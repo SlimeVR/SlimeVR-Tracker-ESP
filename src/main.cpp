@@ -85,7 +85,7 @@ float Mxyz[3];
 unsigned long now = 0, last = 0; //micros() timers
 float deltat = 0;  //loop time in seconds
 unsigned long now_ms, last_ms = 0; //millis() timers
-unsigned long update_ms = 150; //send updates every "update_ms" milliseconds
+unsigned long update_ms = 200; //send updates every "update_ms" milliseconds
 
 
 // Vector to hold quaternion
