@@ -25,6 +25,7 @@
 #include "MPU9250.cpp"
 #include "udpclient.cpp"
 #include "defines.h"
+#include "quat.cpp"
 
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
@@ -84,12 +85,13 @@ float Mxyz[3];
 unsigned long now = 0, last = 0; //micros() timers
 float deltat = 0;  //loop time in seconds
 unsigned long now_ms, last_ms = 0; //millis() timers
-unsigned long print_ms = 200; //print every "print_ms" milliseconds
+unsigned long update_ms = 150; //send updates every "update_ms" milliseconds
 
 
 // Vector to hold quaternion
 static float q[4] = {1.0, 0.0, 0.0, 0.0};
 static float yaw, pitch, roll; //Euler angle output
+static Quat rotationQuat = Quat(Vector3(0, 0, 1), PI/2.0);
 
 float vector_dot(float a[3], float b[3])
 {
@@ -287,18 +289,25 @@ void loop()
   // http://www.ngdc.noaa.gov/geomag-web/#declination
   //conventional nav, yaw increases CW from North, corrected for local magnetic declination
 
-  now_ms = millis(); //time to print?
-  if (now_ms - last_ms >= print_ms) {
+  now_ms = millis();
+  if (now_ms - last_ms >= update_ms) {
     last_ms = now_ms;
-    // print angles for serial plotter...
-    //  Serial.print("ypr ");
-    Serial.print("Rot: ");
-    Serial.print(yaw, 0);
-    Serial.print(", ");
-    Serial.print(pitch, 0);
-    Serial.print(", ");
-    Serial.println(roll, 0);
-    sendQuat(q, PACKET_ROTATION);
+    if(serialDebug) {
+      // print angles for serial plotter...
+      //  Serial.print("ypr ");
+      Serial.print("Rot: ");
+      Serial.print(yaw, 0);
+      Serial.print(", ");
+      Serial.print(pitch, 0);
+      Serial.print(", ");
+      Serial.println(roll, 0);
+    }
+    Quat cq = {};
+    //cq.set(q[0], q[1], q[2], q[3]);
+    cq.set(-q[1], -q[2], -q[0], q[3]);
+    cq *= rotationQuat;
+
+    sendQuat(&cq, PACKET_ROTATION);
     sendQuat(Axyz, PACKET_ACCEL);
     //sendQuat(Mxyz, PACKET_MAG);
     sendQuat(Gxyz, PACKET_GYRO);
