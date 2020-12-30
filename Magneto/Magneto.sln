@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.15
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Magneto", "Magneto.vcxproj", "{98748D35-1E68-4DCB-9C8A-80563220FB6C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{98748D35-1E68-4DCB-9C8A-80563220FB6C}.Debug|x64.ActiveCfg = Debug|x64
+		{98748D35-1E68-4DCB-9C8A-80563220FB6C}.Debug|x64.Build.0 = Debug|x64
+		{98748D35-1E68-4DCB-9C8A-80563220FB6C}.Debug|x86.ActiveCfg = Debug|Win32
+		{98748D35-1E68-4DCB-9C8A-80563220FB6C}.Debug|x86.Build.0 = Debug|Win32
+		{98748D35-1E68-4DCB-9C8A-80563220FB6C}.Release|x64.ActiveCfg = Release|x64
+		{98748D35-1E68-4DCB-9C8A-80563220FB6C}.Release|x64.Build.0 = Release|x64
+		{98748D35-1E68-4DCB-9C8A-80563220FB6C}.Release|x86.ActiveCfg = Release|Win32
+		{98748D35-1E68-4DCB-9C8A-80563220FB6C}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8CF2667F-37C3-4026-AC46-A012F9779188}
+	EndGlobalSection
+EndGlobal
