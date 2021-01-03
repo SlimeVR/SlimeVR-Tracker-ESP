@@ -31,6 +31,8 @@
 
 #define LOADING_LED LED_BUILTIN
 #define CALIBRATING_LED LED_BUILTIN
+#define sensorIdTime 1000
+#define sensorIdInterval 100
 
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
@@ -41,7 +43,7 @@
 MPU9250 accelgyro;
 I2Cdev I2C_M;
 DeviceConfig config;
-const CalibrationConfig & calibration = config.calibration;
+const CalibrationConfig &calibration = config.calibration;
 
 //raw data and scaled as vector
 int16_t ax, ay, az;
@@ -61,38 +63,46 @@ bool isCalibrating = false;
 #define Kp 8.0
 #define Ki 0.1
 
-// globals for AHRS loop timing
-
+// Loop timing globals
 unsigned long now = 0, last = 0;   //micros() timers
 float deltat = 0;                  //loop time in seconds
 unsigned long now_ms, last_ms = 0; //millis() timers
 unsigned long update_ms = 20;      //send updates every "update_ms" milliseconds
+bool blinking = false;
+unsigned long blinkStart = 0;
 
 // Vector to hold quaternion
 static float q[4] = {1.0, 0.0, 0.0, 0.0};
-static float yaw, pitch, roll; //Euler angle output
-static Quat rotationQuat = Quat(Vector3(0, 0, 1), PI / 2.0);
+static const Quat rotationQuat = Quat(Vector3(0, 0, 1), PI / 2.0); // Adjust rotation to match Android rotations
 
 void get_MPU_scaled(void);
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
-void setConfig(DeviceConfig newConfig) {
+void setConfig(DeviceConfig newConfig)
+{
     config = newConfig;
     saveConfig(&config);
 }
 
-void commandRecieved(int command, void * const data, int dataLength) {
-    switch(command) {
-        case COMMAND_CALLIBRATE:
-            isCalibrating = true;
+void commandRecieved(int command, void *const data, int dataLength)
+{
+    switch (command)
+    {
+    case COMMAND_CALLIBRATE:
+        isCalibrating = true;
         break;
-        case COMMAND_SEND_CONFIG:
-            sendConfig(&config, PACKET_CONFIG);
+    case COMMAND_SEND_CONFIG:
+        sendConfig(&config, PACKET_CONFIG);
+        break;
+    case COMMAND_BLINK:
+        blinking = true;
+        blinkStart = now_ms;
         break;
     }
 }
 
 void performCalibration();
+void processBlinking();
 
 void setup()
 {
@@ -105,21 +115,22 @@ void setup()
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
     Serial.begin(serialBaudRate);
-    while (!Serial); // wait for connection
+    while (!Serial)
+        ; // wait for connection
 
     // Load default calibration values and set up callbacks
     config.calibration = {
         {-807.71, 136.80, 290.84},
         {{0.60963, -0.00451, 0.00042},
-            {-0.00451, 0.62762, 0.00492},
-            {0.00042, 0.00492, 0.60485}},
+         {-0.00451, 0.62762, 0.00492},
+         {0.00042, 0.00492, 0.60485}},
         {32.06, 34.44, -97.59},
         {{1.68116, 0.08451, -0.01659},
-            {0.08451, 1.55939, 0.06883},
-            {-0.01659, 0.06883, 1.61732}},
-        {421.3, -236.7, 4.8}
-    };
-    if(hasConfigStored()) {
+         {0.08451, 1.55939, 0.06883},
+         {-0.01659, 0.06883, 1.61732}},
+        {421.3, -236.7, 4.8}};
+    if (hasConfigStored())
+    {
         loadConfig(&config);
     }
     setConfigRecievedCallback(setConfig);
@@ -146,51 +157,24 @@ void setup()
 void loop()
 {
     clientUpdate();
-    if(isCalibrating) {
+    if (isCalibrating)
+    {
         performCalibration();
     }
     get_MPU_scaled();
     now = micros();
     deltat = (now - last) * 1.0e-6; //seconds since last update
     last = now;
+    processBlinking();
 
     // correct for differing accelerometer and magnetometer alignment by circularly permuting mag axes
-
     MahonyQuaternionUpdate(Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2],
                            Mxyz[1], Mxyz[0], -Mxyz[2], deltat);
-    //  Standard orientation: X North, Y West, Z Up
-    //  Tait-Bryan angles as well as Euler angles are
-    // non-commutative; that is, the get the correct orientation the rotations
-    // must be applied in the correct order which for this configuration is yaw,
-    // pitch, and then roll.
-    // http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-    // which has additional links.
-    roll = atan2((q[0] * q[1] + q[2] * q[3]), 0.5 - (q[1] * q[1] + q[2] * q[2]));
-    pitch = asin(2.0 * (q[0] * q[2] - q[1] * q[3]));
-    yaw = atan2((q[1] * q[2] + q[0] * q[3]), 0.5 - (q[2] * q[2] + q[3] * q[3]));
-    // to degrees
-    yaw *= 180.0 / PI;
-    pitch *= 180.0 / PI;
-    roll *= 180.0 / PI;
-
-    // http://www.ngdc.noaa.gov/geomag-web/#declination
-    //conventional nav, yaw increases CW from North, corrected for local magnetic declination
 
     now_ms = millis();
     if (now_ms - last_ms >= update_ms)
     {
         last_ms = now_ms;
-        if (serialDebug)
-        {
-            // print angles for serial plotter...
-            //  Serial.print("ypr ");
-            Serial.print("Rot: ");
-            Serial.print(yaw, 0);
-            Serial.print(", ");
-            Serial.print(pitch, 0);
-            Serial.print(", ");
-            Serial.println(roll, 0);
-        }
         Quat cq = {};
         //cq.set(q[0], q[1], q[2], q[3]);
         cq.set(-q[1], -q[2], -q[0], q[3]);
@@ -332,7 +316,8 @@ void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, fl
     q[3] = q4 * norm;
 }
 
-void performCalibration() {
+void performCalibration()
+{
     digitalWrite(CALIBRATING_LED, LOW);
     Serial.println("Gathering raw data for device calibration...");
     int calibrationSamples = 300;
@@ -359,7 +344,8 @@ void performCalibration() {
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("Gently rotate the device while it's gathering accelerometer and magnetometer data");
-    for(int i = 0; i < 2000 / 20; ++i) {
+    for (int i = 0; i < 2000 / 20; ++i)
+    {
         digitalWrite(CALIBRATING_LED, HIGH);
         delay(2000 / 10);
         digitalWrite(CALIBRATING_LED, LOW);
@@ -381,4 +367,25 @@ void performCalibration() {
     }
     Serial.println("Calibration data gathered and sent");
     digitalWrite(CALIBRATING_LED, HIGH);
+}
+
+void processBlinking() {
+    if (blinking)
+    {
+        if (blinkStart + sensorIdTime < now)
+        {
+            blinking = false;
+            digitalWrite(LOADING_LED, HIGH);
+        }
+        else
+        {
+            int t = (now - blinkStart) / sensorIdInterval;
+            if(t % 2) {
+                digitalWrite(LOADING_LED, LOW);
+            } else {
+                digitalWrite(LOADING_LED, HIGH);
+            }
+        }
+        
+    }
 }

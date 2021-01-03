@@ -229,6 +229,9 @@ void clientUpdate()
             case PACKET_RECIEVE_HEARTBEAT:
                 break;
             case PACKET_RECIEVE_VIBRATE:
+                if(fp_commandCallback) {
+                    fp_commandCallback(COMMAND_BLINK, nullptr, 0);
+                }
                 break;
             case PACKET_RECIEVE_HANDSHAKE:
                 // Assume handshake sucessful

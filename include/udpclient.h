@@ -23,6 +23,7 @@
 
 #define COMMAND_CALLIBRATE 1
 #define COMMAND_SEND_CONFIG 2
+#define COMMAND_BLINK 3
 
 typedef void (* configRecievedCallback)(DeviceConfig const);
 typedef void (* commandRecievedCallback)(int, void * const, int);
