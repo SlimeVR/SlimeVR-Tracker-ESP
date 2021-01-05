@@ -75,7 +75,7 @@ unsigned long blinkStart = 0;
 static float q[4] = {1.0, 0.0, 0.0, 0.0};
 static const Quat rotationQuat = Quat(Vector3(0, 0, 1), PI / 2.0); // Adjust rotation to match Android rotations
 
-void get_MPU_scaled(void);
+void get_MPU_scaled();
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
 void setConfig(DeviceConfig newConfig)
@@ -84,7 +84,7 @@ void setConfig(DeviceConfig newConfig)
     saveConfig(&config);
 }
 
-void commandRecieved(int command, void *const data, int dataLength)
+void commandRecieved(int command, void * const commandData, int commandDataLength)
 {
     switch (command)
     {
@@ -187,7 +187,7 @@ void loop()
     }
 }
 
-void get_MPU_scaled(void)
+void get_MPU_scaled()
 {
     float temp[3];
     int i;

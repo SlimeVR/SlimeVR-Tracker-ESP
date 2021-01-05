@@ -14,23 +14,22 @@ configRecievedCallback fp_configCallback;
 commandRecievedCallback fp_commandCallback;
 
 template <typename T>
-unsigned char *convert_to_chars(T src, unsigned char *target)
+unsigned char * convert_to_chars(T src, unsigned char * target)
 {
-    union
+    union uwunion
     {
         unsigned char c[sizeof(T)];
         T v;
-    } un;
-    un.v = src;
+    };
     for (int i = 0; i < sizeof(T); i++)
     {
-        target[i] = un.c[sizeof(T) - i - 1];
+        target[i] = ((uwunion *) &src)->c[sizeof(T) - i - 1];
     }
     return target;
 }
 
 template <typename T>
-T convert_chars(unsigned char *const src)
+T convert_chars(unsigned char * const src)
 {
     union
     {
