@@ -29,8 +29,6 @@
 #include "util.cpp"
 #include "configuration.cpp"
 
-#define LOADING_LED LED_BUILTIN
-#define CALIBRATING_LED LED_BUILTIN
 #define sensorIdTime 1000
 #define sensorIdInterval 100
 
@@ -148,7 +146,7 @@ void setup()
     Serial.println("Connected to MPU9250");
     //*/
 
-    connectClient();
+    connectClient(&config);
     digitalWrite(LOADING_LED, HIGH);
 }
 

@@ -1,9 +1,5 @@
 #include "udpclient.h"
-
-///////////////////////////////////////////////////////////////////
-//Wifi
-///////////////////////////////////////////////////////////////////
-#include "wificredentials.h"
+#include "configuration.h"
 
 WiFiUDP Udp;
 unsigned char incomingPacket[128]; // buffer for incoming packets
@@ -13,6 +9,9 @@ unsigned char buf[128];
 configRecievedCallback fp_configCallback;
 commandRecievedCallback fp_commandCallback;
 
+int port = 6969;
+IPAddress host;
+
 template <typename T>
 unsigned char * convert_to_chars(T src, unsigned char * target)
 {
@@ -20,10 +19,11 @@ unsigned char * convert_to_chars(T src, unsigned char * target)
     {
         unsigned char c[sizeof(T)];
         T v;
-    };
+    } un;
+    un.v = src;
     for (int i = 0; i < sizeof(T); i++)
     {
-        target[i] = ((uwunion *) &src)->c[sizeof(T) - i - 1];
+        target[i] = un.c[sizeof(T) - i - 1];
     }
     return target;
 }
@@ -264,22 +264,65 @@ void clientUpdate()
     }
 }
 
-void connectClient()
-{
+bool startWPSPBC() {
+    // from https://gist.github.com/copa2/fcc718c6549721c210d614a325271389
+    // wpstest.ino
+    Serial.println("WPS config start");
+    bool wpsSuccess = WiFi.beginWPSConfig();
+    if(wpsSuccess) {
+        // Well this means not always success :-/ in case of a timeout we have an empty ssid
+        String newSSID = WiFi.SSID();
+        if(newSSID.length() > 0) {
+            // WPSConfig has already connected in STA mode successfully to the new station. 
+            Serial.printf("WPS finished. Connected successfully to SSID '%s'\n", newSSID.c_str());
+        } else {
+            wpsSuccess = false;
+        }
+    }
+    return wpsSuccess; 
+}
+
+void setUpWiFi(DeviceConfig * const config) {
     Serial.print("Connecting to wifi ");
-    Serial.println(networkName);
     WiFi.mode(WIFI_STA);
-    WiFi.begin(networkName, networkPassword);
-    while (WiFi.status() != WL_CONNECTED)
+
+    WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
+    while (WiFi.status() == WL_DISCONNECTED)
     {
         delay(500);
         Serial.print(".");
     }
-    Serial.println();
-    Serial.print("Connected, IP address: ");
-    Serial.println(WiFi.localIP());
+    if(WiFi.status() != WL_CONNECTED) {
+        Serial.printf("\nCould not connect to WiFi. state='%d'\n", WiFi.status());
+        Serial.println("Please press WPS button on your router, until mode is indicated.");
 
-    Serial.println("Connecting to owoTrack server");
+        while(true) {
+            if(!startWPSPBC()) {
+                Serial.println("Failed to connect with WPS");
+            } else {
+                WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str()); // reading data from EPROM, 
+                while (WiFi.status() == WL_DISCONNECTED) {          // last saved credentials
+                    delay(500);
+                    Serial.print("."); // show wait for connect to AP
+                }
+            }
+            if(WiFi.status() == WL_CONNECTED)
+                break;
+            delay(1000);
+        }
+    }
+    Serial.printf("\nConnected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+
+    //host = config->serverAddress;
+    //port = config->serverPort;
+    WiFi.hostByName("192.168.1.2", host); // TODO Don't use hardcoded host, perform discovery
+}
+
+void connectClient(DeviceConfig * const config)
+{
+    setUpWiFi(config);
+
+    Serial.printf("Connecting to owoTrack server %s:%d\n", host.toString().c_str(), port);
     Udp.begin(port);
     while (true)
     {
@@ -299,7 +342,7 @@ void connectClient()
             case PACKET_HANDSHAKE:
                 // Assume handshake sucessful
                 Serial.println("Handshale sucessful");
-                break;
+                return;
             }
         }
         Serial.println("Sending handshake...");
@@ -317,6 +360,10 @@ void connectClient()
             Serial.print("Write error: ");
             Serial.println(Udp.getWriteError());
         }
-        delay(1000);
+        
+        digitalWrite(LOADING_LED, LOW);
+        delay(500);
+        digitalWrite(LOADING_LED, HIGH);
+        delay(500);
     }
 }

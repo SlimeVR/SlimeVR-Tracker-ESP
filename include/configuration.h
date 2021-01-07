@@ -1,6 +1,9 @@
 #ifndef _OWO_CONFIG_H_
 #define _OWO_CONFIG_H_
 
+#define LOADING_LED LED_BUILTIN
+#define CALIBRATING_LED LED_BUILTIN
+
 struct CalibrationConfig {
     //acel offsets and correction matrix
     float A_B[3];
