@@ -163,6 +163,7 @@ void loop()
         if (isCalibrating)
         {
             performCalibration();
+            isCalibrating = false;
         }
         get_MPU_scaled();
         now = micros();
@@ -348,11 +349,12 @@ void performCalibration()
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("Gently rotate the device while it's gathering accelerometer and magnetometer data");
-    for (int i = 0; i < 2000 / 20; ++i)
+    for (int i = 0; i < 3000 / 310; ++i)
     {
-        digitalWrite(CALIBRATING_LED, HIGH);
-        delay(2000 / 10);
         digitalWrite(CALIBRATING_LED, LOW);
+        delay(15);
+        digitalWrite(CALIBRATING_LED, HIGH);
+        delay(300);
     }
     int calibrationData[6];
     for (int i = 0; i < calibrationSamples; i++)
@@ -367,7 +369,7 @@ void performCalibration()
         calibrationData[5] = mz;
         sendRawCalibrationData(calibrationData, PACKET_RAW_CALIBRATION_DATA);
         digitalWrite(CALIBRATING_LED, HIGH);
-        delay(300);
+        delay(250);
     }
     Serial.println("Calibration data gathered and sent");
     digitalWrite(CALIBRATING_LED, HIGH);

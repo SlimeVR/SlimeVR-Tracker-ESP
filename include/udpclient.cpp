@@ -1,7 +1,7 @@
 #include "udpclient.h"
 #include "configuration.h"
 
-#define TIMEOUT 3000
+#define TIMEOUT 3000UL
 
 WiFiUDP Udp;
 unsigned char incomingPacket[128]; // buffer for incoming packets
@@ -16,8 +16,8 @@ IPAddress broadcast = IPAddress(255, 255, 255, 255);
 int port = 6969;
 IPAddress host;
 bool connected = false;
-long lastConnectionAttemptMs;
-long lastPacketMs;
+unsigned long lastConnectionAttemptMs;
+unsigned long lastPacketMs;
 
 template <typename T>
 unsigned char * convert_to_chars(T src, unsigned char * target)
@@ -219,58 +219,64 @@ void clientUpdate()
 {
     if (WiFi.status() == WL_CONNECTED)
     {
-        int packetSize = Udp.parsePacket();
-        if (packetSize)
-        {
-            lastPacketMs = millis();
-            // receive incoming UDP packets
-            Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
-            int len = Udp.read(incomingPacket, sizeof(incomingPacket));
-            Serial.print("UDP packet contents: ");
-            for (int i = 0; i < len; ++i)
-                Serial.print((byte)incomingPacket[i]);
-            Serial.println();
-
-            switch (convert_chars<int>(incomingPacket))
+        if(connected) {
+            int packetSize = Udp.parsePacket();
+            if (packetSize)
             {
-            case PACKET_RECIEVE_HEARTBEAT:
-                break;
-            case PACKET_RECIEVE_VIBRATE:
-                if(fp_commandCallback) {
-                    fp_commandCallback(COMMAND_BLINK, nullptr, 0);
-                }
-                break;
-            case PACKET_RECIEVE_HANDSHAKE:
-                // Assume handshake sucessful
-                Serial.println("Handshale recived again, ignoring");
-                break;
-            case PACKET_RECIEVE_COMMAND:
-                if (len < 6)
+                lastPacketMs = millis();
+                // receive incoming UDP packets
+                Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+                int len = Udp.read(incomingPacket, sizeof(incomingPacket));
+                Serial.print("UDP packet contents: ");
+                for (int i = 0; i < len; ++i)
+                    Serial.print((byte)incomingPacket[i]);
+                Serial.println();
+
+                switch (convert_chars<int>(incomingPacket))
                 {
-                    Serial.println("Command packet too short");
+                case PACKET_RECIEVE_HEARTBEAT:
+                    break;
+                case PACKET_RECIEVE_VIBRATE:
+                    if(fp_commandCallback) {
+                        fp_commandCallback(COMMAND_BLINK, nullptr, 0);
+                    }
+                    break;
+                case PACKET_RECIEVE_HANDSHAKE:
+                    // Assume handshake sucessful
+                    Serial.println("Handshale recived again, ignoring");
+                    break;
+                case PACKET_RECIEVE_COMMAND:
+                    if (len < 6)
+                    {
+                        Serial.println("Command packet too short");
+                        break;
+                    }
+                    Serial.printf("Recieved command %d\n", incomingPacket[4]);
+                    if (fp_commandCallback)
+                    {
+                        fp_commandCallback(incomingPacket[4], &incomingPacket[5], len - 6);
+                    }
+                    break;
+                case PACKET_CONFIG:
+                    if (len < sizeof(DeviceConfig) + 4)
+                    {
+                        Serial.println("config packet too short");
+                        break;
+                    }
+                    if (fp_configCallback)
+                    {
+                        fp_configCallback(convert_chars<DeviceConfig>(&incomingPacket[4]));
+                    }
                     break;
                 }
-                Serial.printf("Recieved command %d\n", incomingPacket[4]);
-                if (fp_commandCallback)
-                {
-                    fp_commandCallback(incomingPacket[4], &incomingPacket[5], len - 6);
-                }
-                break;
-            case PACKET_CONFIG:
-                if (len < sizeof(DeviceConfig) + 4)
-                {
-                    Serial.println("config packet too short");
-                    break;
-                }
-                if (fp_configCallback)
-                {
-                    fp_configCallback(convert_chars<DeviceConfig>(&incomingPacket[4]));
-                }
-                break;
+            }
+            if(lastPacketMs + TIMEOUT < millis())
+            {
+                connected = false;
+                Serial.println("Connection to server timed out");
             }
         }
-        if(connected && (lastPacketMs + TIMEOUT < millis()))
-            connected = false;
+            
         if(!connected)
             connectClient();
     }
@@ -330,15 +336,15 @@ void setUpWiFi(DeviceConfig * const config) {
 
 void connectClient()
 {
-    long now = millis();
+    unsigned long now = millis();
     while(true) {
         int packetSize = Udp.parsePacket();
         if (packetSize)
         {
             // receive incoming UDP packets
-            Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+            Serial.printf("[Handshake] Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
             int len = Udp.read(incomingPacket, sizeof(incomingPacket));
-            Serial.print("UDP packet contents: ");
+            Serial.print("[Handshake] UDP packet contents: ");
             for (int i = 0; i < len; ++i)
                 Serial.print((byte)incomingPacket[i]);
             Serial.println();
@@ -352,8 +358,10 @@ void connectClient()
                 lastPacketMs = now;
                 connected = true;
                 digitalWrite(LOADING_LED, HIGH);
-                Serial.printf("Handshale sucessful, server is %s:%d", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
+                Serial.printf("[Handshake] Handshale sucessful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
+            default:
+            continue;
             }
         }
         else
