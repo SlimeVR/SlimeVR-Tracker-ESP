@@ -9,8 +9,12 @@ unsigned char buf[128];
 configRecievedCallback fp_configCallback;
 commandRecievedCallback fp_commandCallback;
 
+IPAddress broadcast = IPAddress(224, 0, 1, 3);
+
 int port = 6969;
 IPAddress host;
+bool connected = false;
+long lastConnectionAttempt;
 
 template <typename T>
 unsigned char * convert_to_chars(T src, unsigned char * target)
@@ -261,6 +265,8 @@ void clientUpdate()
                 break;
             }
         }
+        if(!connected)
+            connectClient();
     }
 }
 
@@ -313,19 +319,12 @@ void setUpWiFi(DeviceConfig * const config) {
     }
     Serial.printf("\nConnected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
 
-    //host = config->serverAddress;
-    //port = config->serverPort;
-    WiFi.hostByName("192.168.1.2", host); // TODO Don't use hardcoded host, perform discovery
+    Udp.begin(port);
 }
 
-void connectClient(DeviceConfig * const config)
+void connectClient()
 {
-    setUpWiFi(config);
-
-    Serial.printf("Connecting to owoTrack server %s:%d\n", host.toString().c_str(), port);
-    Udp.begin(port);
-    while (true)
-    {
+    while(true) {
         int packetSize = Udp.parsePacket();
         if (packetSize)
         {
@@ -341,12 +340,25 @@ void connectClient(DeviceConfig * const config)
             {
             case PACKET_HANDSHAKE:
                 // Assume handshake sucessful
-                Serial.println("Handshale sucessful");
+                host = Udp.remoteIP();
+                port = Udp.remotePort();
+                connected = true;
+                digitalWrite(LOADING_LED, HIGH);
+                Serial.printf("Handshale sucessful, server is %s:%d", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
             }
         }
-        Serial.println("Sending handshake...");
-        if (Udp.beginPacket(host, port) > 0)
+        else
+        {
+            break;
+        }   
+    }
+    long now = millis();
+    if(lastConnectionAttempt + 1000 < now)
+    {
+        lastConnectionAttempt = now;
+        Serial.println("Looking for the server...");
+        if (Udp.beginPacketMulticast(host, port, WiFi.localIP()) > 0)
         {
             Udp.write(handshake, 12);
             if (Udp.endPacket() == 0)
@@ -362,8 +374,9 @@ void connectClient(DeviceConfig * const config)
         }
         
         digitalWrite(LOADING_LED, LOW);
-        delay(500);
+    }
+    else if(lastConnectionAttempt + 20 < now)
+    {
         digitalWrite(LOADING_LED, HIGH);
-        delay(500);
     }
 }
