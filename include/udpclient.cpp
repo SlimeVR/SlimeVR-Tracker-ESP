@@ -1,6 +1,8 @@
 #include "udpclient.h"
 #include "configuration.h"
 
+#define TIMEOUT 3000
+
 WiFiUDP Udp;
 unsigned char incomingPacket[128]; // buffer for incoming packets
 uint64_t packetNumber = 1;
@@ -9,12 +11,13 @@ unsigned char buf[128];
 configRecievedCallback fp_configCallback;
 commandRecievedCallback fp_commandCallback;
 
-IPAddress broadcast = IPAddress(224, 0, 1, 3);
+IPAddress broadcast = IPAddress(255, 255, 255, 255);
 
 int port = 6969;
 IPAddress host;
 bool connected = false;
-long lastConnectionAttempt;
+long lastConnectionAttemptMs;
+long lastPacketMs;
 
 template <typename T>
 unsigned char * convert_to_chars(T src, unsigned char * target)
@@ -219,6 +222,7 @@ void clientUpdate()
         int packetSize = Udp.parsePacket();
         if (packetSize)
         {
+            lastPacketMs = millis();
             // receive incoming UDP packets
             Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
             int len = Udp.read(incomingPacket, sizeof(incomingPacket));
@@ -265,6 +269,8 @@ void clientUpdate()
                 break;
             }
         }
+        if(connected && (lastPacketMs + TIMEOUT < millis()))
+            connected = false;
         if(!connected)
             connectClient();
     }
@@ -324,6 +330,7 @@ void setUpWiFi(DeviceConfig * const config) {
 
 void connectClient()
 {
+    long now = millis();
     while(true) {
         int packetSize = Udp.parsePacket();
         if (packetSize)
@@ -342,6 +349,7 @@ void connectClient()
                 // Assume handshake sucessful
                 host = Udp.remoteIP();
                 port = Udp.remotePort();
+                lastPacketMs = now;
                 connected = true;
                 digitalWrite(LOADING_LED, HIGH);
                 Serial.printf("Handshale sucessful, server is %s:%d", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
@@ -353,12 +361,11 @@ void connectClient()
             break;
         }   
     }
-    long now = millis();
-    if(lastConnectionAttempt + 1000 < now)
+    if(lastConnectionAttemptMs + 1000 < now)
     {
-        lastConnectionAttempt = now;
+        lastConnectionAttemptMs = now;
         Serial.println("Looking for the server...");
-        if (Udp.beginPacketMulticast(host, port, WiFi.localIP()) > 0)
+        if (Udp.beginPacket(broadcast, port) > 0)
         {
             Udp.write(handshake, 12);
             if (Udp.endPacket() == 0)
@@ -375,7 +382,7 @@ void connectClient()
         
         digitalWrite(LOADING_LED, LOW);
     }
-    else if(lastConnectionAttempt + 20 < now)
+    else if(lastConnectionAttemptMs + 20 < now)
     {
         digitalWrite(LOADING_LED, HIGH);
     }
