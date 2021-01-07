@@ -111,7 +111,7 @@ void setup()
     digitalWrite(LOADING_LED, LOW);
 
     // join I2C bus (I2Cdev library doesn't do this automatically)
-    Wire.begin();
+    Wire.begin(D6, D5);
     Serial.begin(serialBaudRate);
     while (!Serial)
         ; // wait for connection
