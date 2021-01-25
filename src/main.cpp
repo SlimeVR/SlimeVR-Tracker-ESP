@@ -71,8 +71,9 @@ bool blinking = false;
 unsigned long blinkStart = 0;
 
 // Vector to hold quaternion
-static float q[4] = {1.0, 0.0, 0.0, 0.0};
-static const Quat rotationQuat = Quat(Vector3(0, 0, 1), PI / 2.0); // Adjust rotation to match Android rotations
+float q[4] = {1.0, 0.0, 0.0, 0.0};
+const Quat rotationQuat = Quat(Vector3(0, 0, 1), PI / 2.0); // Adjust rotation to match Android rotations
+Quat cq = Quat();
 
 void get_MPU_scaled();
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
@@ -165,29 +166,24 @@ void loop()
             performCalibration();
             isCalibrating = false;
         }
-        get_MPU_scaled();
-        now = micros();
-        deltat = (now - last) * 1.0e-6; //seconds since last update
-        last = now;
-        processBlinking();
-
-        // correct for differing accelerometer and magnetometer alignment by circularly permuting mag axes
-        MahonyQuaternionUpdate(Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2],
-                            Mxyz[1], Mxyz[0], -Mxyz[2], deltat);
-
         now_ms = millis();
         if (now_ms - last_ms >= update_ms)
         {
+            now = micros();
+            deltat = (now - last) * 1.0e-6; //seconds since last update
+            last = now;
+            processBlinking();
+
+            get_MPU_scaled();
+            MahonyQuaternionUpdate(Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat);
             last_ms = now_ms;
-            Quat cq = {};
-            //cq.set(q[0], q[1], q[2], q[3]);
             cq.set(-q[1], -q[2], -q[0], q[3]);
             cq *= rotationQuat;
 
             sendQuat(&cq, PACKET_ROTATION);
-            sendQuat(Axyz, PACKET_ACCEL);
+            //sendQuat(Axyz, PACKET_ACCEL);
             //sendQuat(Mxyz, PACKET_MAG);
-            sendQuat(Gxyz, PACKET_GYRO);
+            //sendQuat(Gxyz, PACKET_GYRO);
         }
     }
 }
