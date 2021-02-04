@@ -1,5 +1,6 @@
 #include "udpclient.h"
 #include "configuration.h"
+#include "defines.h"
 
 #define TIMEOUT 3000UL
 
@@ -205,6 +206,18 @@ void sendRawCalibrationData(int *const data, int type)
     }
 }
 
+void returnLastPacket(int len) {
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        Udp.write(incomingPacket, len);
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+}
+
 void setConfigRecievedCallback(configRecievedCallback callback)
 {
     fp_configCallback = callback;
@@ -224,13 +237,15 @@ void clientUpdate()
             if (packetSize)
             {
                 lastPacketMs = millis();
-                // receive incoming UDP packets
-                Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
                 int len = Udp.read(incomingPacket, sizeof(incomingPacket));
-                Serial.print("UDP packet contents: ");
-                for (int i = 0; i < len; ++i)
-                    Serial.print((byte)incomingPacket[i]);
-                Serial.println();
+                // receive incoming UDP packets
+                if(serialDebug) {
+                    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+                    Serial.print("UDP packet contents: ");
+                    for (int i = 0; i < len; ++i)
+                        Serial.print((byte)incomingPacket[i]);
+                    Serial.println();
+                }
 
                 switch (convert_chars<int>(incomingPacket))
                 {
@@ -251,7 +266,9 @@ void clientUpdate()
                         Serial.println("Command packet too short");
                         break;
                     }
-                    Serial.printf("Recieved command %d\n", incomingPacket[4]);
+                    if(serialDebug) {
+                        Serial.printf("Recieved command %d\n", incomingPacket[4]);
+                    }
                     if (fp_commandCallback)
                     {
                         fp_commandCallback(incomingPacket[4], &incomingPacket[5], len - 6);
@@ -267,6 +284,9 @@ void clientUpdate()
                     {
                         fp_configCallback(convert_chars<DeviceConfig>(&incomingPacket[4]));
                     }
+                    break;
+                case PACKET_PING_PONG:
+                    returnLastPacket(len);
                     break;
                 }
             }

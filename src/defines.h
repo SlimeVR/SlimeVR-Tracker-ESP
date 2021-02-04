@@ -23,9 +23,12 @@
 ///////////////////////////////////////////////////////////////////
 //Determines how often we sample and send data
 ///////////////////////////////////////////////////////////////////
-#define samplingRateInMillis 250
+#define samplingRateInMillis 10
 
 ///////////////////////////////////////////////////////////////////
 //Setup for the Magnetometer
 ///////////////////////////////////////////////////////////////////
-#define calibrateMagnetometer false //Setting requires requires you to move device in figure 8 pattern when prompted over serial port.  Typically, you do this once, then manually provide the calibration values moving forward.
+#define useFullCalibrationMatrix true
+
+#define sensorIdTime 1000
+#define sensorIdInterval 100
