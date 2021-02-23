@@ -8,6 +8,13 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "ota.cpp"
+#include "configuration.cpp"
+#include "util.cpp"
+#include "udpclient.cpp"
+
+DeviceConfig config;
+
 uint8_t portArray[] = {16, 5, 4, 0, 2, 14, 12, 13};
 //String portMap[] = {"D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"}; //for Wemos
 String portMap[] = {"GPIO16", "GPIO5", "GPIO4", "GPIO0", "GPIO2", "GPIO14", "GPIO12", "GPIO13"};
@@ -96,6 +103,7 @@ void I2C_recovery() {
 }
 
 void loop() {
+  otaUpdate();
 }
 
 void setup() {
@@ -105,4 +113,7 @@ void setup() {
   scanPorts();
   I2C_recovery();
   scanPorts();
+
+  setUpWiFi(&config);
+  otaSetup();
 }
