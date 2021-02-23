@@ -20,7 +20,7 @@
 
 #include "Wire.h"
 #include "ota.cpp"
-#include "6axismotion.cpp"
+#include "bno085.cpp"
 
 bool isCalibrating = false;
 bool blinking = false;
@@ -61,7 +61,9 @@ void setup()
     digitalWrite(LOADING_LED, LOW);
 
     // join I2C bus (I2Cdev library doesn't do this automatically)
-    Wire.begin(D6, D5);
+    Wire.flush();
+    Wire.begin(D2, D1);
+    Wire.setClockStretchLimit(4000);
     Serial.begin(serialBaudRate);
     while (!Serial)
         ; // wait for connection

@@ -1,3 +1,6 @@
+#ifndef _MOTIONBASE_H_
+#define _MOTIONBASE_H_
+
 #include "I2Cdev.cpp"
 #include "MPU9250MotionApps.h"
 #include "defines.h"
@@ -21,3 +24,5 @@ void motionSetup();
 void motionLoop();
 
 void sendData();
+
+#endif

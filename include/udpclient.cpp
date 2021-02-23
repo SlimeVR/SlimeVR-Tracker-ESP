@@ -20,6 +20,9 @@ bool connected = false;
 unsigned long lastConnectionAttemptMs;
 unsigned long lastPacketMs;
 
+uint8_t serialBuffer[128];
+size_t serialLength = 0;
+
 template <typename T>
 unsigned char * convert_to_chars(T src, unsigned char * target)
 {
@@ -206,6 +209,26 @@ void sendRawCalibrationData(int *const data, int type)
     }
 }
 
+void sendSerial(uint8_t *const data, int length, int type) {
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(convert_to_chars(length, buf), sizeof(length));
+        Udp.write(data, length);
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
 void returnLastPacket(int len) {
     if (Udp.beginPacket(host, port) > 0)
     {
@@ -290,6 +313,10 @@ void clientUpdate()
                     break;
                 }
             }
+            //while(Serial.available()) {
+            //    size_t bytesRead = Serial.readBytes(serialBuffer, min(Serial.available(), sizeof(serialBuffer)));
+            //    sendSerial(serialBuffer, bytesRead, PACKET_SERIAL);
+            //}
             if(lastPacketMs + TIMEOUT < millis())
             {
                 connected = false;

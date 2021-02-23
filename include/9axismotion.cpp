@@ -1,4 +1,4 @@
-#include "motionbase.cpp"
+#include "motionbase.h"
 
 //raw data and scaled as vector
 int16_t ax, ay, az;

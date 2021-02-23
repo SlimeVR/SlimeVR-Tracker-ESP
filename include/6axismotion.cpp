@@ -1,4 +1,5 @@
-#include "motionbase.cpp"
+#include "motionbase.h"
+#include "MPU6050OffsetFinder.cpp"
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -69,7 +70,7 @@ void motionLoop() {
         // track FIFO count here in case there is > 1 packet available
         // (this lets us immediately read more without waiting for an interrupt)
         fifoCount -= packetSize;
-        
+
         accelgyro.dmpGetQuaternion(&rawQuat, fifoBuffer);
         q[0] = rawQuat.x;
         q[1] = rawQuat.y;
@@ -86,6 +87,13 @@ void sendData() {
 
 void performCalibration() {
     digitalWrite(CALIBRATING_LED, LOW);
+    Serial.println("Starting offset finder");
+    findOffset();
+    Serial.println("Process is over");
+    digitalWrite(CALIBRATING_LED, HIGH);
+}
+
+void gatherCalibrationData() {
     Serial.println("Gathering raw data for device calibration...");
     int calibrationSamples = 500;
     // Reset values
@@ -139,5 +147,4 @@ void performCalibration() {
         delay(50);
     }
     Serial.println("Calibration data gathered and sent");
-    digitalWrite(CALIBRATING_LED, HIGH);
 }
