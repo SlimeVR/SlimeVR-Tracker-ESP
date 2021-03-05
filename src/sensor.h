@@ -23,7 +23,7 @@ class Sensor {
 class BNO080Sensor : public Sensor {
     public:
         BNO080Sensor() = default;
-        ~BNO080Sensor() = default;
+        ~BNO080Sensor() override = default;
         void motionSetup(DeviceConfig * config) final;
         void motionLoop() final;
         void sendData() final;
@@ -36,7 +36,7 @@ class BNO080Sensor : public Sensor {
 class MPUSensor : public Sensor {
     public:
         MPUSensor() = default;
-        ~MPUSensor() = default;
+        ~MPUSensor() override = default;
     protected:
         MPU9250 imu {};
         float q[4] {1.0, 0.0, 0.0, 0.0};
@@ -45,7 +45,7 @@ class MPUSensor : public Sensor {
 class MPU6050Sensor : public MPUSensor {
     public:
         MPU6050Sensor() = default;
-        ~MPU6050Sensor() = default;
+        ~MPU6050Sensor() override  = default;
         void motionSetup(DeviceConfig * config) final;
         void motionLoop() final;
         void sendData() final;
@@ -64,7 +64,7 @@ class MPU6050Sensor : public MPUSensor {
 class MPU9250Sensor : public MPUSensor {
     public:
         MPU9250Sensor() = default;
-        ~MPU9250Sensor() = default;
+        ~MPU9250Sensor() override  = default;
         void motionSetup(DeviceConfig * config) final;
         void motionLoop() final;
         void sendData() final;
