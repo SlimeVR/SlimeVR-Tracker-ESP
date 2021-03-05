@@ -38,7 +38,11 @@ THE SOFTWARE.
 #define _MPU9250_H_
 
 #include "I2Cdev.h"
+#include "helper_3dmath.h"
 #include <avr/pgmspace.h>
+
+// MotionApps 2.0 DMP implementation, built using the MPU-6050EVB evaluation board
+#define MPU9250_INCLUDE_DMP_MOTIONAPPS20
 
 //Magnetometer Registers
 #define MPU9150_RA_MAG_ADDRESS		0x0C

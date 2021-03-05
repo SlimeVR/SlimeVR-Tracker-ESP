@@ -80,7 +80,6 @@ and so on.
 // for both classes must be in the include path of your project
 #include "I2Cdev.h"
 #include "MPU9250.h"
-#include "motionbase.h"
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
@@ -113,6 +112,8 @@ int HighOffset[6];
 int Target[6];
 int LinesOut;
 int N;
+
+MPU9250 accelgyro;
 
 void ForceHeader()
 {
@@ -150,8 +151,9 @@ void GetSmoothed()
     }
 } // GetSmoothed
 
-void Initialize()
+void Initialize(MPU9250 &mpu9250)
 {
+    accelgyro = mpu9250;
     Serial.println("PID tuning Each Dot = 100 readings");
     /*A tidbit on how PID (PI actually) tuning works. 
     When we change the offset in the MPU6050 we can get instant results. This allows us to use Proportional and 
@@ -348,9 +350,9 @@ void PullBracketsOut()
     } // keep going
 } // PullBracketsOut
 
-void findOffset()
+void findOffset(MPU9250 &mpu9250)
 {
-    Initialize();
+    Initialize(mpu9250);
     for (int i = iAx; i <= iGz; i++)
     {                  // set targets and initial guesses
         Target[i] = 0; // must fix for ZAccel

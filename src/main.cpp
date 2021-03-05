@@ -19,13 +19,21 @@
 // This version must be compiled with library routines in subfolder "libs"
 
 #include "Wire.h"
-#include "ota.cpp"
-#include "bno085.cpp"
+#include "ota.h"
+#include "sensor.h"
+#include "configuration.h"
+#include "udpclient.h"
+#include "defines.h"
+#include "credentials.h"
+
+BNO080Sensor sensor{};
+DeviceConfig config{};
 
 bool isCalibrating = false;
 bool blinking = false;
 unsigned long blinkStart = 0;
 unsigned long now_ms, last_ms = 0; //millis() timers
+unsigned long last_battery_sample = 0;
 
 void setConfig(DeviceConfig newConfig)
 {
@@ -74,11 +82,11 @@ void setup()
         {{  1.01176, -0.00048,  0.00230},
         { -0.00048,  1.00366, -0.00535},
         {  0.00230, -0.00535,  0.99003}},
-        {    9.85,   47.89,  -10.94},
-        {{  1.11351, -0.01290, -0.00077},
-        { -0.01290,  1.18048,  0.01839},
-        { -0.00077,  0.01839,  1.15212}},
-        {   24.59,    -4.96,   -93.38}};
+        {   24.95,   81.77,  -10.36},
+        {{  1.44652,  0.02739, -0.02186},
+        {  0.02739,  1.48749, -0.00547},
+        { -0.02186, -0.00547,  1.42441}},
+        {   22.97,    13.56,   -90.65}};
     if (hasConfigStored())
     {
         loadConfig(&config);
@@ -86,7 +94,7 @@ void setup()
     setConfigRecievedCallback(setConfig);
     setCommandRecievedCallback(commandRecieved);
 
-    motionSetup();
+    sensor.motionSetup(&config);
 
     // Don't start if not connected to MPU
     /*while(!accelgyro.testConnection()) {
@@ -98,7 +106,7 @@ void setup()
     //*/
 
     setUpWiFi(&config);
-    otaSetup();
+    otaSetup(otaPassword);
     digitalWrite(LOADING_LED, HIGH);
 }
 
@@ -108,14 +116,14 @@ void loop()
 {
     otaUpdate();
     clientUpdate();
-    if(connected)
+    if(isConnected())
     {
         if (isCalibrating)
         {
-            performCalibration();
+            sensor.startCalibration(0);
             isCalibrating = false;
         }
-        motionLoop();
+        sensor.motionLoop();
         // Send updates
         now_ms = millis();
         if (now_ms - last_ms >= samplingRateInMillis)
@@ -123,7 +131,12 @@ void loop()
             last_ms = now_ms;
             processBlinking();
 
-            sendData();
+            sensor.sendData();
+        }
+        if(now_ms - last_battery_sample >= batterySampleRate) {
+            last_battery_sample = now_ms;
+            float battery = ((float) analogRead(A0)) / 1024.0 * 14.0;
+            sendFloat(battery, PACKET_BATTERY_LEVEL);
         }
     }
 }

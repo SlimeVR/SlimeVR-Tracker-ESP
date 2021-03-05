@@ -18,6 +18,7 @@
 #define PACKET_RAW_MAGENTOMETER 9
 #define PACKET_PING_PONG 10
 #define PACKET_SERIAL 11
+#define PACKET_BATTERY_LEVEL 12
 
 #define PACKET_RECIEVE_HEARTBEAT 1
 #define PACKET_RECIEVE_VIBRATE 2
@@ -37,9 +38,12 @@ void sendQuat(float * const quaternion, int type);
 void sendQuat(Quat * const quaternion, int type);
 void sendVector(float * const result, int type);
 void sendConfig(DeviceConfig * const config, int type);
+void sendFloat(float const value, int type);
 void sendRawCalibrationData(int * const data, int type);
 void setConfigRecievedCallback(configRecievedCallback);
 void setCommandRecievedCallback(commandRecievedCallback);
+void setUpWiFi(DeviceConfig * const config);
+bool isConnected();
 
 template<typename T> T convert_chars(unsigned char* src);
 template<typename T> unsigned char* convert_to_chars(T src, unsigned char* target);

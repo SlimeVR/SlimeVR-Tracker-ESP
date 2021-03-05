@@ -453,7 +453,7 @@ float BNO080::getPitch()
 	dqy = dqy/norm;
 	dqz = dqz/norm;
 
-	float ysqr = dqy * dqy;
+	//float ysqr = dqy * dqy;
 
 	// pitch (y-axis rotation)
 	float t2 = +2.0 * (dqw * dqy - dqz * dqx);

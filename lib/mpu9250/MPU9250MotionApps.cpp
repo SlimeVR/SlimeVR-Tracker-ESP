@@ -35,13 +35,7 @@ THE SOFTWARE.
 #ifndef _MPU9250_6AXIS_MOTIONAPPS20_H_
 #define _MPU9250_6AXIS_MOTIONAPPS20_H_
 
-#include "I2Cdev.h"
-#include "helper_3dmath.h"
-
-// MotionApps 2.0 DMP implementation, built using the MPU-6050EVB evaluation board
-#define MPU9250_INCLUDE_DMP_MOTIONAPPS20
-
-#include "MPU9250.cpp"
+#include "MPU9250.h"
 
 // Tom Carpenter's conditional PROGMEM code
 // http://forum.arduino.cc/index.php?topic=129407.0
@@ -49,8 +43,8 @@ THE SOFTWARE.
     #include <avr/pgmspace.h>
 #else
     // Teensy 3.0 library conditional PROGMEM code from Paul Stoffregen
-    #ifndef __PGMSPACE_H_
-        #define __PGMSPACE_H_ 1
+    #ifndef _PGMSPACE_H_
+        #define _PGMSPACE_H_ 1
         #include <inttypes.h>
 
         #define PROGMEM

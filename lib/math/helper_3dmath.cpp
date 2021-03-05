@@ -1,5 +1,4 @@
-#include "util.h"
-#include <math.h>
+#include "helper_3dmath.h"
 
 float vector_dot(float a[3], float b[3])
 {

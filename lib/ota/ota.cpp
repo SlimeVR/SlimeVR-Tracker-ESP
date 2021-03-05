@@ -1,7 +1,6 @@
-#include "credentials.h"
-#include <ArduinoOTA.h>
+#include "ota.h"
 
-void otaSetup() {
+void otaSetup(const char * const otaPassword) {
     if(otaPassword[0] == '\0')
         return; // No password set up, disable OTA
     ArduinoOTA.setPassword(otaPassword);

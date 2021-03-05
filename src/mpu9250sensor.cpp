@@ -1,62 +1,54 @@
-#include "motionbase.h"
+#include "MPU9250.h"
+#include "sensor.h"
+#include "udpclient.h"
+#include "defines.h"
+#include "helper_3dmath.h"
 
-//raw data and scaled as vector
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
-int16_t mx, my, mz;
-float Axyz[3];
-float Gxyz[3];
-float Mxyz[3];
-float rawMag[3];
 #define gscale (250. / 32768.0) * (PI / 180.0) //gyro default 250 LSB per d/s -> rad/s
-
-// NOW USING MAHONY FILTER
-
 // These are the free parameters in the Mahony filter and fusion scheme,
 // Kp for proportional feedback, Ki for integral
 // with MPU-9250, angles start oscillating at Kp=40. Ki does not seem to help and is not required.
 #define Kp 10.0
 #define Ki 0.0
 
-// Loop timing globals
-unsigned long now = 0, last = 0;   //micros() timers
-float deltat = 0;                  //loop time in seconds
-
 void get_MPU_scaled();
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
-void motionSetup() {
+CalibrationConfig * calibration;
+
+void MPU9250Sensor::motionSetup(DeviceConfig * config) {
+    calibration = &config->calibration;
     // initialize device
-    accelgyro.initialize();
+    imu.initialize();
 }
 
-void motionLoop() {
+void MPU9250Sensor::motionLoop() {
     // Update quaternion
     now = micros();
     deltat = (now - last) * 1.0e-6; //seconds since last update
     last = now;
-    get_MPU_scaled();
+    getMPUScaled();
     MahonyQuaternionUpdate(Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat);
-    cq.set(-q[1], -q[2], -q[0], q[3]);
-    cq *= rotationQuat;
+    quaternion.set(-q[1], -q[2], -q[0], q[3]);
+    quaternion *= sensorOffset;
 }
 
-void sendData() {
-    sendQuat(&cq, PACKET_ROTATION);
+void MPU9250Sensor::sendData() {
+    sendQuat(&quaternion, PACKET_ROTATION);
     sendVector(rawMag, PACKET_RAW_MAGENTOMETER);
     sendVector(Axyz, PACKET_ACCEL);
     sendVector(Mxyz, PACKET_MAG);
 }
 
-void get_MPU_scaled()
+void MPU9250Sensor::getMPUScaled()
 {
     float temp[3];
     int i;
-    accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
 
-    Gxyz[0] = ((float)gx - calibration.G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
-    Gxyz[1] = ((float)gy - calibration.G_off[1]) * gscale;
-    Gxyz[2] = ((float)gz - calibration.G_off[2]) * gscale;
+    Gxyz[0] = ((float)gx - calibration->G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
+    Gxyz[1] = ((float)gy - calibration->G_off[1]) * gscale;
+    Gxyz[2] = ((float)gz - calibration->G_off[2]) * gscale;
 
     Axyz[0] = (float)ax;
     Axyz[1] = (float)ay;
@@ -64,13 +56,13 @@ void get_MPU_scaled()
     //apply offsets (bias) and scale factors from Magneto
     if(useFullCalibrationMatrix) {
         for (i = 0; i < 3; i++)
-            temp[i] = (Axyz[i] - calibration.A_B[i]);
-        Axyz[0] = calibration.A_Ainv[0][0] * temp[0] + calibration.A_Ainv[0][1] * temp[1] + calibration.A_Ainv[0][2] * temp[2];
-        Axyz[1] = calibration.A_Ainv[1][0] * temp[0] + calibration.A_Ainv[1][1] * temp[1] + calibration.A_Ainv[1][2] * temp[2];
-        Axyz[2] = calibration.A_Ainv[2][0] * temp[0] + calibration.A_Ainv[2][1] * temp[1] + calibration.A_Ainv[2][2] * temp[2];
+            temp[i] = (Axyz[i] - calibration->A_B[i]);
+        Axyz[0] = calibration->A_Ainv[0][0] * temp[0] + calibration->A_Ainv[0][1] * temp[1] + calibration->A_Ainv[0][2] * temp[2];
+        Axyz[1] = calibration->A_Ainv[1][0] * temp[0] + calibration->A_Ainv[1][1] * temp[1] + calibration->A_Ainv[1][2] * temp[2];
+        Axyz[2] = calibration->A_Ainv[2][0] * temp[0] + calibration->A_Ainv[2][1] * temp[1] + calibration->A_Ainv[2][2] * temp[2];
     } else {
         for (i = 0; i < 3; i++)
-            Axyz[i] = (Axyz[i] - calibration.A_B[i]);
+            Axyz[i] = (Axyz[i] - calibration->A_B[i]);
     }
     vector_normalize(Axyz);
 
@@ -80,13 +72,13 @@ void get_MPU_scaled()
     //apply offsets and scale factors from Magneto
     if(useFullCalibrationMatrix) {
         for (i = 0; i < 3; i++)
-            temp[i] = (Mxyz[i] - calibration.M_B[i]);
-        Mxyz[0] = calibration.M_Ainv[0][0] * temp[0] + calibration.M_Ainv[0][1] * temp[1] + calibration.M_Ainv[0][2] * temp[2];
-        Mxyz[1] = calibration.M_Ainv[1][0] * temp[0] + calibration.M_Ainv[1][1] * temp[1] + calibration.M_Ainv[1][2] * temp[2];
-        Mxyz[2] = calibration.M_Ainv[2][0] * temp[0] + calibration.M_Ainv[2][1] * temp[1] + calibration.M_Ainv[2][2] * temp[2];
+            temp[i] = (Mxyz[i] - calibration->M_B[i]);
+        Mxyz[0] = calibration->M_Ainv[0][0] * temp[0] + calibration->M_Ainv[0][1] * temp[1] + calibration->M_Ainv[0][2] * temp[2];
+        Mxyz[1] = calibration->M_Ainv[1][0] * temp[0] + calibration->M_Ainv[1][1] * temp[1] + calibration->M_Ainv[1][2] * temp[2];
+        Mxyz[2] = calibration->M_Ainv[2][0] * temp[0] + calibration->M_Ainv[2][1] * temp[1] + calibration->M_Ainv[2][2] * temp[2];
     } else {
         for (i = 0; i < 3; i++)
-            Mxyz[i] = (Mxyz[i] - calibration.M_B[i]);
+            Mxyz[i] = (Mxyz[i] - calibration->M_B[i]);
     }
     rawMag[0] = Mxyz[0];
     rawMag[1] = Mxyz[1];
@@ -101,7 +93,7 @@ void get_MPU_scaled()
 // input vectors ax, ay, az and mx, my, mz MUST be normalized!
 // gx, gy, gz must be in units of radians/second
 //
-void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat)
+void MPU9250Sensor::MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat)
 {
     // Vector to hold integral error for Mahony method
     static float eInt[3] = {0.0, 0.0, 0.0};
@@ -188,7 +180,7 @@ void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, fl
     q[3] = q4 * norm;
 }
 
-void performCalibration() {
+void MPU9250Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
     Serial.println("Gathering raw data for device calibration...");
     int calibrationSamples = 300;
@@ -202,7 +194,7 @@ void performCalibration() {
     delay(2000);
     for (int i = 0; i < calibrationSamples; i++)
     {
-        accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+        imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
         Gxyz[0] += float(gx);
         Gxyz[1] += float(gy);
         Gxyz[2] += float(gz);
@@ -226,7 +218,7 @@ void performCalibration() {
     for (int i = 0; i < calibrationSamples; i++)
     {
         digitalWrite(CALIBRATING_LED, LOW);
-        accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+        imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
         calibrationData[0] = ax;
         calibrationData[1] = ay;
         calibrationData[2] = az;

@@ -103,6 +103,26 @@ void sendVector(float *const result, int type)
     }
 }
 
+void sendFloat(float const value, int type)
+{
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(convert_to_chars(value, buf), sizeof(value));
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
 void sendQuat(Quat *const quaternion, int type)
 {
     if (Udp.beginPacket(host, port) > 0)
@@ -379,6 +399,10 @@ void setUpWiFi(DeviceConfig * const config) {
     Serial.printf("\nConnected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
 
     Udp.begin(port);
+}
+
+bool isConnected() {
+    return connected;
 }
 
 void connectClient()
