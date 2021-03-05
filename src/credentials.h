@@ -1,0 +1,1 @@
+const char* otaPassword = ""; // YOUR OTA PASSWORD HERE, LEAVE EMPTY FRO NO OTA UPDATES
