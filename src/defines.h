@@ -14,6 +14,29 @@
   SDA/SCL to Pin4 and Pin5 of Adafruit Huzzah, respectively
 */
 
+#define IMU_MPU9250 1
+#define IMU_MPU6500 2
+#define IMU_BNO080 3
+
+#define IMU IMU_BNO080
+
+#if IMU == IMU_BNO080
+  #define IMU_NAME "BNO080"
+  #define IMU_HAS_ACCELL true
+  #define IMU_HAS_GYRO true
+  #define IMU_HAS_MAG true
+#elif IMU == IMU_MPU9250
+  #define IMU_NAME "MPU9250"
+  #define IMU_HAS_ACCELL true
+  #define IMU_HAS_GYRO true
+  #define IMU_HAS_MAG true
+#elif IMU == IMU_MPU6500
+  #define IMU_NAME "MPU6500"
+  #define IMU_HAS_ACCELL true
+  #define IMU_HAS_GYRO true
+  #define IMU_HAS_MAG false
+#endif
+
 ///////////////////////////////////////////////////////////////////
 //Debug information
 ///////////////////////////////////////////////////////////////////

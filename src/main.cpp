@@ -26,7 +26,13 @@
 #include "defines.h"
 #include "credentials.h"
 
-BNO080Sensor sensor{};
+#if IMU == IMU_BNO080
+    BNO080Sensor sensor{};
+#elif IMU == IMU_MPU9250
+    MPU9250Sensor sensor{};
+#elif IMU == IMU_MPU6500
+    MPU6050Sensor sensor{};
+#endif
 DeviceConfig config{};
 
 bool isCalibrating = false;

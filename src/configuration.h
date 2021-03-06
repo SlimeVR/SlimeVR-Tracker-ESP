@@ -18,6 +18,7 @@ struct CalibrationConfig {
 struct DeviceConfig {
     CalibrationConfig calibration;
     int deviceId;
+    int deviceMode;
 };
 
 void initializeConfig();

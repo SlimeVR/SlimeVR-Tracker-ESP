@@ -24,10 +24,10 @@ class BNO080Sensor : public Sensor {
     public:
         BNO080Sensor() = default;
         ~BNO080Sensor() override = default;
-        void motionSetup(DeviceConfig * config) final;
-        void motionLoop() final;
-        void sendData() final;
-        void startCalibration(int calibrationType) final;
+        void motionSetup(DeviceConfig * config) override final;
+        void motionLoop() override final;
+        void sendData() override final;
+        void startCalibration(int calibrationType) override final;
     private:
         BNO080 imu {};
         bool newData {false};
@@ -46,10 +46,10 @@ class MPU6050Sensor : public MPUSensor {
     public:
         MPU6050Sensor() = default;
         ~MPU6050Sensor() override  = default;
-        void motionSetup(DeviceConfig * config) final;
-        void motionLoop() final;
-        void sendData() final;
-        void startCalibration(int calibrationType) final;
+        void motionSetup(DeviceConfig * config) override final;
+        void motionLoop() override final;
+        void sendData() override final;
+        void startCalibration(int calibrationType) override final;
     private:
         Quaternion rawQuat {};
         // MPU dmp control/status vars
@@ -65,10 +65,10 @@ class MPU9250Sensor : public MPUSensor {
     public:
         MPU9250Sensor() = default;
         ~MPU9250Sensor() override  = default;
-        void motionSetup(DeviceConfig * config) final;
-        void motionLoop() final;
-        void sendData() final;
-        void startCalibration(int calibrationType) final;
+        void motionSetup(DeviceConfig * config) override final;
+        void motionLoop() override final;
+        void sendData() override final;
+        void startCalibration(int calibrationType) override final;
         void getMPUScaled();
         void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
     private:
