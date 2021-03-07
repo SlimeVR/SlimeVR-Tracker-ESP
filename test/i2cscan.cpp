@@ -8,10 +8,11 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#include "ota.cpp"
-#include "configuration.cpp"
-#include "util.cpp"
-#include "udpclient.cpp"
+#include "ota.h"
+#include "configuration.h"
+#include "helper_3dmath.h"
+#include "udpclient.h"
+#include "credentials.h"
 
 DeviceConfig config;
 
@@ -115,5 +116,5 @@ void setup() {
   scanPorts();
 
   setUpWiFi(&config);
-  otaSetup();
+  otaSetup(otaPassword);
 }

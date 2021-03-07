@@ -1,22 +1,25 @@
-//
-// MPU-9250 Mahony AHRS  S.J. Remington 3/2020
-// last update 12/17/2020
-// added full matrix calibration for accel and mag
+/*
+    SlimeVR Code is placed under the MIT license
+    Copyright (c) 2021 Eiren Rain
 
-// ***Standard orientation defined by gyro/accel: X North Y West Z Up***
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
 
-// VERY VERY IMPORTANT!
-// Both the accelerometer and magnetometer MUST be properly calibrated for this program to work, and the gyro offset must be determned.
-// Follow the procedure described in http://sailboatinstruments.blogspot.com/2011/08/improved-magnetometer-calibration.html
-// or in more detail, the tutorial https://thecavepearlproject.org/2015/05/22/calibrating-any-compass-or-accelerometer-for-arduino/
-//
-// To collect data for calibration, use the companion programs MPU9250_cal and Magneto 1.2 from sailboatinstruments.blogspot.com
-//
-// For correcting the data, below I use the diagonal element of matrix A and ignore
-// the off diagonal components. If those terms are large, (most likely only for the magnetometer)
-// add them in to the corrections in function get_MPU_scaled()
-//
-// This version must be compiled with library routines in subfolder "libs"
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+*/
 
 #include "Wire.h"
 #include "ota.h"
