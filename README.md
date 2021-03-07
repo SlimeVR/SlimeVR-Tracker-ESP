@@ -2,7 +2,7 @@
 
 Firmware for ESP8266 microcontroller and different IMU sensors to use them as a vive-like trackers in VR.
 
-Requires [SlimeVR Server](https://github.com/Eirenliel/SlimeVR-Server) to work with Steamvr and resolve pose.
+Requires [SlimeVR Server](https://github.com/SlimeVR/SlimeVR-Server) to work with Steamvr and resolve pose.
 
 
 ## Compatibility
