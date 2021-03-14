@@ -417,6 +417,8 @@ class MPU9250 {
         void initialize();
         bool testConnection();
 
+        uint8_t getAddr();
+
         // AUX_VDDIO register
         uint8_t getAuxVDDIOLevel();
         void setAuxVDDIOLevel(uint8_t level);

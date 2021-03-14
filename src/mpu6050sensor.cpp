@@ -28,8 +28,14 @@
 void gatherCalibrationData(MPU9250 &imu);
 
 void MPU6050Sensor::motionSetup(DeviceConfig * config) {
+    Serial.print("IMU I2C address: ");
+    Serial.println(imu.getAddr(), HEX);
     // initialize device
     imu.initialize();
+    if(!imu.testConnection()) {
+        Serial.print("Can't communicate with MPU9250, response ");
+        Serial.println(imu.getDeviceID(), HEX);
+    }
     devStatus = imu.dmpInitialize();
 
     imu.setXGyroOffset(config->calibration.G_off[0]);

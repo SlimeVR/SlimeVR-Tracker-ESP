@@ -53,6 +53,10 @@ MPU9250::MPU9250(uint8_t address) {
     devAddr = address;
 }
 
+uint8_t MPU9250::getAddr() {
+    return devAddr;
+}
+
 /** Power on and prepare for general usage.
  * This will activate the device and take it out of sleep mode (which must be done
  * after start-up). This function also sets both the accelerometer and the gyroscope

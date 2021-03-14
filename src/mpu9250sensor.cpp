@@ -43,6 +43,10 @@ void MPU9250Sensor::motionSetup(DeviceConfig * config) {
     calibration = &config->calibration;
     // initialize device
     imu.initialize();
+    if(!imu.testConnection()) {
+        Serial.print("Can't communicate with MPU9250, response ");
+        Serial.println(imu.getDeviceID(), HEX);
+    }
 }
 
 void MPU9250Sensor::motionLoop() {

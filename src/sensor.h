@@ -54,6 +54,7 @@ class BNO080Sensor : public Sensor {
     private:
         BNO080 imu {};
         bool newData {false};
+        Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
 };
 
 class MPUSensor : public Sensor {
@@ -61,7 +62,7 @@ class MPUSensor : public Sensor {
         MPUSensor() = default;
         ~MPUSensor() override = default;
     protected:
-        MPU9250 imu {};
+        MPU9250 imu {MPU9250(MPU9250_ADDRESS_AD0_HIGH)};
         float q[4] {1.0, 0.0, 0.0, 0.0};
 };
 

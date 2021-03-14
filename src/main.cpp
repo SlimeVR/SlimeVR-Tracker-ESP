@@ -144,7 +144,7 @@ void loop()
         }
         if(now_ms - last_battery_sample >= batterySampleRate) {
             last_battery_sample = now_ms;
-            float battery = ((float) analogRead(A0)) / 1024.0 * 14.0;
+            float battery = ((float) analogRead(A0)) / 1024.0 * 6.0;
             sendFloat(battery, PACKET_BATTERY_LEVEL);
         }
     }
