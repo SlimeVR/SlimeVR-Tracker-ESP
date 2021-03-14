@@ -24,6 +24,7 @@
 #include "BNO080.h"
 #include "sensor.h"
 #include "udpclient.h"
+#include "defines.h"
 
 void BNO080Sensor::motionSetup(DeviceConfig * config)
 {
@@ -39,7 +40,10 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
     }
     Serial.println("Connected to BNO08X");
     Wire.setClock(400000);
-    imu.enableARVRStabilizedGameRotationVector(10);
+    if(BNO_HASARVR_STABILIZATION)
+        imu.enableARVRStabilizedGameRotationVector(10);
+    else
+        imu.enableGameRotationVector(10);
 }
 
 void BNO080Sensor::motionLoop()

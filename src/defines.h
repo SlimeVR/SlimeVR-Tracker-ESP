@@ -24,14 +24,29 @@
 #define IMU_MPU9250 1
 #define IMU_MPU6500 2
 #define IMU_BNO080 3
+#define IMU_BNO085 4
+#define IMU_BNO055 5
 
-#define IMU IMU_BNO080
+#define IMU IMU_BNO085
 
-#if IMU == IMU_BNO080
+#if IMU == IMU_BNO085
+  #define IMU_NAME "BNO085"
+  #define IMU_HAS_ACCELL true
+  #define IMU_HAS_GYRO true
+  #define IMU_HAS_MAG true
+  #define BNO_HASARVR_STABILIZATION true
+#elif IMU == IMU_BNO080
   #define IMU_NAME "BNO080"
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
+  #define BNO_HASARVR_STABILIZATION false
+#elif IMU == IMU_BNO055
+  #define IMU_NAME "BNO055"
+  #define IMU_HAS_ACCELL true
+  #define IMU_HAS_GYRO true
+  #define IMU_HAS_MAG true
+  #define BNO_HASARVR_STABILIZATION false
 #elif IMU == IMU_MPU9250
   #define IMU_NAME "MPU9250"
   #define IMU_HAS_ACCELL true
@@ -42,6 +57,8 @@
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG false
+#else
+    #error Select IMU in defines.h
 #endif
 
 //Debug information

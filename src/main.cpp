@@ -29,12 +29,14 @@
 #include "defines.h"
 #include "credentials.h"
 
-#if IMU == IMU_BNO080
+#if IMU == IMU_BNO080 || IMU == IMU_BNO085 || IMU == IMU_BNO055
     BNO080Sensor sensor{};
 #elif IMU == IMU_MPU9250
     MPU9250Sensor sensor{};
 #elif IMU == IMU_MPU6500
     MPU6050Sensor sensor{};
+#else
+    #error Unsupported IMU
 #endif
 DeviceConfig config{};
 
