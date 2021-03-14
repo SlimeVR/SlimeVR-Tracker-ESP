@@ -21,6 +21,8 @@
     THE SOFTWARE.
 */
 
+#define FULL_DEBUG 1
+
 #define IMU_MPU9250 1
 #define IMU_MPU6500 2
 #define IMU_BNO080 3

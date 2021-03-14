@@ -64,6 +64,16 @@ void BNO080Sensor::sendData() {
     if(newData) {
         newData = false;
         sendQuat(&quaternion, PACKET_ROTATION);
+        #ifdef FULL_DEBUG
+            Serial.print("Quaternion: ");
+            Serial.print(quaternion.x);
+            Serial.print(",");
+            Serial.print(quaternion.y);
+            Serial.print(",");
+            Serial.print(quaternion.z);
+            Serial.print(",");
+            Serial.println(quaternion.w);
+        #endif
     }
 }
 
