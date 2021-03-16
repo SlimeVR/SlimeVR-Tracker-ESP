@@ -27,12 +27,14 @@
 #include "defines.h"
 #include <i2cscan.h>
 
-void signalAssert() {
-    for(int i = 0; i < 200; ++i) {
-        delay(50);
-        digitalWrite(LOADING_LED, LOW);
-        delay(50);
-        digitalWrite(LOADING_LED, HIGH);
+namespace {
+    void signalAssert() {
+        for(int i = 0; i < 200; ++i) {
+            delay(50);
+            digitalWrite(LOADING_LED, LOW);
+            delay(50);
+            digitalWrite(LOADING_LED, HIGH);
+        }
     }
 }
 

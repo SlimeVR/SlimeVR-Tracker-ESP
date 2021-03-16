@@ -41,12 +41,14 @@ CalibrationConfig * calibration;
 void get_MPU_scaled();
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
-void signalAssert() {
-    for(int i = 0; i < 200; ++i) {
-        delay(50);
-        digitalWrite(LOADING_LED, LOW);
-        delay(50);
-        digitalWrite(LOADING_LED, HIGH);
+namespace {
+    void signalAssert() {
+        for(int i = 0; i < 200; ++i) {
+            delay(50);
+            digitalWrite(LOADING_LED, LOW);
+            delay(50);
+            digitalWrite(LOADING_LED, HIGH);
+        }
     }
 }
 
