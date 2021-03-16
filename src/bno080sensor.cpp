@@ -25,20 +25,28 @@
 #include "sensor.h"
 #include "udpclient.h"
 #include "defines.h"
+#include <i2cscan.h>
 
 void BNO080Sensor::motionSetup(DeviceConfig * config)
 {
     delay(500);
-    if(!imu.begin(BNO080_DEFAULT_ADDRESS, Wire)) {
-        Serial.println("Can't connect to BNO08X");
-        for(int i = 0; i < 500; ++i) {
+    if(FULL_DEBUG)
+        imu.enableDebugging(Serial);
+    if(!imu.begin(IMU_I2C_ADDRESS, Wire)) {
+        Serial.print("Can't connect to ");
+        Serial.println(IMU_NAME);
+        Serial.println("Will scan I2C devices...");
+        I2CSCAN::scani2cports();
+        for(int i = 0; i < 200; ++i) {
             delay(50);
             digitalWrite(LOADING_LED, LOW);
             delay(50);
             digitalWrite(LOADING_LED, HIGH);
         }
+        return;
     }
-    Serial.println("Connected to BNO08X");
+    Serial.print("Connected to ");
+    Serial.println(IMU_NAME);
     Wire.setClock(400000);
     if(BNO_HASARVR_STABILIZATION)
         imu.enableARVRStabilizedGameRotationVector(10);
