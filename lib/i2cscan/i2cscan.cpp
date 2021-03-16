@@ -62,4 +62,12 @@ namespace I2CSCAN
         }
         return found;
     }
+
+    bool isI2CExist(uint8_t addr) {
+        Wire.beginTransmission(addr);
+        byte error = Wire.endTransmission();
+        if(error == 0)
+            return true;
+        return false;
+    }
 }

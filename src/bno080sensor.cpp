@@ -27,22 +27,34 @@
 #include "defines.h"
 #include <i2cscan.h>
 
+void signalAssert() {
+    for(int i = 0; i < 200; ++i) {
+        delay(50);
+        digitalWrite(LOADING_LED, LOW);
+        delay(50);
+        digitalWrite(LOADING_LED, HIGH);
+    }
+}
+
 void BNO080Sensor::motionSetup(DeviceConfig * config)
 {
+    uint8_t addr = 0x4A;
+    if(!I2CSCAN::isI2CExist(addr)) {
+        addr = 0x4B;
+        if(!I2CSCAN::isI2CExist(addr)) {
+            Serial.println("Can't find I2C device on addr 0x4A or 0x4B, scanning for all I2C devices and returning");
+            I2CSCAN::scani2cports();
+            signalAssert();
+            return;
+        }
+    }
     delay(500);
     if(FULL_DEBUG)
         imu.enableDebugging(Serial);
-    if(!imu.begin(IMU_I2C_ADDRESS, Wire)) {
+    if(!imu.begin(addr, Wire)) {
         Serial.print("Can't connect to ");
         Serial.println(IMU_NAME);
-        Serial.println("Will scan I2C devices...");
-        I2CSCAN::scani2cports();
-        for(int i = 0; i < 200; ++i) {
-            delay(50);
-            digitalWrite(LOADING_LED, LOW);
-            delay(50);
-            digitalWrite(LOADING_LED, HIGH);
-        }
+        signalAssert();
         return;
     }
     Serial.print("Connected to ");

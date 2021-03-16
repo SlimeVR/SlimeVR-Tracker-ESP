@@ -62,7 +62,7 @@ class MPUSensor : public Sensor {
         MPUSensor() = default;
         ~MPUSensor() override = default;
     protected:
-        MPU9250 imu {MPU9250(MPU9250_ADDRESS_AD0_HIGH)};
+        MPU9250 imu {};
         float q[4] {1.0, 0.0, 0.0, 0.0};
 };
 

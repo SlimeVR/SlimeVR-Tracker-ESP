@@ -24,14 +24,32 @@
 #include "MPU9250.h"
 #include "sensor.h"
 #include "udpclient.h"
+#include <i2cscan.h>
+
+void signalAssert() {
+    for(int i = 0; i < 200; ++i) {
+        delay(50);
+        digitalWrite(LOADING_LED, LOW);
+        delay(50);
+        digitalWrite(LOADING_LED, HIGH);
+    }
+}
 
 void gatherCalibrationData(MPU9250 &imu);
 
 void MPU6050Sensor::motionSetup(DeviceConfig * config) {
-    Serial.print("IMU I2C address: ");
-    Serial.println(imu.getAddr(), HEX);
+    uint8_t addr = 0x68;
+    if(!I2CSCAN::isI2CExist(addr)) {
+        addr = 0x69;
+        if(!I2CSCAN::isI2CExist(addr)) {
+            Serial.println("Can't find I2C device on addr 0x4A or 0x4B, scanning for all I2C devices and returning");
+            I2CSCAN::scani2cports();
+            signalAssert();
+            return;
+        }
+    }
     // initialize device
-    imu.initialize();
+    imu.initialize(addr);
     if(!imu.testConnection()) {
         Serial.print("Can't communicate with MPU9250, response ");
         Serial.println(imu.getDeviceID(), HEX);

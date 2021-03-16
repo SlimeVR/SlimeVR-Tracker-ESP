@@ -78,8 +78,8 @@ void setup()
     pinMode(CALIBRATING_LED, OUTPUT);
     digitalWrite(CALIBRATING_LED, HIGH);
     digitalWrite(LOADING_LED, LOW);
-
-    // join I2C bus (I2Cdev library doesn't do this automatically)
+    
+    // join I2C bus
     Wire.flush();
     Wire.begin(D2, D1);
     Wire.setClockStretchLimit(4000);

@@ -412,9 +412,8 @@ THE SOFTWARE.
 class MPU9250 {
     public:
         MPU9250();
-        MPU9250(uint8_t address);
 
-        void initialize();
+        void initialize(uint8_t address = MPU9250_DEFAULT_ADDRESS);
         bool testConnection();
 
         uint8_t getAddr();

@@ -43,20 +43,6 @@ MPU9250::MPU9250() {
     devAddr = MPU9250_DEFAULT_ADDRESS;
 }
 
-/** Specific address constructor.
- * @param address I2C address
- * @see MPU9250_DEFAULT_ADDRESS
- * @see MPU9250_ADDRESS_AD0_LOW
- * @see MPU9250_ADDRESS_AD0_HIGH
- */
-MPU9250::MPU9250(uint8_t address) {
-    devAddr = address;
-}
-
-uint8_t MPU9250::getAddr() {
-    return devAddr;
-}
-
 /** Power on and prepare for general usage.
  * This will activate the device and take it out of sleep mode (which must be done
  * after start-up). This function also sets both the accelerometer and the gyroscope
@@ -64,11 +50,16 @@ uint8_t MPU9250::getAddr() {
  * the clock source to use the X Gyro for reference, which is slightly better than
  * the default internal clock source.
  */
-void MPU9250::initialize() {
+void MPU9250::initialize(uint8_t address) {
+    devAddr = address;
     setClockSource(MPU9250_CLOCK_PLL_XGYRO);
     setFullScaleGyroRange(MPU9250_GYRO_FS_250);
     setFullScaleAccelRange(MPU9250_ACCEL_FS_2);
     setSleepEnabled(false); // thanks to Jack Elston for pointing this one out!
+}
+
+uint8_t MPU9250::getAddr() {
+    return devAddr;
 }
 
 /** Verify the I2C connection.

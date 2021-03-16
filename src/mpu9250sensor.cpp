@@ -26,6 +26,8 @@
 #include "udpclient.h"
 #include "defines.h"
 #include "helper_3dmath.h"
+#include <i2cscan.h>
+
 
 #define gscale (250. / 32768.0) * (PI / 180.0) //gyro default 250 LSB per d/s -> rad/s
 // These are the free parameters in the Mahony filter and fusion scheme,
@@ -34,15 +36,34 @@
 #define Kp 10.0
 #define Ki 0.0
 
+CalibrationConfig * calibration;
+
 void get_MPU_scaled();
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
-CalibrationConfig * calibration;
+void signalAssert() {
+    for(int i = 0; i < 200; ++i) {
+        delay(50);
+        digitalWrite(LOADING_LED, LOW);
+        delay(50);
+        digitalWrite(LOADING_LED, HIGH);
+    }
+}
 
 void MPU9250Sensor::motionSetup(DeviceConfig * config) {
     calibration = &config->calibration;
+    uint8_t addr = 0x68;
+    if(!I2CSCAN::isI2CExist(addr)) {
+        addr = 0x69;
+        if(!I2CSCAN::isI2CExist(addr)) {
+            Serial.println("Can't find I2C device on addr 0x4A or 0x4B, scanning for all I2C devices and returning");
+            I2CSCAN::scani2cports();
+            signalAssert();
+            return;
+        }
+    }
     // initialize device
-    imu.initialize();
+    imu.initialize(addr);
     if(!imu.testConnection()) {
         Serial.print("Can't communicate with MPU9250, response ");
         Serial.println(imu.getDeviceID(), HEX);

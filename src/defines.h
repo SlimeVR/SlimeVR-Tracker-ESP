@@ -32,34 +32,29 @@
 #define IMU IMU_BNO080
 
 #if IMU == IMU_BNO085
-  #define IMU_I2C_ADDRESS 0x4B
   #define IMU_NAME "BNO085"
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
   #define BNO_HASARVR_STABILIZATION true
 #elif IMU == IMU_BNO080
-  #define IMU_I2C_ADDRESS 0x4B
   #define IMU_NAME "BNO080"
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
   #define BNO_HASARVR_STABILIZATION false
 #elif IMU == IMU_BNO055
-  #define IMU_I2C_ADDRESS 0x29
   #define IMU_NAME "BNO055"
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
   #define BNO_HASARVR_STABILIZATION false
 #elif IMU == IMU_MPU9250
-  #define IMU_I2C_ADDRESS 0x69
   #define IMU_NAME "MPU9250"
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
 #elif IMU == IMU_MPU6500
-  #define IMU_I2C_ADDRESS 0x69
   #define IMU_NAME "MPU6500"
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
