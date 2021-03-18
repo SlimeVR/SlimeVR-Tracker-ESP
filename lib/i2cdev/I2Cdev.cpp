@@ -216,6 +216,7 @@ int8_t I2Cdev::readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8
         Serial.print("...");
     #endif
 
+    uint8_t status = 0;
     int8_t count = 0;
     uint32_t t1 = millis();
 
@@ -290,7 +291,7 @@ int8_t I2Cdev::readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8
                     #endif
                 }
 
-                Wire.endTransmission();
+                status = Wire.endTransmission();
             }
         #endif
 
@@ -311,9 +312,11 @@ int8_t I2Cdev::readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8
     if (timeout > 0 && millis() - t1 >= timeout && count < length) count = -1; // timeout
 
     #ifdef I2CDEV_SERIAL_DEBUG
-        Serial.print(". Done (");
+        Serial.print(". Done, status ");
+        Serial.print(status);
+        Serial.print(", ");
         Serial.print(count, DEC);
-        Serial.println(" read).");
+        Serial.println(" read.");
     #endif
 
     return count;
@@ -622,7 +625,8 @@ bool I2Cdev::writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_
         status = Wire.endTransmission();
     #endif
     #ifdef I2CDEV_SERIAL_DEBUG
-        Serial.println(". Done.");
+        Serial.print(". Done, status ");
+        Serial.println(status);
     #endif
     return status == 0;
 }

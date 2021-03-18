@@ -29,8 +29,10 @@
 #include "defines.h"
 #include "credentials.h"
 
-#if IMU == IMU_BNO080 || IMU == IMU_BNO085 || IMU == IMU_BNO055
+#if IMU == IMU_BNO080 || IMU == IMU_BNO085
     BNO080Sensor sensor{};
+#elif IMU == IMU_BNO055
+    BNO055Sensor sensor{};
 #elif IMU == IMU_MPU9250
     MPU9250Sensor sensor{};
 #elif IMU == IMU_MPU6500

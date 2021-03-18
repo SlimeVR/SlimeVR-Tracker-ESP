@@ -40,6 +40,7 @@ namespace {
 
 void BNO080Sensor::motionSetup(DeviceConfig * config)
 {
+    delay(500);
     uint8_t addr = 0x4A;
     if(!I2CSCAN::isI2CExist(addr)) {
         addr = 0x4B;
@@ -50,7 +51,6 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
             return;
         }
     }
-    delay(500);
     if(FULL_DEBUG)
         imu.enableDebugging(Serial);
     if(!imu.begin(addr, Wire)) {

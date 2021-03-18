@@ -29,6 +29,7 @@
 #include <quat.h>
 #include <vector3.h>
 #include "configuration.h"
+#include <bno055.h>
 
 class Sensor {
     public:
@@ -55,6 +56,21 @@ class BNO080Sensor : public Sensor {
         BNO080 imu {};
         bool newData {false};
         Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
+};
+
+class BNO055Sensor : public Sensor {
+    public:
+        BNO055Sensor() = default;
+        ~BNO055Sensor() override = default;
+        void motionSetup(DeviceConfig * config) override final;
+        void motionLoop() override final;
+        void sendData() override final;
+        void startCalibration(int calibrationType) override final;
+    private:
+        bno055_t imu {};
+        bool newData {false};
+        Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
+        bno055_quaternion_t rawQuat;
 };
 
 class MPUSensor : public Sensor {
