@@ -51,8 +51,9 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
             return;
         }
     }
-    if(FULL_DEBUG)
+    #ifdef FULL_DEBUG
         imu.enableDebugging(Serial);
+    #endif
     if(!imu.begin(addr, Wire)) {
         Serial.print("Can't connect to ");
         Serial.println(IMU_NAME);

@@ -10,6 +10,10 @@ Requires [SlimeVR Server](https://github.com/SlimeVR/SlimeVR-Server) to work wit
 Compatible and tested with these IMUs (select during compilation):
 * BNO085
   * Using any fusion in internal DMP. Best results with ARVR Stabilized Game Rotation Vector or ARVR Stabilized Rotation Vector if in good magnetic environment
+* BNO080
+  * Using any fusion in internal DMP. Doesn't have BNO085's ARVR stabilization, but still gives good results.
+* BNO055
+  * Work in progress. Should be roughly equal BNO080, but cheaper
 * MPU-9250
   * Using Mahony sensor fusion of Gyroscope, Magnetometer and Accelerometer, requires good magnetic environment
 * MPU-6500
