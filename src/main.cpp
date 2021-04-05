@@ -84,7 +84,7 @@ void setup()
     // join I2C bus
     Wire.flush();
     Wire.begin(D2, D1);
-    Wire.setClockStretchLimit(4000);
+    Wire.setClockStretchLimit(1000);
     Serial.begin(serialBaudRate);
     while (!Serial)
         ; // wait for connection

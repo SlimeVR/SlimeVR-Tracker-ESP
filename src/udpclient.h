@@ -42,6 +42,7 @@
 #define PACKET_PING_PONG 10
 #define PACKET_SERIAL 11
 #define PACKET_BATTERY_LEVEL 12
+#define PACKET_TAP 13
 
 #define PACKET_RECIEVE_HEARTBEAT 1
 #define PACKET_RECIEVE_VIBRATE 2
@@ -62,6 +63,7 @@ void sendQuat(Quat * const quaternion, int type);
 void sendVector(float * const result, int type);
 void sendConfig(DeviceConfig * const config, int type);
 void sendFloat(float const value, int type);
+void sendByte(char const value, int type);
 void sendRawCalibrationData(int * const data, int type);
 void setConfigRecievedCallback(configRecievedCallback);
 void setCommandRecievedCallback(commandRecievedCallback);

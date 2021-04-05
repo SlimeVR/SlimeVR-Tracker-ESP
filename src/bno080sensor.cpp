@@ -72,7 +72,7 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
 void BNO080Sensor::motionLoop()
 {
     //Look for reports from the IMU
-    if (imu.dataAvailable() == true)
+    if (imu.dataAvailable())
     {
         quaternion.x = imu.getQuatI();
         quaternion.y = imu.getQuatJ();

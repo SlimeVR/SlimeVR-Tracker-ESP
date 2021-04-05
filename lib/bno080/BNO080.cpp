@@ -214,10 +214,10 @@ uint16_t BNO080::getReadings(void)
 		{
 			return parseCommandReport(); //This will update responses to commands, calibrationStatus, etc.
 		}
-    else if(shtpHeader[2] == CHANNEL_GYRO)
-    {
-      return parseInputReport(); //This will update the rawAccelX, etc variables depending on which feature report is found
-    }
+		else if(shtpHeader[2] == CHANNEL_GYRO)
+		{
+		return parseInputReport(); //This will update the rawAccelX, etc variables depending on which feature report is found
+		}
 	}
 	return 0;
 }

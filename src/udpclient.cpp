@@ -146,6 +146,26 @@ void sendFloat(float const value, int type)
     }
 }
 
+void sendByte(char const value, int type)
+{
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&value, 1);
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
 void sendQuat(Quat *const quaternion, int type)
 {
     if (Udp.beginPacket(host, port) > 0)

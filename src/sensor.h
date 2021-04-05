@@ -56,6 +56,7 @@ class BNO080Sensor : public Sensor {
         BNO080 imu {};
         bool newData {false};
         Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
+        uint8_t tap;
 };
 
 class BNO055Sensor : public Sensor {

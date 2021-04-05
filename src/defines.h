@@ -29,7 +29,7 @@
 #define IMU_BNO085 4
 #define IMU_BNO055 5
 
-#define IMU IMU_BNO080
+#define IMU IMU_BNO085
 
 #if IMU == IMU_BNO085
   #define IMU_NAME "BNO085"
