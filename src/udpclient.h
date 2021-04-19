@@ -43,6 +43,7 @@
 #define PACKET_SERIAL 11
 #define PACKET_BATTERY_LEVEL 12
 #define PACKET_TAP 13
+#define PACKET_RESET_REASON 14
 
 #define PACKET_RECIEVE_HEARTBEAT 1
 #define PACKET_RECIEVE_VIBRATE 2
@@ -67,6 +68,7 @@ void sendByte(char const value, int type);
 void sendRawCalibrationData(int * const data, int type);
 void setConfigRecievedCallback(configRecievedCallback);
 void setCommandRecievedCallback(commandRecievedCallback);
+void sendSerial(uint8_t *const data, int length, int type);
 void setUpWiFi(DeviceConfig * const config);
 bool isConnected();
 

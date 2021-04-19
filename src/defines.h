@@ -76,3 +76,5 @@
 
 #define sensorIdTime 1000
 #define sensorIdInterval 100
+
+#define batteryADCMultiplier 1.0 / 1024.0 * 5.0

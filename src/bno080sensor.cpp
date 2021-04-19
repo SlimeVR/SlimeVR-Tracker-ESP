@@ -36,6 +36,10 @@ namespace {
             digitalWrite(LOADING_LED, HIGH);
         }
     }
+    
+    void sendResetReason(uint8_t reason) {
+        sendByte(reason, PACKET_RESET_REASON);
+    }
 }
 
 void BNO080Sensor::motionSetup(DeviceConfig * config)
@@ -67,19 +71,30 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
         imu.enableARVRStabilizedGameRotationVector(10);
     else
         imu.enableGameRotationVector(10);
+    uint8_t lastReset = imu.resetReason();
+    sendResetReason(lastReset);
 }
+
+unsigned long lastData = 0;
 
 void BNO080Sensor::motionLoop()
 {
     //Look for reports from the IMU
     if (imu.dataAvailable())
     {
+        lastData = millis();
         quaternion.x = imu.getQuatI();
         quaternion.y = imu.getQuatJ();
         quaternion.z = imu.getQuatK();
         quaternion.w = imu.getQuatReal();
         quaternion *= sensorOffset;
         newData = true;
+    } else {
+        if(lastData + 5000 < millis()) {
+            lastData = millis();
+            uint8_t lastReset = imu.resetReason();
+            sendResetReason(lastReset);
+        }
     }
 }
 
