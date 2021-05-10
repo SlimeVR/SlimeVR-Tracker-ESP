@@ -42,6 +42,8 @@ IPAddress host;
 bool connected = false;
 unsigned long lastConnectionAttemptMs;
 unsigned long lastPacketMs;
+unsigned long lastWifiReportTime = 0;
+bool isWifiConnected = false;
 
 uint8_t serialBuffer[128];
 size_t serialLength = 0;
@@ -316,7 +318,7 @@ void setCommandRecievedCallback(commandRecievedCallback callback)
 
 void clientUpdate()
 {
-    if (WiFi.status() == WL_CONNECTED)
+    if (isWifiConnected)
     {
         if(connected) {
             int packetSize = Udp.parsePacket();
@@ -415,33 +417,48 @@ void setUpWiFi(DeviceConfig * const config) {
     WiFi.mode(WIFI_STA);
 
     WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
-    while (WiFi.status() == WL_DISCONNECTED)
+}
+
+namespace {
+    void reportWifiError() {
+        if(lastWifiReportTime + 1000 < millis()) {
+            lastWifiReportTime = millis();
+            Serial.print(".");
+        }
+    }
+}
+
+void wifiUpkeep() {
+    if(isWifiConnected)
+        return;
+
+    if(WiFi.status() == WL_DISCONNECTED)
     {
-        delay(500);
-        Serial.print(".");
+        // WiFi is in disconnected state, wait until it connects or erros out
+        reportWifiError();
+        return;
     }
     if(WiFi.status() != WL_CONNECTED) {
-        Serial.printf("\nCould not connect to WiFi. state='%d'\n", WiFi.status());
-        Serial.println("Please press WPS button on your router, until mode is indicated.");
+        // Wifi is not connected, try connecting with WPS
+        //Serial.printf("\nCould not connect to WiFi. state='%d'\n", WiFi.status());
+        //Serial.println("Please press WPS button on your router, until mode is indicated.");
 
-        while(true) {
+        //while(true) {
             if(!startWPSPBC()) {
                 Serial.println("Failed to connect with WPS");
             } else {
                 WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str()); // reading data from EPROM, 
-                while (WiFi.status() == WL_DISCONNECTED) {          // last saved credentials
-                    delay(500);
-                    Serial.print("."); // show wait for connect to AP
-                }
+                // WiFi will start connecting here until errors out or connects
             }
-            if(WiFi.status() == WL_CONNECTED)
-                break;
-            delay(1000);
-        }
+        //}
     }
-    Serial.printf("\nConnected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
 
-    Udp.begin(port);
+    if(WiFi.status() == WL_CONNECTED && !isWifiConnected) {
+        // Wasn't connected, but now connected, stop waiting
+        isWifiConnected = true;
+        Serial.printf("\nConnected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+        Udp.begin(port);
+    }
 }
 
 bool isConnected() {

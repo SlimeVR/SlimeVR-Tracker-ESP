@@ -21,7 +21,6 @@
     THE SOFTWARE.
 */
 
-//#define FULL_DEBUG
 
 #define IMU_MPU9250 1
 #define IMU_MPU6500 2
@@ -64,8 +63,11 @@
 #endif
 
 //Debug information
+//#define FULL_DEBUG
 #define serialDebug false // Set to true to get Serial output for debugging
 #define serialBaudRate 115200
+#define UPDATE_IMU_UNCONNECTED 1
+#define SEND_UPDATES_UNCONNECTED 1
 
 // Determines how often we sample and send data
 #define samplingRateInMillis 10

@@ -84,7 +84,7 @@ void setup()
     // join I2C bus
     Wire.flush();
     Wire.begin(D2, D1);
-    Wire.setClockStretchLimit(1000);
+    Wire.setClockStretchLimit(4000);
     Serial.begin(serialBaudRate);
     while (!Serial)
         ; // wait for connection
@@ -127,30 +127,40 @@ void setup()
 
 void loop()
 {
+    wifiUpkeep();
     otaUpdate();
     clientUpdate();
-    if(isConnected())
+    if (isCalibrating)
     {
-        if (isCalibrating)
-        {
-            sensor.startCalibration(0);
-            isCalibrating = false;
+        sensor.startCalibration(0);
+        isCalibrating = false;
+    }
+    #ifndef UPDATE_IMU_UNCONNECTED
+        if(isConnected()) {
+    #endif
+    sensor.motionLoop();
+    #ifndef UPDATE_IMU_UNCONNECTED
         }
-        sensor.motionLoop();
-        // Send updates
-        now_ms = millis();
-        if (now_ms - last_ms >= samplingRateInMillis)
-        {
-            last_ms = now_ms;
-            processBlinking();
+    #endif
+    // Send updates
+    now_ms = millis();
+    if (now_ms - last_ms >= samplingRateInMillis)
+    {
+        last_ms = now_ms;
+        processBlinking();
 
-            sensor.sendData();
-        }
-        if(now_ms - last_battery_sample >= batterySampleRate) {
-            last_battery_sample = now_ms;
-            float battery = ((float) analogRead(A0)) * batteryADCMultiplier;
-            sendFloat(battery, PACKET_BATTERY_LEVEL);
-        }
+        #ifndef SEND_UPDATES_UNCONNECTED
+            if(isConnected()) {
+        #endif
+        sensor.sendData();
+        #ifndef SEND_UPDATES_UNCONNECTED
+            }
+        #endif
+    }
+    if(now_ms - last_battery_sample >= batterySampleRate) {
+        last_battery_sample = now_ms;
+        float battery = ((float) analogRead(A0)) * batteryADCMultiplier;
+        sendFloat(battery, PACKET_BATTERY_LEVEL);
     }
 }
 
