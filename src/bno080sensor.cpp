@@ -71,17 +71,17 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
         imu.enableARVRStabilizedGameRotationVector(10);
     else
         imu.enableGameRotationVector(10);
-    uint8_t lastReset = imu.resetReason();
-    sendResetReason(lastReset);
 }
 
 unsigned long lastData = 0;
+int8_t lastReset = -1;
 
 void BNO080Sensor::motionLoop()
 {
     //Look for reports from the IMU
     if (imu.dataAvailable())
     {
+        lastReset = -1;
         lastData = millis();
         quaternion.x = imu.getQuatI();
         quaternion.y = imu.getQuatJ();
@@ -92,8 +92,12 @@ void BNO080Sensor::motionLoop()
     } else {
         if(lastData + 5000 < millis()) {
             lastData = millis();
-            uint8_t lastReset = imu.resetReason();
-            sendResetReason(lastReset);
+            uint8_t rr = imu.resetReason();
+            if(rr != lastReset) {
+                lastReset = rr;
+                sendResetReason(rr);
+                digitalWrite(LOADING_LED, LOW);
+            }
         }
     }
 }
