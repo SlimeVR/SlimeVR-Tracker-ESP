@@ -42,6 +42,9 @@ namespace {
     }
 }
 
+unsigned long lastData = 0;
+int8_t lastReset = 0;
+
 void BNO080Sensor::motionSetup(DeviceConfig * config)
 {
     delay(500);
@@ -66,20 +69,19 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
     }
     Serial.print("Connected to ");
     Serial.println(IMU_NAME);
-    Wire.setClock(400000);
-    if(BNO_HASARVR_STABILIZATION)
-        imu.enableARVRStabilizedGameRotationVector(10);
-    else
-        imu.enableGameRotationVector(10);
+    #if defined(BNO_HAS_ARVR_STABILIZATION) && BNO_HAS_ARVR_STABILIZATION
+        imu.enableARVRStabilizedGameRotationVector(13);
+    #else
+        imu.enableGameRotationVector(13);
+    #endif
+    lastReset = imu.resetReason();
+    lastData = millis();
 }
-
-unsigned long lastData = 0;
-int8_t lastReset = -1;
 
 void BNO080Sensor::motionLoop()
 {
     //Look for reports from the IMU
-    if (imu.dataAvailable())
+    if(imu.dataAvailable())
     {
         lastReset = -1;
         lastData = millis();
@@ -89,15 +91,14 @@ void BNO080Sensor::motionLoop()
         quaternion.w = imu.getQuatReal();
         quaternion *= sensorOffset;
         newData = true;
-    } else {
-        if(lastData + 5000 < millis()) {
-            lastData = millis();
-            uint8_t rr = imu.resetReason();
-            if(rr != lastReset) {
-                lastReset = rr;
-                sendResetReason(rr);
-                digitalWrite(LOADING_LED, LOW);
-            }
+    }
+    if(lastData + 1000 < millis()) {
+        lastData = millis();
+        uint8_t rr = imu.resetReason();
+        if(rr != lastReset) {
+            lastReset = rr;
+            sendResetReason(rr);
+            digitalWrite(LOADING_LED, LOW);
         }
     }
 }

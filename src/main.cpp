@@ -75,6 +75,7 @@ void processBlinking();
 
 void setup()
 {
+    //wifi_set_sleep_type(NONE_SLEEP_T);
     // Glow diode while loading
     pinMode(LOADING_LED, OUTPUT);
     pinMode(CALIBRATING_LED, OUTPUT);
@@ -85,6 +86,7 @@ void setup()
     Wire.flush();
     Wire.begin(D2, D1);
     Wire.setClockStretchLimit(4000);
+    Wire.setClock(100000);
     Serial.begin(serialBaudRate);
     while (!Serial)
         ; // wait for connection

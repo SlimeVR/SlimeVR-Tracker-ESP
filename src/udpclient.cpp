@@ -415,7 +415,7 @@ bool startWPSPBC() {
 void setUpWiFi(DeviceConfig * const config) {
     Serial.print("Connecting to wifi ");
     WiFi.mode(WIFI_STA);
-
+    WiFi.hostname("SlimeVR");
     WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
 }
 
@@ -488,7 +488,9 @@ void connectClient()
                 port = Udp.remotePort();
                 lastPacketMs = now;
                 connected = true;
+#ifndef SEND_UPDATES_UNCONNECTED
                 digitalWrite(LOADING_LED, HIGH);
+#endif
                 Serial.printf("[Handshake] Handshale sucessful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
             default:
@@ -518,11 +520,14 @@ void connectClient()
             Serial.print("Write error: ");
             Serial.println(Udp.getWriteError());
         }
-        
+#ifndef SEND_UPDATES_UNCONNECTED
         digitalWrite(LOADING_LED, LOW);
+#endif
     }
+#ifndef SEND_UPDATES_UNCONNECTED
     else if(lastConnectionAttemptMs + 20 < now)
     {
         digitalWrite(LOADING_LED, HIGH);
     }
+#endif
 }
