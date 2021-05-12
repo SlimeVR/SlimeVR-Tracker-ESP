@@ -58,10 +58,10 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
             return;
         }
     }
-    #ifdef FULL_DEBUG
+#ifdef FULL_DEBUG
         imu.enableDebugging(Serial);
-    #endif
-    if(!imu.begin(addr, Wire)) {
+#endif
+    if(!imu.begin(addr, Wire, PIN_IMU_INT)) {
         Serial.print("Can't connect to ");
         Serial.println(IMU_NAME);
         signalAssert();
@@ -69,11 +69,11 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
     }
     Serial.print("Connected to ");
     Serial.println(IMU_NAME);
-    #if defined(BNO_HAS_ARVR_STABILIZATION) && BNO_HAS_ARVR_STABILIZATION
+#if defined(BNO_HAS_ARVR_STABILIZATION) && BNO_HAS_ARVR_STABILIZATION
         imu.enableARVRStabilizedGameRotationVector(13);
-    #else
+#else
         imu.enableGameRotationVector(13);
-    #endif
+#endif
     lastReset = imu.resetReason();
     lastData = millis();
 }
@@ -107,7 +107,7 @@ void BNO080Sensor::sendData() {
     if(newData) {
         newData = false;
         sendQuat(&quaternion, PACKET_ROTATION);
-        #ifdef FULL_DEBUG
+#ifdef FULL_DEBUG
             Serial.print("Quaternion: ");
             Serial.print(quaternion.x);
             Serial.print(",");
@@ -116,7 +116,7 @@ void BNO080Sensor::sendData() {
             Serial.print(quaternion.z);
             Serial.print(",");
             Serial.println(quaternion.w);
-        #endif
+#endif
     }
 }
 

@@ -84,7 +84,7 @@ void setup()
     
     // join I2C bus
     Wire.flush();
-    Wire.begin(D2, D1);
+    Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
     Wire.setClockStretchLimit(4000);
     Wire.setClock(100000);
     Serial.begin(serialBaudRate);
@@ -137,13 +137,13 @@ void loop()
         sensor.startCalibration(0);
         isCalibrating = false;
     }
-    #ifndef UPDATE_IMU_UNCONNECTED
+#ifndef UPDATE_IMU_UNCONNECTED
         if(isConnected()) {
-    #endif
+#endif
     sensor.motionLoop();
-    #ifndef UPDATE_IMU_UNCONNECTED
+#ifndef UPDATE_IMU_UNCONNECTED
         }
-    #endif
+#endif
     // Send updates
     now_ms = millis();
     if (now_ms - last_ms >= samplingRateInMillis)
@@ -151,19 +151,21 @@ void loop()
         last_ms = now_ms;
         processBlinking();
 
-        #ifndef SEND_UPDATES_UNCONNECTED
+#ifndef SEND_UPDATES_UNCONNECTED
             if(isConnected()) {
-        #endif
+#endif
         sensor.sendData();
-        #ifndef SEND_UPDATES_UNCONNECTED
+#ifndef SEND_UPDATES_UNCONNECTED
             }
-        #endif
+#endif
     }
+#ifdef PIN_BATTERY_LEVEL
     if(now_ms - last_battery_sample >= batterySampleRate) {
         last_battery_sample = now_ms;
-        float battery = ((float) analogRead(A0)) * batteryADCMultiplier;
+        float battery = ((float) analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
         sendFloat(battery, PACKET_BATTERY_LEVEL);
     }
+#endif
 }
 
 void processBlinking() {
