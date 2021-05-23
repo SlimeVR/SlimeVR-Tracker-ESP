@@ -57,6 +57,8 @@ class BNO080Sensor : public Sensor {
         bool newData {false};
         Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
         uint8_t tap;
+        unsigned long lastData = 0;
+        int8_t lastReset = 0;
 };
 
 class BNO055Sensor : public Sensor {

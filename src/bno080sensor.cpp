@@ -42,9 +42,6 @@ namespace {
     }
 }
 
-unsigned long lastData = 0;
-int8_t lastReset = 0;
-
 void BNO080Sensor::motionSetup(DeviceConfig * config)
 {
     delay(500);

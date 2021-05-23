@@ -50,8 +50,7 @@ void check_if_exist_I2C() {
   if (nDevices == 0)
     Serial.println("No I2C devices found");
   else
-    Serial.println("**********************************\n");
-  //delay(1000);           // wait 1 seconds for next scan, did not find it necessary
+    Serial.println("Scan finished\n");
 }
 
 void scanPorts() { 
