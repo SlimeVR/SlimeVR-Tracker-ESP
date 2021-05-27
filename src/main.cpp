@@ -28,9 +28,13 @@
 #include "udpclient.h"
 #include "defines.h"
 #include "credentials.h"
+#include <i2cscan.h>
 
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     BNO080Sensor sensor{};
+    #if defined(SECOND_IMU) && SECOND_IMU
+        BNO080Sensor sensor2{};
+    #endif
 #elif IMU == IMU_BNO055
     BNO055Sensor sensor{};
 #elif IMU == IMU_MPU9250
@@ -40,6 +44,9 @@
 #else
     #error Unsupported IMU
 #endif
+#if !defined(SECOND_IMU) || !SECOND_IMU
+    EmptySensor sensor2{};
+#endif
 DeviceConfig config{};
 
 bool isCalibrating = false;
@@ -47,6 +54,7 @@ bool blinking = false;
 unsigned long blinkStart = 0;
 unsigned long now_ms, last_ms = 0; //millis() timers
 unsigned long last_battery_sample = 0;
+unsigned long const start = millis();
 
 void setConfig(DeviceConfig newConfig)
 {
@@ -90,34 +98,36 @@ void setup()
     while (!Serial)
         ; // wait for connection
 
-    // Load default calibration values and set up callbacks
-    config.calibration = {
-        {   49.22,    1.26, -203.52},
-        {{  1.01176, -0.00048,  0.00230},
-        { -0.00048,  1.00366, -0.00535},
-        {  0.00230, -0.00535,  0.99003}},
-        {   24.95,   81.77,  -10.36},
-        {{  1.44652,  0.02739, -0.02186},
-        {  0.02739,  1.48749, -0.00547},
-        { -0.02186, -0.00547,  1.42441}},
-        {   22.97,    13.56,   -90.65}};
     if (hasConfigStored())
     {
         loadConfig(&config);
     }
     setConfigRecievedCallback(setConfig);
     setCommandRecievedCallback(commandRecieved);
+    // Wait for IMU to boot
+    delay(500);
+    
+    bool secondImuActive = false;
+    // Currently only second BNO08X is supported
+#if IMU == IMU_BNO080 || IMU == IMU_BNO085
+    #if defined(SECOND_IMU) && SECOND_IMU
+        uint8_t first = I2CSCAN::pickDevice(BNO_ADDR_1, BNO_ADDR_2);
+        uint8_t second = I2CSCAN::pickDevice(BNO_ADDR_2, BNO_ADDR_1);
+        if(first != second) {
+            sensor.setupBNO080(false, first, PIN_IMU_INT);
+            sensor2.setupBNO080(true, second, PIN_IMU_INT_2);
+            secondImuActive = true;
+        } else {
+            sensor.setupBNO080(false, first, PIN_IMU_INT);
+        }
+    #else
+    sensor.setupBNO080(false, I2CSCAN::pickDevice(BNO_ADDR_1, BNO_ADDR_2), PIN_IMU_INT);
+    #endif
+#endif
 
     sensor.motionSetup(&config);
-
-    // Don't start if not connected to MPU
-    /*while(!accelgyro.testConnection()) {
-        Serial.print("Can't communicate with MPU9250, response ");
-        Serial.println(accelgyro.getDeviceID(), HEX);
-        delay(500);
-    }
-    Serial.println("Connected to MPU9250");
-    //*/
+    if(secondImuActive)
+        sensor2.motionSetup(&config);
 
     setUpWiFi(&config);
     otaSetup(otaPassword);
@@ -130,16 +140,18 @@ void loop()
 {
     wifiUpkeep();
     otaUpdate();
-    clientUpdate();
+    clientUpdate(&sensor, &sensor2);
     if (isCalibrating)
     {
         sensor.startCalibration(0);
+        //sensor2.startCalibration(0);
         isCalibrating = false;
     }
 #ifndef UPDATE_IMU_UNCONNECTED
         if(isConnected()) {
 #endif
     sensor.motionLoop();
+    sensor2.motionLoop();
 #ifndef UPDATE_IMU_UNCONNECTED
         }
 #endif
@@ -149,15 +161,15 @@ void loop()
     {
         last_ms = now_ms;
         processBlinking();
-
+    }
 #ifndef SEND_UPDATES_UNCONNECTED
-            if(isConnected()) {
+    if(isConnected()) {
 #endif
         sensor.sendData();
+        sensor2.sendData();
 #ifndef SEND_UPDATES_UNCONNECTED
-            }
-#endif
     }
+#endif
 #ifdef PIN_BATTERY_LEVEL
     if(now_ms - last_battery_sample >= batterySampleRate) {
         last_battery_sample = now_ms;

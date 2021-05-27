@@ -42,43 +42,43 @@ namespace {
     }
 }
 
+void BNO080Sensor::setupBNO080(bool auxilary, uint8_t addr, uint8_t intPin) {
+    this->addr = addr;
+    this->intPin = intPin;
+    this->auxilary = auxilary;
+}
+
 void BNO080Sensor::motionSetup(DeviceConfig * config)
 {
-    delay(500);
-    uint8_t addr = 0x4A;
-    if(!I2CSCAN::isI2CExist(addr)) {
-        addr = 0x4B;
-        if(!I2CSCAN::isI2CExist(addr)) {
-            Serial.println("Can't find I2C device on addr 0x4A or 0x4B, scanning for all I2C devices and returning");
-            I2CSCAN::scani2cports();
-            signalAssert();
-            return;
-        }
-    }
 #ifdef FULL_DEBUG
         imu.enableDebugging(Serial);
 #endif
-    if(!imu.begin(addr, Wire, PIN_IMU_INT)) {
+    if(!imu.begin(addr, Wire, intPin)) {
         Serial.print("Can't connect to ");
         Serial.println(IMU_NAME);
         signalAssert();
         return;
     }
     Serial.print("Connected to ");
-    Serial.println(IMU_NAME);
+    Serial.print(IMU_NAME);
+    Serial.print(" on 0x");
+    if(addr < 16)
+        Serial.print("0");
+    Serial.println(addr, HEX);
 #if defined(BNO_HAS_ARVR_STABILIZATION) && BNO_HAS_ARVR_STABILIZATION
-        imu.enableARVRStabilizedGameRotationVector(13);
+        imu.enableARVRStabilizedGameRotationVector(10);
 #else
-        imu.enableGameRotationVector(13);
+        imu.enableGameRotationVector(10);
 #endif
     lastReset = imu.resetReason();
     lastData = millis();
+    working = true;
 }
 
 void BNO080Sensor::motionLoop()
 {
     //Look for reports from the IMU
-    if(imu.dataAvailable())
+    while(imu.dataAvailable())
     {
         lastReset = -1;
         lastData = millis();
@@ -88,8 +88,11 @@ void BNO080Sensor::motionLoop()
         quaternion.w = imu.getQuatReal();
         quaternion *= sensorOffset;
         newData = true;
+        if(intPin == 255)
+            break;
     }
     if(lastData + 1000 < millis()) {
+        working = false;
         lastData = millis();
         uint8_t rr = imu.resetReason();
         if(rr != lastReset) {
@@ -103,7 +106,7 @@ void BNO080Sensor::motionLoop()
 void BNO080Sensor::sendData() {
     if(newData) {
         newData = false;
-        sendQuat(&quaternion, PACKET_ROTATION);
+        sendQuat(&quaternion, auxilary ? PACKET_ROTATION_2 : PACKET_ROTATION);
 #ifdef FULL_DEBUG
             Serial.print("Quaternion: ");
             Serial.print(quaternion.x);

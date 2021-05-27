@@ -294,6 +294,27 @@ void sendSerial(uint8_t *const data, int length, int type) {
     }
 }
 
+void sendSensorInfo(char const sensorId, char const sensorState, int type)
+{
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&sensorId, 1);
+        Udp.write(&sensorState, 1);
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
 void returnLastPacket(int len) {
     if (Udp.beginPacket(host, port) > 0)
     {
@@ -316,7 +337,21 @@ void setCommandRecievedCallback(commandRecievedCallback callback)
     fp_commandCallback = callback;
 }
 
-void clientUpdate()
+bool sensorStateNotified1 = false;
+bool sensorStateNotified2 = false;
+unsigned long lastSensorInfoPacket = 0;
+
+void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
+    if(millis() - lastSensorInfoPacket > 1000) {
+        lastSensorInfoPacket = millis();
+        if(sensorStateNotified1 != sensor->isWorking())
+            sendSensorInfo(0, sensor->isWorking(), PACKET_SENSOR_INFO);
+        if(sensorStateNotified2 != sensor2->isWorking())
+            sendSensorInfo(1, sensor->isWorking(), PACKET_SENSOR_INFO);
+    }
+}
+
+void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
 {
     if (isWifiConnected)
     {
@@ -376,6 +411,17 @@ void clientUpdate()
                 case PACKET_PING_PONG:
                     returnLastPacket(len);
                     break;
+                case PACKET_SENSOR_INFO:
+                    if(len < 6) {
+                        Serial.println("Wrong sensor info packet");
+                        break;
+                    }
+                    if(incomingPacket[4] == 0) {
+                        sensorStateNotified1 = incomingPacket[5];
+                    } else if(incomingPacket[4] == 1) {
+                        sensorStateNotified2 = incomingPacket[5];
+                    }
+                    break;
                 }
             }
             //while(Serial.available()) {
@@ -385,12 +431,17 @@ void clientUpdate()
             if(lastPacketMs + TIMEOUT < millis())
             {
                 connected = false;
+                sensorStateNotified1 = false;
+                sensorStateNotified2 = false;
                 Serial.println("Connection to server timed out");
             }
         }
             
-        if(!connected)
+        if(!connected) {
             connectClient();
+        } else if(sensorStateNotified1 != sensor->isWorking() || sensorStateNotified2 != sensor2->isWorking()) {
+            updateSensorState(sensor, sensor2);
+        }
     }
 }
 

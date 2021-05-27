@@ -29,12 +29,14 @@
 #define IMU_BNO055 5
 
 #define BOARD_SLIMEVR 1
-#define BOARD_NODEMCU 2
-#define BOARD_CUSTOM 3 // Update pinout below if you're using custom board
+#define BOARD_SLIMEVR_DEV 2
+#define BOARD_NODEMCU 3
+#define BOARD_CUSTOM 4 // Update pinout below if you're using custom board
 
 // Set parameters of IMU and board used
 #define IMU IMU_BNO085
-#define BOARD BOARD_SLIMEVR
+#define BOARD BOARD_SLIMEVR_DEV
+#define SECOND_IMU true
 
 #if IMU == IMU_BNO085
   #define IMU_NAME "BNO085"
@@ -68,15 +70,25 @@
     #error Select IMU in defines.h
 #endif
 
-#if BOARD == BOARD_SLIMEVR
+#if BOARD == BOARD_SLIMEVR || BOARD == BOARD_SLIMEVR_DEV
   #define PIN_IMU_SDA 4
   #define PIN_IMU_SCL 5
   #define PIN_IMU_INT 10
+  #define PIN_IMU_INT_2 13
   #define PIN_BATTERY_LEVEL 17
+  #if BOARD == BOARD_SLIMEVR_DEV
+    #define BNO_ADDR_1 0x4B
+    #define BNO_ADDR_2 0x4A
+  #else
+    #define BNO_ADDR_1 0x4A
+    #define BNO_ADDR_2 0x4B
+  #endif
 #elif BOARD == BOARD_NODEMCU
   #define PIN_IMU_SDA D3
   #define PIN_IMU_SCL D2
   #define PIN_IMU_INT D1
+  #define BNO_ADDR_1 0x4B
+  #define BNO_ADDR_2 0x4A
 #elif BOARD == BOARD_CUSTOM
   // Define pins by the examples above
 #endif

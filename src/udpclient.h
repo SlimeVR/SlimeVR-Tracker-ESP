@@ -29,6 +29,7 @@
 #include <Arduino.h>
 #include "quat.h"
 #include "configuration.h"
+#include "sensor.h"
 
 #define PACKET_ROTATION 1
 #define PACKET_GYRO 2
@@ -44,6 +45,8 @@
 #define PACKET_BATTERY_LEVEL 12
 #define PACKET_TAP 13
 #define PACKET_RESET_REASON 14
+#define PACKET_SENSOR_INFO 15
+#define PACKET_ROTATION_2 16
 
 #define PACKET_RECIEVE_HEARTBEAT 1
 #define PACKET_RECIEVE_VIBRATE 2
@@ -58,13 +61,14 @@ typedef void (* configRecievedCallback)(DeviceConfig const newConfig);
 typedef void (* commandRecievedCallback)(int command, void * const commandData, int commandDataLength);
 
 void connectClient();
-void clientUpdate();
+void clientUpdate(Sensor * const sensor, Sensor * const sensor2);
 void sendQuat(float * const quaternion, int type);
 void sendQuat(Quat * const quaternion, int type);
 void sendVector(float * const result, int type);
 void sendConfig(DeviceConfig * const config, int type);
 void sendFloat(float const value, int type);
 void sendByte(char const value, int type);
+void sendSensorInfo(char const sensorId, char const sensorState, int type);
 void sendRawCalibrationData(int * const data, int type);
 void setConfigRecievedCallback(configRecievedCallback);
 void setCommandRecievedCallback(commandRecievedCallback);

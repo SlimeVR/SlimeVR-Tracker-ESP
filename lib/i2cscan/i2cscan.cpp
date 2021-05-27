@@ -5,6 +5,18 @@ String portMap[] = {"D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"};
 
 namespace I2CSCAN
 {
+
+    uint8_t pickDevice(uint8_t addr1, uint8_t addr2) {
+        if(I2CSCAN::isI2CExist(addr1))
+            return addr1;
+        if(!I2CSCAN::isI2CExist(addr2)) {
+            Serial.println("Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
+            I2CSCAN::scani2cports();
+            return 0;
+        }
+        return addr2;
+    }
+
     void scani2cports()
     {
         bool found = false;

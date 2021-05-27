@@ -39,9 +39,23 @@ class Sensor {
         virtual void motionLoop() = 0;
         virtual void sendData() = 0;
         virtual void startCalibration(int calibrationType) = 0;
+        bool isWorking() {
+            return working;
+        }
     protected:
         Quat quaternion {};
         Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
+        bool working {false};
+};
+
+class EmptySensor : public Sensor {
+    public:
+        EmptySensor() = default;
+        ~EmptySensor() override = default;
+        void motionSetup(DeviceConfig * config) override final;
+        void motionLoop() override final;
+        void sendData() override final;
+        void startCalibration(int calibrationType) override final;
 };
 
 class BNO080Sensor : public Sensor {
@@ -52,13 +66,17 @@ class BNO080Sensor : public Sensor {
         void motionLoop() override final;
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
+        void setupBNO080(bool auxilary = false, uint8_t addr = 0x4B, uint8_t intPin = 255);
     private:
         BNO080 imu {};
         bool newData {false};
         Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
         uint8_t tap;
         unsigned long lastData = 0;
-        int8_t lastReset = 0;
+        uint8_t lastReset = 0;
+        uint8_t addr = 0x4B;
+        uint8_t intPin = 255;
+        bool auxilary {false};
 };
 
 class BNO055Sensor : public Sensor {
