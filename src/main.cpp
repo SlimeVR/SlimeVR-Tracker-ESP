@@ -83,9 +83,8 @@ void setup()
     digitalWrite(LOADING_LED, LOW);
     
     // join I2C bus
-    Wire.flush();
     Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
-    Wire.setClockStretchLimit(4000);
+    Wire.setClockStretchLimit(150000L); // Default streatch limit 150mS
     Wire.setClock(100000);
     Serial.begin(serialBaudRate);
     while (!Serial)
