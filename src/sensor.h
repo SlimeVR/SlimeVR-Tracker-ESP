@@ -30,6 +30,7 @@
 #include <vector3.h>
 #include "configuration.h"
 #include <Adafruit_BNO055.h>
+#include "defines.h"
 
 class Sensor {
     public:

@@ -37,6 +37,7 @@
 #define IMU IMU_BNO085
 #define BOARD BOARD_SLIMEVR_DEV
 #define SECOND_IMU true
+#define IMU_ROTATION PI / 2.0
 
 #if IMU == IMU_BNO085
   #define IMU_NAME "BNO085"
