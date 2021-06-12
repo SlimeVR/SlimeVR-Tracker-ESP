@@ -45,7 +45,7 @@ class Sensor {
         }
     protected:
         Quat quaternion {};
-        Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
+        Quat sensorOffset {Quat(Vector3(0, 0, 1), IMU_ROTATION)};
         bool working {false};
 };
 
@@ -71,7 +71,6 @@ class BNO080Sensor : public Sensor {
     private:
         BNO080 imu {};
         bool newData {false};
-        Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
         uint8_t tap;
         unsigned long lastData = 0;
         uint8_t lastReset = 0;
@@ -91,7 +90,6 @@ class BNO055Sensor : public Sensor {
     private:
         Adafruit_BNO055  imu {Adafruit_BNO055(55, 0x28)};
         bool newData {false};
-        Quat sensorOffset {Quat(Vector3(0, 0, 1), PI / 2.0)};
 };
 
 class MPUSensor : public Sensor {
