@@ -24,6 +24,7 @@
 #include "udpclient.h"
 #include "configuration.h"
 #include "defines.h"
+#include "wifi.h"
 
 #define TIMEOUT 3000UL
 
@@ -38,15 +39,18 @@ commandRecievedCallback fp_commandCallback;
 IPAddress broadcast = IPAddress(255, 255, 255, 255);
 
 int port = 6969;
-IPAddress host;
+IPAddress host = IPAddress(255, 255, 255, 255);
 bool connected = false;
 unsigned long lastConnectionAttemptMs;
 unsigned long lastPacketMs;
-unsigned long lastWifiReportTime = 0;
-bool isWifiConnected = false;
 
 uint8_t serialBuffer[128];
 size_t serialLength = 0;
+
+bool sensorStateNotified1 = false;
+bool sensorStateNotified2 = false;
+unsigned long lastSensorInfoPacket = 0;
+
 
 template <typename T>
 unsigned char * convert_to_chars(T src, unsigned char * target)
@@ -315,6 +319,31 @@ void sendSensorInfo(char const sensorId, char const sensorState, int type)
     }
 }
 
+void sendHandshake() {
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(3);
+        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t));
+        Udp.write(convert_to_chars((uint32_t) BOARD, buf), sizeof(uint32_t));
+        Udp.write(convert_to_chars((uint32_t) IMU, buf), sizeof(uint32_t));
+        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t)); // TODO Send actual IMU hw version read from the chip
+        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
+        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
+        Udp.write(convert_to_chars((uint32_t) FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t));
+        Udp.write(FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION));
+        if (Udp.endPacket() == 0)
+        {
+            Serial.print("Write error: ");
+            Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        Serial.print("Write error: ");
+        Serial.println(Udp.getWriteError());
+    }
+}
+
 void returnLastPacket(int len) {
     if (Udp.beginPacket(host, port) > 0)
     {
@@ -337,10 +366,6 @@ void setCommandRecievedCallback(commandRecievedCallback callback)
     fp_commandCallback = callback;
 }
 
-bool sensorStateNotified1 = false;
-bool sensorStateNotified2 = false;
-unsigned long lastSensorInfoPacket = 0;
-
 void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     if(millis() - lastSensorInfoPacket > 1000) {
         lastSensorInfoPacket = millis();
@@ -351,9 +376,13 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     }
 }
 
+void onWiFiConnected() {
+    Udp.begin(port);
+}
+
 void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
 {
-    if (isWifiConnected)
+    if (isWiFiConnected())
     {
         if(connected) {
             int packetSize = Udp.parsePacket();
@@ -445,73 +474,6 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
     }
 }
 
-bool startWPSPBC() {
-    // from https://gist.github.com/copa2/fcc718c6549721c210d614a325271389
-    // wpstest.ino
-    Serial.println("WPS config start");
-    bool wpsSuccess = WiFi.beginWPSConfig();
-    if(wpsSuccess) {
-        // Well this means not always success :-/ in case of a timeout we have an empty ssid
-        String newSSID = WiFi.SSID();
-        if(newSSID.length() > 0) {
-            // WPSConfig has already connected in STA mode successfully to the new station. 
-            Serial.printf("WPS finished. Connected successfully to SSID '%s'\n", newSSID.c_str());
-        } else {
-            wpsSuccess = false;
-        }
-    }
-    return wpsSuccess; 
-}
-
-void setUpWiFi(DeviceConfig * const config) {
-    Serial.print("Connecting to wifi ");
-    WiFi.mode(WIFI_STA);
-    WiFi.hostname("SlimeVR");
-    WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
-}
-
-namespace {
-    void reportWifiError() {
-        if(lastWifiReportTime + 1000 < millis()) {
-            lastWifiReportTime = millis();
-            Serial.print(".");
-        }
-    }
-}
-
-void wifiUpkeep() {
-    if(isWifiConnected)
-        return;
-
-    if(WiFi.status() == WL_DISCONNECTED)
-    {
-        // WiFi is in disconnected state, wait until it connects or erros out
-        reportWifiError();
-        return;
-    }
-    if(WiFi.status() != WL_CONNECTED) {
-        // Wifi is not connected, try connecting with WPS
-        //Serial.printf("\nCould not connect to WiFi. state='%d'\n", WiFi.status());
-        //Serial.println("Please press WPS button on your router, until mode is indicated.");
-
-        //while(true) {
-            if(!startWPSPBC()) {
-                Serial.println("Failed to connect with WPS");
-            } else {
-                WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str()); // reading data from EPROM, 
-                // WiFi will start connecting here until errors out or connects
-            }
-        //}
-    }
-
-    if(WiFi.status() == WL_CONNECTED && !isWifiConnected) {
-        // Wasn't connected, but now connected, stop waiting
-        isWifiConnected = true;
-        Serial.printf("\nConnected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
-        Udp.begin(port);
-    }
-}
-
 bool isConnected() {
     return connected;
 }
@@ -530,11 +492,13 @@ void connectClient()
             for (int i = 0; i < len; ++i)
                 Serial.print((byte)incomingPacket[i]);
             Serial.println();
-
+            // Handshake is different, it has 3 in the first byte, not the 4th, and data starts right after
             switch (incomingPacket[0])
             {
             case PACKET_HANDSHAKE:
-                // Assume handshake sucessful
+                // Assume handshake sucessful, don't check it
+                // But proper handshake should contain "Hey OVR =D 5" ASCII string right after the packet number
+                // Starting on 14th byte (packet number, 12 bytes greetings, null-terminator) we can transfer SlimeVR handshake data
                 host = Udp.remoteIP();
                 port = Udp.remotePort();
                 lastPacketMs = now;
@@ -557,20 +521,7 @@ void connectClient()
     {
         lastConnectionAttemptMs = now;
         Serial.println("Looking for the server...");
-        if (Udp.beginPacket(broadcast, port) > 0)
-        {
-            Udp.write(handshake, 12);
-            if (Udp.endPacket() == 0)
-            {
-                Serial.print("Write error: ");
-                Serial.println(Udp.getWriteError());
-            }
-        }
-        else
-        {
-            Serial.print("Write error: ");
-            Serial.println(Udp.getWriteError());
-        }
+        sendHandshake();
 #ifndef SEND_UPDATES_UNCONNECTED
         digitalWrite(LOADING_LED, LOW);
 #endif

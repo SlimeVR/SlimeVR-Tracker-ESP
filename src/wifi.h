@@ -21,13 +21,13 @@
     THE SOFTWARE.
 */
 
-#ifndef _WIFICREDENTIALS_H_
-#define _WIFICREDENTIALS_H_ 1
+#ifndef _WIFI_H_
+#define _WIFI_H_
 
-// Default wifi credentials
-char* networkName = "";
-char* networkPassword = "";
-char* host = "";
-int port = 6969;
+#include "configuration.h"
 
-#endif // _WIFICREDENTIALS_H_
+bool isWiFiConnected();
+void setUpWiFi(DeviceConfig * const config);
+void wifiUpkeep();
+
+#endif // _WIFI_H_

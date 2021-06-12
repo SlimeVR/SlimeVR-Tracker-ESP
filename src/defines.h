@@ -112,3 +112,6 @@
 #define sensorIdInterval 100
 
 #define batteryADCMultiplier 1.0 / 1024.0 * 5.0
+
+#define FIRMWARE_BUILD_NUMBER 1
+#define FIRMWARE_VERSION "0.0.1-REV1"

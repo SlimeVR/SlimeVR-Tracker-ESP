@@ -25,6 +25,7 @@
 #include "ota.h"
 #include "sensor.h"
 #include "configuration.h"
+#include "wifi.h"
 #include "udpclient.h"
 #include "defines.h"
 #include "credentials.h"

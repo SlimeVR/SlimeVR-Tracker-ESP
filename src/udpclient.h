@@ -73,8 +73,7 @@ void sendRawCalibrationData(int * const data, int type);
 void setConfigRecievedCallback(configRecievedCallback);
 void setCommandRecievedCallback(commandRecievedCallback);
 void sendSerial(uint8_t *const data, int length, int type);
-void setUpWiFi(DeviceConfig * const config);
-void wifiUpkeep();
+void onWiFiConnected();
 bool isConnected();
 
 template<typename T> T convert_chars(unsigned char* src);
