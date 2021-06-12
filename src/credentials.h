@@ -21,4 +21,11 @@
     THE SOFTWARE.
 */
 
-const char* otaPassword = ""; // YOUR OTA PASSWORD HERE, LEAVE EMPTY TO DISABLE OTA UPDATES
+// The OTA password is public, server should know it for OTA updates,
+// and devices don't have any authentification anyway.
+// We have password here to prevent random attacks on IOT things
+// that might try to hack all esp-based devices and upload malictious
+// firmware. We don't have any hardware buttons for the user to confirm
+// OTA update, so this is the best way we have.
+// OTA is allowed only for the first 60 seconds after device startup.
+const char* otaPassword = "SlimeVR-OTA"; // YOUR OTA PASSWORD HERE, LEAVE EMPTY TO DISABLE OTA UPDATES
