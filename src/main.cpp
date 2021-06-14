@@ -45,7 +45,7 @@
 #else
     #error Unsupported IMU
 #endif
-#if !defined(SECOND_IMU) || !SECOND_IMU
+#if !defined(SECOND_IMU) || !SECOND_IMU || !(IMU == IMU_BNO080 || IMU == IMU_BNO085)
     EmptySensor sensor2{};
 #endif
 DeviceConfig config{};
