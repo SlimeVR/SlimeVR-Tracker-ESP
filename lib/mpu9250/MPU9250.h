@@ -400,7 +400,7 @@ THE SOFTWARE.
 #define MPU9250_BANKSEL_MEM_SEL_BIT         4
 #define MPU9250_BANKSEL_MEM_SEL_LENGTH      5
 
-#define MPU9250_WHO_AM_I_BIT        6
+#define MPU9250_WHO_AM_I_BIT        8
 #define MPU9250_WHO_AM_I_LENGTH     8
 
 #define MPU9250_DMP_MEMORY_BANKS        8
