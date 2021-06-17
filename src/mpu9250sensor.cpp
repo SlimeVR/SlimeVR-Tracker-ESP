@@ -67,7 +67,10 @@ void MPU9250Sensor::motionSetup(DeviceConfig * config) {
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
-        Serial.print("Can't communicate with MPU9250, response ");
+        Serial.print("Can't communicate with MPU9250, response 0x");
+        Serial.println(imu.getDeviceID(), HEX);
+    } else {
+        Serial.print("Connected to MPU, ID 0x");
         Serial.println(imu.getDeviceID(), HEX);
     }
 }
