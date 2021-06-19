@@ -34,7 +34,8 @@
 
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     BNO080Sensor sensor{};
-    #if defined(SECOND_IMU) && SECOND_IMU
+    #if defined(SECOND_IMU) && SECOND_IMU && defined(PIN_IMU_INT_2)
+        #define HAS_SECOND_IMU true
         BNO080Sensor sensor2{};
     #endif
 #elif IMU == IMU_BNO055
@@ -46,7 +47,7 @@
 #else
     #error Unsupported IMU
 #endif
-#if !defined(SECOND_IMU) || !SECOND_IMU || !(IMU == IMU_BNO080 || IMU == IMU_BNO085)
+#ifndef HAS_SECOND_IMU
     EmptySensor sensor2{};
 #endif
 DeviceConfig config{};
@@ -114,7 +115,7 @@ void setup()
     bool secondImuActive = false;
     // Currently only second BNO08X is supported
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
-    #if defined(SECOND_IMU) && SECOND_IMU
+    #ifdef HAS_SECOND_IMU
         uint8_t first = I2CSCAN::pickDevice(BNO_ADDR_1, BNO_ADDR_2);
         uint8_t second = I2CSCAN::pickDevice(BNO_ADDR_2, BNO_ADDR_1);
         if(first != second) {
@@ -130,8 +131,10 @@ void setup()
 #endif
 
     sensor.motionSetup(&config);
+#ifdef HAS_SECOND_IMU
     if(secondImuActive)
         sensor2.motionSetup(&config);
+#endif
 
     setUpWiFi(&config);
     otaSetup(otaPassword);
