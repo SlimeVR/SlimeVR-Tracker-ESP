@@ -30,6 +30,7 @@
 #include "defines.h"
 #include "credentials.h"
 #include <i2cscan.h>
+#include "serialcommands.h"
 
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     BNO080Sensor sensor{};
@@ -91,18 +92,20 @@ void setup()
     digitalWrite(CALIBRATING_LED, HIGH);
     digitalWrite(LOADING_LED, LOW);
     
+    Serial.begin(serialBaudRate);
+    while(!Serial); // Wait for serial to startup
+    setUpSerialCommands();
+
     // join I2C bus
     Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
     Wire.setClockStretchLimit(150000L); // Default streatch limit 150mS
     Wire.setClock(100000);
-    Serial.begin(serialBaudRate);
-    while (!Serial)
-        ; // wait for connection
 
     if (hasConfigStored())
     {
         loadConfig(&config);
     }
+    
     setConfigRecievedCallback(setConfig);
     setCommandRecievedCallback(commandRecieved);
     // Wait for IMU to boot
@@ -139,6 +142,7 @@ void setup()
 
 void loop()
 {
+    serialCommandsUpdate();
     wifiUpkeep();
     otaUpdate();
     clientUpdate(&sensor, &sensor2);

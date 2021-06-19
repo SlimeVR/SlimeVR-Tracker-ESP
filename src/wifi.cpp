@@ -42,6 +42,12 @@ bool isWiFiConnected() {
     return isWifiConnected;
 }
 
+void setWiFiCredentials(const char * SSID, const char * pass) {
+    WiFi.stopSmartConfig();
+    WiFi.begin(SSID, pass);
+    wifiConnectionTimeout = millis();
+}
+
 void setUpWiFi(DeviceConfig * const config) {
     Serial.println("Setting up WiFi");
     WiFi.mode(WIFI_STA);
@@ -52,7 +58,7 @@ void setUpWiFi(DeviceConfig * const config) {
 
 void onConnected() {
     isWifiConnected = true;
-    Serial.printf("\nConnected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+    Serial.printf("Connected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
     onWiFiConnected();
 }
 
@@ -60,7 +66,9 @@ void wifiUpkeep() {
     if(WiFi.status() != WL_CONNECTED) {
         reportWifiError();
         if(!WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
-            WiFi.beginSmartConfig();
+            if(WiFi.beginSmartConfig()) {
+                Serial.println("SmartConfig started");
+            }
         }
         return;
     }
@@ -68,5 +76,5 @@ void wifiUpkeep() {
         onConnected();
         return;
     }
-    return; // Everything else is not used with smart config
+    return;
 }

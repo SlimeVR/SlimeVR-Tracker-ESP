@@ -21,14 +21,10 @@
     THE SOFTWARE.
 */
 
-#ifndef _WIFI_H_
-#define _WIFI_H_
+#ifndef _SERIALCOMMANDS_H_
+#define _SERIALCOMMANDS_H_ 1
 
-#include "configuration.h"
+void setUpSerialCommands();
+void serialCommandsUpdate();
 
-bool isWiFiConnected();
-void setUpWiFi(DeviceConfig * const config);
-void wifiUpkeep();
-void setWiFiCredentials(const char * SSID, const char * pass);
-
-#endif // _WIFI_H_
+#endif // _SERIALCOMMANDS_H_
