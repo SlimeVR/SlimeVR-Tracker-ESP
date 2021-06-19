@@ -58,6 +58,7 @@ unsigned long blinkStart = 0;
 unsigned long now_ms, last_ms = 0; //millis() timers
 unsigned long last_battery_sample = 0;
 unsigned long const start = millis();
+bool secondImuActive = false;
 
 void setConfig(DeviceConfig newConfig)
 {
@@ -112,7 +113,6 @@ void setup()
     // Wait for IMU to boot
     delay(500);
     
-    bool secondImuActive = false;
     // Currently only second BNO08X is supported
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     #ifdef HAS_SECOND_IMU
@@ -159,7 +159,9 @@ void loop()
         if(isConnected()) {
 #endif
     sensor.motionLoop();
+#ifdef HAS_SECOND_IMU
     sensor2.motionLoop();
+#endif
 #ifndef UPDATE_IMU_UNCONNECTED
         }
 #endif
@@ -174,7 +176,9 @@ void loop()
     if(isConnected()) {
 #endif
         sensor.sendData();
+#ifdef HAS_SECOND_IMU
         sensor2.sendData();
+#endif
 #ifndef SEND_UPDATES_UNCONNECTED
     }
 #endif

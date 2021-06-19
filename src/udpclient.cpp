@@ -298,14 +298,31 @@ void sendSerial(uint8_t *const data, int length, int type) {
     }
 }
 
-void sendSensorInfo(char const sensorId, char const sensorState, int type)
-{
+void sendSensorInfo(char const sensorId, char const sensorState, int type) {
     if (Udp.beginPacket(host, port) > 0)
     {
         sendType(type);
         sendPacketNumber();
         Udp.write(&sensorId, 1);
         Udp.write(&sensorState, 1);
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
+void sendHeartbeat() {
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(PACKET_HEARTBEAT);
+        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t));
         if (Udp.endPacket() == 0)
         {
             //Serial.print("Write error: ");
@@ -402,6 +419,7 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
                 switch (convert_chars<int>(incomingPacket))
                 {
                 case PACKET_RECIEVE_HEARTBEAT:
+                    sendHeartbeat();
                     break;
                 case PACKET_RECIEVE_VIBRATE:
                     if(fp_commandCallback) {

@@ -31,6 +31,7 @@
 #include "configuration.h"
 #include "sensor.h"
 
+#define PACKET_HEARTBEAT 0
 #define PACKET_ROTATION 1
 #define PACKET_GYRO 2
 #define PACKET_HANDSHAKE 3
