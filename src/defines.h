@@ -115,3 +115,10 @@
 
 #define FIRMWARE_BUILD_NUMBER 2
 #define FIRMWARE_VERSION "0.0.2"
+#ifdef ESP8266
+  #define HARDWARE_MCU 1
+#elif defined(ESP32)
+  #define HARDWRAE_MCU 2
+#else
+  #define HARDWARE_MCU 0
+#endif

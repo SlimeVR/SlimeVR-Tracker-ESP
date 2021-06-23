@@ -338,6 +338,7 @@ void sendHandshake() {
         Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t));
         Udp.write(convert_to_chars((uint32_t) BOARD, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) IMU, buf), sizeof(uint32_t));
+        Udp.write(convert_to_chars((uint32_t) HARDWARE_MCU, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t)); // TODO Send actual IMU hw version read from the chip
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
