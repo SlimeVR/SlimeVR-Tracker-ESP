@@ -80,7 +80,7 @@ T convert_chars(unsigned char * const src)
 
 void sendPacketNumber()
 {
-    uint64_t pn = packetNumber++;
+    //uint64_t pn = packetNumber++;
     // TODO Send packet number
     Udp.write(0);
     Udp.write(0);

@@ -52,7 +52,11 @@ void setUpWiFi(DeviceConfig * const config) {
     Serial.println("Setting up WiFi");
     WiFi.mode(WIFI_STA);
     WiFi.hostname("SlimeVR FBT Tracker");
+#if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
+    WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
+#else
     WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
+#endif
     wifiConnectionTimeout = millis();
 }
 
