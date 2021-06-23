@@ -22,9 +22,6 @@
 */
 
 #include "udpclient.h"
-#include "configuration.h"
-#include "defines.h"
-#include "wifi.h"
 
 #define TIMEOUT 3000UL
 
@@ -35,8 +32,6 @@ unsigned char handshake[12] = {0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char buf[128];
 configRecievedCallback fp_configCallback;
 commandRecievedCallback fp_commandCallback;
-
-IPAddress broadcast = IPAddress(255, 255, 255, 255);
 
 int port = 6969;
 IPAddress host = IPAddress(255, 255, 255, 255);
@@ -152,7 +147,7 @@ void sendFloat(float const value, int type)
     }
 }
 
-void sendByte(char const value, int type)
+void sendByte(unsigned char const value, int type)
 {
     if (Udp.beginPacket(host, port) > 0)
     {
@@ -298,7 +293,7 @@ void sendSerial(uint8_t *const data, int length, int type) {
     }
 }
 
-void sendSensorInfo(char const sensorId, char const sensorState, int type) {
+void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorState, int type) {
     if (Udp.beginPacket(host, port) > 0)
     {
         sendType(type);
@@ -347,7 +342,7 @@ void sendHandshake() {
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t));
-        Udp.write(FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION));
+        Udp.write((const unsigned char *) FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION));
         if (Udp.endPacket() == 0)
         {
             Serial.print("Write error: ");

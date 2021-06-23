@@ -100,6 +100,8 @@ void BNO080Sensor::motionLoop()
             sendResetReason(rr);
             digitalWrite(LOADING_LED, LOW);
         }
+        Serial.print("[ERR] Sensor was reset: ");
+        Serial.println(rr);
     }
 }
 

@@ -21,7 +21,7 @@
     THE SOFTWARE.
 */
 
-#include "wifi.h"
+#include "wifihandler.h"
 #include "udpclient.h"
 #include "defines.h"
 

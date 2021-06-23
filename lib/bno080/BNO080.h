@@ -65,7 +65,7 @@
 #else
 
 //The catch-all default is 32
-#define I2C_BUFFER_LENGTH 32
+#define BNO_I2C_BUFFER_LENGTH 32
 
 #endif
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

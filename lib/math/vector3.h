@@ -99,7 +99,6 @@ struct Vector3 {
 	inline Vector3 floor() const;
 	inline Vector3 sign() const;
 	inline Vector3 ceil() const;
-	inline Vector3 round() const;
 
 	inline double distance_to(const Vector3& p_b) const;
 	inline double distance_squared_to(const Vector3& p_b) const;
@@ -177,10 +176,6 @@ Vector3 Vector3::floor() const {
 
 Vector3 Vector3::ceil() const {
 	return Vector3(std::ceil(x), std::ceil(y), std::ceil(z));
-}
-
-Vector3 Vector3::round() const {
-	return Vector3(std::round(x), std::round(y), std::round(z));
 }
 
 Vector3 Vector3::lerp(const Vector3& p_b, double p_t) const {

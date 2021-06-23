@@ -25,7 +25,7 @@
 #include "ota.h"
 #include "sensor.h"
 #include "configuration.h"
-#include "wifi.h"
+#include "wifihandler.h"
 #include "udpclient.h"
 #include "defines.h"
 #include "credentials.h"
@@ -100,7 +100,9 @@ void setup()
 
     // join I2C bus
     Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
+#ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default streatch limit 150mS
+#endif
     Wire.setClock(100000);
 
     if (hasConfigStored())

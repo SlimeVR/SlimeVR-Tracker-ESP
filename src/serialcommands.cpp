@@ -22,7 +22,7 @@
 */
 
 #include "serialcommands.h"
-#include "wifi.h"
+#include "wifihandler.h"
 #include <CmdCallback.hpp>
 
 CmdCallback<5> cmdCallbacks;

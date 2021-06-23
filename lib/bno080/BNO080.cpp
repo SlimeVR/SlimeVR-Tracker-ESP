@@ -1478,8 +1478,8 @@ boolean BNO080::getData(uint16_t bytesRemaining)
 	while (bytesRemaining > 0)
 	{
 		uint16_t numberOfBytesToRead = bytesRemaining;
-		if (numberOfBytesToRead > (I2C_BUFFER_LENGTH - 4))
-			numberOfBytesToRead = (I2C_BUFFER_LENGTH - 4);
+		if (numberOfBytesToRead > (BNO_I2C_BUFFER_LENGTH - 4))
+			numberOfBytesToRead = (BNO_I2C_BUFFER_LENGTH - 4);
 
 		_i2cPort->requestFrom((uint8_t)_deviceAddress, (size_t)(numberOfBytesToRead + 4));
 		if (waitForI2C() == false)
@@ -1544,7 +1544,7 @@ boolean BNO080::sendPacket(uint8_t channelNumber, uint8_t dataLength)
 	}
 	else //Do I2C
 	{
-		//if(packetLength > I2C_BUFFER_LENGTH) return(false); //You are trying to send too much. Break into smaller packets.
+		//if(packetLength > BNO_I2C_BUFFER_LENGTH) return(false); //You are trying to send too much. Break into smaller packets.
 
 		_i2cPort->beginTransmission(_deviceAddress);
 

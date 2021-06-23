@@ -24,12 +24,18 @@
 #ifndef _UDP_CLIENT_H_
 #define _UDP_CLIENT_H_
 
-#include <ESP8266WiFi.h>
+#ifdef ESP8266
+    #include <ESP8266WiFi.h>
+#else
+    #include <WiFi.h>
+#endif
 #include <WiFiUdp.h>
 #include <Arduino.h>
 #include "quat.h"
 #include "configuration.h"
 #include "sensor.h"
+#include "wifihandler.h"
+#include "defines.h"
 
 #define PACKET_HEARTBEAT 0
 #define PACKET_ROTATION 1
@@ -68,8 +74,8 @@ void sendQuat(Quat * const quaternion, int type);
 void sendVector(float * const result, int type);
 void sendConfig(DeviceConfig * const config, int type);
 void sendFloat(float const value, int type);
-void sendByte(char const value, int type);
-void sendSensorInfo(char const sensorId, char const sensorState, int type);
+void sendByte(unsigned char const value, int type);
+void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorState, int type);
 void sendRawCalibrationData(int * const data, int type);
 void setConfigRecievedCallback(configRecievedCallback);
 void setCommandRecievedCallback(commandRecievedCallback);
