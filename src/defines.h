@@ -35,7 +35,7 @@
 
 // Set parameters of IMU and board used
 #define IMU IMU_BNO085
-#define BOARD BOARD_SLIMEVR_DEV
+#define BOARD BOARD_SLIMEVR
 #define SECOND_IMU true
 #define IMU_ROTATION PI / 2.0
 
@@ -94,6 +94,13 @@
   // Define pins by the examples above
 #endif
 
+#ifndef LED_BUILTIN
+#define LED_BUILTIN 2
+#endif
+
+#define LOADING_LED LED_BUILTIN
+#define CALIBRATING_LED LED_BUILTIN
+
 //Debug information
 //#define FULL_DEBUG
 #define serialDebug false // Set to true to get Serial output for debugging
@@ -118,7 +125,7 @@
 #ifdef ESP8266
   #define HARDWARE_MCU 1
 #elif defined(ESP32)
-  #define HARDWRAE_MCU 2
+  #define HARDWARE_MCU 2
 #else
   #define HARDWARE_MCU 0
 #endif
