@@ -1,17 +1,26 @@
 #include "i2cscan.h"
 
+#ifdef ESP8266
 uint8_t portArray[] = {16, 5, 4, 0, 2, 14, 12, 13};
 String portMap[] = {"D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"};
+#elif defined(ESP32)
+uint8_t portArray[] = {4, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
+String portMap[] = {"4", "12", "13", "14", "15", "16", "17", "18", "19", "21", "22", "23", "25", "26", "27", "32", "33"};
+#endif
 
 namespace I2CSCAN
 {
 
-    uint8_t pickDevice(uint8_t addr1, uint8_t addr2) {
+    uint8_t pickDevice(uint8_t addr1, uint8_t addr2, bool scanIfNotFound) {
         if(I2CSCAN::isI2CExist(addr1))
             return addr1;
         if(!I2CSCAN::isI2CExist(addr2)) {
-            Serial.println("Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
-            I2CSCAN::scani2cports();
+            if(scanIfNotFound) {
+                Serial.println("[ERR] I2C: Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
+                I2CSCAN::scani2cports();
+            } else {
+                Serial.println("[ERR] I2C: Can't find I2C device on provided addresses");
+            }
             return 0;
         }
         return addr2;
@@ -32,7 +41,7 @@ namespace I2CSCAN
             }
         }
         if(!found) {
-            Serial.println("[I2C SCAN] No I2C devices found");
+            Serial.println("[ERR] I2C: No I2C devices found");
         }
     }
 
@@ -53,7 +62,7 @@ namespace I2CSCAN
 
             if (error == 0)
             {
-                Serial.print("[I2C SCAN] (@ " + portMap[i] + " : " + portMap[j] + ") ");
+                Serial.print("[DBG] I2C (@ " + portMap[i] + " : " + portMap[j] + "): ");
                 Serial.print("I2C device found at address 0x");
                 if (address < 16)
                     Serial.print("0");
@@ -65,7 +74,7 @@ namespace I2CSCAN
             }
             else if (error == 4)
             {
-                Serial.print("[I2C SCAN] (@ " + portMap[i] + " : " + portMap[j] + ") ");
+                Serial.print("[ERR] I2C (@ " + portMap[i] + " : " + portMap[j] + "): ");
                 Serial.print("Unknow error at address 0x");
                 if (address < 16)
                     Serial.print("0");

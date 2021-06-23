@@ -32,6 +32,7 @@
 #define BOARD_SLIMEVR_DEV 2
 #define BOARD_NODEMCU 3
 #define BOARD_CUSTOM 4 // Update pinout below if you're using custom board
+#define BOARD_WROOM32 5
 
 // Set parameters of IMU and board used
 #define IMU IMU_BNO085
@@ -88,10 +89,18 @@
   #define PIN_IMU_SDA D3
   #define PIN_IMU_SCL D2
   #define PIN_IMU_INT D1
-  #define BNO_ADDR_1 0x4B
-  #define BNO_ADDR_2 0x4A
+  #define BNO_ADDR_1 0x4A
+  #define BNO_ADDR_2 0x4B
 #elif BOARD == BOARD_CUSTOM
   // Define pins by the examples above
+#elif BOARD == BOARD_WROOM32
+  #define PIN_IMU_SDA 12
+  #define PIN_IMU_SCL 13
+  #define PIN_IMU_INT 26
+  #define PIN_IMU_INT_2 25
+  #define PIN_BATTERY_LEVEL 36
+  #define BNO_ADDR_1 0x4A
+  #define BNO_ADDR_2 0x4B
 #endif
 
 #ifndef LED_BUILTIN

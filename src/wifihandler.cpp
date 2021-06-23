@@ -49,7 +49,7 @@ void setWiFiCredentials(const char * SSID, const char * pass) {
 }
 
 void setUpWiFi(DeviceConfig * const config) {
-    Serial.println("Setting up WiFi");
+    Serial.println("[NOTICE] Setting up WiFi");
     WiFi.mode(WIFI_STA);
     WiFi.hostname("SlimeVR FBT Tracker");
 #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
@@ -62,7 +62,7 @@ void setUpWiFi(DeviceConfig * const config) {
 
 void onConnected() {
     isWifiConnected = true;
-    Serial.printf("Connected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+    Serial.printf("[NOTICE] Connected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
     onWiFiConnected();
 }
 
@@ -71,7 +71,7 @@ void wifiUpkeep() {
         reportWifiError();
         if(!WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
             if(WiFi.beginSmartConfig()) {
-                Serial.println("SmartConfig started");
+                Serial.println("[NOTICE] SmartConfig started");
             }
         }
         return;

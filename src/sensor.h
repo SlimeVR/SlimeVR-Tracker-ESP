@@ -77,6 +77,7 @@ class BNO080Sensor : public Sensor {
         uint8_t addr = 0x4B;
         uint8_t intPin = 255;
         bool auxilary {false};
+        bool setUp {false};
 };
 
 class BNO055Sensor : public Sensor {

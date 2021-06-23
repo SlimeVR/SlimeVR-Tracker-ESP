@@ -54,12 +54,12 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
         imu.enableDebugging(Serial);
 #endif
     if(!imu.begin(addr, Wire, intPin)) {
-        Serial.print("Can't connect to ");
+        Serial.print("[ERR] IMU BNO08X: Can't connect to ");
         Serial.println(IMU_NAME);
         signalAssert();
         return;
     }
-    Serial.print("Connected to ");
+    Serial.print("[NOTICE] IMU BNO08X: Connected to ");
     Serial.print(IMU_NAME);
     Serial.print(" on 0x");
     if(addr < 16)
@@ -73,6 +73,7 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
     lastReset = imu.resetReason();
     lastData = millis();
     working = true;
+    setUp = true;
 }
 
 void BNO080Sensor::motionLoop()
@@ -91,7 +92,7 @@ void BNO080Sensor::motionLoop()
         if(intPin == 255)
             break;
     }
-    if(lastData + 1000 < millis()) {
+    if(lastData + 1000 < millis() && setUp) {
         working = false;
         lastData = millis();
         uint8_t rr = imu.resetReason();
@@ -110,7 +111,7 @@ void BNO080Sensor::sendData() {
         newData = false;
         sendQuat(&quaternion, auxilary ? PACKET_ROTATION_2 : PACKET_ROTATION);
 #ifdef FULL_DEBUG
-            Serial.print("Quaternion: ");
+            Serial.print("[DBG] Quaternion: ");
             Serial.print(quaternion.x);
             Serial.print(",");
             Serial.print(quaternion.y);
