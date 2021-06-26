@@ -37,6 +37,8 @@ namespace {
     }
 }
 
+bool hasNewData = false;
+
 void gatherCalibrationData(MPU9250 &imu);
 
 void MPU6050Sensor::motionSetup(DeviceConfig * config) {
@@ -122,11 +124,15 @@ void MPU6050Sensor::motionLoop() {
         q[3] = rawQuat.w;
         quaternion.set(-q[1], q[0], q[2], q[3]);
         quaternion *= sensorOffset;
+        hasNewData = true;
     }
 }
 
 void MPU6050Sensor::sendData() {
-    sendQuat(&quaternion, PACKET_ROTATION);
+    if(hasNewData) {
+        sendQuat(&quaternion, PACKET_ROTATION);
+        hasNewData = false;
+    }
 }
 
 void MPU6050Sensor::startCalibration(int calibrationType) {

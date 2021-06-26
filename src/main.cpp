@@ -57,7 +57,6 @@ bool blinking = false;
 unsigned long blinkStart = 0;
 unsigned long now_ms, last_ms = 0; //millis() timers
 unsigned long last_battery_sample = 0;
-unsigned long const start = millis();
 bool secondImuActive = false;
 
 void setConfig(DeviceConfig newConfig)
