@@ -94,7 +94,6 @@ void setup()
     digitalWrite(LOADING_LED, LOW);
     
     Serial.begin(serialBaudRate);
-    while(!Serial); // Wait for serial to startup
     setUpSerialCommands();
 
     // join I2C bus
