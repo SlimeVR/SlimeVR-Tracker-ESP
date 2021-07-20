@@ -29,6 +29,7 @@
 #define BOARD BOARD_CUSTOM
 #define SECOND_IMU false
 #define IMU_ROTATION PI / 2.0
+#define SENSOR_LOOP_SLEEP_MILLIS 2
 
 #if IMU == IMU_BNO085
   #define IMU_NAME "BNO085"

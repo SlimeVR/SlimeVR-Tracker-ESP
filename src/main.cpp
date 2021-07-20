@@ -189,6 +189,10 @@ void loop()
         sendFloat(battery, PACKET_BATTERY_LEVEL);
     }
 #endif
+
+#ifdef SENSOR_LOOP_SLEEP_MILLIS
+    delay(SENSOR_LOOP_SLEEP_MILLIS);
+#endif
 }
 
 void processBlinking() {
