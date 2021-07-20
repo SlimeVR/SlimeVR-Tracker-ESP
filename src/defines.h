@@ -20,20 +20,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-
-
-#define IMU_MPU9250 1
-#define IMU_MPU6500 2
-#define IMU_BNO080 3
-#define IMU_BNO085 4
-#define IMU_BNO055 5
-#define IMU_MPU6050 6
-
-#define BOARD_SLIMEVR 1
-#define BOARD_SLIMEVR_DEV 2
-#define BOARD_NODEMCU 3
-#define BOARD_CUSTOM 4 // Update pinout below if you're using custom board
-#define BOARD_WROOM32 5
+#include "consts.h"
 
 // Set parameters of IMU and board used
 // #define IMU IMU_BNO085
@@ -111,10 +98,6 @@
   #define PIN_BATTERY_LEVEL 36
   #define BNO_ADDR_1 0x4A
   #define BNO_ADDR_2 0x4B
-#endif
-
-#ifndef LED_BUILTIN
-#define LED_BUILTIN 2
 #endif
 
 #define LOADING_LED LED_BUILTIN

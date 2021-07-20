@@ -101,12 +101,7 @@ void setup()
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default streatch limit 150mS
 #endif
-
-    #ifdef IMU_MPU6050
-        Wire.setClock(400000);
-    #elif
-        Wire.setClock(100000);
-    #endif
+    Wire.setClock(400000);
 
     if (hasConfigStored())
     {
