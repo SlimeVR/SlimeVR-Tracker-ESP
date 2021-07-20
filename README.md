@@ -18,6 +18,7 @@ Compatible and tested with these IMUs (select during compilation):
 * MPU-6500
   * Using internal DMP to fuse Gyroscope and Accelerometer, can be used with MPU-9250, can drift substantially
 * MPU-6050
-  * Same as MPU-6500
+  * Using internal DMP to fuse Gyro and Accelerometer. This fork uses I2CDev's MPU6050 library
+  * NOTE: Currently the MPU will auto calibrate when powered on. You *must* place it on the group and *DO NOT* move it until calibration is complete
 
 Firmware can work with both ESP8266 and ESP32. Please edit defines.h and set your pinout properly according to how you connected the IMU.
