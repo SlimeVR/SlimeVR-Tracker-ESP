@@ -27,6 +27,7 @@
 #define IMU_BNO080 3
 #define IMU_BNO085 4
 #define IMU_BNO055 5
+#define IMU_MPU6050 6
 
 #define BOARD_SLIMEVR 1
 #define BOARD_SLIMEVR_DEV 2
@@ -35,9 +36,11 @@
 #define BOARD_WROOM32 5
 
 // Set parameters of IMU and board used
-#define IMU IMU_BNO085
-#define BOARD BOARD_SLIMEVR
-#define SECOND_IMU true
+// #define IMU IMU_BNO085
+#define IMU IMU_MPU6050
+// #define BOARD BOARD_SLIMEVR
+#define BOARD BOARD_CUSTOM
+#define SECOND_IMU false
 #define IMU_ROTATION PI / 2.0
 
 #if IMU == IMU_BNO085
@@ -68,6 +71,11 @@
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG false
+#elif IMU == IMU_MPU6050
+  #define IMU_NAME "MPU6050"
+  #define IMU_HAS_ACCELL true
+  #define IMU_HAS_GYRO true
+  #define IMU_HAS_MAG false
 #else
     #error Select IMU in defines.h
 #endif
@@ -93,6 +101,8 @@
   #define BNO_ADDR_2 0x4B
 #elif BOARD == BOARD_CUSTOM
   // Define pins by the examples above
+  #define PIN_IMU_SDA 4
+  #define PIN_IMU_SCL 5
 #elif BOARD == BOARD_WROOM32
   #define PIN_IMU_SDA 12
   #define PIN_IMU_SCL 13

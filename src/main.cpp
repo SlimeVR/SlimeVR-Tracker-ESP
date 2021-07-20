@@ -42,7 +42,7 @@
     BNO055Sensor sensor{};
 #elif IMU == IMU_MPU9250
     MPU9250Sensor sensor{};
-#elif IMU == IMU_MPU6500
+#elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
     MPU6050Sensor sensor{};
 #else
     #error Unsupported IMU
@@ -101,7 +101,12 @@ void setup()
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default streatch limit 150mS
 #endif
-    Wire.setClock(100000);
+
+    #ifdef IMU_MPU6050
+        Wire.setClock(400000);
+    #elif
+        Wire.setClock(100000);
+    #endif
 
     if (hasConfigStored())
     {
