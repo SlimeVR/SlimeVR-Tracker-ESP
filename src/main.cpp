@@ -101,7 +101,7 @@ void setup()
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default streatch limit 150mS
 #endif
-    Wire.setClock(100000);
+    Wire.setClock(400000);
 
     if (hasConfigStored())
     {
