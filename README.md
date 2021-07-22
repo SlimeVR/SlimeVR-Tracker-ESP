@@ -67,3 +67,7 @@ Locate the alien head button in left menu and press "Build"
 ![enter image description here](https://i.imgur.com/aAQUQoC.png)
  
 Connect the tracker by USB and press Upload
+
+You can check Null's building guide 
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/e1oExyYlTzs/0.jpg)](https://www.youtube.com/watch?v=e1oExyYlTzs)
+
