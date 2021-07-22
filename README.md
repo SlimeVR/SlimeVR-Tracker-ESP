@@ -60,4 +60,9 @@ You need to execute this command in the folder where you want this project.
 
     git clone https://github.com/adigyran/SlimeVR-Tracker-ESP
 
+Open project in VSCode and change platformio.ini and defines.h contents according to the pinout and board type
+
+Locate the alien head button in left menu and press "Build"
+![enter image description here](https://i.imgur.com/aAQUQoC.png)
  
+Connect the tracker by USB and press Upload
