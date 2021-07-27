@@ -71,7 +71,7 @@ void MPU6050Sensor::motionSetup() {
         imu.setDMPEnabled(true);
 
         // Do a quick and dirty calibration. As the imu warms up the offsets will change a bit, but this will be good-enough
-        millis(1000); // A small sleep to give the users a chance to stop it from moving
+        delay(1000); // A small sleep to give the users a chance to stop it from moving
         imu.CalibrateAccel(6);
         imu.CalibrateGyro(6);
         imu.PrintActiveOffsets();
