@@ -25,6 +25,8 @@
 #include "sensor.h"
 #include "udpclient.h"
 #include <i2cscan.h>
+#include "calibration.h"
+#include "configuration.h"
 
 namespace {
     void signalAssert() {
@@ -41,13 +43,14 @@ bool hasNewData = false;
 
 void gatherCalibrationData(MPU9250 &imu);
 
-void MPU6050Sensor::motionSetup(DeviceConfig * config) {
+void MPU6050Sensor::motionSetup() {
+    DeviceConfig * config = getConfigPtr();
+
     uint8_t addr = 0x68;
     if(!I2CSCAN::isI2CExist(addr)) {
         addr = 0x69;
         if(!I2CSCAN::isI2CExist(addr)) {
-            Serial.println("Can't find I2C device on addr 0x4A or 0x4B, scanning for all I2C devices and returning");
-            I2CSCAN::scani2cports();
+            Serial.println("[ERR] Can't find I2C device on addr 0x4A or 0x4B, returning");
             signalAssert();
             return;
         }
@@ -55,7 +58,7 @@ void MPU6050Sensor::motionSetup(DeviceConfig * config) {
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
-        Serial.print("Can't communicate with MPU9250, response ");
+        Serial.print("[ERR] Can't communicate with MPU, response ");
         Serial.println(imu.getDeviceID(), HEX);
     }
     devStatus = imu.dmpInitialize();
@@ -70,12 +73,12 @@ void MPU6050Sensor::motionSetup(DeviceConfig * config) {
     // make sure it worked (returns 0 if so)
     if (devStatus == 0) {
         // turn on the DMP, now that it's ready
-        Serial.println(F("Enabling DMP..."));
+        Serial.println(F("[NOTICE] Enabling DMP..."));
         imu.setDMPEnabled(true);
         mpuIntStatus = imu.getIntStatus();
 
         // set our DMP Ready flag so the main loop() function knows it's okay to use it
-        Serial.println(F("DMP ready! Waiting for first interrupt..."));
+        Serial.println(F("[NOTICE] DMP ready! Waiting for first interrupt..."));
         dmpReady = true;
 
         // get expected DMP packet size for later comparison
@@ -85,7 +88,7 @@ void MPU6050Sensor::motionSetup(DeviceConfig * config) {
         // 1 = initial memory load failed
         // 2 = DMP configuration updates failed
         // (if it's going to break, usually the code will be 1)
-        Serial.print(F("DMP Initialization failed (code "));
+        Serial.print(F("[ERR] DMP Initialization failed (code "));
         Serial.print(devStatus);
         Serial.println(F(")"));
     }
@@ -137,64 +140,28 @@ void MPU6050Sensor::sendData() {
 
 void MPU6050Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
-    Serial.println("Starting offset finder");
-    gatherCalibrationData(imu);
-    Serial.println("Process is over");
+    Serial.println("[NOTICE] Starting offset finder");
+    DeviceConfig * config = getConfigPtr();
+
+    switch(calibrationType) {
+        case CALIBRATION_TYPE_INTERNAL_ACCEL:
+            imu.CalibrateAccel(10);
+            sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+            config->calibration.A_B[0] = imu.getXAccelOffset();
+            config->calibration.A_B[1] = imu.getYAccelOffset();
+            config->calibration.A_B[2] = imu.getZAccelOffset();
+            saveConfig();
+            break;
+        case CALIBRATION_TYPE_INTERNAL_GYRO:
+            imu.CalibrateGyro(10);
+            sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+            config->calibration.G_off[0] = imu.getXGyroOffset();
+            config->calibration.G_off[1] = imu.getYGyroOffset();
+            config->calibration.G_off[2] = imu.getZGyroOffset();
+            saveConfig();
+            break;
+    }
+
+    Serial.println("[NOTICE] Process is over");
     digitalWrite(CALIBRATING_LED, HIGH);
-}
-
-void gatherCalibrationData(MPU9250 &imu) {
-    Serial.println("Gathering raw data for device calibration...");
-    int calibrationSamples = 500;
-    // Reset values
-    float Gxyz[3];
-    int16_t gx;
-    int16_t gy;
-    int16_t gz;
-    int16_t ax;
-    int16_t ay;
-    int16_t az;
-
-    // Wait for sensor to calm down before calibration
-    Serial.println("Put down the device and wait for baseline gyro reading calibration");
-    delay(2000);
-    for (int i = 0; i < calibrationSamples; i++)
-    {
-        imu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-        Gxyz[0] += float(gx);
-        Gxyz[1] += float(gy);
-        Gxyz[2] += float(gz);
-        delay(10);
-    }
-    Gxyz[0] /= calibrationSamples;
-    Gxyz[1] /= calibrationSamples;
-    Gxyz[2] /= calibrationSamples;
-    Serial.printf("Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
-    sendVector(Gxyz, PACKET_GYRO_CALIBRATION_DATA);
-
-    // Blink calibrating led before user should rotate the sensor
-    Serial.println("Gently rotate the device while it's gathering accelerometer data");
-    for (int i = 0; i < 3000 / 310; ++i)
-    {
-        digitalWrite(CALIBRATING_LED, LOW);
-        delay(15);
-        digitalWrite(CALIBRATING_LED, HIGH);
-        delay(300);
-    }
-    int calibrationData[6];
-    for (int i = 0; i < calibrationSamples; i++)
-    {
-        digitalWrite(CALIBRATING_LED, LOW);
-        imu.getAcceleration(&ax, &ay, &az);
-        calibrationData[0] = ax;
-        calibrationData[1] = ay;
-        calibrationData[2] = az;
-        calibrationData[3] = 0;
-        calibrationData[4] = 0;
-        calibrationData[5] = 0;
-        sendRawCalibrationData(calibrationData, PACKET_RAW_CALIBRATION_DATA);
-        digitalWrite(CALIBRATING_LED, HIGH);
-        delay(50);
-    }
-    Serial.println("Calibration data gathered and sent");
 }

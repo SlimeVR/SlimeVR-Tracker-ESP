@@ -48,7 +48,7 @@ void setWiFiCredentials(const char * SSID, const char * pass) {
     wifiConnectionTimeout = millis();
 }
 
-void setUpWiFi(DeviceConfig * const config) {
+void setUpWiFi() {
     Serial.println("[NOTICE] Setting up WiFi");
     WiFi.mode(WIFI_STA);
     WiFi.hostname("SlimeVR FBT Tracker");

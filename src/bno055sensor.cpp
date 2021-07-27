@@ -37,7 +37,7 @@ namespace {
     }
 }
 
-void BNO055Sensor::motionSetup(DeviceConfig * config) {
+void BNO055Sensor::motionSetup() {
     delay(3000);
     if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS))
     {

@@ -50,7 +50,6 @@
 #ifndef HAS_SECOND_IMU
     EmptySensor sensor2{};
 #endif
-DeviceConfig config{};
 
 bool isCalibrating = false;
 bool blinking = false;
@@ -58,12 +57,6 @@ unsigned long blinkStart = 0;
 unsigned long now_ms, last_ms = 0; //millis() timers
 unsigned long last_battery_sample = 0;
 bool secondImuActive = false;
-
-void setConfig(DeviceConfig newConfig)
-{
-    config = newConfig;
-    saveConfig(&config);
-}
 
 void commandRecieved(int command, void * const commandData, int commandDataLength)
 {
@@ -73,7 +66,7 @@ void commandRecieved(int command, void * const commandData, int commandDataLengt
         isCalibrating = true;
         break;
     case COMMAND_SEND_CONFIG:
-        sendConfig(&config, PACKET_CONFIG);
+        sendConfig(getConfigPtr(), PACKET_CONFIG);
         break;
     case COMMAND_BLINK:
         blinking = true;
@@ -103,11 +96,7 @@ void setup()
 #endif
     Wire.setClock(I2C_SPEED);
 
-    if (hasConfigStored())
-    {
-        loadConfig(&config);
-    }
-    
+    getConfigPtr();
     setConfigRecievedCallback(setConfig);
     setCommandRecievedCallback(commandRecieved);
     // Wait for IMU to boot
@@ -130,13 +119,13 @@ void setup()
     #endif
 #endif
 
-    sensor.motionSetup(&config);
+    sensor.motionSetup();
 #ifdef HAS_SECOND_IMU
     if(secondImuActive)
-        sensor2.motionSetup(&config);
+        sensor2.motionSetup();
 #endif
 
-    setUpWiFi(&config);
+    setUpWiFi();
     otaSetup(otaPassword);
     digitalWrite(LOADING_LED, HIGH);
 }

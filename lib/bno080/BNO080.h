@@ -275,6 +275,13 @@ public:
 	uint8_t commandSequenceNumber = 0;				//Commands have a seqNum as well. These are inside command packet, the header uses its own seqNum per channel
 	uint32_t metaData[MAX_METADATA_SIZE];			//There is more than 10 words in a metadata record but we'll stop at Q point 3
 
+	// IMU info
+	uint8_t swMajor;
+	uint8_t swMinor;
+	uint32_t swPartNumber;
+	uint32_t swBuildNumber;
+	uint16_t swVersionPatch;
+
 private:
 	//Variables
 	TwoWire *_i2cPort;		//The generic connection to user's chosen I2C hardware

@@ -36,7 +36,7 @@ class Sensor {
     public:
         Sensor() = default;
         virtual ~Sensor() = default;
-        virtual void motionSetup(DeviceConfig * config) = 0;
+        virtual void motionSetup() = 0;
         virtual void motionLoop() = 0;
         virtual void sendData() = 0;
         virtual void startCalibration(int calibrationType) = 0;
@@ -53,7 +53,7 @@ class EmptySensor : public Sensor {
     public:
         EmptySensor() = default;
         ~EmptySensor() override = default;
-        void motionSetup(DeviceConfig * config) override final;
+        void motionSetup() override final;
         void motionLoop() override final;
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
@@ -63,7 +63,7 @@ class BNO080Sensor : public Sensor {
     public:
         BNO080Sensor() = default;
         ~BNO080Sensor() override = default;
-        void motionSetup(DeviceConfig * config) override final;
+        void motionSetup() override final;
         void motionLoop() override final;
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
@@ -84,7 +84,7 @@ class BNO055Sensor : public Sensor {
     public:
         BNO055Sensor() = default;
         ~BNO055Sensor() override = default;
-        void motionSetup(DeviceConfig * config) override final;
+        void motionSetup() override final;
         void motionLoop() override final;
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
@@ -106,7 +106,7 @@ class MPU6050Sensor : public MPUSensor {
     public:
         MPU6050Sensor() = default;
         ~MPU6050Sensor() override  = default;
-        void motionSetup(DeviceConfig * config) override final;
+        void motionSetup() override final;
         void motionLoop() override final;
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
@@ -125,7 +125,7 @@ class MPU9250Sensor : public MPUSensor {
     public:
         MPU9250Sensor() = default;
         ~MPU9250Sensor() override  = default;
-        void motionSetup(DeviceConfig * config) override final;
+        void motionSetup() override final;
         void motionLoop() override final;
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
