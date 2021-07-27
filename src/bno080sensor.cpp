@@ -48,7 +48,7 @@ void BNO080Sensor::setupBNO080(bool auxilary, uint8_t addr, uint8_t intPin) {
     this->auxilary = auxilary;
 }
 
-void BNO080Sensor::motionSetup(DeviceConfig * config)
+void BNO080Sensor::motionSetup()
 {
 #ifdef FULL_DEBUG
         imu.enableDebugging(Serial);
@@ -62,9 +62,17 @@ void BNO080Sensor::motionSetup(DeviceConfig * config)
     Serial.print("[NOTICE] IMU BNO08X: Connected to ");
     Serial.print(IMU_NAME);
     Serial.print(" on 0x");
-    if(addr < 16)
-        Serial.print("0");
-    Serial.println(addr, HEX);
+    Serial.print(addr, HEX);
+    Serial.print(". Info: SW Version Major: 0x");
+    Serial.print(imu.swMajor, HEX);
+    Serial.print(" SW Version Minor: 0x");
+    Serial.print(imu.swMinor, HEX);
+    Serial.print(" SW Part Number: 0x");
+    Serial.print(imu.swPartNumber, HEX);
+    Serial.print(" SW Build Number: 0x");
+    Serial.print(imu.swBuildNumber, HEX);
+    Serial.print(" SW Version Patch: 0x");
+    Serial.println(imu.swVersionPatch, HEX);
 #if defined(BNO_HAS_ARVR_STABILIZATION) && BNO_HAS_ARVR_STABILIZATION
         imu.enableARVRStabilizedGameRotationVector(10);
 #else

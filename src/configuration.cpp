@@ -24,6 +24,9 @@
 #include <EEPROM.h>
 #include "configuration.h"
 
+DeviceConfig * const config{};
+bool configLoaded;
+
 void initializeConfig() {
     EEPROM.begin(sizeof(DeviceConfig) + 1);
 }
@@ -34,12 +37,23 @@ bool hasConfigStored() {
     return hasConfigStored;
 }
 
-void loadConfig(DeviceConfig * cfg) {
-    EEPROM.get(1, cfg);
+DeviceConfig * const getConfigPtr() {
+    if(!configLoaded) {
+        initializeConfig();
+        if(hasConfigStored())
+            EEPROM.get(1, config);
+        configLoaded = true;
+    }
+    return config;
 }
 
-void saveConfig(DeviceConfig * const cfg) {
+void setConfig(DeviceConfig newConfig) {
+    *config = newConfig;
+    saveConfig();
+}
+
+void saveConfig() {
     EEPROM.put(0, true);
-    EEPROM.put(1, cfg);
+    EEPROM.put(1, config);
     EEPROM.commit();
 }

@@ -1,6 +1,6 @@
 #include "sensor.h"
 
-void EmptySensor::motionSetup(DeviceConfig * config) {
+void EmptySensor::motionSetup() {
     // nothing
 }
 void EmptySensor::motionLoop() {

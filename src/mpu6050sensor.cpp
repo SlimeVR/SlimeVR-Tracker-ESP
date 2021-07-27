@@ -27,6 +27,8 @@
 #include "sensor.h"
 #include "udpclient.h"
 #include <i2cscan.h>
+#include "calibration.h"
+#include "configuration.h"
 
 namespace {
     void signalAssert() {
@@ -41,14 +43,15 @@ namespace {
 
 bool hasNewData = false;
 
-void MPU6050Sensor::motionSetup(DeviceConfig *config) {
+void MPU6050Sensor::motionSetup() {
+    DeviceConfig * config = getConfigPtr();
+
     uint8_t addr = 0x68;
 
     if(!I2CSCAN::isI2CExist(addr)) {
         addr = 0x69;
         if(!I2CSCAN::isI2CExist(addr)) {
-            Serial.println("Can't find I2C device on addr 0x4A or 0x4B, scanning for all I2C devices and returning");
-            I2CSCAN::scani2cports();
+            Serial.println("[ERR] Can't find I2C device on addr 0x4A or 0x4B, returning");
             signalAssert();
             return;
         }
@@ -56,7 +59,7 @@ void MPU6050Sensor::motionSetup(DeviceConfig *config) {
 
     imu.initialize();
     if(!imu.testConnection()) {
-        Serial.printf("Can't Communicate with MPU6050, response ");
+        Serial.print("[ERR] Can't communicate with MPU, response ");
         Serial.println(imu.getDeviceID(), HEX);
     }
 
@@ -64,10 +67,11 @@ void MPU6050Sensor::motionSetup(DeviceConfig *config) {
 
     if (devStatus == 0) {
         // turn on the DMP, now that it's ready
-        Serial.println(F("Enabling DMP..."));
+        Serial.println(F("[NOTICE] Enabling DMP..."));
         imu.setDMPEnabled(true);
 
         // Do a quick and dirty calibration. As the imu warms up the offsets will change a bit, but this will be good-enough
+        millis(1000); // A small sleep to give the users a chance to stop it from moving
         imu.CalibrateAccel(6);
         imu.CalibrateGyro(6);
         imu.PrintActiveOffsets();
@@ -76,10 +80,10 @@ void MPU6050Sensor::motionSetup(DeviceConfig *config) {
 
         // TODO: Add interupt support
         // mpuIntStatus = imu.getIntStatus();
-        
-        dmpReady = true; // set our DMP Ready flag so the main loop() function knows it's okay to use it
-        Serial.println(F("DMP ready! Waiting for first interrupt..."));
 
+        // set our DMP Ready flag so the main loop() function knows it's okay to use it
+        Serial.println(F("[NOTICE] DMP ready! Waiting for first interrupt..."));
+        dmpReady = true;
 
         // get expected DMP packet size for later comparison
         packetSize = imu.dmpGetFIFOPacketSize();
@@ -88,7 +92,7 @@ void MPU6050Sensor::motionSetup(DeviceConfig *config) {
         // 1 = initial memory load failed
         // 2 = DMP configuration updates failed
         // (if it's going to break, usually the code will be 1)
-        Serial.print(F("DMP Initialization failed (code "));
+        Serial.print(F("[ERR] DMP Initialization failed (code "));
         Serial.print(devStatus);
         Serial.println(F(")"));
     }
@@ -131,5 +135,28 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     imu.setDMPEnabled(true);
 
     Serial.println("Calibrated!");
+    Serial.println("[NOTICE] Starting offset finder");
+    DeviceConfig * config = getConfigPtr();
+
+    switch(calibrationType) {
+        case CALIBRATION_TYPE_INTERNAL_ACCEL:
+            imu.CalibrateAccel(10);
+            sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+            config->calibration.A_B[0] = imu.getXAccelOffset();
+            config->calibration.A_B[1] = imu.getYAccelOffset();
+            config->calibration.A_B[2] = imu.getZAccelOffset();
+            saveConfig();
+            break;
+        case CALIBRATION_TYPE_INTERNAL_GYRO:
+            imu.CalibrateGyro(10);
+            sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+            config->calibration.G_off[0] = imu.getXGyroOffset();
+            config->calibration.G_off[1] = imu.getYGyroOffset();
+            config->calibration.G_off[2] = imu.getZGyroOffset();
+            saveConfig();
+            break;
+    }
+
+    Serial.println("[NOTICE] Process is over");
     digitalWrite(CALIBRATING_LED, HIGH);
 }

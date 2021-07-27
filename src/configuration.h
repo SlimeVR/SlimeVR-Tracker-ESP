@@ -41,9 +41,8 @@ struct DeviceConfig {
     int deviceMode;
 };
 
-void initializeConfig();
-bool hasConfigStored();
-void loadConfig(DeviceConfig * cfg);
-void saveConfig(DeviceConfig * const cfg);
+DeviceConfig * const getConfigPtr();
+void setConfig(DeviceConfig config);
+void saveConfig();
 
 #endif // _OWO_CONFIG_H_

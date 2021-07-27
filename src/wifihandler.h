@@ -27,7 +27,7 @@
 #include "configuration.h"
 
 bool isWiFiConnected();
-void setUpWiFi(DeviceConfig * const config);
+void setUpWiFi();
 void wifiUpkeep();
 void setWiFiCredentials(const char * SSID, const char * pass);
 

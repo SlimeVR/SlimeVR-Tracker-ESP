@@ -74,19 +74,21 @@ boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, uint8_t intPin)
 		{
 			if (_printDebug == true)
 			{
+				swMajor = shtpData[2];
+				swMinor = shtpData[3];
+				swPartNumber = ((uint32_t)shtpData[7] << 24) | ((uint32_t)shtpData[6] << 16) | ((uint32_t)shtpData[5] << 8) | ((uint32_t)shtpData[4]);
+				swBuildNumber = ((uint32_t)shtpData[11] << 24) | ((uint32_t)shtpData[10] << 16) | ((uint32_t)shtpData[9] << 8) | ((uint32_t)shtpData[8]);
+				swVersionPatch = ((uint16_t)shtpData[13] << 8) | ((uint16_t)shtpData[12]);
 				_debugPort->print(F("SW Version Major: 0x"));
-				_debugPort->print(shtpData[2], HEX);
+				_debugPort->print(swMajor, HEX);
 				_debugPort->print(F(" SW Version Minor: 0x"));
-				_debugPort->print(shtpData[3], HEX);
-				uint32_t SW_Part_Number = ((uint32_t)shtpData[7] << 24) | ((uint32_t)shtpData[6] << 16) | ((uint32_t)shtpData[5] << 8) | ((uint32_t)shtpData[4]);
+				_debugPort->print(swMinor, HEX);
 				_debugPort->print(F(" SW Part Number: 0x"));
-				_debugPort->print(SW_Part_Number, HEX);
-				uint32_t SW_Build_Number = ((uint32_t)shtpData[11] << 24) | ((uint32_t)shtpData[10] << 16) | ((uint32_t)shtpData[9] << 8) | ((uint32_t)shtpData[8]);
+				_debugPort->print(swPartNumber, HEX);
 				_debugPort->print(F(" SW Build Number: 0x"));
-				_debugPort->print(SW_Build_Number, HEX);
-				uint16_t SW_Version_Patch = ((uint16_t)shtpData[13] << 8) | ((uint16_t)shtpData[12]);
+				_debugPort->print(swBuildNumber, HEX);
 				_debugPort->print(F(" SW Version Patch: 0x"));
-				_debugPort->println(SW_Version_Patch, HEX);
+				_debugPort->println(swVersionPatch, HEX);
 			}
 			return (true);
 		}

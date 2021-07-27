@@ -44,7 +44,7 @@
 #define PACKET_ACCEL 4
 #define PACKET_MAG 5
 #define PACKET_RAW_CALIBRATION_DATA 6
-#define PACKET_GYRO_CALIBRATION_DATA 7
+#define PACKET_CALIBRATION_FINISHED 7
 #define PACKET_CONFIG 8
 #define PACKET_RAW_MAGENTOMETER 9
 #define PACKET_PING_PONG 10
@@ -76,7 +76,9 @@ void sendConfig(DeviceConfig * const config, int type);
 void sendFloat(float const value, int type);
 void sendByte(unsigned char const value, int type);
 void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorState, int type);
-void sendRawCalibrationData(int * const data, int type);
+void sendRawCalibrationData(int * const data, int calibrationType, unsigned char const sensorId, int type);
+void sendRawCalibrationData(float * const data, int calibrationType, unsigned char const sensorId, int type);
+void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, int type);
 void setConfigRecievedCallback(configRecievedCallback);
 void setCommandRecievedCallback(commandRecievedCallback);
 void sendSerial(uint8_t *const data, int length, int type);

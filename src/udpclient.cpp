@@ -221,7 +221,7 @@ void sendQuat(float *const quaternion, int type)
     }
 }
 
-void sendConfig(DeviceConfig *const config, int type)
+void sendConfig(DeviceConfig * const config, int type)
 {
     if (Udp.beginPacket(host, port) > 0)
     {
@@ -242,24 +242,67 @@ void sendConfig(DeviceConfig *const config, int type)
     }
 }
 
-void sendRawCalibrationData(int *const data, int type)
+void sendRawCalibrationData(int * const data, int calibrationType, unsigned char const sensorId, int type)
 {
     if (Udp.beginPacket(host, port) > 0)
     {
-        int ax = data[0];
-        int ay = data[1];
-        int az = data[2];
-        int mx = data[3];
-        int my = data[4];
-        int mz = data[5];
+        int x = data[0];
+        int y = data[1];
+        int z = data[2];
         sendType(type);
         sendPacketNumber();
-        Udp.write(convert_to_chars(ax, buf), sizeof(ax));
-        Udp.write(convert_to_chars(ay, buf), sizeof(ay));
-        Udp.write(convert_to_chars(az, buf), sizeof(az));
-        Udp.write(convert_to_chars(mx, buf), sizeof(mx));
-        Udp.write(convert_to_chars(my, buf), sizeof(my));
-        Udp.write(convert_to_chars(mz, buf), sizeof(mz));
+        Udp.write(&sensorId, 1);
+        Udp.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
+        Udp.write(convert_to_chars(x, buf), sizeof(x));
+        Udp.write(convert_to_chars(y, buf), sizeof(y));
+        Udp.write(convert_to_chars(z, buf), sizeof(z));
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
+void sendRawCalibrationData(float * const data, int calibrationType, unsigned char const sensorId, int type)
+{
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        float x = data[0];
+        float y = data[1];
+        float z = data[2];
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&sensorId, 1);
+        Udp.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
+        Udp.write(convert_to_chars(x, buf), sizeof(x));
+        Udp.write(convert_to_chars(y, buf), sizeof(y));
+        Udp.write(convert_to_chars(z, buf), sizeof(z));
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
+void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, int type) {
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&sensorId, 1);
+        Udp.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
         if (Udp.endPacket() == 0)
         {
             //Serial.print("Write error: ");
