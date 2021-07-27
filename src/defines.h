@@ -34,21 +34,21 @@
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
   #define BNO_HAS_ARVR_STABILIZATION true
-  #define I2C_SPEED SECOND_IMU ? 400000 : 100000
+  #define I2C_SPEED 400000
 #elif IMU == IMU_BNO080
   #define IMU_NAME "BNO080"
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
   #define BNO_HAS_ARVR_STABILIZATION false
-  #define I2C_SPEED SECOND_IMU ? 400000 : 100000
+  #define I2C_SPEED 400000
 #elif IMU == IMU_BNO055
   #define IMU_NAME "BNO055"
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
   #define BNO_HAS_ARVR_STABILIZATION false
-  #define I2C_SPEED SECOND_IMU ? 400000 : 100000
+  #define I2C_SPEED 400000
 #elif IMU == IMU_MPU9250
   #define IMU_NAME "MPU9250"
   #define IMU_HAS_ACCELL true
