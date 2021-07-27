@@ -52,12 +52,12 @@ void setUpWiFi() {
     Serial.println("[NOTICE] Setting up WiFi");
     WiFi.mode(WIFI_STA);
     WiFi.hostname("SlimeVR FBT Tracker");
-#if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
-    WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
-#else
 #ifdef ESP32
     WiFi.begin();
 #endif
+#if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
+    WiFi.begin(STRINGIFY(WIFI_CREDS_SSID), STRINGIFY(WIFI_CREDS_PASSWD));
+#else
     WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
 #endif
     wifiConnectionTimeout = millis();
