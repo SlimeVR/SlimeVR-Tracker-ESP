@@ -26,7 +26,7 @@
 // List of constants used in other places
 #define IMU_MPU9250 1
 #define IMU_MPU6500 2
-#define IMU_BNO6050 2
+#define IMU_MPU6050 2
 #define IMU_BNO080 3
 #define IMU_BNO085 4
 #define IMU_BNO055 5
