@@ -125,18 +125,11 @@ void MPU6050Sensor::sendData() {
 
 void MPU6050Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
-    Serial.println("Calibrating IMU");
-
+    
     Serial.println("Put down the device and wait for baseline gyro reading calibration");
-    delay(2000);
-
-    imu.setDMPEnabled(false);
-    imu.CalibrateAccel(6);
-    imu.CalibrateGyro(6);
-    imu.setDMPEnabled(true);
 
     Serial.println("Calibrated!");
-    Serial.println("[NOTICE] Starting offset finder");
+    Serial.println("[NOTICE] Starting IMU Calibration");
     DeviceConfig * config = getConfigPtr();
 
     switch(calibrationType) {
