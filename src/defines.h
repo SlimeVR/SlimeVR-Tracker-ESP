@@ -81,7 +81,7 @@
 #elif BOARD == BOARD_NODEMCU
   #define PIN_IMU_SDA D3
   #define PIN_IMU_SCL D2
-  #define PIN_IMU_INT D1
+  #define PIN_IMU_INT D4
   #define BNO_ADDR_1 0x4A
   #define BNO_ADDR_2 0x4B
 #elif BOARD == BOARD_CUSTOM
@@ -118,12 +118,5 @@
 
 #define batteryADCMultiplier 1.0 / 1024.0 * 5.0
 
-#define FIRMWARE_BUILD_NUMBER 2
-#define FIRMWARE_VERSION "0.0.2"
-#ifdef ESP8266
-  #define HARDWARE_MCU 1
-#elif defined(ESP32)
-  #define HARDWARE_MCU 2
-#else
-  #define HARDWARE_MCU 0
-#endif
+#define FIRMWARE_BUILD_NUMBER 3
+#define FIRMWARE_VERSION "0.0.3"

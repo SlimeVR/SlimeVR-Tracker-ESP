@@ -378,15 +378,21 @@ void sendHandshake() {
     if (Udp.beginPacket(host, port) > 0)
     {
         sendType(3);
-        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t));
+        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t)); // Packet number is always 0 for handshake
         Udp.write(convert_to_chars((uint32_t) BOARD, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) IMU, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) HARDWARE_MCU, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t)); // TODO Send actual IMU hw version read from the chip
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t));
-        Udp.write((const unsigned char *) FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION));
+        Udp.write(convert_to_chars((uint32_t) FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t)); // Firmware build number
+        uint8_t size = (uint8_t) sizeof(FIRMWARE_VERSION);
+        Udp.write(&size, 1); // Firmware version string size
+        Udp.write((const unsigned char *) FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION)); // Firmware version string
+        const char * mac = WiFi.macAddress().c_str();
+        size = (uint8_t) strlen(mac);
+        Udp.write(&size, 1); // MAC address string size
+        Udp.write(mac, strlen(mac)); // MAC address string
         if (Udp.endPacket() == 0)
         {
             Serial.print("Write error: ");
