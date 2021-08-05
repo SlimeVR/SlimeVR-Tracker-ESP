@@ -1,8 +1,8 @@
 #include "i2cscan.h"
 
 #ifdef ESP8266
-uint8_t portArray[] = {16, 5, 4, 0, 2, 14, 12, 13};
-String portMap[] = {"D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"};
+uint8_t portArray[] = {16, 5, 4, 2, 14, 12, 13};
+String portMap[] = {"D0", "D1", "D2", "D4", "D5", "D6", "D7"};
 #elif defined(ESP32)
 uint8_t portArray[] = {4, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
 String portMap[] = {"4", "12", "13", "14", "15", "16", "17", "18", "19", "21", "22", "23", "25", "26", "27", "32", "33"};
