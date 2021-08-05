@@ -79,10 +79,10 @@
     #define BNO_ADDR_2 0x4B
   #endif
 #elif BOARD == BOARD_NODEMCU
-  #define PIN_IMU_SDA D3
-  #define PIN_IMU_SCL D2
-  #define PIN_IMU_INT D4
-  #define PIN_IMU_INT_2 D5
+  #define PIN_IMU_SDA D2
+  #define PIN_IMU_SCL D1
+  #define PIN_IMU_INT D5
+  #define PIN_IMU_INT_2 D6
   #define BNO_ADDR_1 0x4A
   #define BNO_ADDR_2 0x4B
 #elif BOARD == BOARD_CUSTOM
