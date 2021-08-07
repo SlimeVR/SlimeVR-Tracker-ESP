@@ -53,7 +53,7 @@ namespace {
 }
 
 void MPU9250Sensor::motionSetup() {
-    DeviceConfig * config = getConfigPtr();
+    DeviceConfig * const config = getConfigPtr();
     calibration = &config->calibration;
     uint8_t addr = 0x68;
     if(!I2CSCAN::isI2CExist(addr)) {

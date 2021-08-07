@@ -44,7 +44,7 @@ bool hasNewData = false;
 void gatherCalibrationData(MPU9250 &imu);
 
 void MPU6050Sensor::motionSetup() {
-    DeviceConfig * config = getConfigPtr();
+    DeviceConfig * const config = getConfigPtr();
 
     uint8_t addr = 0x68;
     if(!I2CSCAN::isI2CExist(addr)) {
@@ -141,7 +141,7 @@ void MPU6050Sensor::sendData() {
 void MPU6050Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
     Serial.println("[NOTICE] Starting offset finder");
-    DeviceConfig * config = getConfigPtr();
+    DeviceConfig * const config = getConfigPtr();
 
     switch(calibrationType) {
         case CALIBRATION_TYPE_INTERNAL_ACCEL:

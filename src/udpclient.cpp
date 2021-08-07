@@ -392,7 +392,7 @@ void sendHandshake() {
         const char * mac = WiFi.macAddress().c_str();
         size = (uint8_t) strlen(mac);
         Udp.write(&size, 1); // MAC address string size
-        Udp.write(mac, strlen(mac)); // MAC address string
+        Udp.write((uint8_t *) mac, strlen(mac)); // MAC address string
         if (Udp.endPacket() == 0)
         {
             Serial.print("Write error: ");
