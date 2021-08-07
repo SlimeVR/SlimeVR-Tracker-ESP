@@ -24,7 +24,7 @@
 #include <EEPROM.h>
 #include "configuration.h"
 
-DeviceConfig * const config{};
+DeviceConfig * config{};
 bool configLoaded;
 
 void initializeConfig() {
@@ -37,7 +37,7 @@ bool hasConfigStored() {
     return hasConfigStored;
 }
 
-DeviceConfig * const getConfigPtr() {
+DeviceConfig *const getConfigPtr() {
     if(!configLoaded) {
         initializeConfig();
         if(hasConfigStored())
