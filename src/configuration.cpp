@@ -41,21 +41,17 @@ DeviceConfig *const getConfigPtr()
 {
     if (!configLoaded)
     {
-        Serial.println("[DEBUG] Loading config EEPROM");
         initializeConfig();
         if (hasConfigStored())
         {
-            Serial.println("[DEBUG] Something stored, getting...");
             EEPROM.get(1, config);
         }
         else
         {
-            Serial.println("[DEBUG] Setting baseline values");
             auto start = DeviceConfig{CalibrationConfig{}, 0, 0};
             config = &start;
             setConfig(start);
         }
-        Serial.println("config loaded");
         configLoaded = true;
     }
     return config;
