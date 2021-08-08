@@ -42,10 +42,10 @@ namespace {
     }
 }
 
-void BNO080Sensor::setupBNO080(bool auxilary, uint8_t addr, uint8_t intPin) {
+void BNO080Sensor::setupBNO080(uint8_t sensorId, uint8_t addr, uint8_t intPin) {
     this->addr = addr;
     this->intPin = intPin;
-    this->auxilary = auxilary;
+    this->sensorId = sensorId;
 }
 
 void BNO080Sensor::motionSetup()
@@ -74,10 +74,23 @@ void BNO080Sensor::motionSetup()
     Serial.print(" SW Version Patch: 0x");
     Serial.println(imu.swVersionPatch, HEX);
 #if defined(BNO_HAS_ARVR_STABILIZATION) && BNO_HAS_ARVR_STABILIZATION
-        imu.enableARVRStabilizedGameRotationVector(10);
+        if(useMagentometerAllTheTime) {
+            imu.enableARVRStabilizedRotationVector(10);
+        } else {
+            imu.enableARVRStabilizedGameRotationVector(10);
+            if(useMagentometerCorrection)
+                imu.enableARVRStabilizedRotationVector(1000);
+        }
 #else
+    if(useMagentometerAllTheTime) {
+        imu.enableRotationVector(10);
+    } else {
         imu.enableGameRotationVector(10);
+        if(useMagentometerCorrection)
+            imu.enableRotationVector(1000);
+    }
 #endif
+    imu.enableTapDetector(100);
     lastReset = imu.resetReason();
     lastData = millis();
     working = true;
@@ -91,13 +104,28 @@ void BNO080Sensor::motionLoop()
     {
         lastReset = -1;
         lastData = millis();
-        quaternion.x = imu.getQuatI();
-        quaternion.y = imu.getQuatJ();
-        quaternion.z = imu.getQuatK();
-        quaternion.w = imu.getQuatReal();
-        quaternion *= sensorOffset;
-        newData = true;
-        if(intPin == 255)
+        if(useMagentometerAllTheTime || !useMagentometerCorrection) {
+            if(imu.hasNewQuat()) {
+                imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
+                quaternion *= sensorOffset;
+                newData = true;
+            }
+        } else {
+            if(imu.hasNewGameQuat()) {
+                imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
+                quaternion *= sensorOffset;
+                newData = true;
+            }
+            if(imu.hasNewMagQuat()) {
+                imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
+                quaternion *= sensorOffset;
+                newMagData = true;
+            }
+        }
+        if(imu.getTapDetected()) {
+            tap = imu.getTapDetector();
+        }
+        if(intPin == 255 || imu.I2CTimedOut())
             break;
     }
     if(lastData + 1000 < millis() && setUp) {
@@ -117,7 +145,9 @@ void BNO080Sensor::motionLoop()
 void BNO080Sensor::sendData() {
     if(newData) {
         newData = false;
-        sendQuat(&quaternion, auxilary ? PACKET_ROTATION_2 : PACKET_ROTATION);
+        sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
+        if(useMagentometerAllTheTime)
+            sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGENTOMETER_ACCURACY);
 #ifdef FULL_DEBUG
             Serial.print("[DBG] Quaternion: ");
             Serial.print(quaternion.x);
@@ -128,6 +158,15 @@ void BNO080Sensor::sendData() {
             Serial.print(",");
             Serial.println(quaternion.w);
 #endif
+    }
+    if(newMagData) {
+        newMagData = false;
+        sendRotationData(&quaternion, DATA_TYPE_CORRECTION, calibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
+        sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGENTOMETER_ACCURACY);
+    }
+    if(tap != 0) {
+        sendByte(tap, sensorId, PACKET_TAP);
+        tap = 0;
     }
 }
 

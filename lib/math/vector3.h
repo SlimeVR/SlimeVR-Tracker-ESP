@@ -44,30 +44,30 @@ struct Vector3 {
 
 	union {
 		struct {
-			double x;
-			double y;
-			double z;
+			float x;
+			float y;
+			float z;
 		};
 
-		double coord[3] = { 0 };
+		float coord[3] = { 0 };
 	};
 
-	inline const double& operator[](int p_axis) const {
+	inline const float& operator[](int p_axis) const {
 		return coord[p_axis];
 	}
 
-	inline double& operator[](int p_axis) {
+	inline float& operator[](int p_axis) {
 		return coord[p_axis];
 	}
 
-	void set_axis(int p_axis, double p_value);
-	double get_axis(int p_axis) const;
+	void set_axis(int p_axis, float p_value);
+	float get_axis(int p_axis) const;
 
 	int min_axis() const;
 	int max_axis() const;
 
-	inline double length() const;
-	inline double length_squared() const;
+	inline float length() const;
+	inline float length_squared() const;
 
 	inline void normalize();
 	inline Vector3 normalized() const;
@@ -79,19 +79,19 @@ struct Vector3 {
 	// void snap(Vector3 p_val);
 	// Vector3 snapped(Vector3 p_val) const;
 
-	void rotate(const Vector3& p_axis, double p_phi);
-	Vector3 rotated(const Vector3& p_axis, double p_phi) const;
+	void rotate(const Vector3& p_axis, float p_phi);
+	Vector3 rotated(const Vector3& p_axis, float p_phi) const;
 
 	/* Static Methods between 2 vector3s */
 
-	inline Vector3 lerp(const Vector3& p_b, double p_t) const;
-	inline Vector3 slerp(const Vector3& p_b, double p_t) const;
-	Vector3 cubic_interpolate(const Vector3& p_b, const Vector3& p_pre_a, const Vector3& p_post_b, double p_t) const;
-	Vector3 cubic_interpolaten(const Vector3& p_b, const Vector3& p_pre_a, const Vector3& p_post_b, double p_t) const;
-	Vector3 move_toward(const Vector3& p_to, const double p_delta) const;
+	inline Vector3 lerp(const Vector3& p_b, float p_t) const;
+	inline Vector3 slerp(const Vector3& p_b, float p_t) const;
+	Vector3 cubic_interpolate(const Vector3& p_b, const Vector3& p_pre_a, const Vector3& p_post_b, float p_t) const;
+	Vector3 cubic_interpolaten(const Vector3& p_b, const Vector3& p_pre_a, const Vector3& p_post_b, float p_t) const;
+	Vector3 move_toward(const Vector3& p_to, const float p_delta) const;
 
 	inline Vector3 cross(const Vector3& p_b) const;
-	inline double dot(const Vector3& p_b) const;
+	inline float dot(const Vector3& p_b) const;
 	Basis outer(const Vector3& p_b) const;
 	Basis to_diagonal_matrix() const;
 
@@ -100,14 +100,14 @@ struct Vector3 {
 	inline Vector3 sign() const;
 	inline Vector3 ceil() const;
 
-	inline double distance_to(const Vector3& p_b) const;
-	inline double distance_squared_to(const Vector3& p_b) const;
+	inline float distance_to(const Vector3& p_b) const;
+	inline float distance_squared_to(const Vector3& p_b) const;
 
-	inline Vector3 posmod(const double p_mod) const;
+	inline Vector3 posmod(const float p_mod) const;
 	inline Vector3 posmodv(const Vector3& p_modv) const;
 	inline Vector3 project(const Vector3& p_b) const;
 
-	inline double angle_to(const Vector3& p_b) const;
+	inline float angle_to(const Vector3& p_b) const;
 	inline Vector3 direction_to(const Vector3& p_b) const;
 
 	inline Vector3 slide(const Vector3& p_normal) const;
@@ -127,10 +127,10 @@ struct Vector3 {
 	inline Vector3& operator/=(const Vector3& p_v);
 	inline Vector3 operator/(const Vector3& p_v) const;
 
-	inline Vector3& operator*=(double p_scalar);
-	inline Vector3 operator*(double p_scalar) const;
-	inline Vector3& operator/=(double p_scalar);
-	inline Vector3 operator/(double p_scalar) const;
+	inline Vector3& operator*=(float p_scalar);
+	inline Vector3 operator*(float p_scalar) const;
+	inline Vector3& operator/=(float p_scalar);
+	inline Vector3 operator/(float p_scalar) const;
 
 	inline Vector3 operator-() const;
 
@@ -142,7 +142,7 @@ struct Vector3 {
 	inline bool operator>=(const Vector3& p_v) const;
 
 	inline Vector3() {}
-	inline Vector3(double p_x, double p_y, double p_z) {
+	inline Vector3(float p_x, float p_y, float p_z) {
 		x = p_x;
 		y = p_y;
 		z = p_z;
@@ -158,7 +158,7 @@ Vector3 Vector3::cross(const Vector3& p_b) const {
 	return ret;
 }
 
-double Vector3::dot(const Vector3& p_b) const {
+float Vector3::dot(const Vector3& p_b) const {
 	return x * p_b.x + y * p_b.y + z * p_b.z;
 }
 
@@ -178,27 +178,27 @@ Vector3 Vector3::ceil() const {
 	return Vector3(std::ceil(x), std::ceil(y), std::ceil(z));
 }
 
-Vector3 Vector3::lerp(const Vector3& p_b, double p_t) const {
+Vector3 Vector3::lerp(const Vector3& p_b, float p_t) const {
 	return Vector3(
 		x + (p_t * (p_b.x - x)),
 		y + (p_t * (p_b.y - y)),
 		z + (p_t * (p_b.z - z)));
 }
 
-Vector3 Vector3::slerp(const Vector3& p_b, double p_t) const {
-	double theta = angle_to(p_b);
+Vector3 Vector3::slerp(const Vector3& p_b, float p_t) const {
+	float theta = angle_to(p_b);
 	return rotated(cross(p_b).normalized(), theta * p_t);
 }
 
-double Vector3::distance_to(const Vector3& p_b) const {
+float Vector3::distance_to(const Vector3& p_b) const {
 	return (p_b - *this).length();
 }
 
-double Vector3::distance_squared_to(const Vector3& p_b) const {
+float Vector3::distance_squared_to(const Vector3& p_b) const {
 	return (p_b - *this).length_squared();
 }
 
-Vector3 Vector3::posmod(const double p_mod) const {
+Vector3 Vector3::posmod(const float p_mod) const {
 	return Vector3(Math::fposmod(x, p_mod), Math::fposmod(y, p_mod), Math::fposmod(z, p_mod));
 }
 
@@ -210,7 +210,7 @@ Vector3 Vector3::project(const Vector3& p_b) const {
 	return p_b * (dot(p_b) / p_b.length_squared());
 }
 
-double Vector3::angle_to(const Vector3& p_b) const {
+float Vector3::angle_to(const Vector3& p_b) const {
 	return std::atan2(cross(p_b).length(), dot(p_b));
 }
 
@@ -266,29 +266,29 @@ Vector3 Vector3::operator/(const Vector3& p_v) const {
 	return Vector3(x / p_v.x, y / p_v.y, z / p_v.z);
 }
 
-Vector3& Vector3::operator*=(double p_scalar) {
+Vector3& Vector3::operator*=(float p_scalar) {
 	x *= p_scalar;
 	y *= p_scalar;
 	z *= p_scalar;
 	return *this;
 }
 
-inline Vector3 operator*(double p_scalar, const Vector3& p_vec) {
+inline Vector3 operator*(float p_scalar, const Vector3& p_vec) {
 	return p_vec * p_scalar;
 }
 
-Vector3 Vector3::operator*(double p_scalar) const {
+Vector3 Vector3::operator*(float p_scalar) const {
 	return Vector3(x * p_scalar, y * p_scalar, z * p_scalar);
 }
 
-Vector3& Vector3::operator/=(double p_scalar) {
+Vector3& Vector3::operator/=(float p_scalar) {
 	x /= p_scalar;
 	y /= p_scalar;
 	z /= p_scalar;
 	return *this;
 }
 
-Vector3 Vector3::operator/(double p_scalar) const {
+Vector3 Vector3::operator/(float p_scalar) const {
 	return Vector3(x / p_scalar, y / p_scalar, z / p_scalar);
 }
 
@@ -364,33 +364,33 @@ inline Vector3 vec3_cross(const Vector3& p_a, const Vector3& p_b) {
 	return p_a.cross(p_b);
 }
 
-inline double vec3_dot(const Vector3& p_a, const Vector3& p_b) {
+inline float vec3_dot(const Vector3& p_a, const Vector3& p_b) {
 	return p_a.dot(p_b);
 }
 
-double Vector3::length() const {
-	double x2 = x * x;
-	double y2 = y * y;
-	double z2 = z * z;
+float Vector3::length() const {
+	float x2 = x * x;
+	float y2 = y * y;
+	float z2 = z * z;
 
 	return std::sqrt(x2 + y2 + z2);
 }
 
-double Vector3::length_squared() const {
-	double x2 = x * x;
-	double y2 = y * y;
-	double z2 = z * z;
+float Vector3::length_squared() const {
+	float x2 = x * x;
+	float y2 = y * y;
+	float z2 = z * z;
 
 	return x2 + y2 + z2;
 }
 
 void Vector3::normalize() {
-	double lengthsq = length_squared();
+	float lengthsq = length_squared();
 	if (lengthsq == 0) {
 		x = y = z = 0;
 	}
 	else {
-		double length = std::sqrt(lengthsq);
+		float length = std::sqrt(lengthsq);
 		x /= length;
 		y /= length;
 		z /= length;
