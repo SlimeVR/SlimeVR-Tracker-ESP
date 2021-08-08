@@ -37,11 +37,21 @@ bool hasConfigStored() {
     return hasConfigStored;
 }
 
-DeviceConfig *const getConfigPtr() {
-    if(!configLoaded) {
+DeviceConfig *const getConfigPtr()
+{
+    if (!configLoaded)
+    {
         initializeConfig();
-        if(hasConfigStored())
+        if (hasConfigStored())
+        {
             EEPROM.get(1, config);
+        }
+        else
+        {
+            auto start = DeviceConfig{CalibrationConfig{}, 0, 0};
+            config = &start;
+            setConfig(start);
+        }
         configLoaded = true;
     }
     return config;
