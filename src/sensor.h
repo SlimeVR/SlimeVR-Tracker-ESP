@@ -26,6 +26,7 @@
 
 #include <BNO080.h>
 #include <MPU9250.h>
+#include <MPU6050.h>
 #include <quat.h>
 #include <vector3.h>
 #include "configuration.h"
@@ -98,7 +99,6 @@ class MPUSensor : public Sensor {
         MPUSensor() = default;
         ~MPUSensor() override = default;
     protected:
-        MPU9250 imu {};
         float q[4] {1.0, 0.0, 0.0, 0.0};
 };
 
@@ -111,6 +111,7 @@ class MPU6050Sensor : public MPUSensor {
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
     private:
+        MPU6050 imu {};
         Quaternion rawQuat {};
         // MPU dmp control/status vars
         bool dmpReady{false};  // set true if DMP init was successful

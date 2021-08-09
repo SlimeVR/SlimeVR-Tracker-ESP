@@ -21,7 +21,9 @@
     THE SOFTWARE.
 */
 
-#include "MPU9250.h"
+#include "MPU6050_6Axis_MotionApps20.h"
+// #include "MPU6050.h" // not necessary if using MotionApps include file
+
 #include "sensor.h"
 #include "udpclient.h"
 #include <i2cscan.h>
@@ -41,12 +43,11 @@ namespace {
 
 bool hasNewData = false;
 
-void gatherCalibrationData(MPU9250 &imu);
-
 void MPU6050Sensor::motionSetup() {
     DeviceConfig * const config = getConfigPtr();
 
     uint8_t addr = 0x68;
+
     if(!I2CSCAN::isI2CExist(addr)) {
         addr = 0x69;
         if(!I2CSCAN::isI2CExist(addr)) {
@@ -55,27 +56,30 @@ void MPU6050Sensor::motionSetup() {
             return;
         }
     }
-    // initialize device
-    imu.initialize(addr);
+
+    imu.initialize();
     if(!imu.testConnection()) {
         Serial.print("[ERR] Can't communicate with MPU, response ");
         Serial.println(imu.getDeviceID(), HEX);
     }
+
     devStatus = imu.dmpInitialize();
 
-    imu.setXGyroOffset(config->calibration.G_off[0]);
-    imu.setYGyroOffset(config->calibration.G_off[1]);
-    imu.setZGyroOffset(config->calibration.G_off[2]);
-    imu.setXAccelOffset(config->calibration.A_B[0]);
-    imu.setYAccelOffset(config->calibration.A_B[1]);
-    imu.setZAccelOffset(config->calibration.A_B[2]);
-
-    // make sure it worked (returns 0 if so)
     if (devStatus == 0) {
         // turn on the DMP, now that it's ready
         Serial.println(F("[NOTICE] Enabling DMP..."));
         imu.setDMPEnabled(true);
-        mpuIntStatus = imu.getIntStatus();
+
+        // Do a quick and dirty calibration. As the imu warms up the offsets will change a bit, but this will be good-enough
+        delay(1000); // A small sleep to give the users a chance to stop it from moving
+        imu.CalibrateAccel(6);
+        imu.CalibrateGyro(6);
+        imu.PrintActiveOffsets();
+
+        imu.setDMPEnabled(true);
+
+        // TODO: Add interupt support
+        // mpuIntStatus = imu.getIntStatus();
 
         // set our DMP Ready flag so the main loop() function knows it's okay to use it
         Serial.println(F("[NOTICE] DMP ready! Waiting for first interrupt..."));
@@ -95,38 +99,18 @@ void MPU6050Sensor::motionSetup() {
 }
 
 void MPU6050Sensor::motionLoop() {
-    // if programming failed, don't try to do anything
-    if (!dmpReady) return;
-    mpuIntStatus = imu.getIntStatus();
+    if(!dmpReady)
+        return;
 
-    // get current FIFO count
-    fifoCount = imu.getFIFOCount();
-
-    // check for overflow (this should never happen unless our code is too inefficient)
-    if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
-        // reset so we can continue cleanly
-        imu.resetFIFO();
-        Serial.println(F("FIFO overflow!"));
-
-        // otherwise, check for DMP data ready interrupt (this should happen frequently)
-    } else if (mpuIntStatus & 0x02) {
-        // wait for correct available data length, should be a VERY short wait
-        while (fifoCount < packetSize) fifoCount = imu.getFIFOCount();
-
-        // read a packet from FIFO
-        imu.getFIFOBytes(fifoBuffer, packetSize);
-
-        // track FIFO count here in case there is > 1 packet available
-        // (this lets us immediately read more without waiting for an interrupt)
-        fifoCount -= packetSize;
-
+    if(imu.dmpGetCurrentFIFOPacket(fifoBuffer)) {
         imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
+
         q[0] = rawQuat.x;
         q[1] = rawQuat.y;
         q[2] = rawQuat.z;
         q[3] = rawQuat.w;
         quaternion.set(-q[1], q[0], q[2], q[3]);
-        quaternion *= sensorOffset;
+
         hasNewData = true;
     }
 }
@@ -140,6 +124,17 @@ void MPU6050Sensor::sendData() {
 
 void MPU6050Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
+    Serial.println("Calibrating IMU");
+
+    Serial.println("Put down the device and wait for baseline gyro reading calibration");
+    delay(2000);
+
+    imu.setDMPEnabled(false);
+    imu.CalibrateAccel(6);
+    imu.CalibrateGyro(6);
+    imu.setDMPEnabled(true);
+
+    Serial.println("Calibrated!");
     Serial.println("[NOTICE] Starting offset finder");
     DeviceConfig * const config = getConfigPtr();
 
