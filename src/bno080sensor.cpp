@@ -79,7 +79,7 @@ void BNO080Sensor::motionSetup()
         } else {
             imu.enableARVRStabilizedGameRotationVector(10);
             if(useMagentometerCorrection)
-                imu.enableARVRStabilizedRotationVector(1000);
+                imu.enableRotationVector(1000);
         }
 #else
     if(useMagentometerAllTheTime) {
