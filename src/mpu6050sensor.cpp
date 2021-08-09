@@ -22,7 +22,6 @@
 */
 
 #include "MPU6050_6Axis_MotionApps20.h"
-// #include "MPU6050.h" // not necessary if using MotionApps include file
 
 #include "sensor.h"
 #include "udpclient.h"
@@ -44,7 +43,8 @@ namespace {
 bool hasNewData = false;
 
 void MPU6050Sensor::motionSetup() {
-    DeviceConfig * const config = getConfigPtr();
+    //DeviceConfig * const config = getConfigPtr();
+    sensorOffset = {Quat(Vector3(0, 0, 1), IMU_ROTATION - PI / 2.0)}; // MPU has different offset, but we want to use the same board orientation as BNO
 
     uint8_t addr = 0x68;
 
@@ -56,8 +56,7 @@ void MPU6050Sensor::motionSetup() {
             return;
         }
     }
-
-    imu.initialize();
+    imu.initialize(addr);
     if(!imu.testConnection()) {
         Serial.print("[ERR] Can't communicate with MPU, response ");
         Serial.println(imu.getDeviceID(), HEX);
@@ -110,7 +109,7 @@ void MPU6050Sensor::motionLoop() {
         q[2] = rawQuat.z;
         q[3] = rawQuat.w;
         quaternion.set(-q[1], q[0], q[2], q[3]);
-
+        quaternion *= sensorOffset;
         hasNewData = true;
     }
 }
