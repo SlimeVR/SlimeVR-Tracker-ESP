@@ -54,6 +54,8 @@
 #define PACKET_RESET_REASON 14
 #define PACKET_SENSOR_INFO 15
 #define PACKET_ROTATION_2 16
+#define PACKET_ROTATION_DATA 17
+#define PACKET_MAGENTOMETER_ACCURACY 18
 
 #define PACKET_RECIEVE_HEARTBEAT 1
 #define PACKET_RECIEVE_VIBRATE 2
@@ -71,10 +73,13 @@ void connectClient();
 void clientUpdate(Sensor * const sensor, Sensor * const sensor2);
 void sendQuat(float * const quaternion, int type);
 void sendQuat(Quat * const quaternion, int type);
+void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId, int type);
+void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type);
 void sendVector(float * const result, int type);
 void sendConfig(DeviceConfig * const config, int type);
 void sendFloat(float const value, int type);
 void sendByte(unsigned char const value, int type);
+void sendByte(uint8_t const value, uint8_t sensorId, int type);
 void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorState, int type);
 void sendRawCalibrationData(int * const data, int calibrationType, unsigned char const sensorId, int type);
 void sendRawCalibrationData(float * const data, int calibrationType, unsigned char const sensorId, int type);

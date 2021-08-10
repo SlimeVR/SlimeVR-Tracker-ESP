@@ -354,6 +354,7 @@ uint16_t BNO080::parseInputReport(void)
 		shtpData[5] == SENSOR_REPORTID_AR_VR_STABILIZED_ROTATION_VECTOR ||
 		shtpData[5] == SENSOR_REPORTID_AR_VR_STABILIZED_GAME_ROTATION_VECTOR)
 	{
+		hasNewQuaternion = true;
 		quatAccuracy = status;
 		rawQuatI = data1;
 		rawQuatJ = data2;
@@ -363,10 +364,29 @@ uint16_t BNO080::parseInputReport(void)
 		//Only available on rotation vector and ar/vr stabilized rotation vector,
 		// not game rot vector and not ar/vr stabilized rotation vector
 		rawQuatRadianAccuracy = data5;
+
+		if(shtpData[5] == SENSOR_REPORTID_ROTATION_VECTOR || shtpData[5] == SENSOR_REPORTID_AR_VR_STABILIZED_ROTATION_VECTOR) {
+			hasNewMagQuaternion = true;
+			quatMagAccuracy = status;
+			rawMagQuatI = data1;
+			rawMagQuatJ = data2;
+			rawMagQuatK = data3;
+			rawMagQuatReal = data4;
+			rawMagQuatRadianAccuracy = data5;
+		}
+		if(shtpData[5] == SENSOR_REPORTID_GAME_ROTATION_VECTOR || shtpData[5] == SENSOR_REPORTID_AR_VR_STABILIZED_GAME_ROTATION_VECTOR) {
+			hasNewGameQuaternion = true;
+			quatGameAccuracy = status;
+			rawGameQuatI = data1;
+			rawGameQuatJ = data2;
+			rawGameQuatK = data3;
+			rawGameQuatReal = data4;
+		}
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_TAP_DETECTOR)
 	{
 		tapDetector = shtpData[5 + 4]; //Byte 4 only
+		hasNewTap = true;
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_STEP_COUNTER)
 	{
@@ -517,6 +537,40 @@ void BNO080::getQuat(float &i, float &j, float &k, float &real, float &radAccura
 	real = qToFloat(rawQuatReal, rotationVector_Q1);
 	radAccuracy = qToFloat(rawQuatRadianAccuracy, rotationVector_Q1);
 	accuracy = quatAccuracy;
+	hasNewQuaternion = false;
+}
+
+void BNO080::getGameQuat(float &i, float &j, float &k, float &real, uint8_t &accuracy)
+{
+	i = qToFloat(rawGameQuatI, rotationVector_Q1);
+	j = qToFloat(rawGameQuatJ, rotationVector_Q1);
+	k = qToFloat(rawGameQuatK, rotationVector_Q1);
+	real = qToFloat(rawGameQuatReal, rotationVector_Q1);
+	accuracy = quatGameAccuracy;
+	hasNewGameQuaternion = false;
+}
+
+void BNO080::getMagQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy)
+{
+	i = qToFloat(rawMagQuatI, rotationVector_Q1);
+	j = qToFloat(rawMagQuatJ, rotationVector_Q1);
+	k = qToFloat(rawMagQuatK, rotationVector_Q1);
+	real = qToFloat(rawMagQuatReal, rotationVector_Q1);
+	radAccuracy = qToFloat(rawMagQuatRadianAccuracy, rotationVector_Q1);
+	accuracy = quatMagAccuracy;
+	hasNewMagQuaternion = false;
+}
+
+bool BNO080::hasNewQuat() {
+	return hasNewQuaternion;
+}
+
+bool BNO080::hasNewGameQuat() {
+	return hasNewGameQuaternion;
+}
+
+bool BNO080::hasNewMagQuat() {
+	return hasNewMagQuaternion;
 }
 
 //Return the rotation vector quaternion I
@@ -745,7 +799,12 @@ uint8_t BNO080::getTapDetector()
 {
 	uint8_t previousTapDetector = tapDetector;
 	tapDetector = 0; //Reset so user code sees exactly one tap
+	hasNewTap = false;
 	return (previousTapDetector);
+}
+
+bool BNO080::getTapDetected() {
+	return hasNewTap;
 }
 
 //Return the step count
@@ -1341,6 +1400,7 @@ void BNO080::saveCalibration()
 //Returns false if failed
 boolean BNO080::waitForI2C()
 {
+	i2cTimedOut = false;
 	for (uint8_t counter = 0; counter < 100; counter++) //Don't got more than 255
 	{
 		if (_i2cPort->available() > 0)
@@ -1350,7 +1410,13 @@ boolean BNO080::waitForI2C()
 
 	if (_printDebug == true)
 		_debugPort->println(F("I2C timeout"));
+	i2cTimedOut = true;
 	return (false);
+}
+
+boolean BNO080::I2CTimedOut()
+{
+	return i2cTimedOut;
 }
 
 //Blocking wait for BNO080 to assert (pull low) the INT pin
