@@ -42,7 +42,7 @@
     BNO055Sensor sensor{};
 #elif IMU == IMU_MPU9250
     MPU9250Sensor sensor{};
-#elif IMU == IMU_MPU6500
+#elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
     MPU6050Sensor sensor{};
 #else
     #error Unsupported IMU
@@ -76,6 +76,7 @@ void commandRecieved(int command, void * const commandData, int commandDataLengt
 }
 
 void processBlinking();
+int I2C_ClearBus();
 
 void setup()
 {
@@ -88,7 +89,10 @@ void setup()
     
     Serial.begin(serialBaudRate);
     setUpSerialCommands();
-
+#if IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_MPU9250
+    I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); // Make sure the bus isn't suck when reseting ESP without powering it down
+    // Do it only for MPU, cause reaction of BNO to this is not investigated yet
+#endif
     // join I2C bus
     Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
 #ifdef ESP8266

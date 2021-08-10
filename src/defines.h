@@ -55,6 +55,12 @@
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
   #define I2C_SPEED 100000
+#elif IMU == IMU_MPU6050
+  #define IMU_NAME "MPU6050"
+  #define IMU_HAS_ACCELL true
+  #define IMU_HAS_GYRO true
+  #define IMU_HAS_MAG false
+  #define I2C_SPEED 100000
 #elif IMU == IMU_MPU6500
   #define IMU_NAME "MPU6500"
   #define IMU_HAS_ACCELL true
