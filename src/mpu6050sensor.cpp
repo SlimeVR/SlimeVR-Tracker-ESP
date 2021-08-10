@@ -65,16 +65,22 @@ void MPU6050Sensor::motionSetup() {
     devStatus = imu.dmpInitialize();
 
     if (devStatus == 0) {
-        // turn on the DMP, now that it's ready
-        Serial.println(F("[NOTICE] Enabling DMP..."));
-        imu.setDMPEnabled(true);
-
+        Serial.println(F("[NOTICE] Performing startup calibration of accel and gyro..."));
         // Do a quick and dirty calibration. As the imu warms up the offsets will change a bit, but this will be good-enough
         delay(1000); // A small sleep to give the users a chance to stop it from moving
-        imu.CalibrateAccel(6);
         imu.CalibrateGyro(6);
+        imu.CalibrateAccel(6);
         imu.PrintActiveOffsets();
 
+        for(int i = 0; i < 5; ++i) {
+            delay(50);
+            digitalWrite(LOADING_LED, LOW);
+            delay(50);
+            digitalWrite(LOADING_LED, HIGH);
+        }
+
+        // turn on the DMP, now that it's ready
+        Serial.println(F("[NOTICE] Enabling DMP..."));
         imu.setDMPEnabled(true);
 
         // TODO: Add interupt support
@@ -129,8 +135,8 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     delay(2000);
 
     imu.setDMPEnabled(false);
-    imu.CalibrateAccel(6);
     imu.CalibrateGyro(6);
+    imu.CalibrateAccel(6);
     imu.setDMPEnabled(true);
 
     Serial.println("Calibrated!");
