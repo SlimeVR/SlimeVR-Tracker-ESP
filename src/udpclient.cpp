@@ -459,10 +459,9 @@ void sendHandshake() {
         uint8_t size = (uint8_t) sizeof(FIRMWARE_VERSION);
         Udp.write(&size, 1); // Firmware version string size
         Udp.write((const unsigned char *) FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION)); // Firmware version string
-        const char * mac = WiFi.macAddress().c_str();
-        size = (uint8_t) strlen(mac);
-        Udp.write(&size, 1); // MAC address string size
-        Udp.write((uint8_t *) mac, strlen(mac)); // MAC address string
+        uint8_t mac[6];
+        WiFi.macAddress(mac);
+        Udp.write(mac, 6); // MAC address string
         if (Udp.endPacket() == 0)
         {
             Serial.print("Write error: ");
