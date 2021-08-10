@@ -87,7 +87,7 @@ class BNO080Sensor : public Sensor {
         uint8_t calibrationAccuracy {0};
         uint8_t magCalibrationAccuracy {0};
         bool useMagentometerAllTheTime {false};
-        bool useMagentometerCorrection {true};
+        bool useMagentometerCorrection {false};
 };
 
 class BNO055Sensor : public Sensor {
