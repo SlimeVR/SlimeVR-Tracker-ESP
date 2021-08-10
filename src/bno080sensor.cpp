@@ -118,7 +118,7 @@ void BNO080Sensor::motionLoop()
             }
             if(imu.hasNewMagQuat()) {
                 imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
-                quaternion *= sensorOffset;
+                magQuaternion *= sensorOffset;
                 newMagData = true;
             }
         }
@@ -161,7 +161,7 @@ void BNO080Sensor::sendData() {
     }
     if(newMagData) {
         newMagData = false;
-        sendRotationData(&quaternion, DATA_TYPE_CORRECTION, calibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
+        sendRotationData(&magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
         sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGENTOMETER_ACCURACY);
     }
     if(tap != 0) {

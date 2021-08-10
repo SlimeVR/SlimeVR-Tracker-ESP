@@ -386,7 +386,7 @@ uint16_t BNO080::parseInputReport(void)
 	else if (shtpData[5] == SENSOR_REPORTID_TAP_DETECTOR)
 	{
 		tapDetector = shtpData[5 + 4]; //Byte 4 only
-		hasNewTap = false;
+		hasNewTap = true;
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_STEP_COUNTER)
 	{
@@ -799,6 +799,7 @@ uint8_t BNO080::getTapDetector()
 {
 	uint8_t previousTapDetector = tapDetector;
 	tapDetector = 0; //Reset so user code sees exactly one tap
+	hasNewTap = false;
 	return (previousTapDetector);
 }
 
