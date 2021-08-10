@@ -43,28 +43,28 @@ class Quat {
 public:
 	union {
 		struct {
-			double x;
-			double y;
-			double z;
-			double w;
+			float x;
+			float y;
+			float z;
+			float w;
 		};
-		double components[4] = { 0, 0, 0, 1.0 };
+		float components[4] = { 0, 0, 0, 1.0 };
 	};
 
-	inline double& operator[](int idx) {
+	inline float& operator[](int idx) {
 		return components[idx];
 	}
-	inline const double& operator[](int idx) const {
+	inline const float& operator[](int idx) const {
 		return components[idx];
 	}
-	inline double length_squared() const;
+	inline float length_squared() const;
 	bool is_equal_approx(const Quat& p_quat) const;
-	double length() const;
+	float length() const;
 	void normalize();
 	Quat normalized() const;
 	bool is_normalized() const;
 	Quat inverse() const;
-	inline double dot(const Quat& q) const;
+	inline float dot(const Quat& q) const;
 
 	void set_euler_xyz(const Vector3& p_euler);
 	Vector3 get_euler_xyz() const;
@@ -74,11 +74,11 @@ public:
 	void set_euler(const Vector3& p_euler) { set_euler_yxz(p_euler); };
 	Vector3 get_euler() const { return get_euler_yxz(); };
 
-	Quat slerp(const Quat& q, const double& t) const;
-	Quat slerpni(const Quat& q, const double& t) const;
-	Quat cubic_slerp(const Quat& q, const Quat& prep, const Quat& postq, const double& t) const;
+	Quat slerp(const Quat& q, const float& t) const;
+	Quat slerpni(const Quat& q, const float& t) const;
+	Quat cubic_slerp(const Quat& q, const Quat& prep, const Quat& postq, const float& t) const;
 
-	void set_axis_angle(const Vector3& axis, const double& angle);
+	void set_axis_angle(const Vector3& axis, const float& angle);
 	inline void get_axis_angle(Vector3& r_axis, double& r_angle) const {
 		r_angle = 2 * std::acos(w);
 		double r = ((double)1) / std::sqrt(1 - w * w);
@@ -103,7 +103,7 @@ public:
 #endif
 		Vector3 u(x, y, z);
 		Vector3 uv = u.cross(v);
-		return v + ((uv * w) + u.cross(uv)) * ((double)2);
+		return v + ((uv * w) + u.cross(uv)) * ((float)2);
 	}
 
 	inline Vector3 xform_inv(const Vector3& v) const {
@@ -112,18 +112,18 @@ public:
 
 	inline void operator+=(const Quat& q);
 	inline void operator-=(const Quat& q);
-	inline void operator*=(const double& s);
-	inline void operator/=(const double& s);
+	inline void operator*=(const float& s);
+	inline void operator/=(const float& s);
 	inline Quat operator+(const Quat& q2) const;
 	inline Quat operator-(const Quat& q2) const;
 	inline Quat operator-() const;
-	inline Quat operator*(const double& s) const;
-	inline Quat operator/(const double& s) const;
+	inline Quat operator*(const float& s) const;
+	inline Quat operator/(const float& s) const;
 
 	inline bool operator==(const Quat& p_quat) const;
 	inline bool operator!=(const Quat& p_quat) const;
 
-	inline void set(double p_x, double p_y, double p_z, double p_w) {
+	inline void set(float p_x, float p_y, float p_z, float p_w) {
 		x = p_x;
 		y = p_y;
 		z = p_z;
@@ -131,13 +131,13 @@ public:
 	}
 
 	inline Quat() {}
-	inline Quat(double p_x, double p_y, double p_z, double p_w) :
+	inline Quat(float p_x, float p_y, float p_z, float p_w) :
 		x(p_x),
 		y(p_y),
 		z(p_z),
 		w(p_w) {
 	}
-	Quat(const Vector3& axis, const double& angle) { set_axis_angle(axis, angle); }
+	Quat(const Vector3& axis, const float& angle) { set_axis_angle(axis, angle); }
 
 	Quat(const Vector3& euler) { set_euler(euler); }
 	Quat(const Quat& q) :
@@ -158,7 +158,7 @@ public:
 	Quat(const Vector3& v0, const Vector3& v1) // shortest arc
 	{
 		Vector3 c = v0.cross(v1);
-		double d = v0.dot(v1);
+		float d = v0.dot(v1);
 
 		if (d < -1.0 + CMP_EPSILON) {
 			x = 0;
@@ -167,8 +167,8 @@ public:
 			w = 0;
 		}
 		else {
-			double s = std::sqrt((1.0 + d) * 2.0);
-			double rs = 1.0 / s;
+			float s = std::sqrt((1.0 + d) * 2.0);
+			float rs = 1.0 / s;
 
 			x = c.x * rs;
 			y = c.y * rs;
@@ -178,11 +178,11 @@ public:
 	}
 };
 
-double Quat::dot(const Quat& q) const {
+float Quat::dot(const Quat& q) const {
 	return x * q.x + y * q.y + z * q.z + w * q.w;
 }
 
-double Quat::length_squared() const {
+float Quat::length_squared() const {
 	return dot(*this);
 }
 
@@ -200,14 +200,14 @@ void Quat::operator-=(const Quat& q) {
 	w -= q.w;
 }
 
-void Quat::operator*=(const double& s) {
+void Quat::operator*=(const float& s) {
 	x *= s;
 	y *= s;
 	z *= s;
 	w *= s;
 }
 
-void Quat::operator/=(const double& s) {
+void Quat::operator/=(const float& s) {
 	*this *= 1.0 / s;
 }
 
@@ -226,11 +226,11 @@ Quat Quat::operator-() const {
 	return Quat(-q2.x, -q2.y, -q2.z, -q2.w);
 }
 
-Quat Quat::operator*(const double& s) const {
+Quat Quat::operator*(const float& s) const {
 	return Quat(x * s, y * s, z * s, w * s);
 }
 
-Quat Quat::operator/(const double& s) const {
+Quat Quat::operator/(const float& s) const {
 	return *this * (1.0 / s);
 }
 
@@ -242,7 +242,7 @@ bool Quat::operator!=(const Quat& p_quat) const {
 	return x != p_quat.x || y != p_quat.y || z != p_quat.z || w != p_quat.w;
 }
 
-inline Quat operator*(const double& p_real, const Quat& p_quat) {
+inline Quat operator*(const float& p_real, const Quat& p_quat) {
 	return p_quat * p_real;
 }
 

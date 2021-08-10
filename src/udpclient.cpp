@@ -167,6 +167,27 @@ void sendByte(unsigned char const value, int type)
     }
 }
 
+void sendByte(uint8_t const value, uint8_t sensorId, int type)
+{
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&sensorId, 1);
+        Udp.write(&value, 1);
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
 void sendQuat(Quat *const quaternion, int type)
 {
     if (Udp.beginPacket(host, port) > 0)
@@ -181,6 +202,55 @@ void sendQuat(Quat *const quaternion, int type)
         Udp.write(convert_to_chars(y, buf), sizeof(y));
         Udp.write(convert_to_chars(z, buf), sizeof(z));
         Udp.write(convert_to_chars(w, buf), sizeof(w));
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
+void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId, int type) {
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        float x = quaternion->x;
+        float y = quaternion->y;
+        float z = quaternion->z;
+        float w = quaternion->w;
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&sensorId, 1);
+        Udp.write(&dataType, 1);
+        Udp.write(convert_to_chars(x, buf), sizeof(x));
+        Udp.write(convert_to_chars(y, buf), sizeof(y));
+        Udp.write(convert_to_chars(z, buf), sizeof(z));
+        Udp.write(convert_to_chars(w, buf), sizeof(w));
+        Udp.write(&accuracyInfo, 1);
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
+void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type) {
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&sensorId, 1);
+        Udp.write(convert_to_chars(accuracyInfo, buf), sizeof(accuracyInfo));
         if (Udp.endPacket() == 0)
         {
             //Serial.print("Write error: ");
@@ -389,10 +459,9 @@ void sendHandshake() {
         uint8_t size = (uint8_t) sizeof(FIRMWARE_VERSION);
         Udp.write(&size, 1); // Firmware version string size
         Udp.write((const unsigned char *) FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION)); // Firmware version string
-        const char * mac = WiFi.macAddress().c_str();
-        size = (uint8_t) strlen(mac);
-        Udp.write(&size, 1); // MAC address string size
-        Udp.write((uint8_t *) mac, strlen(mac)); // MAC address string
+        uint8_t mac[6];
+        WiFi.macAddress(mac);
+        Udp.write(mac, 6); // MAC address string
         if (Udp.endPacket() == 0)
         {
             Serial.print("Write error: ");

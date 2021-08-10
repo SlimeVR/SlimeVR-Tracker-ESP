@@ -108,14 +108,14 @@ void setup()
         uint8_t first = I2CSCAN::pickDevice(BNO_ADDR_1, BNO_ADDR_2, true);
         uint8_t second = I2CSCAN::pickDevice(BNO_ADDR_2, BNO_ADDR_1, false);
         if(first != second) {
-            sensor.setupBNO080(false, first, PIN_IMU_INT);
-            sensor2.setupBNO080(true, second, PIN_IMU_INT_2);
+            sensor.setupBNO080(0, first, PIN_IMU_INT);
+            sensor2.setupBNO080(1, second, PIN_IMU_INT_2);
             secondImuActive = true;
         } else {
-            sensor.setupBNO080(false, first, PIN_IMU_INT);
+            sensor.setupBNO080(0, first, PIN_IMU_INT);
         }
     #else
-    sensor.setupBNO080(false, I2CSCAN::pickDevice(BNO_ADDR_1, BNO_ADDR_2, true), PIN_IMU_INT);
+    sensor.setupBNO080(0, I2CSCAN::pickDevice(BNO_ADDR_1, BNO_ADDR_2, true), PIN_IMU_INT);
     #endif
 #endif
 
