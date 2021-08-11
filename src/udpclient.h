@@ -66,7 +66,7 @@
 #define COMMAND_SEND_CONFIG 2
 #define COMMAND_BLINK 3
 
-typedef void (* configRecievedCallback)(DeviceConfig const newConfig);
+typedef void (* configRecievedCallback)(const DeviceConfig & newConfig);
 typedef void (* commandRecievedCallback)(int command, void * const commandData, int commandDataLength);
 
 void connectClient();

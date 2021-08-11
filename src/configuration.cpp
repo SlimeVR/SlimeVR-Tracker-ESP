@@ -24,7 +24,7 @@
 #include <EEPROM.h>
 #include "configuration.h"
 
-DeviceConfig * config{};
+DeviceConfig config{};
 bool configLoaded;
 
 void initializeConfig() {
@@ -46,19 +46,13 @@ DeviceConfig *const getConfigPtr()
         {
             EEPROM.get(1, config);
         }
-        else
-        {
-            auto start = DeviceConfig{CalibrationConfig{}, 0, 0};
-            config = &start;
-            setConfig(start);
-        }
         configLoaded = true;
     }
-    return config;
+    return &config;
 }
 
-void setConfig(DeviceConfig newConfig) {
-    *config = newConfig;
+void setConfig(const DeviceConfig & newConfig) {
+    config = newConfig;
     saveConfig();
 }
 
