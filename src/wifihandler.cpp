@@ -60,7 +60,7 @@ void setUpWiFi() {
 #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
     // Try saved credentials first, even if we have hardcoded credentials
     if(WiFi.SSID().length() == 0) {
-        WiFi.begin(STRINGIFY(WIFI_CREDS_SSID), STRINGIFY(WIFI_CREDS_PASSWD));
+        WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
         wifiState = 2;
     } else {
         WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
