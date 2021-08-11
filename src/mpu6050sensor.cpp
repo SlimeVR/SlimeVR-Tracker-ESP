@@ -44,7 +44,6 @@ bool hasNewData = false;
 
 void MPU6050Sensor::motionSetup() {
     //DeviceConfig * const config = getConfigPtr();
-    sensorOffset = {Quat(Vector3(0, 0, 1), IMU_ROTATION - PI / 2.0)}; // MPU has different offset, but we want to use the same board orientation as BNO
 
     uint8_t addr = 0x68;
 
