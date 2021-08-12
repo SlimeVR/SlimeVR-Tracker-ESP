@@ -89,7 +89,7 @@ void wifiUpkeep() {
                 case 1: // Couldn't connect with first set of credentials
                     #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
                         // Try hardcoded credentials now
-                        WiFi.begin(STRINGIFY(WIFI_CREDS_SSID), STRINGIFY(WIFI_CREDS_PASSWD));
+                        WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
                         wifiConnectionTimeout = millis();
                         Serial.println("[NOTICE] WiFi: Trying hardcoded credentials...");
                     #endif
