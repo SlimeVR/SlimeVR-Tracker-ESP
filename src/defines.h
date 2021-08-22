@@ -94,9 +94,9 @@
 #elif BOARD == BOARD_CUSTOM
   // Define pins by the examples above
 #elif BOARD == BOARD_WROOM32
-  #define PIN_IMU_SDA 12
-  #define PIN_IMU_SCL 13
-  #define PIN_IMU_INT 26
+  #define PIN_IMU_SDA 21
+  #define PIN_IMU_SCL 22
+  #define PIN_IMU_INT 23
   #define PIN_IMU_INT_2 25
   #define PIN_BATTERY_LEVEL 36
   #define BNO_ADDR_1 0x4A
