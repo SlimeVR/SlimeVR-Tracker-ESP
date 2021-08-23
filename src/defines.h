@@ -25,8 +25,8 @@
 // Set parameters of IMU and board used
 #define IMU IMU_BNO085
 #define BOARD BOARD_SLIMEVR
-#define SECOND_IMU true
 #define IMU_ROTATION PI / 2.0
+#define SECOND_IMU_ROTATION IMU_ROTATION
 
 #if IMU == IMU_BNO085
   #define IMU_NAME "BNO085"

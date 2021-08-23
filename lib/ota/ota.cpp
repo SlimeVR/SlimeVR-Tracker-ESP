@@ -67,7 +67,7 @@ void otaUpdate() {
         if(bootTime + 60000 < millis()) {
             // Disable OTA 60 seconds after boot as protection measure
             enabled = false;
-            Serial.println("[NOTICE] OTA disabled by timeout");
+            Serial.println("[NOTICE] OTA disabled by timeout, it is not an error");
             return;
         }
         ArduinoOTA.handle();

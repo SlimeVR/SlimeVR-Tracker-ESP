@@ -34,7 +34,7 @@
 
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     BNO080Sensor sensor{};
-    #if defined(SECOND_IMU) && SECOND_IMU && defined(PIN_IMU_INT_2)
+    #if defined(PIN_IMU_INT_2)
         #define HAS_SECOND_IMU true
         BNO080Sensor sensor2{};
     #endif

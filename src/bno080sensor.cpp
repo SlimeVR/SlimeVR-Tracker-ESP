@@ -46,6 +46,7 @@ void BNO080Sensor::setupBNO080(uint8_t sensorId, uint8_t addr, uint8_t intPin) {
     this->addr = addr;
     this->intPin = intPin;
     this->sensorId = sensorId;
+    this->sensorOffset = {Quat(Vector3(0, 0, 1), sensorId == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
 }
 
 void BNO080Sensor::motionSetup()
@@ -137,7 +138,9 @@ void BNO080Sensor::motionLoop()
             sendResetReason(rr);
             digitalWrite(LOADING_LED, LOW);
         }
-        Serial.print("[ERR] Sensor was reset: ");
+        Serial.print("[ERR] Sensor ");
+        Serial.print(sensorId);
+        Serial.print(" was reset: ");
         Serial.println(rr);
     }
 }
