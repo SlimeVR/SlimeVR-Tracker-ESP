@@ -45,12 +45,22 @@ bool isWiFiConnected() {
 
 void setWiFiCredentials(const char * SSID, const char * pass) {
     WiFi.stopSmartConfig();
+#ifndef ESP32
+    DeviceConfig * const config = getConfigPtr();
+    memcpy(config->wifissid, SSID, strlen(SSID));
+    memcpy(config->wifipass, pass, strlen(pass));
+    config->wifissid[strlen(SSID)] = 0; //EOL
+    config->wifipass[strlen(pass)] = 0;
+    saveConfig();
+#endif
     WiFi.begin(SSID, pass);
     wifiState = 2;
     wifiConnectionTimeout = millis();
 }
 
 void setUpWiFi() {
+    DeviceConfig * const config = getConfigPtr();
+    
     Serial.println("[NOTICE] WiFi: Setting up WiFi");
     WiFi.mode(WIFI_STA);
     WiFi.hostname("SlimeVR FBT Tracker");
@@ -66,10 +76,12 @@ void setUpWiFi() {
         WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
         wifiState = 1;
     }
-#else
+#elif defined(ESP32)
     WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
-    wifiState = 1;
+#else
+    WiFi.begin(config->wifissid, config->wifipass);
 #endif
+    wifiState = 1;
     wifiConnectionTimeout = millis();
 }
 

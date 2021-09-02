@@ -39,6 +39,8 @@ struct DeviceConfig {
     CalibrationConfig calibration;
     int deviceId;
     int deviceMode;
+    char wifissid[50];
+    char wifipass[50];
 };
 
 DeviceConfig * const getConfigPtr();
