@@ -54,22 +54,8 @@ void setUpWiFi() {
     Serial.println("[NOTICE] WiFi: Setting up WiFi");
     WiFi.mode(WIFI_STA);
     WiFi.hostname("SlimeVR FBT Tracker");
-#ifdef ESP32
-    WiFi.begin();
-#endif
-#if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
-    // Try saved credentials first, even if we have hardcoded credentials
-    if(WiFi.SSID().length() == 0) {
-        WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
-        wifiState = 2;
-    } else {
-        WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
-        wifiState = 1;
-    }
-#else
-    WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
+    WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
     wifiState = 1;
-#endif
     wifiConnectionTimeout = millis();
 }
 
