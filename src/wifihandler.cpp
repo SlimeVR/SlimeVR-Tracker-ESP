@@ -52,9 +52,12 @@ void setWiFiCredentials(const char * SSID, const char * pass) {
 
 void setUpWiFi() {
     Serial.println("[NOTICE] WiFi: Setting up WiFi");
+    WiFi.persistent(true);
     WiFi.mode(WIFI_STA);
     WiFi.hostname("SlimeVR FBT Tracker");
-    WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
+    Serial.printf("[NOTICE] WiFi: Loaded credentials for SSID %s and pass length %d\n", WiFi.SSID().c_str(), WiFi.psk().length());
+    wl_status_t status = WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
+    Serial.printf("[NOTICE] Status: %d", status);
     wifiState = 1;
     wifiConnectionTimeout = millis();
 }
@@ -77,6 +80,7 @@ void wifiUpkeep() {
                         // Try hardcoded credentials now
                         WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
                         wifiConnectionTimeout = millis();
+                        Serial.printf("[NOTICE] WiFi: Can't connect from saved credentials, status: %d.\n", WiFi.status());
                         Serial.println("[NOTICE] WiFi: Trying hardcoded credentials...");
                     #endif
                     wifiState = 2;
@@ -85,6 +89,7 @@ void wifiUpkeep() {
                     // Start smart config
                     if(!WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
                         if(WiFi.beginSmartConfig()) {
+                            Serial.printf("[NOTICE] WiFi: Can't connect from any credentials, status: %d.\n", WiFi.status());
                             Serial.println("[NOTICE] WiFi: SmartConfig started");
                         }
                     }
