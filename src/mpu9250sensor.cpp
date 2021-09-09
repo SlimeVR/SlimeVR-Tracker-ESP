@@ -59,7 +59,7 @@ void MPU9250Sensor::motionSetup() {
     if(!I2CSCAN::isI2CExist(addr)) {
         addr = 0x69;
         if(!I2CSCAN::isI2CExist(addr)) {
-            Serial.println("[ERR] Can't find I2C device on addr 0x4A or 0x4B, returning");
+            Serial.println("[ERR] Can't find I2C device on addr 0x68 or 0x69, returning");
             signalAssert();
             return;
         }
