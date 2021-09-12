@@ -510,6 +510,7 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
 
 void onWiFiConnected() {
     Udp.begin(port);
+    connected = false;
     setLedStatus(LED_STATUS_SERVER_CONNECTING);
 }
 
