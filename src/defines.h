@@ -128,5 +128,5 @@
 
 #define batteryADCMultiplier 1.0 / 1024.0 * 5.0
 
-#define FIRMWARE_BUILD_NUMBER 4
-#define FIRMWARE_VERSION "0.0.4"
+#define FIRMWARE_BUILD_NUMBER 5
+#define FIRMWARE_VERSION "0.0.5"
