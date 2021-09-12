@@ -26,6 +26,7 @@
 #include "udpclient.h"
 #include "defines.h"
 #include <i2cscan.h>
+#include "ledstatus.h"
 
 namespace {
     void signalAssert() {
@@ -130,6 +131,7 @@ void BNO080Sensor::motionLoop()
             break;
     }
     if(lastData + 1000 < millis() && setUp) {
+        setLedStatus(LED_STATUS_IMU_ERROR);
         working = false;
         lastData = millis();
         uint8_t rr = imu.resetReason();

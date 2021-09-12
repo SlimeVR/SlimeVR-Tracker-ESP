@@ -22,6 +22,7 @@
 */
 
 #include "udpclient.h"
+#include "ledstatus.h"
 
 #define TIMEOUT 3000UL
 
@@ -509,6 +510,7 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
 
 void onWiFiConnected() {
     Udp.begin(port);
+    setLedStatus(LED_STATUS_SERVER_CONNECTING);
 }
 
 void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
@@ -591,6 +593,7 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
             //}
             if(lastPacketMs + TIMEOUT < millis())
             {
+                setLedStatus(LED_STATUS_SERVER_CONNECTING);
                 connected = false;
                 sensorStateNotified1 = false;
                 sensorStateNotified2 = false;
@@ -635,6 +638,7 @@ void connectClient()
                 port = Udp.remotePort();
                 lastPacketMs = now;
                 connected = true;
+                unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
 #ifndef SEND_UPDATES_UNCONNECTED
                 digitalWrite(LOADING_LED, HIGH);
 #endif

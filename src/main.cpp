@@ -31,6 +31,7 @@
 #include "credentials.h"
 #include <i2cscan.h>
 #include "serialcommands.h"
+#include "ledstatus.h"
 
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     BNO080Sensor sensor{};
@@ -74,9 +75,6 @@ void commandRecieved(int command, void * const commandData, int commandDataLengt
         break;
     }
 }
-
-void processBlinking();
-int I2C_ClearBus();
 
 void setup()
 {
@@ -138,6 +136,7 @@ void setup()
 
 void loop()
 {
+    ledStatusUpdate();
     serialCommandsUpdate();
     wifiUpkeep();
     otaUpdate();
@@ -160,11 +159,6 @@ void loop()
 #endif
     // Send updates
     now_ms = millis();
-    if (now_ms - last_ms >= samplingRateInMillis)
-    {
-        last_ms = now_ms;
-        processBlinking();
-    }
 #ifndef SEND_UPDATES_UNCONNECTED
     if(isConnected()) {
 #endif
@@ -182,25 +176,4 @@ void loop()
         sendFloat(battery, PACKET_BATTERY_LEVEL);
     }
 #endif
-}
-
-void processBlinking() {
-    if (blinking)
-    {
-        if (blinkStart + sensorIdTime < now_ms)
-        {
-            blinking = false;
-            digitalWrite(LOADING_LED, HIGH);
-        }
-        else
-        {
-            int t = (now_ms - blinkStart) / sensorIdInterval;
-            if(t % 2) {
-                digitalWrite(LOADING_LED, LOW);
-            } else {
-                digitalWrite(LOADING_LED, HIGH);
-            }
-        }
-        
-    }
 }

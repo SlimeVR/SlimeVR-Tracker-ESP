@@ -24,6 +24,7 @@
 #include "wifihandler.h"
 #include "udpclient.h"
 #include "defines.h"
+#include "ledstatus.h"
 
 unsigned long lastWifiReportTime = 0;
 unsigned long wifiConnectionTimeout = millis();
@@ -63,6 +64,7 @@ void setUpWiFi() {
 }
 
 void onConnected() {
+    unsetLedStatus(LED_STATUS_WIFI_CONNECTING);
     isWifiConnected = true;
     Serial.printf("[NOTICE] WiFi: Connected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
     onWiFiConnected();
@@ -70,6 +72,7 @@ void onConnected() {
 
 void wifiUpkeep() {
     if(WiFi.status() != WL_CONNECTED) {
+        setLedStatus(LED_STATUS_WIFI_CONNECTING);
         reportWifiError();
         if(wifiConnectionTimeout + 11000 < millis()) {
             switch(wifiState) {
