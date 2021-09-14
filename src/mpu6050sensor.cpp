@@ -21,7 +21,11 @@
     THE SOFTWARE.
 */
 
-#include "MPU6050_6Axis_MotionApps20.h"
+#ifdef IMU_MPU6050_RUNTIME_CALIBRATION
+    #include "MPU6050_6Axis_MotionApps_V6_12.h"
+#else
+    #include "MPU6050_6Axis_MotionApps20.h"
+#endif
 
 #include "sensor.h"
 #include "udpclient.h"
@@ -64,12 +68,18 @@ void MPU6050Sensor::motionSetup() {
     devStatus = imu.dmpInitialize();
 
     if (devStatus == 0) {
+#ifdef IMU_MPU6050_RUNTIME_CALIBRATION
+    // We don't have to manually calibrate if we are using the dmp's automatic calibration
+#else // IMU_MPU6050_RUNTIME_CALIBRATION
+        
         Serial.println(F("[NOTICE] Performing startup calibration of accel and gyro..."));
         // Do a quick and dirty calibration. As the imu warms up the offsets will change a bit, but this will be good-enough
         delay(1000); // A small sleep to give the users a chance to stop it from moving
+
         imu.CalibrateGyro(6);
         imu.CalibrateAccel(6);
         imu.PrintActiveOffsets();
+#endif // IMU_MPU6050_RUNTIME_CALIBRATION
 
         for(int i = 0; i < 5; ++i) {
             delay(50);
@@ -128,7 +138,24 @@ void MPU6050Sensor::sendData() {
 
 void MPU6050Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
-    Serial.println("Calibrating IMU");
+    
+#ifdef IMU_MPU6050_RUNTIME_CALIBRATION
+
+    Serial.println("MPU is using automatic runtime calibration. Place down the device and it should automatically calibrate after a few seconds");
+
+    DeviceConfig * const config = getConfigPtr();
+
+    // Lie to the server and say we've calibrated
+    switch(calibrationType) {
+        case CALIBRATION_TYPE_INTERNAL_ACCEL:
+            sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+            break;
+        case CALIBRATION_TYPE_INTERNAL_GYRO:
+            sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+            break;
+    }
+
+#else //!IMU_MPU6050_RUNTIME_CALIBRATION
 
     Serial.println("Put down the device and wait for baseline gyro reading calibration");
     delay(2000);
@@ -163,4 +190,6 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
 
     Serial.println("[NOTICE] Process is over");
     digitalWrite(CALIBRATING_LED, HIGH);
+
+#endif // !IMU_MPU6050_RUNTIME_CALIBRATION
 }

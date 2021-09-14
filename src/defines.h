@@ -61,6 +61,9 @@
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG false
   #define I2C_SPEED 100000
+  
+  // User-Configurable
+  #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
 #elif IMU == IMU_MPU6500
   #define IMU_NAME "MPU6500"
   #define IMU_HAS_ACCELL true
