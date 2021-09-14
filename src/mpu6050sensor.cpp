@@ -140,10 +140,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
     
 #ifdef IMU_MPU6050_RUNTIME_CALIBRATION
-
     Serial.println("MPU is using automatic runtime calibration. Place down the device and it should automatically calibrate after a few seconds");
-
-    DeviceConfig * const config = getConfigPtr();
 
     // Lie to the server and say we've calibrated
     switch(calibrationType) {
@@ -156,7 +153,6 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     }
 
 #else //!IMU_MPU6050_RUNTIME_CALIBRATION
-
     Serial.println("Put down the device and wait for baseline gyro reading calibration");
     delay(2000);
 
