@@ -21,6 +21,7 @@
     THE SOFTWARE.
 */
 #include "consts.h"
+#include "debug.h"
 
 // Set parameters of IMU and board used
 #define IMU IMU_BNO085
@@ -61,8 +62,6 @@
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG false
   #define I2C_SPEED 100000
-  
-  // User-Configurable
   #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
 #elif IMU == IMU_MPU6500
   #define IMU_NAME "MPU6500"
@@ -110,26 +109,4 @@
 #define CALIBRATING_LED LED_BUILTIN
 #define STATUS_LED LED_BUILTIN
 
-//Debug information
-//#define FULL_DEBUG
-#define serialDebug false // Set to true to get Serial output for debugging
-#define serialBaudRate 115200
-#define UPDATE_IMU_UNCONNECTED 1
-#define SEND_UPDATES_UNCONNECTED 1
-#define LED_INTERVAL_STANDBUY 10000
-#define STATUS_PRINT_INTERVAL 15000
-
-// Determines how often we sample and send data
-#define samplingRateInMillis 10
-#define batterySampleRate 10000
-
-// Setup for the Magnetometer
-#define useFullCalibrationMatrix true
-
-#define sensorIdTime 1000
-#define sensorIdInterval 100
-
 #define batteryADCMultiplier 1.0 / 1024.0 * 5.0
-
-#define FIRMWARE_BUILD_NUMBER 5
-#define FIRMWARE_VERSION "0.0.5"
