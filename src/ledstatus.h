@@ -20,29 +20,13 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-// List of constants used in other places
-#define IMU_MPU9250 1
-#define IMU_MPU6500 2
-#define IMU_BNO080 3
-#define IMU_BNO085 4
-#define IMU_BNO086 4
-#define IMU_BNO055 5
-#define IMU_MPU6050 6
+#include "defines.h"
+#include "Arduino.h"
 
-#define BOARD_SLIMEVR 1
-#define BOARD_SLIMEVR_DEV 2
-#define BOARD_NODEMCU 3
-#define BOARD_CUSTOM 4
-#define BOARD_WROOM32 5
+#define LED_STATUS_SERVER_CONNECTING 2
+#define LED_STATUS_WIFI_CONNECTING 4
+#define LED_STATUS_IMU_ERROR 256
 
-#ifndef LED_BUILTIN
-#define LED_BUILTIN 2
-#endif
-
-#ifdef ESP8266
-  #define HARDWARE_MCU 1
-#elif defined(ESP32)
-  #define HARDWARE_MCU 2
-#else
-  #define HARDWARE_MCU 0
-#endif
+void setLedStatus(uint32_t status);
+void unsetLedStatus(uint32_t status);
+void ledStatusUpdate();

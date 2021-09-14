@@ -53,7 +53,8 @@ MPU6050::MPU6050(uint8_t address):devAddr(address) {
  * the clock source to use the X Gyro for reference, which is slightly better than
  * the default internal clock source.
  */
-void MPU6050::initialize() {
+void MPU6050::initialize(uint8_t address) {
+    devAddr = address;
     setClockSource(MPU6050_CLOCK_PLL_XGYRO);
     setFullScaleGyroRange(MPU6050_GYRO_FS_250);
     setFullScaleAccelRange(MPU6050_ACCEL_FS_2);

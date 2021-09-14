@@ -155,6 +155,7 @@ public:
 	float qToFloat(int16_t fixedPointValue, uint8_t qPoint); //Given a Q value, converts fixed point floating to regular floating point number
 
 	boolean waitForI2C(); //Delay based polling for I2C traffic
+	boolean I2CTimedOut(); // Check if last time I2C timed out
 	boolean waitForSPI(); //Delay based polling for INT pin to go low
 	boolean receivePacket(void);
 	boolean getData(uint16_t bytesRemaining); //Given a number of bytes, send the requests in I2C_BUFFER_LENGTH chunks
@@ -184,7 +185,12 @@ public:
 	uint16_t parseInputReport(void);   //Parse sensor readings out of report
 	uint16_t parseCommandReport(void); //Parse command responses out of report
 
+	bool hasNewQuat();
+	bool hasNewGameQuat();
+	bool hasNewMagQuat();
 	void getQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy);
+	void getGameQuat(float &i, float &j, float &k, float &real, uint8_t &accuracy);
+	void getMagQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy);
 	float getQuatI();
 	float getQuatJ();
 	float getQuatK();
@@ -232,6 +238,7 @@ public:
 	boolean calibrationComplete();   //Checks ME Cal response for byte 5, R0 - Status
 
 	uint8_t getTapDetector();
+	bool getTapDetected();
 	uint32_t getTimeStamp();
 	uint16_t getStepCount();
 	uint8_t getStabilityClassifier();
@@ -286,6 +293,7 @@ private:
 	//Variables
 	TwoWire *_i2cPort;		//The generic connection to user's chosen I2C hardware
 	uint8_t _deviceAddress; //Keeps track of I2C address. setI2CAddress changes this.
+	bool i2cTimedOut = false;
 
 	Stream *_debugPort;			 //The stream to send debug messages to if enabled. Usually Serial.
 	boolean _printDebug = false; //Flag to print debugging variables
@@ -303,8 +311,12 @@ private:
 	uint16_t rawGyroX, rawGyroY, rawGyroZ, gyroAccuracy;
 	uint16_t rawMagX, rawMagY, rawMagZ, magAccuracy;
 	uint16_t rawQuatI, rawQuatJ, rawQuatK, rawQuatReal, rawQuatRadianAccuracy, quatAccuracy;
+	uint16_t rawGameQuatI, rawGameQuatJ, rawGameQuatK, rawGameQuatReal, quatGameAccuracy;
+	uint16_t rawMagQuatI, rawMagQuatJ, rawMagQuatK, rawMagQuatReal, rawMagQuatRadianAccuracy, quatMagAccuracy;
+	bool hasNewQuaternion, hasNewGameQuaternion, hasNewMagQuaternion;
 	uint16_t rawFastGyroX, rawFastGyroY, rawFastGyroZ;
 	uint8_t tapDetector;
+	bool hasNewTap;
 	uint16_t stepCount;
 	uint32_t timeStamp;
 	uint8_t stabilityClassifier;

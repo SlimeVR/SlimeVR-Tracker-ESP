@@ -30,7 +30,7 @@ CmdParser cmdParser;
 CmdBuffer<64> cmdBuffer;
 
 void cmdSet(CmdParser * parser) {
-    if(parser->equalCmdParam(1, "WIFI")) {
+    if(parser->getParamCount() != 1 && parser->equalCmdParam(1, "WIFI")  ) {
         if(parser->getParamCount() < 3) {
             Serial.println("[ERR] CMD SET WIFI ERROR: Too few arguments");
             Serial.println("[NOTICE] Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");

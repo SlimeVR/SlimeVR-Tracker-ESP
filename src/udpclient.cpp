@@ -22,6 +22,7 @@
 */
 
 #include "udpclient.h"
+#include "ledstatus.h"
 
 #define TIMEOUT 3000UL
 
@@ -167,6 +168,27 @@ void sendByte(unsigned char const value, int type)
     }
 }
 
+void sendByte(uint8_t const value, uint8_t sensorId, int type)
+{
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&sensorId, 1);
+        Udp.write(&value, 1);
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
 void sendQuat(Quat *const quaternion, int type)
 {
     if (Udp.beginPacket(host, port) > 0)
@@ -181,6 +203,55 @@ void sendQuat(Quat *const quaternion, int type)
         Udp.write(convert_to_chars(y, buf), sizeof(y));
         Udp.write(convert_to_chars(z, buf), sizeof(z));
         Udp.write(convert_to_chars(w, buf), sizeof(w));
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
+void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId, int type) {
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        float x = quaternion->x;
+        float y = quaternion->y;
+        float z = quaternion->z;
+        float w = quaternion->w;
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&sensorId, 1);
+        Udp.write(&dataType, 1);
+        Udp.write(convert_to_chars(x, buf), sizeof(x));
+        Udp.write(convert_to_chars(y, buf), sizeof(y));
+        Udp.write(convert_to_chars(z, buf), sizeof(z));
+        Udp.write(convert_to_chars(w, buf), sizeof(w));
+        Udp.write(&accuracyInfo, 1);
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
+void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type) {
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(&sensorId, 1);
+        Udp.write(convert_to_chars(accuracyInfo, buf), sizeof(accuracyInfo));
         if (Udp.endPacket() == 0)
         {
             //Serial.print("Write error: ");
@@ -378,15 +449,20 @@ void sendHandshake() {
     if (Udp.beginPacket(host, port) > 0)
     {
         sendType(3);
-        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t));
+        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t)); // Packet number is always 0 for handshake
         Udp.write(convert_to_chars((uint32_t) BOARD, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) IMU, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) HARDWARE_MCU, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t)); // TODO Send actual IMU hw version read from the chip
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t));
-        Udp.write((const unsigned char *) FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION));
+        Udp.write(convert_to_chars((uint32_t) FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t)); // Firmware build number
+        uint8_t size = (uint8_t) sizeof(FIRMWARE_VERSION);
+        Udp.write(&size, 1); // Firmware version string size
+        Udp.write((const unsigned char *) FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION)); // Firmware version string
+        uint8_t mac[6];
+        WiFi.macAddress(mac);
+        Udp.write(mac, 6); // MAC address string
         if (Udp.endPacket() == 0)
         {
             Serial.print("Write error: ");
@@ -428,12 +504,14 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
         if(sensorStateNotified1 != sensor->isWorking())
             sendSensorInfo(0, sensor->isWorking(), PACKET_SENSOR_INFO);
         if(sensorStateNotified2 != sensor2->isWorking())
-            sendSensorInfo(1, sensor->isWorking(), PACKET_SENSOR_INFO);
+            sendSensorInfo(1, sensor2->isWorking(), PACKET_SENSOR_INFO);
     }
 }
 
 void onWiFiConnected() {
     Udp.begin(port);
+    connected = false;
+    setLedStatus(LED_STATUS_SERVER_CONNECTING);
 }
 
 void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
@@ -516,6 +594,7 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
             //}
             if(lastPacketMs + TIMEOUT < millis())
             {
+                setLedStatus(LED_STATUS_SERVER_CONNECTING);
                 connected = false;
                 sensorStateNotified1 = false;
                 sensorStateNotified2 = false;
@@ -560,6 +639,7 @@ void connectClient()
                 port = Udp.remotePort();
                 lastPacketMs = now;
                 connected = true;
+                unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
 #ifndef SEND_UPDATES_UNCONNECTED
                 digitalWrite(LOADING_LED, HIGH);
 #endif

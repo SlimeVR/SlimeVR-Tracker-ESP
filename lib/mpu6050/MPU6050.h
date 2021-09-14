@@ -442,7 +442,7 @@ class MPU6050 {
     public:
         MPU6050(uint8_t address=MPU6050_DEFAULT_ADDRESS);
 
-        void initialize();
+        void initialize(uint8_t address=MPU6050_DEFAULT_ADDRESS);
         bool testConnection();
 
         // AUX_VDDIO register

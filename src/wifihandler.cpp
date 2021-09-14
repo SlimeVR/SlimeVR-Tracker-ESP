@@ -24,10 +24,12 @@
 #include "wifihandler.h"
 #include "udpclient.h"
 #include "defines.h"
+#include "ledstatus.h"
 
 unsigned long lastWifiReportTime = 0;
 unsigned long wifiConnectionTimeout = millis();
 bool isWifiConnected = false;
+uint8_t wifiState = 0;
 
 namespace {
     void reportWifiError() {
@@ -45,36 +47,56 @@ bool isWiFiConnected() {
 void setWiFiCredentials(const char * SSID, const char * pass) {
     WiFi.stopSmartConfig();
     WiFi.begin(SSID, pass);
+    wifiState = 2;
     wifiConnectionTimeout = millis();
 }
 
 void setUpWiFi() {
-    Serial.println("[NOTICE] Setting up WiFi");
+    Serial.println("[NOTICE] WiFi: Setting up WiFi");
+    WiFi.persistent(true);
     WiFi.mode(WIFI_STA);
     WiFi.hostname("SlimeVR FBT Tracker");
-#ifdef ESP32
-    WiFi.begin();
-#endif
-#if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
-    WiFi.begin(STRINGIFY(WIFI_CREDS_SSID), STRINGIFY(WIFI_CREDS_PASSWD));
-#else
-    WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
-#endif
+    Serial.printf("[NOTICE] WiFi: Loaded credentials for SSID %s and pass length %d\n", WiFi.SSID().c_str(), WiFi.psk().length());
+    wl_status_t status = WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
+    Serial.printf("[NOTICE] Status: %d", status);
+    wifiState = 1;
     wifiConnectionTimeout = millis();
 }
 
 void onConnected() {
+    unsetLedStatus(LED_STATUS_WIFI_CONNECTING);
     isWifiConnected = true;
-    Serial.printf("[NOTICE] Connected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+    Serial.printf("[NOTICE] WiFi: Connected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
     onWiFiConnected();
 }
 
 void wifiUpkeep() {
     if(WiFi.status() != WL_CONNECTED) {
+        setLedStatus(LED_STATUS_WIFI_CONNECTING);
         reportWifiError();
-        if(!WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
-            if(WiFi.beginSmartConfig()) {
-                Serial.println("[NOTICE] SmartConfig started");
+        if(wifiConnectionTimeout + 11000 < millis()) {
+            switch(wifiState) {
+                case 0: // Wasn't set up
+                return;
+                case 1: // Couldn't connect with first set of credentials
+                    #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
+                        // Try hardcoded credentials now
+                        WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
+                        wifiConnectionTimeout = millis();
+                        Serial.printf("[NOTICE] WiFi: Can't connect from saved credentials, status: %d.\n", WiFi.status());
+                        Serial.println("[NOTICE] WiFi: Trying hardcoded credentials...");
+                    #endif
+                    wifiState = 2;
+                return;
+                case 2: // Couldn't connect with second set of credentials
+                    // Start smart config
+                    if(!WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
+                        if(WiFi.beginSmartConfig()) {
+                            Serial.printf("[NOTICE] WiFi: Can't connect from any credentials, status: %d.\n", WiFi.status());
+                            Serial.println("[NOTICE] WiFi: SmartConfig started");
+                        }
+                    }
+                return;
             }
         }
         return;

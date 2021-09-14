@@ -21,9 +21,8 @@
     THE SOFTWARE.
 */
 
-// #include "MPU6050_6Axis_MotionApps20.h"
 #include "MPU6050_6Axis_MotionApps_V6_12.h"
-// #include "MPU6050.h" // not necessary if using MotionApps include file
+#include "MPU6050_6Axis_MotionApps20.h"
 
 #include "sensor.h"
 #include "udpclient.h"
@@ -45,20 +44,19 @@ namespace {
 bool hasNewData = false;
 
 void MPU6050Sensor::motionSetup() {
-    DeviceConfig * config = getConfigPtr();
+    //DeviceConfig * const config = getConfigPtr();
 
     uint8_t addr = 0x68;
 
     if(!I2CSCAN::isI2CExist(addr)) {
         addr = 0x69;
         if(!I2CSCAN::isI2CExist(addr)) {
-            Serial.println("[ERR] Can't find I2C device on addr 0x4A or 0x4B, returning");
+            Serial.println("[ERR] Can't find I2C device on addr 0x68 or 0x69, returning");
             signalAssert();
             return;
         }
     }
-
-    imu.initialize();
+    imu.initialize(addr);
     if(!imu.testConnection()) {
         Serial.print("[ERR] Can't communicate with MPU, response ");
         Serial.println(imu.getDeviceID(), HEX);
@@ -67,16 +65,22 @@ void MPU6050Sensor::motionSetup() {
     devStatus = imu.dmpInitialize();
 
     if (devStatus == 0) {
-        // turn on the DMP, now that it's ready
-        Serial.println(F("[NOTICE] Enabling DMP..."));
-        imu.setDMPEnabled(true);
-
+        Serial.println(F("[NOTICE] Performing startup calibration of accel and gyro..."));
         // Do a quick and dirty calibration. As the imu warms up the offsets will change a bit, but this will be good-enough
         delay(1000); // A small sleep to give the users a chance to stop it from moving
-        imu.CalibrateAccel(6);
         imu.CalibrateGyro(6);
+        imu.CalibrateAccel(6);
         imu.PrintActiveOffsets();
 
+        for(int i = 0; i < 5; ++i) {
+            delay(50);
+            digitalWrite(LOADING_LED, LOW);
+            delay(50);
+            digitalWrite(LOADING_LED, HIGH);
+        }
+
+        // turn on the DMP, now that it's ready
+        Serial.println(F("[NOTICE] Enabling DMP..."));
         imu.setDMPEnabled(true);
 
         // TODO: Add interupt support
@@ -111,7 +115,7 @@ void MPU6050Sensor::motionLoop() {
         q[2] = rawQuat.z;
         q[3] = rawQuat.w;
         quaternion.set(-q[1], q[0], q[2], q[3]);
-
+        quaternion *= sensorOffset;
         hasNewData = true;
     }
 }
@@ -127,10 +131,16 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
     
     Serial.println("Put down the device and wait for baseline gyro reading calibration");
+    delay(2000);
+
+    imu.setDMPEnabled(false);
+    imu.CalibrateGyro(6);
+    imu.CalibrateAccel(6);
+    imu.setDMPEnabled(true);
 
     Serial.println("Calibrated!");
-    Serial.println("[NOTICE] Starting IMU Calibration");
-    DeviceConfig * config = getConfigPtr();
+    Serial.println("[NOTICE] Starting offset finder");
+    DeviceConfig * const config = getConfigPtr();
 
     switch(calibrationType) {
         case CALIBRATION_TYPE_INTERNAL_ACCEL:
