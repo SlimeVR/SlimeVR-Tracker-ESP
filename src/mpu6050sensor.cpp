@@ -44,12 +44,26 @@ namespace {
     }
 }
 
-bool hasNewData = false;
+void MPU6050Sensor::setSecond() {
+    isSecond = true;
+    sensorOffset = {Quat(Vector3(0, 0, 1), SECOND_IMU_ROTATION)};
+}
 
 void MPU6050Sensor::motionSetup() {
     //DeviceConfig * const config = getConfigPtr();
 
     uint8_t addr = 0x68;
+
+    if (isSecond) {
+        addr = 0x69;
+        if (!I2CSCAN::isI2CExist(addr)) {
+            Serial.println("[ERR] Can't find I2C device on addr 0x69, returning");
+            signalAssert();
+            return;
+        } else {
+            Serial.println("[INFO] Second I2C device on addr 0x69");
+        }
+    }
 
     if(!I2CSCAN::isI2CExist(addr)) {
         addr = 0x69;
@@ -101,6 +115,10 @@ void MPU6050Sensor::motionSetup() {
 
         // get expected DMP packet size for later comparison
         packetSize = imu.dmpGetFIFOPacketSize();
+
+        if (isSecond) {
+            working = true;
+        }
     } else {
         // ERROR!
         // 1 = initial memory load failed
@@ -131,7 +149,7 @@ void MPU6050Sensor::motionLoop() {
 
 void MPU6050Sensor::sendData() {
     if(hasNewData) {
-        sendQuat(&quaternion, PACKET_ROTATION);
+        sendQuat(&quaternion, isSecond ? PACKET_ROTATION_2 : PACKET_ROTATION);
         hasNewData = false;
     }
 }
