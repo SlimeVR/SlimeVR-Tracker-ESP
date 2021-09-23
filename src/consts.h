@@ -34,6 +34,7 @@
 #define BOARD_NODEMCU 3
 #define BOARD_CUSTOM 4
 #define BOARD_WROOM32 5
+#define BOARD_WEMOSD1MINI 6
 
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 2
