@@ -63,6 +63,8 @@
   #define IMU_HAS_MAG false
   #define I2C_SPEED 100000
   #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
+  // If you want to use dual MPU6050's, change I2C_SPEED to 400000 and uncomment the next line
+  // #define HAS_SECOND_IMU true
 #elif IMU == IMU_MPU6500
   #define IMU_NAME "MPU6500"
   #define IMU_HAS_ACCELL true

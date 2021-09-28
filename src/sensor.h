@@ -117,11 +117,14 @@ class MPU6050Sensor : public MPUSensor {
         MPU6050Sensor() = default;
         ~MPU6050Sensor() override  = default;
         void motionSetup() override final;
+        void setSecond();
         void motionLoop() override final;
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
     private:
         MPU6050 imu {};
+        bool isSecond{false};
+        bool hasNewData{false};
         Quaternion rawQuat {};
         // MPU dmp control/status vars
         bool dmpReady{false};  // set true if DMP init was successful

@@ -45,6 +45,9 @@
     MPU9250Sensor sensor{};
 #elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
     MPU6050Sensor sensor{};
+    #if defined(HAS_SECOND_IMU)
+        MPU6050Sensor sensor2{};
+    #endif
 #else
     #error Unsupported IMU
 #endif
@@ -119,6 +122,14 @@ void setup()
     #else
     sensor.setupBNO080(0, I2CSCAN::pickDevice(BNO_ADDR_1, BNO_ADDR_2, true), PIN_IMU_INT);
     #endif
+#endif
+#if IMU == IMU_MPU6050 && HAS_SECOND_IMU
+    if (I2CSCAN::isI2CExist(0x68) && I2CSCAN::isI2CExist(0x69)) {
+        sensor2.setSecond();
+        secondImuActive = true;
+    } else {
+        Serial.println("[ERR] HAS_SECOND_IMU defined but can't find I2C devices 0x68 and 0x69. Running in single sensor mode.");
+    }
 #endif
 
     sensor.motionSetup();
