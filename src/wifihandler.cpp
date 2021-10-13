@@ -74,7 +74,10 @@ void onConnected() {
 
 void wifiUpkeep() {
     if(WiFi.status() != WL_CONNECTED) {
-        isWifiConnected = false;
+        if(isWifiConnected) {
+            Serial.printf("[NOTICE] WiFi: Connection to WiFi lost, reconnecting...");
+            isWifiConnected = false;
+        }
         setLedStatus(LED_STATUS_WIFI_CONNECTING);
         reportWifiError();
         if(wifiConnectionTimeout + 11000 < millis()) {

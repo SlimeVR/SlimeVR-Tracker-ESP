@@ -59,7 +59,7 @@ void otaSetup(const char * const otaPassword) {
     });
     ArduinoOTA.begin();
 
-    Serial.println("[NOTICE] OTA allowed");
+    Serial.println("[NOTICE] OTA updates allowed");
 }
 
 void otaUpdate() {
@@ -67,7 +67,7 @@ void otaUpdate() {
         if(bootTime + 60000 < millis()) {
             // Disable OTA 60 seconds after boot as protection measure
             enabled = false;
-            Serial.println("[NOTICE] OTA disabled by timeout, it is not an error");
+            Serial.println("[NOTICE] OTA updates disabled by timeout, this is not an error");
             return;
         }
         ArduinoOTA.handle();
