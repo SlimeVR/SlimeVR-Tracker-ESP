@@ -30,6 +30,7 @@ unsigned long lastWifiReportTime = 0;
 unsigned long wifiConnectionTimeout = millis();
 bool isWifiConnected = false;
 uint8_t wifiState = 0;
+bool hadWifi = false;
 
 namespace {
     void reportWifiError() {
@@ -66,12 +67,14 @@ void setUpWiFi() {
 void onConnected() {
     unsetLedStatus(LED_STATUS_WIFI_CONNECTING);
     isWifiConnected = true;
+    hadWifi = true;
     Serial.printf("[NOTICE] WiFi: Connected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
     onWiFiConnected();
 }
 
 void wifiUpkeep() {
     if(WiFi.status() != WL_CONNECTED) {
+        isWifiConnected = false;
         setLedStatus(LED_STATUS_WIFI_CONNECTING);
         reportWifiError();
         if(wifiConnectionTimeout + 11000 < millis()) {
@@ -90,7 +93,7 @@ void wifiUpkeep() {
                 return;
                 case 2: // Couldn't connect with second set of credentials
                     // Start smart config
-                    if(!WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
+                    if(!hadWifi && !WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
                         if(WiFi.beginSmartConfig()) {
                             Serial.printf("[NOTICE] WiFi: Can't connect from any credentials, status: %d.\n", WiFi.status());
                             Serial.println("[NOTICE] WiFi: SmartConfig started");
