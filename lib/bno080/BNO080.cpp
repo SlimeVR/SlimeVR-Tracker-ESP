@@ -321,8 +321,9 @@ uint16_t BNO080::parseInputReport(void)
 	}
 
 	//Store these generic values to their proper global variable
-	if (shtpData[5] == SENSOR_REPORTID_ACCELEROMETER)
+	if (shtpData[5] == SENSOR_REPORTID_ACCELEROMETER || shtpData[5] == SENSOR_REPORTID_GRAVITY)
 	{
+		hasNewAccel_ = true;
 		accelAccuracy = status;
 		rawAccelX = data1;
 		rawAccelY = data2;
@@ -573,6 +574,10 @@ bool BNO080::hasNewMagQuat() {
 	return hasNewMagQuaternion;
 }
 
+bool BNO080::hasNewAccel() {
+	return hasNewAccel_;
+}
+
 //Return the rotation vector quaternion I
 float BNO080::getQuatI()
 {
@@ -622,6 +627,7 @@ void BNO080::getAccel(float &x, float &y, float &z, uint8_t &accuracy)
 	y = qToFloat(rawAccelY, accelerometer_Q1);
 	z = qToFloat(rawAccelZ, accelerometer_Q1);
 	accuracy = accelAccuracy;
+	hasNewAccel_ = false;
 }
 
 //Return the acceleration component
@@ -1138,6 +1144,11 @@ void BNO080::enableAccelerometer(uint16_t timeBetweenReports)
 	setFeatureCommand(SENSOR_REPORTID_ACCELEROMETER, timeBetweenReports);
 }
 
+//Sends the packet to enable the gravity
+void BNO080::enableGravity(uint16_t timeBetweenReports)
+{
+	setFeatureCommand(SENSOR_REPORTID_GRAVITY, timeBetweenReports);
+}
 //Sends the packet to enable the accelerometer
 void BNO080::enableLinearAccelerometer(uint16_t timeBetweenReports)
 {
