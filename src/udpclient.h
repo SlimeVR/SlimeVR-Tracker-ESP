@@ -78,6 +78,7 @@ void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type);
 void sendVector(float * const result, int type);
 void sendConfig(DeviceConfig * const config, int type);
 void sendFloat(float const value, int type);
+void send2Floats(float const value1, float const value2, int type);
 void sendByte(unsigned char const value, int type);
 void sendByte(uint8_t const value, uint8_t sensorId, int type);
 void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorState, int type);

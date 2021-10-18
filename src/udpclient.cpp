@@ -148,6 +148,27 @@ void sendFloat(float const value, int type)
     }
 }
 
+void send2Floats(float const value1, float const value2, int type)
+{
+    if (Udp.beginPacket(host, port) > 0)
+    {
+        sendType(type);
+        sendPacketNumber();
+        Udp.write(convert_to_chars(value1, buf), sizeof(value1));
+        Udp.write(convert_to_chars(value2, buf), sizeof(value2));
+        if (Udp.endPacket() == 0)
+        {
+            //Serial.print("Write error: ");
+            //Serial.println(Udp.getWriteError());
+        }
+    }
+    else
+    {
+        //Serial.print("Write error: ");
+        //Serial.println(Udp.getWriteError());
+    }
+}
+
 void sendByte(unsigned char const value, int type)
 {
     if (Udp.beginPacket(host, port) > 0)
