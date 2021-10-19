@@ -185,7 +185,8 @@ void loop()
     if(now_ms - last_battery_sample >= batterySampleRate) {
         last_battery_sample = now_ms;
         float battery = ((float) analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
-        sendFloat(battery, PACKET_BATTERY_LEVEL);
+        float batteryLevel = (125 * battery) * 0.5 - 162.5; // Not good probably
+        send2Floats(battery, batteryLevel, PACKET_BATTERY_LEVEL);
     }
 #endif
 }

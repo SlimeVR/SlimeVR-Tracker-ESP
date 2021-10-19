@@ -168,6 +168,7 @@ public:
 	void enableARVRStabilizedRotationVector(uint16_t timeBetweenReports);
 	void enableARVRStabilizedGameRotationVector(uint16_t timeBetweenReports);
 	void enableAccelerometer(uint16_t timeBetweenReports);
+	void enableGravity(uint16_t timeBetweenReports);
 	void enableLinearAccelerometer(uint16_t timeBetweenReports);
 	void enableGyro(uint16_t timeBetweenReports);
 	void enableMagnetometer(uint16_t timeBetweenReports);
@@ -203,6 +204,7 @@ public:
 	float getAccelY();
 	float getAccelZ();
 	uint8_t getAccelAccuracy();
+	bool hasNewAccel();
 
 	void getLinAccel(float &x, float &y, float &z, uint8_t &accuracy);
 	float getLinAccelX();
@@ -313,7 +315,7 @@ private:
 	uint16_t rawQuatI, rawQuatJ, rawQuatK, rawQuatReal, rawQuatRadianAccuracy, quatAccuracy;
 	uint16_t rawGameQuatI, rawGameQuatJ, rawGameQuatK, rawGameQuatReal, quatGameAccuracy;
 	uint16_t rawMagQuatI, rawMagQuatJ, rawMagQuatK, rawMagQuatReal, rawMagQuatRadianAccuracy, quatMagAccuracy;
-	bool hasNewQuaternion, hasNewGameQuaternion, hasNewMagQuaternion;
+	bool hasNewQuaternion, hasNewGameQuaternion, hasNewMagQuaternion, hasNewAccel_;
 	uint16_t rawFastGyroX, rawFastGyroY, rawFastGyroZ;
 	uint8_t tapDetector;
 	bool hasNewTap;

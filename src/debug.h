@@ -41,5 +41,5 @@
 #define sensorIdTime 1000
 #define sensorIdInterval 100
 
-#define FIRMWARE_BUILD_NUMBER 6
-#define FIRMWARE_VERSION "0.1.0"
+#define FIRMWARE_BUILD_NUMBER 7
+#define FIRMWARE_VERSION "0.1.1"

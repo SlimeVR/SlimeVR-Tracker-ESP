@@ -127,6 +127,12 @@ void BNO080Sensor::motionLoop()
         if(imu.getTapDetected()) {
             tap = imu.getTapDetector();
         }
+        if(imu.hasNewAccel()) {
+            float v[3];
+            uint8_t acc;
+            imu.getAccel(v[0], v[1], v[2], acc);
+            sendVector(v, PACKET_ACCEL);
+        }
         if(intPin == 255 || imu.I2CTimedOut())
             break;
     }
