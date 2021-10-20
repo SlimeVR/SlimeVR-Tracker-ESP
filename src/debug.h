@@ -41,5 +41,11 @@
 #define sensorIdTime 1000
 #define sensorIdInterval 100
 
-#define FIRMWARE_BUILD_NUMBER 7
-#define FIRMWARE_VERSION "0.1.1"
+// Send updates over network only when changes are substantial
+// If "false" updates are sent at the sensor update rate (usually 100 TPS)
+// If "true" updates will be less frequent in the time of little motion
+// Experimental
+#define OPTIMIZE_UPDATES false
+
+#define FIRMWARE_BUILD_NUMBER 8
+#define FIRMWARE_VERSION "0.1.2"

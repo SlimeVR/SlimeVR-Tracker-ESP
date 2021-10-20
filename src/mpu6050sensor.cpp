@@ -143,14 +143,17 @@ void MPU6050Sensor::motionLoop() {
         q[3] = rawQuat.w;
         quaternion.set(-q[1], q[0], q[2], q[3]);
         quaternion *= sensorOffset;
-        hasNewData = true;
+        if(!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion)) {
+            newData = true;
+            lastQuatSent = quaternion;
+        }
     }
 }
 
 void MPU6050Sensor::sendData() {
-    if(hasNewData) {
+    if(newData) {
         sendQuat(&quaternion, isSecond ? PACKET_ROTATION_2 : PACKET_ROTATION);
-        hasNewData = false;
+        newData = false;
     }
 }
 

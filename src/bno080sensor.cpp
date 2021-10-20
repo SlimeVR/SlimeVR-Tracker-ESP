@@ -110,7 +110,10 @@ void BNO080Sensor::motionLoop()
             if(imu.hasNewQuat()) {
                 imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
                 quaternion *= sensorOffset;
-                newData = true;
+                if(!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion)) {
+                    newData = true;
+                    lastQuatSent = quaternion;
+                }
             }
         } else {
             if(imu.hasNewGameQuat()) {
