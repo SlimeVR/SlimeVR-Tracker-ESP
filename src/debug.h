@@ -45,7 +45,7 @@
 // If "false" updates are sent at the sensor update rate (usually 100 TPS)
 // If "true" updates will be less frequent in the time of little motion
 // Experimental
-#define OPTIMIZE_UPDATES false
+#define OPTIMIZE_UPDATES true
 
 #define FIRMWARE_BUILD_NUMBER 8
 #define FIRMWARE_VERSION "0.1.2"

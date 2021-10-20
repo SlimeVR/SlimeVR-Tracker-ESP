@@ -38,8 +38,8 @@ namespace {
         }
     }
     
-    void sendResetReason(uint8_t reason) {
-        sendByte(reason, PACKET_RESET_REASON);
+    void sendResetReason(uint8_t reason, uint8_t sensorId) {
+        sendByte(reason, sensorId, PACKET_RESET_REASON);
     }
 }
 
@@ -146,8 +146,7 @@ void BNO080Sensor::motionLoop()
         uint8_t rr = imu.resetReason();
         if(rr != lastReset) {
             lastReset = rr;
-            sendResetReason(rr);
-            digitalWrite(LOADING_LED, LOW);
+            sendResetReason(rr, this->sensorId);
         }
         Serial.print("[ERR] Sensor ");
         Serial.print(sensorId);
