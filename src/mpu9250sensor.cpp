@@ -93,9 +93,6 @@ void MPU9250Sensor::motionLoop() {
 void MPU9250Sensor::sendData() {
     if(newData) {
         sendQuat(&quaternion, PACKET_ROTATION);
-        sendVector(rawMag, PACKET_RAW_MAGENTOMETER);
-        sendVector(Axyz, PACKET_ACCEL);
-        sendVector(Mxyz, PACKET_MAG);
     }
 }
 
