@@ -93,6 +93,7 @@ void MPU9250Sensor::motionLoop() {
 void MPU9250Sensor::sendData() {
     if(newData) {
         sendQuat(&quaternion, PACKET_ROTATION);
+        newData = false;
     }
 }
 
