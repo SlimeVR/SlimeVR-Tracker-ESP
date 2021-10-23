@@ -109,8 +109,8 @@ void setup()
     // Currently only second BNO08X is supported
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     #ifdef HAS_SECOND_IMU
-        uint8_t first = I2CSCAN::pickDevice(BNO_ADDR_1, BNO_ADDR_2, true);
-        uint8_t second = I2CSCAN::pickDevice(BNO_ADDR_2, BNO_ADDR_1, false);
+        uint8_t first = I2CSCAN::pickDevice(0x4A, 0x4B, true);
+        uint8_t second = I2CSCAN::pickDevice(0x4B, 0x4A, false);
         if(first != second) {
             sensor.setupBNO080(0, first, PIN_IMU_INT);
             sensor2.setupBNO080(1, second, PIN_IMU_INT_2);
@@ -119,7 +119,7 @@ void setup()
             sensor.setupBNO080(0, first, PIN_IMU_INT);
         }
     #else
-    sensor.setupBNO080(0, I2CSCAN::pickDevice(BNO_ADDR_1, BNO_ADDR_2, true), PIN_IMU_INT);
+    sensor.setupBNO080(0, I2CSCAN::pickDevice(0x4A, 0x4B, true), PIN_IMU_INT);
     #endif
 #endif
 #if IMU == IMU_MPU6050 || IMU == IMU_MPU6500

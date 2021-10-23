@@ -80,20 +80,12 @@
   #define PIN_IMU_INT 10
   #define PIN_IMU_INT_2 13
   #define PIN_BATTERY_LEVEL 17
-  #if BOARD == BOARD_SLIMEVR_DEV
-    #define BNO_ADDR_1 0x4B
-    #define BNO_ADDR_2 0x4A
-  #else
-    #define BNO_ADDR_1 0x4A
-    #define BNO_ADDR_2 0x4B
-  #endif
-#elif BOARD == BOARD_NODEMCU
+#elif BOARD == BOARD_NODEMCU || BOARD == BOARD_WEMOSD1MINI
   #define PIN_IMU_SDA D2
   #define PIN_IMU_SCL D1
   #define PIN_IMU_INT D5
   #define PIN_IMU_INT_2 D6
-  #define BNO_ADDR_1 0x4A
-  #define BNO_ADDR_2 0x4B
+  #define PIN_BATTERY_LEVEL A0
   #define BATTERY_SHIELD_130K true
 #elif BOARD == BOARD_CUSTOM
   // Define pins by the examples above
@@ -103,13 +95,6 @@
   #define PIN_IMU_INT 23
   #define PIN_IMU_INT_2 25
   #define PIN_BATTERY_LEVEL 36
-  #define BNO_ADDR_1 0x4A
-  #define BNO_ADDR_2 0x4B
-  #define BATTERY_SHIELD_130K true
-#elif BOARD == BOARD_WEMOSD1MINI
-  #define PIN_IMU_SDA D2
-  #define PIN_IMU_SCL D1
-  #define PIN_BATTERY_LEVEL A0
   #define BATTERY_SHIELD_130K true
 #endif
 
@@ -117,7 +102,7 @@
 #define CALIBRATING_LED LED_BUILTIN
 #define STATUS_LED LED_BUILTIN
 
-#if BATTERY_SHIELD_130K == true
+#if defined(BATTERY_SHIELD_130K) && BATTERY_SHIELD_130K == true
   // Wemos D1 Mini has an internal Voltage Divider with R1=220K and R2=100K > this means, 3.3V analogRead input voltage results in 1023.0
   // Wemos D1 Mini with Wemos BatteryShiled v1.2.0 or higher: BatteryShield with J2 closed, has an addtional 130K resistor. So the resulting Voltage Divider is R1=220K+100K=320K and R2=100K > this means, 4.5V analogRead input voltage results in 1023.0
   #define batteryADCMultiplier 1.0 / 1023.0 * 4.5
