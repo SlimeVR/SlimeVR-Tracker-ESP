@@ -50,6 +50,7 @@ class Sensor {
     protected:
         Quat quaternion {};
         Quat sensorOffset {Quat(Vector3(0, 0, 1), IMU_ROTATION)};
+        Quat lastQuatSent {};
         bool working {false};
         uint8_t sensorId {0};
 };
@@ -124,7 +125,7 @@ class MPU6050Sensor : public MPUSensor {
     private:
         MPU6050 imu {};
         bool isSecond{false};
-        bool hasNewData{false};
+        bool newData{false};
         Quaternion rawQuat {};
         // MPU dmp control/status vars
         bool dmpReady{false};  // set true if DMP init was successful
@@ -158,6 +159,7 @@ class MPU9250Sensor : public MPUSensor {
         // Loop timing globals
         unsigned long now = 0, last = 0;   //micros() timers
         float deltat = 0;                  //loop time in seconds
+        bool newData {false};
 };
 
 #endif /* _SENSOR_H_ */

@@ -59,7 +59,10 @@ void BNO055Sensor::motionLoop() {
     Quat quat = imu.getQuat();
     quaternion.set(quat.x, quat.y, quat.z, quat.w);
     quaternion *= sensorOffset;
-    newData = true;
+    if(!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion)) {
+        newData = true;
+        lastQuatSent = quaternion;
+    }
 }
 
 void BNO055Sensor::sendData() {

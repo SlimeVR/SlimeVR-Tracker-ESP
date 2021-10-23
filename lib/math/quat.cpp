@@ -137,6 +137,10 @@ bool Quat::is_normalized() const {
 	return Math::is_equal_approx(length_squared(), 1.0, UNIT_EPSILON); //use less epsilon
 }
 
+bool Quat::equalsWithEpsilon(const Quat& q2) {
+	return ABS(x - q2.x) < 0.0001f && ABS(y - q2.y) < 0.0001f && ABS(z - q2.z) < 0.0001f && ABS(w - q2.w) < 0.0001f;
+}
+
 Quat Quat::inverse() const {
 #ifdef MATH_CHECKS
 	ERR_FAIL_COND_V_MSG(!is_normalized(), Quat(), "The quaternion must be normalized.");

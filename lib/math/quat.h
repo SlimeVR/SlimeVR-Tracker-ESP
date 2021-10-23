@@ -77,6 +77,7 @@ public:
 	Quat slerp(const Quat& q, const float& t) const;
 	Quat slerpni(const Quat& q, const float& t) const;
 	Quat cubic_slerp(const Quat& q, const Quat& prep, const Quat& postq, const float& t) const;
+	bool equalsWithEpsilon(const Quat& q2);
 
 	void set_axis_angle(const Vector3& axis, const float& angle);
 	inline void get_axis_angle(Vector3& r_axis, double& r_angle) const {

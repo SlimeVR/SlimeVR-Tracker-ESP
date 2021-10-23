@@ -79,14 +79,24 @@ void MPU9250Sensor::motionLoop() {
     //MahonyQuaternionUpdate(Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat);
     quaternion.set(-imu.getQuaternionX(), -imu.getQuaternionY(), -imu.getQuaternionW(), imu.getQuaternionZ());
     quaternion *= sensorOffset;
+    if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
+        newData = true;
+        lastQuatSent = quaternion;
+    }
 }
 
 void MPU9250Sensor::sendData() {
+<<<<<<< HEAD
     sendQuat(&quaternion, PACKET_ROTATION);
     sendVector(Gxyz, PACKET_GYRO);
     sendVector(Axyz, PACKET_ACCEL);
     sendVector(Mxyz, PACKET_MAG);
     //sendVector(rawMag, PACKET_RAW_MAGENTOMETER);
+=======
+    if(newData) {
+        sendQuat(&quaternion, PACKET_ROTATION);
+    }
+>>>>>>> main
 }
 
 void MPU9250Sensor::getMPUScaled()
