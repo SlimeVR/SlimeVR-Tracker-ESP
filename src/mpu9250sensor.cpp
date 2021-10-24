@@ -97,6 +97,7 @@ void MPU9250Sensor::motionLoop() {
 void MPU9250Sensor::sendData() {
     if(newData) {
         sendQuat(&quaternion, PACKET_ROTATION);
+        newData = false;
     }
 }
 
@@ -296,7 +297,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0, PACKET_RAW_CALIBRATION_DATA);
 }
 
-#include <magento1.4.h>
+#include "magneto1.4.h"
 
 void MPU9250Sensor::internalCalibration()
 {
