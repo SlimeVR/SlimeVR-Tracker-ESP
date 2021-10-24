@@ -2312,4 +2312,4 @@ void Interchange_Rows(double* A, int row1, int row2, int ncols)
     }
 }
 
-#endif
+#endif // __MAGENTO_1_4__

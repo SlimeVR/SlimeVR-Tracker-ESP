@@ -44,5 +44,6 @@ struct DeviceConfig {
 DeviceConfig * const getConfigPtr();
 void setConfig(const DeviceConfig & config);
 void saveConfig();
+bool hasConfigStored();
 
 #endif // _OWO_CONFIG_H_

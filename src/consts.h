@@ -37,9 +37,9 @@
 #define BOARD_WEMOSD1MINI 6
 #define BOARD_TTGO_TBASE 7
 
-// #ifndef LED_BUILTIN
-// #define LED_BUILTIN 2
-// #endif
+#ifndef LED_BUILTIN
+#define LED_BUILTIN 2
+#endif
 
 #ifdef ESP8266
   #define HARDWARE_MCU 1
