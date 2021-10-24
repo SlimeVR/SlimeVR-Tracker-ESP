@@ -16,7 +16,6 @@ Compatible and tested with these IMUs (select during compilation):
 * MPU-9250
   * Using Mahony sensor fusion of Gyroscope, Magnetometer and Accelerometer, requires good magnetic environment.
   * NOTE: Currently can't be calibrated due to lack of proper commands from the server. Work in progress. Can be ran as MPU-6050 below w/o magnetometer.
-  * NOTE: Now Testing MPU9250 codes from [Arduino library for MPU9250](https://github.com/hideakitai/MPU9250)
 * MPU-6500 & MPU-6050
   * Using internal DMP to fuse Gyroscope and Accelerometer, can be used with MPU-9250 to use it without accelerometer, can drift substantially.
   * NOTE: Currently the MPU will auto calibrate when powered on. You *must* place it on the ground and *DO NOT* move it until calibration is complete (for a few seconds). **LED on the ESP will blink 5 times after calibration is over.**
