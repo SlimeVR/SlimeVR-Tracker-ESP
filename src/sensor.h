@@ -144,6 +144,7 @@ class MPU9250Sensor : public MPUSensor {
         void motionLoop() override final;
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
+        void internalCalibration();
         void getMPUScaled();
         void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
     private:

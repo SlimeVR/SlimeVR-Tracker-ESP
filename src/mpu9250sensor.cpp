@@ -25,9 +25,21 @@
 #include "sensor.h"
 #include "udpclient.h"
 #include "defines.h"
-//#include <i2cscan.h>
+#include "helper_3dmath.h"
+#include <i2cscan.h>
 #include "calibration.h"
 
+#define gscale (250. / 32768.0) * (PI / 180.0) //gyro default 250 LSB per d/s -> rad/s
+// These are the free parameters in the Mahony filter and fusion scheme,
+// Kp for proportional feedback, Ki for integral
+// with MPU-9250, angles start oscillating at Kp=40. Ki does not seem to help and is not required.
+#define Kp 10.0
+#define Ki 0.0
+
+CalibrationConfig * calibration;
+
+void get_MPU_scaled();
+void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
 namespace {
     void signalAssert() {
@@ -41,33 +53,30 @@ namespace {
 }
 
 void MPU9250Sensor::motionSetup() {
-#if serialDebug
-    imu.verbose(true);
-#endif
     uint8_t addr = 0x68;
-    if (!imu.setup(addr)) {
+    if(!I2CSCAN::isI2CExist(addr)) {
         addr = 0x69;
-        if (!imu.setup(addr)) {
+        if(!I2CSCAN::isI2CExist(addr)) {
             Serial.println("[ERR] Can't find I2C device on addr 0x68 or 0x69, returning");
             signalAssert();
             return;
         }
     }
+    // initialize device
+    imu.initialize(addr);
+    if(!imu.testConnection()) {
+        Serial.print("[ERR] Can't communicate with MPU, response 0x");
+        Serial.println(imu.getDeviceID(), HEX);
+    } else {
+        Serial.print("[OK] Connected to MPU, ID 0x");
+        Serial.println(imu.getDeviceID(), HEX);
+    }
 
-    Serial.print("[OK] Connected to MPU, ID 0x");
-    Serial.println(addr, HEX);
-
-    imu.selectFilter(QuatFilterSel::MADGWICK);
-    Serial.println("[NOTICE] Load Calibration Data");
-    eeprom.setupEEPROM(&imu);
-    // Serial.println("Calibration Start!");
-    // imu.verbose(true);
-    // imu.calibrateAccelGyro();
-    // imu.calibrateMag();
-    // imu.verbose(true);
-    // Serial.println("Calibration Finished");
-    // eeprom.saveCalibration();
-    Serial.println("[NOTICE] Finished Load Calibration Data");
+    DeviceConfig * const config = getConfigPtr();
+    calibration = &config->calibration;
+    if (!hasConfigStored()) {
+        internalCalibration();
+    }
 }
 
 void MPU9250Sensor::motionLoop() {
@@ -76,8 +85,8 @@ void MPU9250Sensor::motionLoop() {
     deltat = (now - last) * 1.0e-6; //seconds since last update
     last = now;
     getMPUScaled();
-    //MahonyQuaternionUpdate(Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat);
-    quaternion.set(-imu.getQuaternionX(), -imu.getQuaternionY(), -imu.getQuaternionW(), imu.getQuaternionZ());
+    MahonyQuaternionUpdate(Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat);
+    quaternion.set(-q[1], -q[2], -q[0], q[3]);
     quaternion *= sensorOffset;
     if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;
@@ -86,32 +95,55 @@ void MPU9250Sensor::motionLoop() {
 }
 
 void MPU9250Sensor::sendData() {
-<<<<<<< HEAD
-    sendQuat(&quaternion, PACKET_ROTATION);
-    sendVector(Gxyz, PACKET_GYRO);
-    sendVector(Axyz, PACKET_ACCEL);
-    sendVector(Mxyz, PACKET_MAG);
-    //sendVector(rawMag, PACKET_RAW_MAGENTOMETER);
-=======
     if(newData) {
         sendQuat(&quaternion, PACKET_ROTATION);
-        newData = false;
     }
->>>>>>> main
 }
 
 void MPU9250Sensor::getMPUScaled()
 {
-    if (imu.update()) {
-        for (int i = 0; i < 3; i++) {
-            Axyz[i] = imu.getAcc(i);
-            Gxyz[i] = imu.getGyro(i);
-            Mxyz[i] = imu.getMag(i);
-            rawMag[i] = Mxyz[i];
-        }
+    float temp[3];
+    int i;
+    imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+
+    Gxyz[0] = ((float)gx - calibration->G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
+    Gxyz[1] = ((float)gy - calibration->G_off[1]) * gscale;
+    Gxyz[2] = ((float)gz - calibration->G_off[2]) * gscale;
+
+    Axyz[0] = (float)ax;
+    Axyz[1] = (float)ay;
+    Axyz[2] = (float)az;
+    //apply offsets (bias) and scale factors from Magneto
+    if(useFullCalibrationMatrix) {
+        for (i = 0; i < 3; i++)
+            temp[i] = (Axyz[i] - calibration->A_B[i]);
+        Axyz[0] = calibration->A_Ainv[0][0] * temp[0] + calibration->A_Ainv[0][1] * temp[1] + calibration->A_Ainv[0][2] * temp[2];
+        Axyz[1] = calibration->A_Ainv[1][0] * temp[0] + calibration->A_Ainv[1][1] * temp[1] + calibration->A_Ainv[1][2] * temp[2];
+        Axyz[2] = calibration->A_Ainv[2][0] * temp[0] + calibration->A_Ainv[2][1] * temp[1] + calibration->A_Ainv[2][2] * temp[2];
+    } else {
+        for (i = 0; i < 3; i++)
+            Axyz[i] = (Axyz[i] - calibration->A_B[i]);
     }
-    
-    //Serial.printf("Gxyz: %f, %f, %f\nAxyz: %f, %f, %f\nMxyz: %f, %f, %f\n", Gxyz[0], Gxyz[1], Gxyz[2], Axyz[0], Axyz[1], Axyz[2], Mxyz[0], Mxyz[1], Mxyz[2]);
+    vector_normalize(Axyz);
+
+    Mxyz[0] = (float)mx;
+    Mxyz[1] = (float)my;
+    Mxyz[2] = (float)mz;
+    //apply offsets and scale factors from Magneto
+    if(useFullCalibrationMatrix) {
+        for (i = 0; i < 3; i++)
+            temp[i] = (Mxyz[i] - calibration->M_B[i]);
+        Mxyz[0] = calibration->M_Ainv[0][0] * temp[0] + calibration->M_Ainv[0][1] * temp[1] + calibration->M_Ainv[0][2] * temp[2];
+        Mxyz[1] = calibration->M_Ainv[1][0] * temp[0] + calibration->M_Ainv[1][1] * temp[1] + calibration->M_Ainv[1][2] * temp[2];
+        Mxyz[2] = calibration->M_Ainv[2][0] * temp[0] + calibration->M_Ainv[2][1] * temp[1] + calibration->M_Ainv[2][2] * temp[2];
+    } else {
+        for (i = 0; i < 3; i++)
+            Mxyz[i] = (Mxyz[i] - calibration->M_B[i]);
+    }
+    rawMag[0] = Mxyz[0];
+    rawMag[1] = Mxyz[1];
+    rawMag[2] = Mxyz[2];
+    vector_normalize(Mxyz);
 }
 
 // Mahony orientation filter, assumed World Frame NWU (xNorth, yWest, zUp)
@@ -123,42 +155,226 @@ void MPU9250Sensor::getMPUScaled()
 //
 void MPU9250Sensor::MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat)
 {
-    // include imu.update() function
+    // Vector to hold integral error for Mahony method
+    static float eInt[3] = {0.0, 0.0, 0.0};
+
+    // short name local variable for readability
+    float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];
+    float norm;
+    float hx, hy, hz;  //observed West vector W = AxM
+    float ux, uy, uz, wx, wy, wz; //calculated A (Up) and W in body frame
+    float ex, ey, ez;
+    float pa, pb, pc;
+
+    // Auxiliary variables to avoid repeated arithmetic
+    float q1q1 = q1 * q1;
+    float q1q2 = q1 * q2;
+    float q1q3 = q1 * q3;
+    float q1q4 = q1 * q4;
+    float q2q2 = q2 * q2;
+    float q2q3 = q2 * q3;
+    float q2q4 = q2 * q4;
+    float q3q3 = q3 * q3;
+    float q3q4 = q3 * q4;
+    float q4q4 = q4 * q4;
+
+    // Measured horizon vector = a x m (in body frame)
+    hx = ay * mz - az * my;
+    hy = az * mx - ax * mz;
+    hz = ax * my - ay * mx;
+    // Normalise horizon vector
+    norm = sqrt(hx * hx + hy * hy + hz * hz);
+    if (norm == 0.0f) return; // Handle div by zero
+
+    norm = 1.0f / norm;
+    hx *= norm;
+    hy *= norm;
+    hz *= norm;
+
+    // Estimated direction of Up reference vector
+    ux = 2.0f * (q2q4 - q1q3);
+    uy = 2.0f * (q1q2 + q3q4);
+    uz = q1q1 - q2q2 - q3q3 + q4q4;
+
+    // estimated direction of horizon (West) reference vector
+    wx = 2.0f * (q2q3 + q1q4);
+    wy = q1q1 - q2q2 + q3q3 - q4q4;
+    wz = 2.0f * (q3q4 - q1q2);
+
+    // Error is cross product between estimated direction and measured direction of the reference vectors
+    ex = (ay * uz - az * uy) + (hy * wz - hz * wy);
+    ey = (az * ux - ax * uz) + (hz * wx - hx * wz);
+    ez = (ax * uy - ay * ux) + (hx * wy - hy * wx);
+
+    if (Ki > 0.0f)
+    {
+        eInt[0] += ex; // accumulate integral error
+        eInt[1] += ey;
+        eInt[2] += ez;
+        // Apply I feedback
+        gx += Ki * eInt[0];
+        gy += Ki * eInt[1];
+        gz += Ki * eInt[2];
+    }
+
+    // Apply P feedback
+    gx = gx + Kp * ex;
+    gy = gy + Kp * ey;
+    gz = gz + Kp * ez;
+
+    // Integrate rate of change of quaternion
+    pa = q2;
+    pb = q3;
+    pc = q4;
+    q1 = q1 + (-q2 * gx - q3 * gy - q4 * gz) * (0.5f * deltat);
+    q2 = pa + (q1 * gx + pb * gz - pc * gy) * (0.5f * deltat);
+    q3 = pb + (q1 * gy - pa * gz + pc * gx) * (0.5f * deltat);
+    q4 = pc + (q1 * gz + pa * gy - pb * gx) * (0.5f * deltat);
+
+    // Normalise quaternion
+    norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);
+    norm = 1.0f / norm;
+    q[0] = q1 * norm;
+    q[1] = q2 * norm;
+    q[2] = q3 * norm;
+    q[3] = q4 * norm;
 }
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
     Serial.println("[NOTICE] Gathering raw data for device calibration...");
-    Serial.println("[NOTICE] Put down the device and wait for baseline gyro reading calibration");
-    // imu.verbose(true);
-    // imu.calibrateAccelGyro();
-    // if (imu.isConnectedAK8963()) {
-    //     imu.calibrateMag();
-    // }
-    // imu.verbose(false);
-    // eeprom.saveCalibration();
+    int calibrationSamples = 300;
+    // Reset values
+    Gxyz[0] = 0;
+    Gxyz[1] = 0;
+    Gxyz[2] = 0;
+
     // Wait for sensor to calm down before calibration
-    for (int i = 0; i < 3; i++) {
-        Gxyz[i] = imu.getGyroBias(i);
+    Serial.println("[NOTICE] Put down the device and wait for baseline gyro reading calibration");
+    delay(2000);
+    for (int i = 0; i < calibrationSamples; i++)
+    {
+        imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+        Gxyz[0] += float(gx);
+        Gxyz[1] += float(gy);
+        Gxyz[2] += float(gz);
     }
+    Gxyz[0] /= calibrationSamples;
+    Gxyz[1] /= calibrationSamples;
+    Gxyz[2] /= calibrationSamples;
     Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
     sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0, PACKET_RAW_CALIBRATION_DATA);
 
     // Blink calibrating led before user should rotate the sensor
-    Serial.println("[NOTICE] Gently rotate the device while it's gathering accelerometer and magnetometer data");    
-    digitalWrite(CALIBRATING_LED, LOW);
+    Serial.println("[NOTICE] Gently rotate the device while it's gathering accelerometer and magnetometer data");
+    for (int i = 0; i < 3000 / 310; ++i)
+    {
+        digitalWrite(CALIBRATING_LED, LOW);
+        delay(15);
+        digitalWrite(CALIBRATING_LED, HIGH);
+        delay(300);
+    }
     int calibrationDataAcc[3];
     int calibrationDataMag[3];
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < calibrationSamples; i++)
     {
-        calibrationDataAcc[i] = imu.getAccBias(i);
-        calibrationDataMag[i] = imu.getMagBias(i);
+        digitalWrite(CALIBRATING_LED, LOW);
+        imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+        calibrationDataAcc[0] = ax;
+        calibrationDataAcc[1] = ay;
+        calibrationDataAcc[2] = az;
+        calibrationDataMag[0] = mx;
+        calibrationDataMag[1] = my;
+        calibrationDataMag[2] = mz;
+        sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+        sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0, PACKET_RAW_CALIBRATION_DATA);
+        digitalWrite(CALIBRATING_LED, HIGH);
+        delay(250);
     }
-    sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
-    sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0, PACKET_RAW_CALIBRATION_DATA);
-    digitalWrite(CALIBRATING_LED, HIGH);
-
     Serial.println("[NOTICE] Calibration data gathered and sent");
     digitalWrite(CALIBRATING_LED, HIGH);
     sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0, PACKET_RAW_CALIBRATION_DATA);
+}
+
+#include <magento1.4.h>
+
+void MPU9250Sensor::internalCalibration()
+{
+    digitalWrite(CALIBRATING_LED, LOW);
+    Serial.println("[NOTICE] Gathering raw data for device calibration...");
+    int calibrationSamples = 300;
+    DeviceConfig config{};
+    // Reset values
+    Gxyz[0] = 0;
+    Gxyz[1] = 0;
+    Gxyz[2] = 0;
+
+    // Wait for sensor to calm down before calibration
+    Serial.println("[NOTICE] Put down the device and wait for baseline gyro reading calibration");
+    delay(2000);
+    for (int i = 0; i < calibrationSamples; i++)
+    {
+        imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+        Gxyz[0] += float(gx);
+        Gxyz[1] += float(gy);
+        Gxyz[2] += float(gz);
+    }
+    Gxyz[0] /= calibrationSamples;
+    Gxyz[1] /= calibrationSamples;
+    Gxyz[2] /= calibrationSamples;
+    Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
+    config.calibration.G_off[0] = Gxyz[0];
+    config.calibration.G_off[1] = Gxyz[1];
+    config.calibration.G_off[2] = Gxyz[2];
+
+    // Blink calibrating led before user should rotate the sensor
+    Serial.println("[NOTICE] After 3seconds, Gently rotate the device while it's gathering accelerometer and magnetometer data");
+    digitalWrite(CALIBRATING_LED, LOW);
+    delay(1500);
+    digitalWrite(CALIBRATING_LED, HIGH);
+    delay(1500);
+    Serial.println("[NOTICE] Gathering accelerometer and magnetometer data start!!");
+
+    float *calibrationDataAcc = (float*)malloc(calibrationSamples * 3 * sizeof(float));
+    float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
+    for (int i = 0; i < calibrationSamples; i++)
+    {
+        digitalWrite(CALIBRATING_LED, LOW);
+        imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+        calibrationDataAcc[i * 3 + 0] = ax;
+        calibrationDataAcc[i * 3 + 1] = ay;
+        calibrationDataAcc[i * 3 + 2] = az;
+        calibrationDataMag[i * 3 + 0] = mx;
+        calibrationDataMag[i * 3 + 1] = my;
+        calibrationDataMag[i * 3 + 2] = mz;
+        digitalWrite(CALIBRATING_LED, HIGH);
+        delay(250);
+    }
+    Serial.println("[NOTICE] Calibration data gathered");
+    digitalWrite(CALIBRATING_LED, HIGH);
+    delay(250);
+    Serial.println("[NOTICE] Now Calculate Calibration data");
+
+    float A_BAinv[4][3];
+    float M_BAinv[4][3];
+    CalculateCalibration(calibrationDataAcc, calibrationSamples, A_BAinv);
+    CalculateCalibration(calibrationDataMag, calibrationSamples, M_BAinv);
+    Serial.println("[NOTICE] Finished Calculate Calibration data");
+    Serial.println("[NOTICE] Now Saving EEPROM");
+    for (int i = 0; i < 3; i++)
+    {
+        config.calibration.A_B[i] = A_BAinv[0][i];
+        config.calibration.A_Ainv[0][i] = A_BAinv[1][i];
+        config.calibration.A_Ainv[1][i] = A_BAinv[2][i];
+        config.calibration.A_Ainv[2][i] = A_BAinv[3][i];
+
+        config.calibration.M_B[i] = M_BAinv[0][i];
+        config.calibration.M_Ainv[0][i] = M_BAinv[1][i];
+        config.calibration.M_Ainv[1][i] = M_BAinv[2][i];
+        config.calibration.M_Ainv[2][i] = M_BAinv[3][i];
+    }
+
+    setConfig(config);
+    Serial.println("[NOTICE] Finished Saving EEPROM");
+    delay(4000);
 }
