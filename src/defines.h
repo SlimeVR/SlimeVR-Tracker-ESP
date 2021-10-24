@@ -28,6 +28,7 @@
 #define BOARD BOARD_SLIMEVR
 #define IMU_ROTATION -PI / 2.0
 #define SECOND_IMU_ROTATION PI / 2.0
+#define BATTERY_SHIELD_130K false
 
 #if IMU == IMU_BNO085
   #define IMU_NAME "BNO085"
@@ -86,7 +87,12 @@
   #define PIN_IMU_INT D5
   #define PIN_IMU_INT_2 D6
   #define PIN_BATTERY_LEVEL A0
-  #define BATTERY_SHIELD_130K true
+#elif BOARD == BOARD_TTGO_TBASE
+  #define PIN_IMU_SDA 5
+  #define PIN_IMU_SCL 4
+  #define PIN_IMU_INT 14
+  #define PIN_IMU_INT_2 13
+  #define PIN_BATTERY_LEVEL A0
 #elif BOARD == BOARD_CUSTOM
   // Define pins by the examples above
 #elif BOARD == BOARD_WROOM32
@@ -95,7 +101,6 @@
   #define PIN_IMU_INT 23
   #define PIN_IMU_INT_2 25
   #define PIN_BATTERY_LEVEL 36
-  #define BATTERY_SHIELD_130K true
 #endif
 
 #define LOADING_LED LED_BUILTIN
