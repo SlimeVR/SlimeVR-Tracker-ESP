@@ -32,6 +32,7 @@
 #include <i2cscan.h>
 #include "serialcommands.h"
 #include "ledstatus.h"
+#include "ledmgr.h"
 
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     BNO080Sensor sensor{};
@@ -52,6 +53,10 @@
 #endif
 #ifndef HAS_SECOND_IMU
     EmptySensor sensor2{};
+#endif
+
+#if ENABLE_VCC_MONITOR
+uint16_t voltage_3_3 = 3000;
 #endif
 
 bool isCalibrating = false;
@@ -78,15 +83,21 @@ void commandRecieved(int command, void * const commandData, int commandDataLengt
     }
 }
 
+#if ENABLE_VCC_MONITOR
+ADC_MODE(ADC_VCC);
+#endif
+
 void setup()
 {
     //wifi_set_sleep_type(NONE_SLEEP_T);
     // Glow diode while loading
+#if ENABLE_LEDS
     pinMode(LOADING_LED, OUTPUT);
     pinMode(CALIBRATING_LED, OUTPUT);
     digitalWrite(CALIBRATING_LED, HIGH);
     digitalWrite(LOADING_LED, LOW);
-    
+#endif
+
     Serial.begin(serialBaudRate);
     setUpSerialCommands();
 #if IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_MPU9250
@@ -141,7 +152,7 @@ void setup()
 
     setUpWiFi();
     otaSetup(otaPassword);
-    digitalWrite(LOADING_LED, HIGH);
+    LEDMGR::Off(LOADING_LED);
 }
 
 // AHRS loop
@@ -181,12 +192,43 @@ void loop()
 #ifndef SEND_UPDATES_UNCONNECTED
     }
 #endif
-#ifdef PIN_BATTERY_LEVEL
-    if(now_ms - last_battery_sample >= batterySampleRate) {
+#if (defined(PIN_BATTERY_LEVEL) && ENABLE_ADCBATTERY_MONITOR) || ENABLE_VCC_MONITOR
+    if (now_ms - last_battery_sample >= batterySampleRate)
+    {
+#if ENABLE_VCC_MONITOR
         last_battery_sample = now_ms;
-        float battery = ((float) analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
+        auto level = ESP.getVcc();
+        if (level > voltage_3_3)
+        {
+            voltage_3_3 = level;
+        }
+        else
+        {
+            //Calculate drop in mV
+            level = voltage_3_3 - level;
+            if (level > 200)
+            {
+                //Battery completely empty dropped to 3.1V, sleep until reset to preserve bat and prevent malfunctions
+                ESP.deepSleep(0);
+            }
+            if (level > 100)
+            {
+                //Battery low, warn
+                send2Floats((float)3.3 - ((float)level / 1000), 0, PACKET_BATTERY_LEVEL);
+                return;
+            }
+#if !(defined(PIN_BATTERY_LEVEL) && ENABLE_ADCBATTERY_MONITOR)
+            //Battery still good
+            send2Floats((float)3.3 - ((float)level / 1000), 100, PACKET_BATTERY_LEVEL);
+#endif
+        }
+#endif
+#if defined(PIN_BATTERY_LEVEL) && ENABLE_ADCBATTERY_MONITOR
+        last_battery_sample = now_ms;
+        float battery = ((float)analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
         float batteryLevel = (125 * battery) * 0.5 - 162.5; // Not good probably
         send2Floats(battery, batteryLevel, PACKET_BATTERY_LEVEL);
+#endif
     }
 #endif
 }

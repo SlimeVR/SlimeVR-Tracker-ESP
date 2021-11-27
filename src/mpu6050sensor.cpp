@@ -32,15 +32,11 @@
 #include <i2cscan.h>
 #include "calibration.h"
 #include "configuration.h"
+#include "ledmgr.h"
 
 namespace {
     void signalAssert() {
-        for(int i = 0; i < 200; ++i) {
-            delay(50);
-            digitalWrite(LOADING_LED, LOW);
-            delay(50);
-            digitalWrite(LOADING_LED, HIGH);
-        }
+        LEDMGR::Pattern(LOADING_LED, 50, 50, 200);
     }
 }
 
@@ -95,12 +91,7 @@ void MPU6050Sensor::motionSetup() {
         imu.PrintActiveOffsets();
 #endif // IMU_MPU6050_RUNTIME_CALIBRATION
 
-        for(int i = 0; i < 5; ++i) {
-            delay(50);
-            digitalWrite(LOADING_LED, LOW);
-            delay(50);
-            digitalWrite(LOADING_LED, HIGH);
-        }
+        LEDMGR::Pattern(LOADING_LED, 50, 50, 5);
 
         // turn on the DMP, now that it's ready
         Serial.println(F("[NOTICE] Enabling DMP..."));
@@ -158,7 +149,7 @@ void MPU6050Sensor::sendData() {
 }
 
 void MPU6050Sensor::startCalibration(int calibrationType) {
-    digitalWrite(CALIBRATING_LED, LOW);
+    LEDMGR::On(CALIBRATING_LED);
     
 #ifdef IMU_MPU6050_RUNTIME_CALIBRATION
     Serial.println("MPU is using automatic runtime calibration. Place down the device and it should automatically calibrate after a few seconds");
@@ -172,6 +163,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
             sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
             break;
     }
+    LEDMGR::Off(CALIBRATING_LED);
 
 #else //!IMU_MPU6050_RUNTIME_CALIBRATION
     Serial.println("Put down the device and wait for baseline gyro reading calibration");
@@ -206,7 +198,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     }
 
     Serial.println("[NOTICE] Process is over");
-    digitalWrite(CALIBRATING_LED, HIGH);
+    LEDMGR::Off(CALIBRATING_LED);
 
 #endif // !IMU_MPU6050_RUNTIME_CALIBRATION
 }

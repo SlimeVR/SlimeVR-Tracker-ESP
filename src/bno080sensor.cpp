@@ -27,15 +27,12 @@
 #include "defines.h"
 #include <i2cscan.h>
 #include "ledstatus.h"
+#include "ledmgr.h"
 
 namespace {
-    void signalAssert() {
-        for(int i = 0; i < 200; ++i) {
-            delay(50);
-            digitalWrite(LOADING_LED, LOW);
-            delay(50);
-            digitalWrite(LOADING_LED, HIGH);
-        }
+    void signalAssert()
+    {
+        LEDMGR::Pattern(LOADING_LED, 50, 50, 200);
     }
     
     void sendResetReason(uint8_t reason, uint8_t sensorId) {
@@ -185,22 +182,16 @@ void BNO080Sensor::sendData() {
 
 void BNO080Sensor::startCalibration(int calibrationType) {
     // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
-    for(int i = 0; i < 10; ++i) {
-        digitalWrite(CALIBRATING_LED, LOW);
-        delay(20);
-        digitalWrite(CALIBRATING_LED, HIGH);
-        delay(20);
-    }
-    digitalWrite(CALIBRATING_LED, LOW);
-    delay(2000);
-    digitalWrite(CALIBRATING_LED, HIGH);
+    LEDMGR::Pattern(CALIBRATING_LED, 20, 20, 10);
+    LEDMGR::Blink(CALIBRATING_LED, 2000);
     imu.calibrateGyro();
-    do {
-        digitalWrite(CALIBRATING_LED, LOW);
+    do
+    {
+        LEDMGR::On(CALIBRATING_LED);
         imu.requestCalibrationStatus();
         delay(20);
         imu.getReadings();
-        digitalWrite(CALIBRATING_LED, HIGH);
+        LEDMGR::Off(CALIBRATING_LED);
         delay(20);
     } while(!imu.calibrationComplete());
     imu.saveCalibration();

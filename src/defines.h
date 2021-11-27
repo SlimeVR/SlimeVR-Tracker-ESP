@@ -29,6 +29,9 @@
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
 #define BATTERY_SHIELD_130K false
+#define ENABLE_VCC_MONITOR false
+#define ENABLE_ADCBATTERY_MONITOR true
+#define ENABLE_LEDS true
 
 #if IMU == IMU_BNO085
   #define IMU_NAME "BNO085"
@@ -88,6 +91,11 @@
   #define PIN_IMU_INT D5
   #define PIN_IMU_INT_2 D6
   #define PIN_BATTERY_LEVEL A0
+#elif BOARD == BOARD_ESP01
+  #define PIN_IMU_SDA 2
+  #define PIN_IMU_SCL 0
+  #define PIN_IMU_INT 255
+  #define PIN_IMU_INT_2 255
 #elif BOARD == BOARD_TTGO_TBASE
   #define PIN_IMU_SDA 5
   #define PIN_IMU_SCL 4
