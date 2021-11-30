@@ -20,6 +20,9 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_DEBUG_H_
+#define SLIMEVR_DEBUG_H_
+
 #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
 
 //Debug information
@@ -49,3 +52,5 @@
 
 #define FIRMWARE_BUILD_NUMBER 8
 #define FIRMWARE_VERSION "0.1.2"
+
+#endif // SLIMEVR_DEBUG_H_

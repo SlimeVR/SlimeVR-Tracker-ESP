@@ -21,8 +21,8 @@
     THE SOFTWARE.
 */
 
-#ifndef _UDP_CLIENT_H_
-#define _UDP_CLIENT_H_
+#ifndef SLIMEVR_UDP_CLIENT_H_
+#define SLIMEVR_UDP_CLIENT_H_
 
 #ifdef ESP8266
     #include <ESP8266WiFi.h>
@@ -46,7 +46,7 @@
 #define PACKET_RAW_CALIBRATION_DATA 6
 #define PACKET_CALIBRATION_FINISHED 7
 #define PACKET_CONFIG 8
-#define PACKET_RAW_MAGENTOMETER 9
+#define PACKET_RAW_MAGNETOMETER 9
 #define PACKET_PING_PONG 10
 #define PACKET_SERIAL 11
 #define PACKET_BATTERY_LEVEL 12
@@ -55,19 +55,19 @@
 #define PACKET_SENSOR_INFO 15
 #define PACKET_ROTATION_2 16
 #define PACKET_ROTATION_DATA 17
-#define PACKET_MAGENTOMETER_ACCURACY 18
+#define PACKET_MAGNETOMETER_ACCURACY 18
 
-#define PACKET_RECIEVE_HEARTBEAT 1
-#define PACKET_RECIEVE_VIBRATE 2
-#define PACKET_RECIEVE_HANDSHAKE 3
-#define PACKET_RECIEVE_COMMAND 4
+#define PACKET_RECEIVE_HEARTBEAT 1
+#define PACKET_RECEIVE_VIBRATE 2
+#define PACKET_RECEIVE_HANDSHAKE 3
+#define PACKET_RECEIVE_COMMAND 4
 
 #define COMMAND_CALLIBRATE 1
 #define COMMAND_SEND_CONFIG 2
 #define COMMAND_BLINK 3
 
-typedef void (* configRecievedCallback)(const DeviceConfig & newConfig);
-typedef void (* commandRecievedCallback)(int command, void * const commandData, int commandDataLength);
+typedef void (* configReceivedCallback)(const DeviceConfig & newConfig);
+typedef void (* commandReceivedCallback)(int command, void * const commandData, int commandDataLength);
 
 void connectClient();
 void clientUpdate(Sensor * const sensor, Sensor * const sensor2);
@@ -85,8 +85,8 @@ void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorStat
 void sendRawCalibrationData(int * const data, int calibrationType, unsigned char const sensorId, int type);
 void sendRawCalibrationData(float * const data, int calibrationType, unsigned char const sensorId, int type);
 void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, int type);
-void setConfigRecievedCallback(configRecievedCallback);
-void setCommandRecievedCallback(commandRecievedCallback);
+void setConfigReceivedCallback(configReceivedCallback);
+void setCommandReceivedCallback(commandReceivedCallback);
 void sendSerial(uint8_t *const data, int length, int type);
 void onWiFiConnected();
 bool isConnected();
@@ -94,4 +94,4 @@ bool isConnected();
 template<typename T> T convert_chars(unsigned char* src);
 template<typename T> unsigned char* convert_to_chars(T src, unsigned char* target);
 
-#endif // _UDP_CLIENT_H_
+#endif // SLIMEVR_UDP_CLIENT_H_

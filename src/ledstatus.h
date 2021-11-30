@@ -20,6 +20,9 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_LEDSTATUS_H_
+#define SLIMEVR_LEDSTATUS_H_
+
 #include "defines.h"
 #include "Arduino.h"
 
@@ -30,3 +33,5 @@
 void setLedStatus(uint32_t status);
 void unsetLedStatus(uint32_t status);
 void ledStatusUpdate();
+
+#endif // SLIMEVR_LEDSTATUS_H_

@@ -21,10 +21,10 @@
     THE SOFTWARE.
 */
 
-#ifndef _SERIALCOMMANDS_H_
-#define _SERIALCOMMANDS_H_ 1
+#ifndef SLIMEVR_SERIALCOMMANDS_H_
+#define SLIMEVR_SERIALCOMMANDS_H_
 
 void setUpSerialCommands();
 void serialCommandsUpdate();
 
-#endif // _SERIALCOMMANDS_H_
+#endif // SLIMEVR_SERIALCOMMANDS_H_
