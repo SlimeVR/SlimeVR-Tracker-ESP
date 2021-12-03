@@ -206,11 +206,13 @@ void loop()
         {
             //Calculate drop in mV
             level = voltage_3_3 - level;
+#if SHUTDOWN_LOW_POWER
             if (level > 200)
             {
-                //Battery completely empty dropped to 3.1V, sleep until reset to preserve bat and prevent malfunctions
+                //Battery completely empty at 3.2V since 3.3V dropped to 3.1V, sleep until reset to preserve bat and prevent malfunctions
                 ESP.deepSleep(0);
             }
+#endif
             if (level > 100)
             {
                 //Battery low, warn
@@ -226,6 +228,12 @@ void loop()
 #if defined(PIN_BATTERY_LEVEL) && ENABLE_ADCBATTERY_MONITOR
         last_battery_sample = now_ms;
         float battery = ((float)analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
+#if SHUTDOWN_LOW_POWER
+        if (battery < 3.2)
+        {
+            ESP.deepSleep(0);
+        }
+#endif
         float batteryLevel = (125 * battery) * 0.5 - 162.5; // Not good probably
         send2Floats(battery, batteryLevel, PACKET_BATTERY_LEVEL);
 #endif

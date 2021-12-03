@@ -32,6 +32,7 @@
 #define ENABLE_VCC_MONITOR false
 #define ENABLE_ADCBATTERY_MONITOR true
 #define ENABLE_LEDS true
+#define SHUTDOWN_LOW_POWER true
 
 #if IMU == IMU_BNO085
   #define IMU_NAME "BNO085"
