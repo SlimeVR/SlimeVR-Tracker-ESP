@@ -21,11 +21,11 @@
     THE SOFTWARE.
 */
 
-#ifndef _OWO_CONFIG_H_
-#define _OWO_CONFIG_H_
+#ifndef SLIMEVR_CONFIG_H_
+#define SLIMEVR_CONFIG_H_
 
 struct CalibrationConfig {
-    //acel offsets and correction matrix
+    //accel offsets and correction matrix
     float A_B[3];
     float A_Ainv[3][3];
     // mag offsets and correction matrix
@@ -45,4 +45,4 @@ DeviceConfig * const getConfigPtr();
 void setConfig(const DeviceConfig & config);
 void saveConfig();
 
-#endif // _OWO_CONFIG_H_
+#endif // SLIMEVR_CONFIG_H_

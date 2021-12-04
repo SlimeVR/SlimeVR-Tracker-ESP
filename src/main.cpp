@@ -66,7 +66,7 @@ unsigned long now_ms, last_ms = 0; //millis() timers
 unsigned long last_battery_sample = 0;
 bool secondImuActive = false;
 
-void commandRecieved(int command, void * const commandData, int commandDataLength)
+void commandReceived(int command, void * const commandData, int commandDataLength)
 {
     switch (command)
     {
@@ -107,13 +107,13 @@ void setup()
     // join I2C bus
     Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
 #ifdef ESP8266
-    Wire.setClockStretchLimit(150000L); // Default streatch limit 150mS
+    Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif
     Wire.setClock(I2C_SPEED);
 
     getConfigPtr();
-    setConfigRecievedCallback(setConfig);
-    setCommandRecievedCallback(commandRecieved);
+    setConfigReceivedCallback(setConfig);
+    setCommandReceivedCallback(commandReceived);
     // Wait for IMU to boot
     delay(500);
     

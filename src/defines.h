@@ -20,6 +20,9 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_DEFINES_H_
+#define SLIMEVR_DEFINES_H_
+
 #include "consts.h"
 #include "debug.h"
 
@@ -119,9 +122,11 @@
 
 #if defined(BATTERY_SHIELD_130K) && BATTERY_SHIELD_130K == true
   // Wemos D1 Mini has an internal Voltage Divider with R1=220K and R2=100K > this means, 3.3V analogRead input voltage results in 1023.0
-  // Wemos D1 Mini with Wemos BatteryShiled v1.2.0 or higher: BatteryShield with J2 closed, has an addtional 130K resistor. So the resulting Voltage Divider is R1=220K+100K=320K and R2=100K > this means, 4.5V analogRead input voltage results in 1023.0
+  // Wemos D1 Mini with Wemos BatteryShiled v1.2.0 or higher: BatteryShield with J2 closed, has an additional 130K resistor. So the resulting Voltage Divider is R1=220K+100K=320K and R2=100K > this means, 4.5V analogRead input voltage results in 1023.0
   #define batteryADCMultiplier 1.0 / 1023.0 * 4.5
 #else
   // SlimeVR Board can handle max 5V > so analogRead of 5.0V input will result in 1023.0
   #define batteryADCMultiplier 1.0 / 1023.0 * 5.0
 #endif
+
+#endif // SLIMEVR_DEFINES_H_

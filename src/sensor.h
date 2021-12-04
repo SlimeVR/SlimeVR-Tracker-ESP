@@ -21,8 +21,8 @@
     THE SOFTWARE.
 */
 
-#ifndef _SENSOR_H_
-#define _SENSOR_H_ 1
+#ifndef SLIMEVR_SENSOR_H_
+#define SLIMEVR_SENSOR_H_
 
 #include <BNO080.h>
 #include <MPU9250.h>
@@ -88,8 +88,8 @@ class BNO080Sensor : public Sensor {
         float magneticAccuracyEstimate {999};
         uint8_t calibrationAccuracy {0};
         uint8_t magCalibrationAccuracy {0};
-        bool useMagentometerAllTheTime {false};
-        bool useMagentometerCorrection {false};
+        bool useMagnetometerAllTheTime {false};
+        bool useMagnetometerCorrection {false};
 };
 
 class BNO055Sensor : public Sensor {
@@ -162,4 +162,4 @@ class MPU9250Sensor : public MPUSensor {
         bool newData {false};
 };
 
-#endif /* _SENSOR_H_ */
+#endif // SLIMEVR_SENSOR_H_

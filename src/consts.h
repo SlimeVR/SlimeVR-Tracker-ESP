@@ -20,6 +20,9 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_CONSTS_H_
+#define SLIMEVR_CONSTS_H_
+
 // List of constants used in other places
 #define IMU_MPU9250 1
 #define IMU_MPU6500 2
@@ -54,3 +57,5 @@
 #else
   #define HARDWARE_MCU 0
 #endif
+
+#endif // SLIMEVR_CONSTS_H_

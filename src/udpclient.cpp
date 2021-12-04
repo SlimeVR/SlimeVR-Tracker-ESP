@@ -31,8 +31,8 @@ unsigned char incomingPacket[128]; // buffer for incoming packets
 uint64_t packetNumber = 1;
 unsigned char handshake[12] = {0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char buf[128];
-configRecievedCallback fp_configCallback;
-commandRecievedCallback fp_commandCallback;
+configReceivedCallback fp_configCallback;
+commandReceivedCallback fp_commandCallback;
 
 int port = 6969;
 IPAddress host = IPAddress(255, 255, 255, 255);
@@ -509,12 +509,12 @@ void returnLastPacket(int len) {
     }
 }
 
-void setConfigRecievedCallback(configRecievedCallback callback)
+void setConfigReceivedCallback(configReceivedCallback callback)
 {
     fp_configCallback = callback;
 }
 
-void setCommandRecievedCallback(commandRecievedCallback callback)
+void setCommandReceivedCallback(commandReceivedCallback callback)
 {
     fp_commandCallback = callback;
 }
@@ -556,26 +556,26 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
 
                 switch (convert_chars<int>(incomingPacket))
                 {
-                case PACKET_RECIEVE_HEARTBEAT:
+                case PACKET_RECEIVE_HEARTBEAT:
                     sendHeartbeat();
                     break;
-                case PACKET_RECIEVE_VIBRATE:
+                case PACKET_RECEIVE_VIBRATE:
                     if(fp_commandCallback) {
                         fp_commandCallback(COMMAND_BLINK, nullptr, 0);
                     }
                     break;
-                case PACKET_RECIEVE_HANDSHAKE:
-                    // Assume handshake sucessful
-                    Serial.println("Handshale recived again, ignoring");
+                case PACKET_RECEIVE_HANDSHAKE:
+                    // Assume handshake successful
+                    Serial.println("Handshale received again, ignoring");
                     break;
-                case PACKET_RECIEVE_COMMAND:
+                case PACKET_RECEIVE_COMMAND:
                     if (len < 6)
                     {
                         Serial.println("Command packet too short");
                         break;
                     }
                     if(serialDebug) {
-                        Serial.printf("Recieved command %d\n", incomingPacket[4]);
+                        Serial.printf("Received command %d\n", incomingPacket[4]);
                     }
                     if (fp_commandCallback)
                     {
@@ -653,7 +653,7 @@ void connectClient()
             switch (incomingPacket[0])
             {
             case PACKET_HANDSHAKE:
-                // Assume handshake sucessful, don't check it
+                // Assume handshake successful, don't check it
                 // But proper handshake should contain "Hey OVR =D 5" ASCII string right after the packet number
                 // Starting on 14th byte (packet number, 12 bytes greetings, null-terminator) we can transfer SlimeVR handshake data
                 host = Udp.remoteIP();
@@ -664,7 +664,7 @@ void connectClient()
 #ifndef SEND_UPDATES_UNCONNECTED
                 LEDMGR::Off(LOADING_LED);
 #endif
-                Serial.printf("[Handshake] Handshale sucessful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
+                Serial.printf("[Handshake] Handshale successful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
             default:
             continue;
