@@ -76,19 +76,19 @@ void BNO080Sensor::motionSetup()
     Serial.print(" SW Version Patch: 0x");
     Serial.println(imu.swVersionPatch, HEX);
 #if defined(BNO_HAS_ARVR_STABILIZATION) && BNO_HAS_ARVR_STABILIZATION
-        if(useMagentometerAllTheTime) {
+        if(useMagnetometerAllTheTime) {
             imu.enableARVRStabilizedRotationVector(10);
         } else {
             imu.enableARVRStabilizedGameRotationVector(10);
-            if(useMagentometerCorrection)
+            if(useMagnetometerCorrection)
                 imu.enableRotationVector(1000);
         }
 #else
-    if(useMagentometerAllTheTime) {
+    if(useMagnetometerAllTheTime) {
         imu.enableRotationVector(10);
     } else {
         imu.enableGameRotationVector(10);
-        if(useMagentometerCorrection)
+        if(useMagnetometerCorrection)
             imu.enableRotationVector(1000);
     }
 #endif
@@ -106,7 +106,7 @@ void BNO080Sensor::motionLoop()
     {
         lastReset = -1;
         lastData = millis();
-        if(useMagentometerAllTheTime || !useMagentometerCorrection) {
+        if(useMagnetometerAllTheTime || !useMagnetometerCorrection) {
             if(imu.hasNewQuat()) {
                 imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
                 quaternion *= sensorOffset;
@@ -159,8 +159,8 @@ void BNO080Sensor::sendData() {
     if(newData) {
         newData = false;
         sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
-        if(useMagentometerAllTheTime)
-            sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGENTOMETER_ACCURACY);
+        if(useMagnetometerAllTheTime)
+            sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGNETOMETER_ACCURACY);
 #ifdef FULL_DEBUG
             Serial.print("[DBG] Quaternion: ");
             Serial.print(quaternion.x);
@@ -175,7 +175,7 @@ void BNO080Sensor::sendData() {
     if(newMagData) {
         newMagData = false;
         sendRotationData(&magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
-        sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGENTOMETER_ACCURACY);
+        sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGNETOMETER_ACCURACY);
     }
     if(tap != 0) {
         sendByte(tap, sensorId, PACKET_TAP);

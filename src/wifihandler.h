@@ -21,8 +21,8 @@
     THE SOFTWARE.
 */
 
-#ifndef _WIFI_H_
-#define _WIFI_H_
+#ifndef SLIMEVR_WIFI_H_
+#define SLIMEVR_WIFI_H_
 
 #include "configuration.h"
 
@@ -31,4 +31,4 @@ void setUpWiFi();
 void wifiUpkeep();
 void setWiFiCredentials(const char * SSID, const char * pass);
 
-#endif // _WIFI_H_
+#endif // SLIMEVR_WIFI_H_
