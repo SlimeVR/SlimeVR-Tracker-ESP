@@ -207,13 +207,13 @@ void loop()
             //Calculate drop in mV
             level = voltage_3_3 - level;
 #if SHUTDOWN_LOW_POWER
-            if (level > 200)
+            if (level > 100)
             {
-                //Battery completely empty at 3.2V since 3.3V dropped to 3.1V, sleep until reset to preserve bat and prevent malfunctions
+                //Battery completely empty at 3.3V since 3.3V VCC dropped to 3.2V, sleep until reset to preserve bat and prevent malfunctions
                 ESP.deepSleep(0);
             }
 #endif
-            if (level > 100)
+            if (level > 50)
             {
                 //Battery low, warn
                 send2Floats((float)3.3 - ((float)level / 1000), 0, PACKET_BATTERY_LEVEL);
