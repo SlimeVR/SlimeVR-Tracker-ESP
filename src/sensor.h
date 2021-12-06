@@ -124,6 +124,7 @@ class MPU6050Sensor : public MPUSensor {
         void startCalibration(int calibrationType) override final;
     private:
         MPU6050 imu {};
+        uint8_t addr = 0;
         bool isSecond{false};
         bool newData{false};
         Quaternion rawQuat {};

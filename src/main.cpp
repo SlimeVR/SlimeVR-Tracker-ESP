@@ -35,21 +35,42 @@
 
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     BNO080Sensor sensor{};
-    #if defined(PIN_IMU_INT_2)
-        #define HAS_SECOND_IMU true
-        BNO080Sensor sensor2{};
-    #endif
 #elif IMU == IMU_BNO055
     BNO055Sensor sensor{};
 #elif IMU == IMU_MPU9250
     MPU9250Sensor sensor{};
 #elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
     MPU6050Sensor sensor{};
-    #define HAS_SECOND_IMU true
-    MPU6050Sensor sensor2{};
 #else
     #error Unsupported IMU
 #endif
+
+// Deprecated block: Checks for old type of config. Remove after a grace period to allow people to use outdated defines.h for a while.
+#ifndef SECOND_IMU
+    #if IMU == IMU_BNO080
+        #define SECOND_IMU IMU_BNO080
+    #elsif IMU == IMU_BNO085
+        #define SECOND_IMU IMU_BNO085
+    #elsif IMU == IMU_MPU6500
+        #define SECOND_IMU IMU_MPU6500
+    #elsif IMU == IMU_MPU6050
+        #define SECOND_IMU IMU_MPU6050
+    #else
+        #error Unsupported IMU
+    #endif
+#endif
+// End deprecated block
+
+#if SECOND_IMU == IMU_BNO080 || SECOND_IMU == IMU_BNO085
+    #if defined(PIN_IMU_INT_2)
+        BNO080Sensor sensor2{};
+        #define HAS_SECOND_IMU true
+    #endif
+#elif SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050
+    MPU6050Sensor sensor2{};
+    #define HAS_SECOND_IMU true
+#endif
+
 #ifndef HAS_SECOND_IMU
     EmptySensor sensor2{};
 #endif
@@ -106,9 +127,8 @@ void setup()
     // Wait for IMU to boot
     delay(500);
     
-    // Currently only second BNO08X is supported
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
-    #ifdef HAS_SECOND_IMU
+    #if defined(HAS_SECOND_IMU) && (SECOND_IMU == IMU_BNO080 || SECOND_IMU == IMU_BNO085)
         uint8_t first = I2CSCAN::pickDevice(0x4A, 0x4B, true);
         uint8_t second = I2CSCAN::pickDevice(0x4B, 0x4A, false);
         if(first != second) {
@@ -123,7 +143,7 @@ void setup()
     #endif
 #endif
 #if IMU == IMU_MPU6050 || IMU == IMU_MPU6500
-    #ifdef HAS_SECOND_IMU
+    #if defined(HAS_SECOND_IMU) && (SECOND_IMU == IMU_MPU6050 || SECOND_IMU == IMU_MPU6500)
         uint8_t first = I2CSCAN::pickDevice(0x68, 0x69, true);
         uint8_t second = I2CSCAN::pickDevice(0x69, 0x68, false);
         if(first != second) {
@@ -131,6 +151,9 @@ void setup()
             secondImuActive = true;
         }
     #endif
+#elif SECOND_IMU == IMU_MPU6050 || SECOND_IMU == IMU_MPU6500
+    sensor2.setSecond();
+    secondImuActive = true;
 #endif
 
     sensor.motionSetup();
