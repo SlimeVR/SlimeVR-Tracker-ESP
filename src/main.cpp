@@ -47,16 +47,14 @@
 
 // Deprecated block: Checks for old type of config. Remove after a grace period to allow people to use outdated defines.h for a while.
 #ifndef SECOND_IMU
-    #if IMU == IMU_BNO080
-        #define SECOND_IMU IMU_BNO080
-    #elsif IMU == IMU_BNO085
+    #if IMU == IMU_BNO085
         #define SECOND_IMU IMU_BNO085
-    #elsif IMU == IMU_MPU6500
+    #elif IMU == IMU_BNO080
+        #define SECOND_IMU IMU_BNO080
+    #elif IMU == IMU_MPU6500
         #define SECOND_IMU IMU_MPU6500
-    #elsif IMU == IMU_MPU6050
+    #elif IMU == IMU_MPU6050
         #define SECOND_IMU IMU_MPU6050
-    #else
-        #error Unsupported IMU
     #endif
 #endif
 // End deprecated block
