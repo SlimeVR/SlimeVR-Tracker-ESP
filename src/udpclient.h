@@ -26,10 +26,11 @@
 
 #ifdef ESP8266
     #include <ESP8266WiFi.h>
+    #include <ESPAsyncUDP.h>
 #else
     #include <WiFi.h>
+    #include <AsyncUDP.h>
 #endif
-#include <AsyncUDP.h>
 #include <Arduino.h>
 #include "quat.h"
 #include "configuration.h"
