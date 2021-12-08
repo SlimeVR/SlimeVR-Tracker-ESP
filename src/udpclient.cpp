@@ -658,14 +658,6 @@ void onPacketCallBack(AsyncUDPPacket packet)
                 //    size_t bytesRead = Serial.readBytes(serialBuffer, min(Serial.available(), sizeof(serialBuffer)));
                 //    sendSerial(serialBuffer, bytesRead, PACKET_SERIAL);
                 //}
-                if (lastPacketMs + TIMEOUT < millis())
-                {
-                    setLedStatus(LED_STATUS_SERVER_CONNECTING);
-                    connected = false;
-                    sensorStateNotified1 = false;
-                    sensorStateNotified2 = false;
-                    Serial.println("Connection to server timed out");
-                }
             }
             else
             {
@@ -719,6 +711,14 @@ void clientUpdate(Sensor *const sensor, Sensor *const sensor2)
     {
         if (connected)
         {
+            if (lastPacketMs + TIMEOUT < millis())
+            {
+                setLedStatus(LED_STATUS_SERVER_CONNECTING);
+                connected = false;
+                sensorStateNotified1 = false;
+                sensorStateNotified2 = false;
+                Serial.println("Connection to server timed out");
+            }
             if (sensorStateNotified1 != sensor->isWorking() || sensorStateNotified2 != sensor2->isWorking())
             {
                 updateSensorState(sensor, sensor2);
