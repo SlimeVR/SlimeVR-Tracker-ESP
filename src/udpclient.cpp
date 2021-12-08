@@ -26,7 +26,8 @@
 
 #define TIMEOUT 3000UL
 
-WiFiUDP Udp;
+AsyncUDP Udp;
+AsyncUDPMessage Udpmsg;
 unsigned char incomingPacket[128]; // buffer for incoming packets
 uint64_t packetNumber = 1;
 unsigned char handshake[12] = {0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -34,7 +35,7 @@ unsigned char buf[128];
 configReceivedCallback fp_configCallback;
 commandReceivedCallback fp_commandCallback;
 
-int port = 6969;
+uint16_t port = 6969;
 IPAddress host = IPAddress(255, 255, 255, 255);
 bool connected = false;
 unsigned long lastConnectionAttemptMs;
@@ -47,9 +48,8 @@ bool sensorStateNotified1 = false;
 bool sensorStateNotified2 = false;
 unsigned long lastSensorInfoPacket = 0;
 
-
 template <typename T>
-unsigned char * convert_to_chars(T src, unsigned char * target)
+unsigned char *convert_to_chars(T src, unsigned char *target)
 {
     union uwunion
     {
@@ -65,7 +65,7 @@ unsigned char * convert_to_chars(T src, unsigned char * target)
 }
 
 template <typename T>
-T convert_chars(unsigned char * const src)
+T convert_chars(unsigned char *const src)
 {
     union
     {
@@ -83,39 +83,40 @@ void sendPacketNumber()
 {
     //uint64_t pn = packetNumber++;
     // TODO Send packet number
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
+    Udpmsg.write(0);
+    Udpmsg.write(0);
+    Udpmsg.write(0);
+    Udpmsg.write(0);
+    Udpmsg.write(0);
+    Udpmsg.write(0);
+    Udpmsg.write(0);
+    Udpmsg.write(0);
 }
 
 void sendType(int type)
 {
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(type);
+    Udpmsg.write(0);
+    Udpmsg.write(0);
+    Udpmsg.write(0);
+    Udpmsg.write(type);
 }
 
 void sendVector(float *const result, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         float x = result[0];
         float y = result[1];
         float z = result[2];
         float w = 0;
         sendType(type);
         sendPacketNumber();
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        Udp.write(convert_to_chars(w, buf), sizeof(w));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(convert_to_chars(x, buf), sizeof(x));
+        Udpmsg.write(convert_to_chars(y, buf), sizeof(y));
+        Udpmsg.write(convert_to_chars(z, buf), sizeof(z));
+        Udpmsg.write(convert_to_chars(w, buf), sizeof(w));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -130,12 +131,13 @@ void sendVector(float *const result, int type)
 
 void sendFloat(float const value, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         sendType(type);
         sendPacketNumber();
-        Udp.write(convert_to_chars(value, buf), sizeof(value));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(convert_to_chars(value, buf), sizeof(value));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -150,13 +152,14 @@ void sendFloat(float const value, int type)
 
 void send2Floats(float const value1, float const value2, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         sendType(type);
         sendPacketNumber();
-        Udp.write(convert_to_chars(value1, buf), sizeof(value1));
-        Udp.write(convert_to_chars(value2, buf), sizeof(value2));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(convert_to_chars(value1, buf), sizeof(value1));
+        Udpmsg.write(convert_to_chars(value2, buf), sizeof(value2));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -171,12 +174,13 @@ void send2Floats(float const value1, float const value2, int type)
 
 void sendByte(unsigned char const value, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         sendType(type);
         sendPacketNumber();
-        Udp.write(&value, 1);
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(&value, 1);
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -191,13 +195,14 @@ void sendByte(unsigned char const value, int type)
 
 void sendByte(uint8_t const value, uint8_t sensorId, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         sendType(type);
         sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(&value, 1);
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(&sensorId, 1);
+        Udpmsg.write(&value, 1);
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -212,19 +217,20 @@ void sendByte(uint8_t const value, uint8_t sensorId, int type)
 
 void sendQuat(Quat *const quaternion, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         float x = quaternion->x;
         float y = quaternion->y;
         float z = quaternion->z;
         float w = quaternion->w;
         sendType(type);
         sendPacketNumber();
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        Udp.write(convert_to_chars(w, buf), sizeof(w));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(convert_to_chars(x, buf), sizeof(x));
+        Udpmsg.write(convert_to_chars(y, buf), sizeof(y));
+        Udpmsg.write(convert_to_chars(z, buf), sizeof(z));
+        Udpmsg.write(convert_to_chars(w, buf), sizeof(w));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -237,23 +243,25 @@ void sendQuat(Quat *const quaternion, int type)
     }
 }
 
-void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+void sendRotationData(Quat *const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId, int type)
+{
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         float x = quaternion->x;
         float y = quaternion->y;
         float z = quaternion->z;
         float w = quaternion->w;
         sendType(type);
         sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(&dataType, 1);
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        Udp.write(convert_to_chars(w, buf), sizeof(w));
-        Udp.write(&accuracyInfo, 1);
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(&sensorId, 1);
+        Udpmsg.write(&dataType, 1);
+        Udpmsg.write(convert_to_chars(x, buf), sizeof(x));
+        Udpmsg.write(convert_to_chars(y, buf), sizeof(y));
+        Udpmsg.write(convert_to_chars(z, buf), sizeof(z));
+        Udpmsg.write(convert_to_chars(w, buf), sizeof(w));
+        Udpmsg.write(&accuracyInfo, 1);
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -266,14 +274,16 @@ void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accurac
     }
 }
 
-void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type)
+{
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         sendType(type);
         sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(convert_to_chars(accuracyInfo, buf), sizeof(accuracyInfo));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(&sensorId, 1);
+        Udpmsg.write(convert_to_chars(accuracyInfo, buf), sizeof(accuracyInfo));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -288,19 +298,20 @@ void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type) {
 
 void sendQuat(float *const quaternion, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         float x = quaternion[0];
         float y = quaternion[1];
         float z = quaternion[2];
         float w = quaternion[3];
         sendType(type);
         sendPacketNumber();
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        Udp.write(convert_to_chars(w, buf), sizeof(w));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(convert_to_chars(x, buf), sizeof(x));
+        Udpmsg.write(convert_to_chars(y, buf), sizeof(y));
+        Udpmsg.write(convert_to_chars(z, buf), sizeof(z));
+        Udpmsg.write(convert_to_chars(w, buf), sizeof(w));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -313,15 +324,16 @@ void sendQuat(float *const quaternion, int type)
     }
 }
 
-void sendConfig(DeviceConfig * const config, int type)
+void sendConfig(DeviceConfig *const config, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         DeviceConfig data = *config;
         sendType(type);
         sendPacketNumber();
-        Udp.write(convert_to_chars(data, buf), sizeof(data));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(convert_to_chars(data, buf), sizeof(data));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -334,21 +346,22 @@ void sendConfig(DeviceConfig * const config, int type)
     }
 }
 
-void sendRawCalibrationData(int * const data, int calibrationType, unsigned char const sensorId, int type)
+void sendRawCalibrationData(int *const data, int calibrationType, unsigned char const sensorId, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         int x = data[0];
         int y = data[1];
         int z = data[2];
         sendType(type);
         sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(&sensorId, 1);
+        Udpmsg.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
+        Udpmsg.write(convert_to_chars(x, buf), sizeof(x));
+        Udpmsg.write(convert_to_chars(y, buf), sizeof(y));
+        Udpmsg.write(convert_to_chars(z, buf), sizeof(z));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -361,21 +374,22 @@ void sendRawCalibrationData(int * const data, int calibrationType, unsigned char
     }
 }
 
-void sendRawCalibrationData(float * const data, int calibrationType, unsigned char const sensorId, int type)
+void sendRawCalibrationData(float *const data, int calibrationType, unsigned char const sensorId, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         float x = data[0];
         float y = data[1];
         float z = data[2];
         sendType(type);
         sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(&sensorId, 1);
+        Udpmsg.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
+        Udpmsg.write(convert_to_chars(x, buf), sizeof(x));
+        Udpmsg.write(convert_to_chars(y, buf), sizeof(y));
+        Udpmsg.write(convert_to_chars(z, buf), sizeof(z));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -388,14 +402,16 @@ void sendRawCalibrationData(float * const data, int calibrationType, unsigned ch
     }
 }
 
-void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, int type)
+{
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         sendType(type);
         sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(&sensorId, 1);
+        Udpmsg.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -408,14 +424,16 @@ void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, 
     }
 }
 
-void sendSerial(uint8_t *const data, int length, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+void sendSerial(uint8_t *const data, int length, int type)
+{
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         sendType(type);
         sendPacketNumber();
-        Udp.write(convert_to_chars(length, buf), sizeof(length));
-        Udp.write(data, length);
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(convert_to_chars(length, buf), sizeof(length));
+        Udpmsg.write(data, length);
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -428,14 +446,16 @@ void sendSerial(uint8_t *const data, int length, int type) {
     }
 }
 
-void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorState, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorState, int type)
+{
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         sendType(type);
         sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(&sensorState, 1);
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(&sensorId, 1);
+        Udpmsg.write(&sensorState, 1);
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -448,12 +468,14 @@ void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorStat
     }
 }
 
-void sendHeartbeat() {
-    if (Udp.beginPacket(host, port) > 0)
+void sendHeartbeat()
+{
+    if (Udp.connect(host, port))
     {
+        Udpmsg.flush();
         sendType(PACKET_HEARTBEAT);
-        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t));
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(convert_to_chars((uint64_t)0, buf), sizeof(uint64_t));
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -466,25 +488,27 @@ void sendHeartbeat() {
     }
 }
 
-void sendHandshake() {
-    if (Udp.beginPacket(host, port) > 0)
+void sendHandshake()
+{
+    if (WiFi.status() == WL_CONNECTED)
     {
+        Udpmsg.flush();
         sendType(3);
-        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t)); // Packet number is always 0 for handshake
-        Udp.write(convert_to_chars((uint32_t) BOARD, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) IMU, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) HARDWARE_MCU, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t)); // TODO Send actual IMU hw version read from the chip
-        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t)); // Firmware build number
-        uint8_t size = (uint8_t) sizeof(FIRMWARE_VERSION);
-        Udp.write(&size, 1); // Firmware version string size
-        Udp.write((const unsigned char *) FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION)); // Firmware version string
+        Udpmsg.write(convert_to_chars((uint64_t)0, buf), sizeof(uint64_t)); // Packet number is always 0 for handshake
+        Udpmsg.write(convert_to_chars((uint32_t)BOARD, buf), sizeof(uint32_t));
+        Udpmsg.write(convert_to_chars((uint32_t)IMU, buf), sizeof(uint32_t));
+        Udpmsg.write(convert_to_chars((uint32_t)HARDWARE_MCU, buf), sizeof(uint32_t));
+        Udpmsg.write(convert_to_chars((uint32_t)0, buf), sizeof(uint32_t)); // TODO Send actual IMU hw version read from the chip
+        Udpmsg.write(convert_to_chars((uint32_t)0, buf), sizeof(uint32_t));
+        Udpmsg.write(convert_to_chars((uint32_t)0, buf), sizeof(uint32_t));
+        Udpmsg.write(convert_to_chars((uint32_t)FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t)); // Firmware build number
+        uint8_t size = (uint8_t)sizeof(FIRMWARE_VERSION);
+        Udpmsg.write(&size, 1);                                                          // Firmware version string size
+        Udpmsg.write((const unsigned char *)FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION)); // Firmware version string
         uint8_t mac[6];
         WiFi.macAddress(mac);
-        Udp.write(mac, 6); // MAC address string
-        if (Udp.endPacket() == 0)
+        Udpmsg.write(mac, 6); // MAC address string
+        if (Udp.broadcastTo(Udpmsg, port) == 0)
         {
             Serial.print("Write error: ");
             Serial.println(Udp.getWriteError());
@@ -497,11 +521,13 @@ void sendHandshake() {
     }
 }
 
-void returnLastPacket(int len) {
-    if (Udp.beginPacket(host, port) > 0)
+void returnLastPacket(int len)
+{
+    if (Udp.connect(host, port))
     {
-        Udp.write(incomingPacket, len);
-        if (Udp.endPacket() == 0)
+        Udpmsg.flush();
+        Udpmsg.write(incomingPacket, len);
+        if (Udp.send(Udpmsg) == 0)
         {
             //Serial.print("Write error: ");
             //Serial.println(Udp.getWriteError());
@@ -519,175 +545,191 @@ void setCommandReceivedCallback(commandReceivedCallback callback)
     fp_commandCallback = callback;
 }
 
-void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
-    if(millis() - lastSensorInfoPacket > 1000) {
+void updateSensorState(Sensor *const sensor, Sensor *const sensor2)
+{
+    if (millis() - lastSensorInfoPacket > 1000)
+    {
         lastSensorInfoPacket = millis();
-        if(sensorStateNotified1 != sensor->isWorking())
+        if (sensorStateNotified1 != sensor->isWorking())
             sendSensorInfo(0, sensor->isWorking(), PACKET_SENSOR_INFO);
-        if(sensorStateNotified2 != sensor2->isWorking())
+        if (sensorStateNotified2 != sensor2->isWorking())
             sendSensorInfo(1, sensor2->isWorking(), PACKET_SENSOR_INFO);
     }
 }
 
-void onWiFiConnected() {
-    Udp.begin(port);
+void onWiFiConnected()
+{
+    if (Udp.listen(port))
+    {
+        Serial.print("UDP Listening on IP: ");
+        Serial.println(WiFi.localIP());
+        Udp.onPacket([](AsyncUDPPacket packet)
+                     {
+                         if (isWiFiConnected())
+                         {
+                             if (connected)
+                             {
+                                 int packetSize = packet.length();
+                                 if (packetSize)
+                                 {
+                                     lastPacketMs = millis();
+                                     int len = packet.read(incomingPacket, sizeof(incomingPacket));
+                                     // receive incoming UDP packets
+                                     if (serialDebug)
+                                     {
+                                         Serial.printf("Received %d bytes from %s, port %d\n", packetSize, packet.remoteIP().toString().c_str(), packet.remotePort());
+                                         Serial.print("UDP packet contents: ");
+                                         for (int i = 0; i < len; ++i)
+                                             Serial.print((byte)incomingPacket[i]);
+                                         Serial.println();
+                                     }
+
+                                     switch (convert_chars<int>(incomingPacket))
+                                     {
+                                     case PACKET_RECEIVE_HEARTBEAT:
+                                         sendHeartbeat();
+                                         break;
+                                     case PACKET_RECEIVE_VIBRATE:
+                                         if (fp_commandCallback)
+                                         {
+                                             fp_commandCallback(COMMAND_BLINK, nullptr, 0);
+                                         }
+                                         break;
+                                     case PACKET_RECEIVE_HANDSHAKE:
+                                         // Assume handshake sucessful
+                                         Serial.println("Handshale recived again, ignoring");
+                                         break;
+                                     case PACKET_RECEIVE_COMMAND:
+                                         if (len < 6)
+                                         {
+                                             Serial.println("Command packet too short");
+                                             break;
+                                         }
+                                         if (serialDebug)
+                                         {
+                                             Serial.printf("Recieved command %d\n", incomingPacket[4]);
+                                         }
+                                         if (fp_commandCallback)
+                                         {
+                                             fp_commandCallback(incomingPacket[4], &incomingPacket[5], len - 6);
+                                         }
+                                         break;
+                                     case PACKET_CONFIG:
+                                         if (len < sizeof(DeviceConfig) + 4)
+                                         {
+                                             Serial.println("config packet too short");
+                                             break;
+                                         }
+                                         if (fp_configCallback)
+                                         {
+                                             fp_configCallback(convert_chars<DeviceConfig>(&incomingPacket[4]));
+                                         }
+                                         break;
+                                     case PACKET_PING_PONG:
+                                         returnLastPacket(len);
+                                         break;
+                                     case PACKET_SENSOR_INFO:
+                                         if (len < 6)
+                                         {
+                                             Serial.println("Wrong sensor info packet");
+                                             break;
+                                         }
+                                         if (incomingPacket[4] == 0)
+                                         {
+                                             sensorStateNotified1 = incomingPacket[5];
+                                         }
+                                         else if (incomingPacket[4] == 1)
+                                         {
+                                             sensorStateNotified2 = incomingPacket[5];
+                                         }
+                                         break;
+                                     }
+                                 }
+                                 //while(Serial.available()) {
+                                 //    size_t bytesRead = Serial.readBytes(serialBuffer, min(Serial.available(), sizeof(serialBuffer)));
+                                 //    sendSerial(serialBuffer, bytesRead, PACKET_SERIAL);
+                                 //}
+                                 if (lastPacketMs + TIMEOUT < millis())
+                                 {
+                                     setLedStatus(LED_STATUS_SERVER_CONNECTING);
+                                     connected = false;
+                                     sensorStateNotified1 = false;
+                                     sensorStateNotified2 = false;
+                                     Serial.println("Connection to server timed out");
+                                 }
+                             }
+                             else
+                             {
+                                 int packetSize = packet.length();
+                                 if (packetSize)
+                                 {
+                                     // receive incoming UDP packets
+                                     Serial.printf("[Handshake] Received %d bytes from %s, port %d\n", packetSize, packet.remoteIP().toString().c_str(), packet.remotePort());
+                                     int len = packet.read(incomingPacket, sizeof(incomingPacket));
+                                     Serial.print("[Handshake] UDP packet contents: ");
+                                     for (int i = 0; i < len; ++i)
+                                         Serial.print((byte)incomingPacket[i]);
+                                     Serial.println();
+                                     // Handshake is different, it has 3 in the first byte, not the 4th, and data starts right after
+                                     switch (incomingPacket[0])
+                                     {
+                                     case PACKET_HANDSHAKE:
+                                         // Assume handshake sucessful, don't check it
+                                         // But proper handshake should contain "Hey OVR =D 5" ASCII string right after the packet number
+                                         // Starting on 14th byte (packet number, 12 bytes greetings, null-terminator) we can transfer SlimeVR handshake data
+                                         host = packet.remoteIP();
+                                         port = packet.remotePort();
+                                         lastPacketMs = millis();
+                                         connected = true;
+                                         unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
+#ifndef SEND_UPDATES_UNCONNECTED
+                                         digitalWrite(LOADING_LED, LOW);
+#endif
+                                         Serial.printf("[Handshake] Handshale sucessful, server is %s:%d\n", packet.remoteIP().toString().c_str(), +packet.remotePort());
+                                     }
+                                 }
+                             }
+                         }
+                     });
+    }
     connected = false;
     setLedStatus(LED_STATUS_SERVER_CONNECTING);
 }
 
-void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
+void clientUpdate(Sensor *const sensor, Sensor *const sensor2)
 {
     if (isWiFiConnected())
     {
-        if(connected) {
-            int packetSize = Udp.parsePacket();
-            if (packetSize)
-            {
-                lastPacketMs = millis();
-                int len = Udp.read(incomingPacket, sizeof(incomingPacket));
-                // receive incoming UDP packets
-                if(serialDebug) {
-                    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
-                    Serial.print("UDP packet contents: ");
-                    for (int i = 0; i < len; ++i)
-                        Serial.print((byte)incomingPacket[i]);
-                    Serial.println();
-                }
-
-                switch (convert_chars<int>(incomingPacket))
-                {
-                case PACKET_RECEIVE_HEARTBEAT:
-                    sendHeartbeat();
-                    break;
-                case PACKET_RECEIVE_VIBRATE:
-                    if(fp_commandCallback) {
-                        fp_commandCallback(COMMAND_BLINK, nullptr, 0);
-                    }
-                    break;
-                case PACKET_RECEIVE_HANDSHAKE:
-                    // Assume handshake successful
-                    Serial.println("Handshale received again, ignoring");
-                    break;
-                case PACKET_RECEIVE_COMMAND:
-                    if (len < 6)
-                    {
-                        Serial.println("Command packet too short");
-                        break;
-                    }
-                    if(serialDebug) {
-                        Serial.printf("Received command %d\n", incomingPacket[4]);
-                    }
-                    if (fp_commandCallback)
-                    {
-                        fp_commandCallback(incomingPacket[4], &incomingPacket[5], len - 6);
-                    }
-                    break;
-                case PACKET_CONFIG:
-                    if (len < sizeof(DeviceConfig) + 4)
-                    {
-                        Serial.println("config packet too short");
-                        break;
-                    }
-                    if (fp_configCallback)
-                    {
-                        fp_configCallback(convert_chars<DeviceConfig>(&incomingPacket[4]));
-                    }
-                    break;
-                case PACKET_PING_PONG:
-                    returnLastPacket(len);
-                    break;
-                case PACKET_SENSOR_INFO:
-                    if(len < 6) {
-                        Serial.println("Wrong sensor info packet");
-                        break;
-                    }
-                    if(incomingPacket[4] == 0) {
-                        sensorStateNotified1 = incomingPacket[5];
-                    } else if(incomingPacket[4] == 1) {
-                        sensorStateNotified2 = incomingPacket[5];
-                    }
-                    break;
-                }
-            }
-            //while(Serial.available()) {
-            //    size_t bytesRead = Serial.readBytes(serialBuffer, min(Serial.available(), sizeof(serialBuffer)));
-            //    sendSerial(serialBuffer, bytesRead, PACKET_SERIAL);
-            //}
-            if(lastPacketMs + TIMEOUT < millis())
-            {
-                setLedStatus(LED_STATUS_SERVER_CONNECTING);
-                connected = false;
-                sensorStateNotified1 = false;
-                sensorStateNotified2 = false;
-                Serial.println("Connection to server timed out");
-            }
-        }
-            
-        if(!connected) {
-            connectClient();
-        } else if(sensorStateNotified1 != sensor->isWorking() || sensorStateNotified2 != sensor2->isWorking()) {
-            updateSensorState(sensor, sensor2);
-        }
-    }
-}
-
-bool isConnected() {
-    return connected;
-}
-
-void connectClient()
-{
-    unsigned long now = millis();
-    while(true) {
-        int packetSize = Udp.parsePacket();
-        if (packetSize)
+        if (connected)
         {
-            // receive incoming UDP packets
-            Serial.printf("[Handshake] Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
-            int len = Udp.read(incomingPacket, sizeof(incomingPacket));
-            Serial.print("[Handshake] UDP packet contents: ");
-            for (int i = 0; i < len; ++i)
-                Serial.print((byte)incomingPacket[i]);
-            Serial.println();
-            // Handshake is different, it has 3 in the first byte, not the 4th, and data starts right after
-            switch (incomingPacket[0])
+            if (sensorStateNotified1 != sensor->isWorking() || sensorStateNotified2 != sensor2->isWorking())
             {
-            case PACKET_HANDSHAKE:
-                // Assume handshake successful, don't check it
-                // But proper handshake should contain "Hey OVR =D 5" ASCII string right after the packet number
-                // Starting on 14th byte (packet number, 12 bytes greetings, null-terminator) we can transfer SlimeVR handshake data
-                host = Udp.remoteIP();
-                port = Udp.remotePort();
-                lastPacketMs = now;
-                connected = true;
-                unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
-#ifndef SEND_UPDATES_UNCONNECTED
-                digitalWrite(LOADING_LED, HIGH);
-#endif
-                Serial.printf("[Handshake] Handshale successful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
-                return;
-            default:
-            continue;
+                updateSensorState(sensor, sensor2);
             }
         }
         else
         {
-            break;
-        }   
-    }
-    if(lastConnectionAttemptMs + 1000 < now)
-    {
-        lastConnectionAttemptMs = now;
-        Serial.println("Looking for the server...");
-        sendHandshake();
+            unsigned long now = millis();
+            if (lastConnectionAttemptMs + 1000 < now)
+            {
+                lastConnectionAttemptMs = now;
+                Serial.println("Looking for the server...");
+                sendHandshake();
 #ifndef SEND_UPDATES_UNCONNECTED
-        digitalWrite(LOADING_LED, LOW);
+                digitalWrite(LOADING_LED, HIGH);
 #endif
-    }
+            }
 #ifndef SEND_UPDATES_UNCONNECTED
-    else if(lastConnectionAttemptMs + 20 < now)
-    {
-        digitalWrite(LOADING_LED, HIGH);
-    }
+            else if (lastConnectionAttemptMs + 20 < now)
+            {
+                digitalWrite(LOADING_LED, LOW);
+            }
 #endif
+        }
+    }
+}
+
+bool isConnected()
+{
+    return connected;
 }

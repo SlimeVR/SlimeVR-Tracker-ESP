@@ -29,7 +29,7 @@
 #else
     #include <WiFi.h>
 #endif
-#include <WiFiUdp.h>
+#include <AsyncUDP.h>
 #include <Arduino.h>
 #include "quat.h"
 #include "configuration.h"
