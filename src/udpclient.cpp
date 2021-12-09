@@ -684,7 +684,7 @@ void onPacketCallBack(AsyncUDPPacket packet)
                         connected = true;
                         unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
 #ifndef SEND_UPDATES_UNCONNECTED
-                        digitalWrite(LOADING_LED, LOW);
+                        digitalWrite(LOADING_LED, HIGH);
 #endif
                         Serial.printf("[Handshake] Handshale sucessful, server is %s:%d\n", packet.remoteIP().toString().c_str(), +packet.remotePort());
                     }
@@ -733,13 +733,13 @@ void clientUpdate(Sensor *const sensor, Sensor *const sensor2)
                 Serial.println("Looking for the server...");
                 sendHandshake();
 #ifndef SEND_UPDATES_UNCONNECTED
-                digitalWrite(LOADING_LED, HIGH);
+                digitalWrite(LOADING_LED, LOW);
 #endif
             }
 #ifndef SEND_UPDATES_UNCONNECTED
             else if (lastConnectionAttemptMs + 20 < now)
             {
-                digitalWrite(LOADING_LED, LOW);
+                digitalWrite(LOADING_LED, HIGH);
             }
 #endif
         }
