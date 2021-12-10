@@ -21,7 +21,9 @@ namespace LEDMGR
     */
     void Off(uint8_t pin)
     {
+#if ENABLE_LEDS
         digitalWrite(pin, HIGH);
+#endif
     }
 
     /*!
@@ -35,9 +37,11 @@ namespace LEDMGR
     */
     void Blink(uint8_t pin, unsigned long time, uint8_t direction)
     {
+#if ENABLE_LEDS
         digitalWrite(pin, direction);
         delay(time);
         digitalWrite(pin, direction ^ 1);
+#endif
     }
 
     /*!
@@ -55,6 +59,7 @@ namespace LEDMGR
     */
     void Pattern(uint8_t pin, unsigned long timeon, unsigned long timeoff, int times, uint8_t direction)
     {
+#if ENABLE_LEDS
         for (int i = 0; i < times; i++)
         {
             digitalWrite(pin, direction);
@@ -62,5 +67,6 @@ namespace LEDMGR
             digitalWrite(pin, direction ^ 1);
             delay(timeoff);
         }
+#endif
     }
 }
