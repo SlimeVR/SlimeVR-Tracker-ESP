@@ -33,6 +33,7 @@
 #include "serialcommands.h"
 #include "ledstatus.h"
 #include "ledmgr.h"
+#include "batterymonitor.h"
 
 #if IMU == IMU_BNO080 || IMU == IMU_BNO085
     BNO080Sensor sensor{};
@@ -55,16 +56,11 @@
     EmptySensor sensor2{};
 #endif
 
-#if ENABLE_VCC_MONITOR
-uint16_t voltage_3_3 = 3000;
-#endif
-
 bool isCalibrating = false;
 bool blinking = false;
 unsigned long blinkStart = 0;
-unsigned long now_ms, last_ms = 0; //millis() timers
-unsigned long last_battery_sample = 0;
 bool secondImuActive = false;
+BatteryMonitor battery;
 
 void commandReceived(int command, void * const commandData, int commandDataLength)
 {
@@ -78,14 +74,10 @@ void commandReceived(int command, void * const commandData, int commandDataLengt
         break;
     case COMMAND_BLINK:
         blinking = true;
-        blinkStart = now_ms;
+        blinkStart = millis();
         break;
     }
 }
-
-#if ENABLE_VCC_MONITOR
-ADC_MODE(ADC_VCC);
-#endif
 
 void setup()
 {
@@ -152,6 +144,7 @@ void setup()
 
     setUpWiFi();
     otaSetup(otaPassword);
+    battery.Setup();
     LEDMGR::Off(LOADING_LED);
 }
 
@@ -181,7 +174,6 @@ void loop()
         }
 #endif
     // Send updates
-    now_ms = millis();
 #ifndef SEND_UPDATES_UNCONNECTED
     if(isConnected()) {
 #endif
@@ -192,51 +184,5 @@ void loop()
 #ifndef SEND_UPDATES_UNCONNECTED
     }
 #endif
-#if (defined(PIN_BATTERY_LEVEL) && ENABLE_ADCBATTERY_MONITOR) || ENABLE_VCC_MONITOR
-    if (now_ms - last_battery_sample >= batterySampleRate)
-    {
-#if ENABLE_VCC_MONITOR
-        last_battery_sample = now_ms;
-        auto level = ESP.getVcc();
-        if (level > voltage_3_3)
-        {
-            voltage_3_3 = level;
-        }
-        else
-        {
-            //Calculate drop in mV
-            level = voltage_3_3 - level;
-#if SHUTDOWN_LOW_POWER
-            if (level > 100)
-            {
-                //Battery completely empty at 3.3V since 3.3V VCC dropped to 3.2V, sleep until reset to preserve bat and prevent malfunctions
-                ESP.deepSleep(0);
-            }
-#endif
-            if (level > 50)
-            {
-                //Battery low, warn
-                send2Floats((float)3.3 - ((float)level / 1000), 0, PACKET_BATTERY_LEVEL);
-                return;
-            }
-#if !(defined(PIN_BATTERY_LEVEL) && ENABLE_ADCBATTERY_MONITOR)
-            //Battery still good
-            send2Floats((float)3.3 - ((float)level / 1000), 100, PACKET_BATTERY_LEVEL);
-#endif
-        }
-#endif
-#if defined(PIN_BATTERY_LEVEL) && ENABLE_ADCBATTERY_MONITOR
-        last_battery_sample = now_ms;
-        float battery = ((float)analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
-#if SHUTDOWN_LOW_POWER
-        if (battery < 3.2)
-        {
-            ESP.deepSleep(0);
-        }
-#endif
-        float batteryLevel = (125 * battery) * 0.5 - 162.5; // Not good probably
-        send2Floats(battery, batteryLevel, PACKET_BATTERY_LEVEL);
-#endif
-    }
-#endif
+    battery.Loop();
 }
