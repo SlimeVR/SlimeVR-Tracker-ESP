@@ -40,7 +40,14 @@ void BatteryMonitor::Loop()
         {
             //Calculate drop in mV
             level = voltage_3_3 - level;
-            voltage = 3.3F - ((float)level / 1000.0F) + 0.1F; //we assume 100mV drop on the linear converter
+            if (level < 50)
+            {
+                voltage = 4.0F;
+            }
+            else
+            {
+                voltage = 3.3F - ((float)level / 1000.0F) + 0.1F; //we assume 100mV drop on the linear converter
+            }
         }
 #endif
 #if BATTERY_MONITOR_EXTERNAL
