@@ -31,11 +31,14 @@
 #define BOARD BOARD_SLIMEVR
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
-#define BATTERY_SHIELD_130K false
-#define ENABLE_VCC_MONITOR false
-#define ENABLE_ADCBATTERY_MONITOR true
-#define ENABLE_LEDS true
-#define SHUTDOWN_LOW_POWER true
+
+//Battery monitoring options (comment to disable):
+//#define BATTERY_MONITOR_EXTERNAL 130 //130k BatteryShield, 180k SlimeVR or fill in external resistor value in kOhm
+#define BATTERY_MONITOR_INTERNAL true //Internal without any components, only detects Bat LOW
+#define BATTERY_MONITOR_MCP3021 true //External I2C ADC
+#define BATTERY_LOW_POWER_VOLTAGE 3.3 //Voltage to shut down
+
+#define ENABLE_LEDS false
 
 #if IMU == IMU_BNO085
   #define IMU_NAME "BNO085"
@@ -120,13 +123,11 @@
 #define CALIBRATING_LED LED_BUILTIN
 #define STATUS_LED LED_BUILTIN
 
-#if defined(BATTERY_SHIELD_130K) && BATTERY_SHIELD_130K == true
+#ifdef BATTERY_MONITOR_EXTERNAL
   // Wemos D1 Mini has an internal Voltage Divider with R1=220K and R2=100K > this means, 3.3V analogRead input voltage results in 1023.0
   // Wemos D1 Mini with Wemos BatteryShiled v1.2.0 or higher: BatteryShield with J2 closed, has an additional 130K resistor. So the resulting Voltage Divider is R1=220K+100K=320K and R2=100K > this means, 4.5V analogRead input voltage results in 1023.0
-  #define batteryADCMultiplier 1.0 / 1023.0 * 4.5
-#else
   // SlimeVR Board can handle max 5V > so analogRead of 5.0V input will result in 1023.0
-  #define batteryADCMultiplier 1.0 / 1023.0 * 5.0
+  #define batteryADCMultiplier 1.0 / 1023.0 * (320 + BATTERY_MONITOR_EXTERNAL) / 100
 #endif
 
 #endif // SLIMEVR_DEFINES_H_
