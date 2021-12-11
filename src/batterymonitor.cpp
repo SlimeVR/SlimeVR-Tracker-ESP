@@ -64,7 +64,24 @@ void BatteryMonitor::Loop()
 #endif
         if (voltage > 0) //valid measurement
         {
-            level = (125 * voltage) * 0.5 - 162.5; // Not good probably
+            // Estimate battery level, 3.2V is 0%, 4.17V is 100% (1.0)
+            if (voltage > 3.975)
+                level = (voltage - 2.920) * 0.8;
+            else if (voltage > 3.678)
+                level = (voltage - 3.300) * 1.25;
+            else if (voltage > 3.489)
+                level = (voltage - 3.400) * 1.7;
+            else if (voltage > 3.360)
+                level = (voltage - 3.300) * 0.8;
+            else
+                level = (voltage - 3.200) * 0.3;
+
+            level = (level - 0.05) / 0.95; // Cut off the last 5% (3.36V)
+
+            if (level > 1)
+                level = 1;
+            else if (level < 0)
+                level = 0;
             send2Floats(voltage, level, PACKET_BATTERY_LEVEL);
 #ifdef BATTERY_LOW_POWER_VOLTAGE
             if (voltage < (float)BATTERY_LOW_POWER_VOLTAGE)
