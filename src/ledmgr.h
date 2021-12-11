@@ -1,5 +1,5 @@
-#ifndef _LEDMGR_H_
-#define _LEDMGR_H_ 1
+#ifndef SLIMEVR_LEDMGR_H_
+#define SLIMEVR_LEDMGR_H_
 
 #include <Arduino.h>
 
@@ -10,4 +10,4 @@ namespace LEDMGR {
     void Pattern(uint8_t pin, unsigned long timeon, unsigned long timeoff, int times, uint8_t direction = LOW);
 }
 
-#endif // _LEDMGR_H_
+#endif // SLIMEVR_LEDMGR_H_
