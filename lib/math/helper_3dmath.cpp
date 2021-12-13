@@ -31,6 +31,7 @@ float vector_dot(float a[3], float b[3])
 void vector_normalize(float a[3])
 {
     float mag = sqrt(vector_dot(a, a));
+    if(mag==0.0) return;
     a[0] /= mag;
     a[1] /= mag;
     a[2] /= mag;

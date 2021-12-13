@@ -145,9 +145,11 @@ class MPU9250Sensor : public MPUSensor {
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
         void getMPUScaled();
+        void setSecond(); 
         void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
     private:
         MPU9250 imu {};
+        bool isSecond{false};
         //raw data and scaled as vector
         int16_t ax, ay, az;
         int16_t gx, gy, gz;
@@ -156,6 +158,8 @@ class MPU9250Sensor : public MPUSensor {
         float Gxyz[3] {};
         float Mxyz[3] {};
         float rawMag[3] {};
+        int16_t *Mbias;
+        uint8_t reset_next_update=1;
         // Loop timing globals
         unsigned long now = 0, last = 0;   //micros() timers
         float deltat = 0;                  //loop time in seconds

@@ -27,8 +27,8 @@
 #include "debug.h"
 
 // Set parameters of IMU and board used
-#define IMU IMU_BNO085
-#define BOARD BOARD_SLIMEVR
+#define IMU IMU_MPU9250
+#define BOARD BOARD_WEMOSD1MINI
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
 #define BATTERY_SHIELD_130K false
@@ -55,7 +55,6 @@
   #define BNO_HAS_ARVR_STABILIZATION false
   #define I2C_SPEED 400000
 #elif IMU == IMU_MPU9250
-  #error IMU_MPU9250 cannot be used yet. Use IMU_MPU6050.
   #define IMU_NAME "MPU9250"
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
