@@ -23,7 +23,7 @@
 
 #include "Wire.h"
 #include "ota.h"
-#include "sensor.h"
+#include "sensorfactory.h"
 #include "configuration.h"
 #include "wifihandler.h"
 #include "udpclient.h"
@@ -33,27 +33,7 @@
 #include "serialcommands.h"
 #include "ledstatus.h"
 
-#if IMU == IMU_BNO080 || IMU == IMU_BNO085
-    BNO080Sensor sensor{};
-    #if defined(PIN_IMU_INT_2)
-        #define HAS_SECOND_IMU true
-        BNO080Sensor sensor2{};
-    #endif
-#elif IMU == IMU_BNO055
-    BNO055Sensor sensor{};
-#elif IMU == IMU_MPU9250
-    MPU9250Sensor sensor{};
-#elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
-    MPU6050Sensor sensor{};
-    #define HAS_SECOND_IMU true
-    MPU6050Sensor sensor2{};
-#else
-    #error Unsupported IMU
-#endif
-#ifndef HAS_SECOND_IMU
-    EmptySensor sensor2{};
-#endif
-
+SensorFactory sensors {};
 bool isCalibrating = false;
 bool blinking = false;
 unsigned long blinkStart = 0;
@@ -106,37 +86,11 @@ void setup()
     // Wait for IMU to boot
     delay(500);
     
-    // Currently only second BNO08X is supported
-#if IMU == IMU_BNO080 || IMU == IMU_BNO085
-    #ifdef HAS_SECOND_IMU
-        uint8_t first = I2CSCAN::pickDevice(0x4A, 0x4B, true);
-        uint8_t second = I2CSCAN::pickDevice(0x4B, 0x4A, false);
-        if(first != second) {
-            sensor.setupBNO080(0, first, PIN_IMU_INT);
-            sensor2.setupBNO080(1, second, PIN_IMU_INT_2);
-            secondImuActive = true;
-        } else {
-            sensor.setupBNO080(0, first, PIN_IMU_INT);
-        }
-    #else
-    sensor.setupBNO080(0, I2CSCAN::pickDevice(0x4A, 0x4B, true), PIN_IMU_INT);
-    #endif
-#endif
-#if IMU == IMU_MPU6050 || IMU == IMU_MPU6500
-    #ifdef HAS_SECOND_IMU
-        uint8_t first = I2CSCAN::pickDevice(0x68, 0x69, true);
-        uint8_t second = I2CSCAN::pickDevice(0x69, 0x68, false);
-        if(first != second) {
-            sensor2.setSecond();
-            secondImuActive = true;
-        }
-    #endif
-#endif
+    sensors.create();
 
-    sensor.motionSetup();
-#ifdef HAS_SECOND_IMU
-    if(secondImuActive)
-        sensor2.motionSetup();
+    sensors.getFirst()->motionSetup();
+#ifdef SECOND_IMU
+    sensors.getSecond()->motionSetup();
 #endif
 
     setUpWiFi();
@@ -152,19 +106,19 @@ void loop()
     serialCommandsUpdate();
     wifiUpkeep();
     otaUpdate();
-    clientUpdate(&sensor, &sensor2);
+    clientUpdate(sensors.getFirst(), sensors.getSecond());
     if (isCalibrating)
     {
-        sensor.startCalibration(0);
-        //sensor2.startCalibration(0);
+        sensors.getFirst()->startCalibration(0);
+        //sensors.getSecond()->startCalibration(0);
         isCalibrating = false;
     }
 #ifndef UPDATE_IMU_UNCONNECTED
         if(isConnected()) {
 #endif
-    sensor.motionLoop();
-#ifdef HAS_SECOND_IMU
-    sensor2.motionLoop();
+    sensors.getFirst()->motionLoop();
+#ifdef SECOND_IMU
+    sensors.getSecond()->motionLoop();
 #endif
 #ifndef UPDATE_IMU_UNCONNECTED
         }
@@ -174,9 +128,9 @@ void loop()
 #ifndef SEND_UPDATES_UNCONNECTED
     if(isConnected()) {
 #endif
-        sensor.sendData();
-#ifdef HAS_SECOND_IMU
-        sensor2.sendData();
+        sensors.getFirst()->sendData();
+#ifdef SECOND_IMU
+        sensors.getSecond()->sendData();
 #endif
 #ifndef SEND_UPDATES_UNCONNECTED
     }
