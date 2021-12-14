@@ -87,11 +87,7 @@ void setup()
     delay(500);
     
     sensors.create();
-
-    sensors.getFirst()->motionSetup();
-#ifdef SECOND_IMU
-    sensors.getSecond()->motionSetup();
-#endif
+    sensors.motionSetup();
 
     setUpWiFi();
     otaSetup(otaPassword);
@@ -109,17 +105,13 @@ void loop()
     clientUpdate(sensors.getFirst(), sensors.getSecond());
     if (isCalibrating)
     {
-        sensors.getFirst()->startCalibration(0);
-        //sensors.getSecond()->startCalibration(0);
+        sensors.startCalibration(0);
         isCalibrating = false;
     }
 #ifndef UPDATE_IMU_UNCONNECTED
         if(isConnected()) {
 #endif
-    sensors.getFirst()->motionLoop();
-#ifdef SECOND_IMU
-    sensors.getSecond()->motionLoop();
-#endif
+        sensors.motionLoop();
 #ifndef UPDATE_IMU_UNCONNECTED
         }
 #endif
@@ -128,10 +120,7 @@ void loop()
 #ifndef SEND_UPDATES_UNCONNECTED
     if(isConnected()) {
 #endif
-        sensors.getFirst()->sendData();
-#ifdef SECOND_IMU
-        sensors.getSecond()->sendData();
-#endif
+        sensors.sendData();
 #ifndef SEND_UPDATES_UNCONNECTED
     }
 #endif

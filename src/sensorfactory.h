@@ -10,6 +10,10 @@ public:
     SensorFactory();
     ~SensorFactory();
     bool create();
+    void motionSetup();
+    void motionLoop();
+    void sendData();
+    void startCalibration(int calibrationType);
     Sensor *getFirst() { return sensor1; };
     Sensor *getSecond() { return sensor2; };
 

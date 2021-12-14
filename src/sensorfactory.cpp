@@ -72,3 +72,35 @@ bool SensorFactory::create()
     this->sensor2->setupSensor(1, second_addr, PIN_IMU_INT_2);
     return true;
 }
+
+void SensorFactory::motionSetup()
+{
+    sensor1->motionSetup();
+    #ifdef SECOND_IMU
+    sensor2->motionSetup();
+    #endif
+}
+
+void SensorFactory::motionLoop()
+{
+    sensor1->motionLoop();
+    #ifdef SECOND_IMU
+    sensor2->motionLoop();
+    #endif
+}
+
+void SensorFactory::sendData()
+{
+    sensor1->sendData();
+    #ifdef SECOND_IMU
+    sensor2->sendData();
+    #endif
+}
+
+void SensorFactory::startCalibration(int calibrationType)
+{
+    sensor1->startCalibration(calibrationType);
+    // #ifdef SECOND_IMU
+    // sensor2->startCalibration(calibrationType);
+    // #endif
+}
