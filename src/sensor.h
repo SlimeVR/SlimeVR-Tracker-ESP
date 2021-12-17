@@ -155,6 +155,7 @@ class MPU9250Sensor : public MPUSensor {
         float Gxyz[3] {};
         float Mxyz[3] {};
         float rawMag[3] {};
+        float adjustments[3] {};
         // Loop timing globals
         unsigned long now = 0, last = 0;   //micros() timers
         float deltat = 0;                  //loop time in seconds
