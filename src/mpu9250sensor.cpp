@@ -108,16 +108,16 @@ void MPU9250Sensor::getMPUScaled()
     Axyz[1] = (float)ay;
     Axyz[2] = (float)az;
     //apply offsets (bias) and scale factors from Magneto
-    if(useFullCalibrationMatrix) {
+    #if useFullCalibrationMatrix == true
         for (i = 0; i < 3; i++)
             temp[i] = (Axyz[i] - calibration->A_B[i]);
         Axyz[0] = calibration->A_Ainv[0][0] * temp[0] + calibration->A_Ainv[0][1] * temp[1] + calibration->A_Ainv[0][2] * temp[2];
         Axyz[1] = calibration->A_Ainv[1][0] * temp[0] + calibration->A_Ainv[1][1] * temp[1] + calibration->A_Ainv[1][2] * temp[2];
         Axyz[2] = calibration->A_Ainv[2][0] * temp[0] + calibration->A_Ainv[2][1] * temp[1] + calibration->A_Ainv[2][2] * temp[2];
-    } else {
+    #else
         for (i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
-    }
+    #endif
     vector_normalize(Axyz);
 
     // Apply correction for 16-bit mode and factory sensitivity adjustments
@@ -125,16 +125,16 @@ void MPU9250Sensor::getMPUScaled()
     Mxyz[1] = (float)my * 0.15f * adjustments[1];
     Mxyz[2] = (float)mz * 0.15f * adjustments[2];
     //apply offsets and scale factors from Magneto
-    if(useFullCalibrationMatrix) {
+    #if useFullCalibrationMatrix == true
         for (i = 0; i < 3; i++)
             temp[i] = (Mxyz[i] - calibration->M_B[i]);
         Mxyz[0] = calibration->M_Ainv[0][0] * temp[0] + calibration->M_Ainv[0][1] * temp[1] + calibration->M_Ainv[0][2] * temp[2];
         Mxyz[1] = calibration->M_Ainv[1][0] * temp[0] + calibration->M_Ainv[1][1] * temp[1] + calibration->M_Ainv[1][2] * temp[2];
         Mxyz[2] = calibration->M_Ainv[2][0] * temp[0] + calibration->M_Ainv[2][1] * temp[1] + calibration->M_Ainv[2][2] * temp[2];
-    } else {
+    #else
         for (i = 0; i < 3; i++)
             Mxyz[i] = (Mxyz[i] - calibration->M_B[i]);
-    }
+    #endif
     rawMag[0] = Mxyz[0];
     rawMag[1] = Mxyz[1];
     rawMag[2] = Mxyz[2];
