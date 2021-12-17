@@ -30,7 +30,7 @@
 #include "calibration.h"
 #include "mahony.h"
 
-#define gscale (250. / 32768.0) * (PI / 180.0) //gyro default 250 LSB per d/s -> rad/s
+constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
 
 namespace {
     void signalAssert() {
