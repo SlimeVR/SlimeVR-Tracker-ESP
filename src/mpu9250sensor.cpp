@@ -69,15 +69,20 @@ void MPU9250Sensor::motionSetup() {
 void MPU9250Sensor::motionLoop() {
     // Update quaternion
     now = micros();
-    deltat = (now - last) * 1.0e-6; //seconds since last update
-    last = now;
-    getMPUScaled();
-    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat);
-    quaternion.set(-q[1], -q[2], -q[0], q[3]);
-    quaternion *= sensorOffset;
-    if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
-        newData = true;
-        lastQuatSent = quaternion;
+    deltat = now - last; //seconds since last update
+    if ((deltat * 1.0e-3) >= samplingRateInMillis) {
+        last = now;
+        getMPUScaled();
+        // Orientations of axes are set in accordance with the datasheet
+        // See Section 9.1 Orientation of Axes
+        // https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf
+        mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat * 1.0e-6);
+        quaternion.set(-q[1], -q[2], -q[0], q[3]);
+        quaternion *= sensorOffset;
+        if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
+            newData = true;
+            lastQuatSent = quaternion;
+        }
     }
 }
 
