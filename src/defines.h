@@ -129,5 +129,9 @@
   // SlimeVR Board can handle max 5V > so analogRead of 5.0V input will result in 1023.0
   #define batteryADCMultiplier 1.0 / 1023.0 * (320 + BATTERY_MONITOR_EXTERNAL) / 100
 #endif
+#if BATTERY_MONITOR_MCP3021
+  // Default recommended resistors are 9.1k and 5.1k
+  #define batteryADCMultiplier 3.3 / 1023.0 * 14.2 / 9.1
+#endif
 
 #endif // SLIMEVR_DEFINES_H_

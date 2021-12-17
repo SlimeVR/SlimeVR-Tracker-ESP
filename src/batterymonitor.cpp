@@ -42,7 +42,7 @@ void BatteryMonitor::Loop()
             level = voltage_3_3 - level;
             if (level < 50)
             {
-                voltage = 4.0F;
+                voltage = 5.0F;
             }
             else
             {
@@ -52,7 +52,8 @@ void BatteryMonitor::Loop()
 #endif
 #if BATTERY_MONITOR_EXTERNAL
         last_battery_sample = now_ms;
-        voltage = ((float)analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
+        float e = ((float)analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
+        voltage = (voltage > 0) ? min(voltage, e) : e;
 #endif
 #if BATTERY_MONITOR_MCP3021
         if (address > 0)
@@ -65,6 +66,7 @@ void BatteryMonitor::Loop()
             if (status == 0)
             {
                 float v = (((uint16_t)(MSB & 0x0F) << 6) | (uint16_t)(LSB >> 2));
+                v *= batteryADCMultiplier;
                 voltage = (voltage > 0) ? min(voltage, v) : v;
             }
         }
