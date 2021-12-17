@@ -23,15 +23,18 @@
 
 #include "helper_3dmath.h"
 
-float vector_dot(float a[3], float b[3])
-{
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+// Fast inverse square root function (https://en.wikipedia.org/wiki/Fast_inverse_square_root).
+// Source: https://pizer.wordpress.com/2008/10/12/fast-inverse-square-root/
+float invSqrt(float x) {
+   uint32_t i = 0x5F1F1412 - (*(uint32_t*)&x >> 1);
+   float tmp = *(float*)&i;
+   return tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
 }
 
 void vector_normalize(float a[3])
 {
-    float mag = sqrt(vector_dot(a, a));
-    a[0] /= mag;
-    a[1] /= mag;
-    a[2] /= mag;
+    float norm = invSqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+    a[0] *= norm;
+    a[1] *= norm;
+    a[2] *= norm;
 }

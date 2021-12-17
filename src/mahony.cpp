@@ -65,10 +65,7 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     hy = az * mx - ax * mz;
     hz = ax * my - ay * mx;
     // Normalise horizon vector
-    norm = sqrt(hx * hx + hy * hy + hz * hz);
-    if (norm == 0.0f) return;
-
-    norm = 1.0f / norm;
+    norm = invSqrt(hx * hx + hy * hy + hz * hz);
     hx *= norm;
     hy *= norm;
     hz *= norm;
@@ -114,8 +111,7 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     q4 = pc + (q1 * gz + pa * gy - pb * gx) * (0.5f * deltat);
 
     // Normalise quaternion
-    norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);
-    norm = 1.0f / norm;
+    norm = invSqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);
     q[0] = q1 * norm;
     q[1] = q2 * norm;
     q[2] = q3 * norm;
@@ -181,7 +177,7 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     q[3] += (qa * gz + qb * gy - qc * gx);
 
     // normalise quaternion
-    norm = 1.0f / sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    norm = invSqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
     q[0] = q[0] * norm;
     q[1] = q[1] * norm;
     q[2] = q[2] * norm;
