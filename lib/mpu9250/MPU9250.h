@@ -45,13 +45,20 @@ THE SOFTWARE.
 #define MPU9250_INCLUDE_DMP_MOTIONAPPS20
 
 //Magnetometer Registers
-#define MPU9150_RA_MAG_ADDRESS		0x0C
-#define MPU9150_RA_MAG_XOUT_L		0x03
-#define MPU9150_RA_MAG_XOUT_H		0x04
-#define MPU9150_RA_MAG_YOUT_L		0x05
-#define MPU9150_RA_MAG_YOUT_H		0x06
-#define MPU9150_RA_MAG_ZOUT_L		0x07
-#define MPU9150_RA_MAG_ZOUT_H		0x08
+#define MPU9250_RA_MAG_ADDRESS      0x0C
+#define MPU9250_RA_MAG_WHOAMI       0x01
+#define MPU9250_RA_MAG_ST1          0x02
+#define MPU9250_RA_MAG_XOUT_L       0x03
+#define MPU9250_RA_MAG_XOUT_H       0x04
+#define MPU9250_RA_MAG_YOUT_L       0x05
+#define MPU9250_RA_MAG_YOUT_H       0x06
+#define MPU9250_RA_MAG_ZOUT_L       0x07
+#define MPU9250_RA_MAG_ZOUT_H       0x08
+#define MPU9250_RA_MAG_ST2          0x09
+#define MPU9250_RA_MAG_ASAX         0x10
+#define MPU9250_RA_MAG_ASAY         0x11
+#define MPU9250_RA_MAG_ASAZ         0x12
+#define MPU9250_RA_MAG_CNTL1        0x0A
 
 #define MPU9250_ADDRESS_AD0_LOW     0x68 // address pin low (GND), default for InvenSense evaluation board
 #define MPU9250_ADDRESS_AD0_HIGH    0x69 // address pin high (VCC)
@@ -997,9 +1004,11 @@ class MPU9250 {
             uint16_t dmpGetFIFOPacketSize();
         #endif
 
+        void getMagnetometerAdjustments(float *adjustments);
     private:
         uint8_t devAddr;
         uint8_t buffer[14];
+        float asax, asay, asaz;
 };
 
 #endif /* _MPU9250_H_ */

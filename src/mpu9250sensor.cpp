@@ -64,6 +64,7 @@ void MPU9250Sensor::motionSetup() {
         Serial.print("[OK] Connected to MPU, ID 0x");
         Serial.println(imu.getDeviceID(), HEX);
     }
+    imu.getMagnetometerAdjustments(adjustments);
 }
 
 void MPU9250Sensor::motionLoop() {
@@ -119,9 +120,10 @@ void MPU9250Sensor::getMPUScaled()
     }
     vector_normalize(Axyz);
 
-    Mxyz[0] = (float)mx;
-    Mxyz[1] = (float)my;
-    Mxyz[2] = (float)mz;
+    // Apply correction for 16-bit mode and factory sensitivity adjustments
+    Mxyz[0] = (float)mx * 0.15f * adjustments[0];
+    Mxyz[1] = (float)my * 0.15f * adjustments[1];
+    Mxyz[2] = (float)mz * 0.15f * adjustments[2];
     //apply offsets and scale factors from Magneto
     if(useFullCalibrationMatrix) {
         for (i = 0; i < 3; i++)
