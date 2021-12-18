@@ -22,6 +22,7 @@
 */
 
 #include "ledstatus.h"
+#include "ledmgr.h"
 
 #define DEFAULT_LENGTH 300
 #define DEFAULT_GAP 500
@@ -50,11 +51,11 @@ unsigned long statusPrintInterval = 0;
 unsigned long lastUpdate = millis();
 
 void ledOn() {
-    digitalWrite(STATUS_LED, LOW);
+    LEDMGR::On(STATUS_LED);
 }
 
 void ledOff() {
-    digitalWrite(STATUS_LED, HIGH);
+    LEDMGR::Off(STATUS_LED);
 }
 
 void setLedStatus(uint32_t status) {

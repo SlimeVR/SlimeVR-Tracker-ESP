@@ -662,7 +662,7 @@ void connectClient()
                 connected = true;
                 unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
 #ifndef SEND_UPDATES_UNCONNECTED
-                digitalWrite(LOADING_LED, HIGH);
+                LEDMGR::Off(LOADING_LED);
 #endif
                 Serial.printf("[Handshake] Handshale successful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
@@ -681,13 +681,13 @@ void connectClient()
         Serial.println("Looking for the server...");
         sendHandshake();
 #ifndef SEND_UPDATES_UNCONNECTED
-        digitalWrite(LOADING_LED, LOW);
+        LEDMGR::On(LOADING_LED);
 #endif
     }
 #ifndef SEND_UPDATES_UNCONNECTED
     else if(lastConnectionAttemptMs + 20 < now)
     {
-        digitalWrite(LOADING_LED, HIGH);
+        LEDMGR::Off(LOADING_LED);
     }
 #endif
 }

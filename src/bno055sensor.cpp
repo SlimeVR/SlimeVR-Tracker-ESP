@@ -25,15 +25,11 @@
 #include <I2Cdev.h>
 #include "udpclient.h"
 #include "defines.h"
+#include "ledmgr.h"
 
 namespace {
     void signalAssert() {
-        for(int i = 0; i < 200; ++i) {
-            delay(50);
-            digitalWrite(LOADING_LED, LOW);
-            delay(50);
-            digitalWrite(LOADING_LED, HIGH);
-        }
+        LEDMGR::Pattern(LOADING_LED, 50, 50, 200);
     }
 }
 

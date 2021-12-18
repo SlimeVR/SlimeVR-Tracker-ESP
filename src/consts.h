@@ -39,6 +39,7 @@
 #define BOARD_WROOM32 5
 #define BOARD_WEMOSD1MINI 6
 #define BOARD_TTGO_TBASE 7
+#define BOARD_ESP01 8
 
 #define DEG_0 0.f
 #define DEG_90 -PI / 2
