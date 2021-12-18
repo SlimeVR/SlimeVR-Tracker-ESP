@@ -36,18 +36,18 @@
 #include "batterymonitor.h"
 
 SensorFactory sensors {};
-bool isCalibrating = false;
+int sensorToCalibrate = -1;
 bool blinking = false;
 unsigned long blinkStart = 0;
 bool secondImuActive = false;
 BatteryMonitor battery;
 
-void commandReceived(int command, void * const commandData, int commandDataLength)
+void commandReceived(int sensorId, int command, void * const commandData, int commandDataLength)
 {
     switch (command)
     {
     case COMMAND_CALLIBRATE:
-        isCalibrating = true;
+        sensorToCalibrate = sensorId;
         break;
     case COMMAND_SEND_CONFIG:
         sendConfig(getConfigPtr(), PACKET_CONFIG);
@@ -59,8 +59,7 @@ void commandReceived(int command, void * const commandData, int commandDataLengt
     }
 }
 
-void setup()
-{
+void setup() {
     //wifi_set_sleep_type(NONE_SLEEP_T);
     // Glow diode while loading
 #if ENABLE_LEDS
@@ -98,19 +97,15 @@ void setup()
     LEDMGR::Off(LOADING_LED);
 }
 
-// AHRS loop
-
-void loop()
-{
+void loop() {
     ledStatusUpdate();
     serialCommandsUpdate();
     wifiUpkeep();
     otaUpdate();
     clientUpdate(sensors.getFirst(), sensors.getSecond());
-    if (isCalibrating)
-    {
-        sensors.startCalibration(0);
-        isCalibrating = false;
+    if(sensorToCalibrate >= 0) {
+        sensors.startCalibration(sensorToCalibrate, 0);
+        sensorToCalibrate = -1;
     }
 #ifndef UPDATE_IMU_UNCONNECTED
         if(isConnected()) {

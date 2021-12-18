@@ -67,7 +67,7 @@
 #define COMMAND_BLINK 3
 
 typedef void (* configReceivedCallback)(const DeviceConfig & newConfig);
-typedef void (* commandReceivedCallback)(int command, void * const commandData, int commandDataLength);
+typedef void (* commandReceivedCallback)(int sensorId, int command, void * const commandData, int commandDataLength);
 
 void connectClient();
 void clientUpdate(Sensor * const sensor, Sensor * const sensor2);

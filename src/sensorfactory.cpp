@@ -1,3 +1,25 @@
+/*
+    SlimeVR Code is placed under the MIT license
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+*/
 #include "sensorfactory.h"
 #include <i2cscan.h>
 
@@ -33,20 +55,6 @@ void SensorFactory::create()
     if (first_addr == 0)
         this->sensor1 = new EmptySensor();
     this->sensor1->setupSensor(0, first_addr, PIN_IMU_INT);
-
-    // Deprecated block: Checks for old type of config. Remove after a grace period to allow people to use outdated defines.h for a while.
-    #ifndef SECOND_IMU
-    #if IMU == IMU_BNO085
-    #define SECOND_IMU IMU_BNO085
-    #elif IMU == IMU_BNO080
-    #define SECOND_IMU IMU_BNO080
-    #elif IMU == IMU_MPU6500
-    #define SECOND_IMU IMU_MPU6500
-    #elif IMU == IMU_MPU6050
-    #define SECOND_IMU IMU_MPU6050
-    #endif
-    #endif
-    // End deprecated block
 
     uint8_t second_addr = 0;
     #ifndef SECOND_IMU
@@ -96,10 +104,14 @@ void SensorFactory::sendData()
     #endif
 }
 
-void SensorFactory::startCalibration(int calibrationType)
+void SensorFactory::startCalibration(int sensorId, int calibrationType)
 {
-    sensor1->startCalibration(calibrationType);
-    // #ifdef SECOND_IMU
-    // sensor2->startCalibration(calibrationType);
-    // #endif
+    switch(sensorId) {
+        case 0:
+            sensor1->startCalibration(calibrationType);
+        break;
+        case 1:
+            sensor2->startCalibration(calibrationType);
+        break;
+    }
 }

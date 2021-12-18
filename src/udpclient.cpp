@@ -561,7 +561,7 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
                     break;
                 case PACKET_RECEIVE_VIBRATE:
                     if(fp_commandCallback) {
-                        fp_commandCallback(COMMAND_BLINK, nullptr, 0);
+                        fp_commandCallback(-1, COMMAND_BLINK, nullptr, 0);
                     }
                     break;
                 case PACKET_RECEIVE_HANDSHAKE:
@@ -579,7 +579,7 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
                     }
                     if (fp_commandCallback)
                     {
-                        fp_commandCallback(incomingPacket[4], &incomingPacket[5], len - 6);
+                        fp_commandCallback(-1, incomingPacket[4], &incomingPacket[5], len - 6);
                     }
                     break;
                 case PACKET_CONFIG:
