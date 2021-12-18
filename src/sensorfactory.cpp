@@ -11,7 +11,7 @@ SensorFactory::~SensorFactory()
     delete sensor2;
 }
 
-bool SensorFactory::create()
+void SensorFactory::create()
 {
     uint8_t first_addr = 0;
     #if IMU == IMU_BNO080 || IMU == IMU_BNO085
@@ -31,7 +31,7 @@ bool SensorFactory::create()
     #endif
 
     if (first_addr == 0)
-        return false;
+        this->sensor1 = new EmptySensor();
     this->sensor1->setupSensor(0, first_addr, PIN_IMU_INT);
 
     // Deprecated block: Checks for old type of config. Remove after a grace period to allow people to use outdated defines.h for a while.
@@ -70,7 +70,6 @@ bool SensorFactory::create()
     if (first_addr == second_addr)
         this->sensor2 = new EmptySensor();
     this->sensor2->setupSensor(1, second_addr, PIN_IMU_INT_2);
-    return true;
 }
 
 void SensorFactory::motionSetup()

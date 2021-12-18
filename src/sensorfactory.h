@@ -9,7 +9,7 @@ class SensorFactory
 public:
     SensorFactory();
     ~SensorFactory();
-    bool create();
+    void create();
     void motionSetup();
     void motionLoop();
     void sendData();
