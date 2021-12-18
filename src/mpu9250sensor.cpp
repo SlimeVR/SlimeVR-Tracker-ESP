@@ -28,6 +28,7 @@
 #include "helper_3dmath.h"
 #include <i2cscan.h>
 #include "calibration.h"
+#include "magneto1.4.h"
 
 #define gscale (250. / 32768.0) * (PI / 180.0) //gyro default 250 LSB per d/s -> rad/s
 // These are the free parameters in the Mahony filter and fusion scheme,
@@ -72,6 +73,18 @@ void MPU9250Sensor::motionSetup() {
     } else {
         Serial.print("[OK] Connected to MPU, ID 0x");
         Serial.println(imu.getDeviceID(), HEX);
+    }
+    int16_t ax,ay,az,dumb;
+    imu.getMotion9(&ax, &ay, &az, &dumb, &dumb, &dumb, &dumb, &dumb, &dumb);
+    // turn on while flip back to calibrate. then, flip again after 5 seconds.
+    if(az<0 && 10.0*(ax*ax+ay*ay)<az*az) {
+        digitalWrite(CALIBRATING_LED, HIGH);
+        Serial.println("Calling Calibration...");
+        delay(5000);
+        digitalWrite(CALIBRATING_LED, LOW);
+        imu.getMotion6(&ax, &ay, &az, &dumb, &dumb, &dumb);
+        if(az>0 && 10.0*(ax*ax+ay*ay)<az*az) 
+            internalCalibration();
     }
 }
 
@@ -291,4 +304,90 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     Serial.println("[NOTICE] Calibration data gathered and sent");
     digitalWrite(CALIBRATING_LED, HIGH);
     sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0, PACKET_RAW_CALIBRATION_DATA);
+}
+
+
+void MPU9250Sensor::internalCalibration()
+{
+    digitalWrite(CALIBRATING_LED, LOW);
+    Serial.println("[NOTICE] Gathering raw data for device calibration...");
+    int calibrationSamples = 300;
+    DeviceConfig config{};
+    // Reset values
+    Gxyz[0] = 0;
+    Gxyz[1] = 0;
+    Gxyz[2] = 0;
+
+    // Wait for sensor to calm down before calibration
+    Serial.println("[NOTICE] Put down the device and wait for baseline gyro reading calibration");
+    delay(2000);
+    for (int i = 0; i < calibrationSamples; i++)
+    {
+        int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
+        imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+        Gxyz[0] += float(gx);
+        Gxyz[1] += float(gy);
+        Gxyz[2] += float(gz);
+    }
+    Gxyz[0] /= calibrationSamples;
+    Gxyz[1] /= calibrationSamples;
+    Gxyz[2] /= calibrationSamples;
+    Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
+    config.calibration.G_off[0] = Gxyz[0];
+    config.calibration.G_off[1] = Gxyz[1];
+    config.calibration.G_off[2] = Gxyz[2];
+
+    // Blink calibrating led before user should rotate the sensor
+    Serial.println("[NOTICE] After 3seconds, Gently rotate the device while it's gathering accelerometer and magnetometer data");
+    digitalWrite(CALIBRATING_LED, LOW);
+    delay(1500);
+    digitalWrite(CALIBRATING_LED, HIGH);
+    delay(1500);
+    Serial.println("[NOTICE] Gathering accelerometer and magnetometer data start!!");
+
+    float *calibrationDataAcc = (float*)malloc(calibrationSamples * 3 * sizeof(float));
+    float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
+    for (int i = 0; i < calibrationSamples; i++)
+    {
+        int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
+        digitalWrite(CALIBRATING_LED, LOW);
+        imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+        calibrationDataAcc[i * 3 + 0] = ax;
+        calibrationDataAcc[i * 3 + 1] = ay;
+        calibrationDataAcc[i * 3 + 2] = az;
+        calibrationDataMag[i * 3 + 0] = mx;
+        calibrationDataMag[i * 3 + 1] = my;
+        calibrationDataMag[i * 3 + 2] = mz;
+        digitalWrite(CALIBRATING_LED, HIGH);
+        delay(250);
+    }
+    Serial.println("[NOTICE] Calibration data gathered");
+    digitalWrite(CALIBRATING_LED, HIGH);
+    delay(250);
+    Serial.println("[NOTICE] Now Calculate Calibration data");
+
+    float A_BAinv[4][3];
+    float M_BAinv[4][3];
+    CalculateCalibration(calibrationDataAcc, calibrationSamples, A_BAinv);
+    CalculateCalibration(calibrationDataMag, calibrationSamples, M_BAinv);
+    free(calibrationDataAcc);
+    free(calibrationDataMag);
+    Serial.println("[NOTICE] Finished Calculate Calibration data");
+    Serial.println("[NOTICE] Now Saving EEPROM");
+    for (int i = 0; i < 3; i++)
+    {
+        config.calibration.A_B[i] = A_BAinv[0][i];
+        config.calibration.A_Ainv[0][i] = A_BAinv[1][i];
+        config.calibration.A_Ainv[1][i] = A_BAinv[2][i];
+        config.calibration.A_Ainv[2][i] = A_BAinv[3][i];
+
+        config.calibration.M_B[i] = M_BAinv[0][i];
+        config.calibration.M_Ainv[0][i] = M_BAinv[1][i];
+        config.calibration.M_Ainv[1][i] = M_BAinv[2][i];
+        config.calibration.M_Ainv[2][i] = M_BAinv[3][i];
+    }
+
+    setConfig(config);
+    Serial.println("[NOTICE] Finished Saving EEPROM");
+    delay(4000);
 }
