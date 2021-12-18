@@ -36,130 +36,131 @@
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
 
-class Sensor {
-    public:
-        Sensor() = default;
-        virtual ~Sensor() = default;
-        virtual void motionSetup() = 0;
-        virtual void motionLoop() = 0;
-        virtual void sendData() = 0;
-        virtual void startCalibration(int calibrationType) = 0;
-        bool isWorking() {
-            return working;
-        }
-    protected:
-        Quat quaternion {};
-        Quat sensorOffset {Quat(Vector3(0, 0, 1), IMU_ROTATION)};
-        Quat lastQuatSent {};
-        bool working {false};
-        uint8_t sensorId {0};
+class Sensor
+{
+public:
+    Sensor(){};
+    virtual ~Sensor(){};
+    void setupSensor(uint8_t sensorId = 0, uint8_t addr = 0, uint8_t intPin = 0);
+    virtual void motionSetup(){};
+    virtual void motionLoop(){};
+    virtual void sendData();
+    virtual void startCalibration(int calibrationType){};
+    bool isWorking()
+    {
+        return working;
+    };
+
+protected:
+    uint8_t addr = 0;
+    uint8_t intPin = 255;
+    uint8_t sensorId = 0;
+    bool configured = false;
+    bool newData = false;
+    bool working = false;
+    uint8_t calibrationAccuracy = 0;
+    Quat sensorOffset = Quat(Vector3(0, 0, 1), IMU_ROTATION);
+
+    Quat quaternion{};
+    Quat lastQuatSent{};
 };
 
-class EmptySensor : public Sensor {
-    public:
-        EmptySensor() = default;
-        ~EmptySensor() override = default;
-        void motionSetup() override final;
-        void motionLoop() override final;
-        void sendData() override final;
-        void startCalibration(int calibrationType) override final;
+class EmptySensor : public Sensor
+{
+public:
+    EmptySensor(){};
+    ~EmptySensor(){};
+    void motionSetup() override final{};
+    void motionLoop() override final{};
+    void sendData() override final{};
+    void startCalibration(int calibrationType) override final{};
 };
 
-class BNO080Sensor : public Sensor {
-    public:
-        BNO080Sensor() = default;
-        ~BNO080Sensor() override = default;
-        void motionSetup() override final;
-        void motionLoop() override final;
-        void sendData() override final;
-        void startCalibration(int calibrationType) override final;
-        void setupBNO080(uint8_t sensorId = 0, uint8_t addr = 0x4B, uint8_t intPin = 255);
-    private:
-        BNO080 imu {};
-        bool newData {false};
-        bool newMagData {false};
-        uint8_t tap;
-        unsigned long lastData = 0;
-        uint8_t lastReset = 0;
-        uint8_t addr = 0x4B;
-        uint8_t intPin = 255;
-        bool setUp {false};
-        Quat magQuaternion {};
-        float magneticAccuracyEstimate {999};
-        uint8_t calibrationAccuracy {0};
-        uint8_t magCalibrationAccuracy {0};
-        bool useMagnetometerAllTheTime {false};
-        bool useMagnetometerCorrection {false};
+class BNO080Sensor : public Sensor
+{
+public:
+    BNO080Sensor(){};
+    ~BNO080Sensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void sendData() override final;
+    void startCalibration(int calibrationType) override final;
+
+private:
+    BNO080 imu{};
+
+    uint8_t tap;
+    unsigned long lastData = 0;
+    uint8_t lastReset = 0;
+
+    // Magnetometer specific members
+    Quat magQuaternion{};
+    uint8_t magCalibrationAccuracy = 0;
+    float magneticAccuracyEstimate = 999;
+    bool useMagnetometerAllTheTime = false;
+    bool useMagnetometerCorrection = false;
+    bool newMagData = false;
 };
 
-class BNO055Sensor : public Sensor {
-    public:
-        BNO055Sensor() = default;
-        ~BNO055Sensor() override = default;
-        void motionSetup() override final;
-        void motionLoop() override final;
-        void sendData() override final;
-        void startCalibration(int calibrationType) override final;
-    private:
-        Adafruit_BNO055  imu {Adafruit_BNO055(55, 0x28)};
-        bool newData {false};
+class BNO055Sensor : public Sensor
+{
+public:
+    BNO055Sensor(){};
+    ~BNO055Sensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void startCalibration(int calibrationType) override final;
+
+private:
+    Adafruit_BNO055 imu;
 };
 
-class MPUSensor : public Sensor {
-    public:
-        MPUSensor() = default;
-        ~MPUSensor() override = default;
-    protected:
-        float q[4] {1.0, 0.0, 0.0, 0.0};
+class MPU6050Sensor : public Sensor
+{
+public:
+    MPU6050Sensor(){};
+    ~MPU6050Sensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void startCalibration(int calibrationType) override final;
+
+private:
+    MPU6050 imu{};
+    Quaternion rawQuat{};
+    // MPU dmp control/status vars
+    bool dmpReady = false;    // set true if DMP init was successful
+    uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
+    uint8_t devStatus;        // return status after each device operation (0 = success, !0 = error)
+    uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
+    uint16_t fifoCount;       // count of all bytes currently in FIFO
+    uint8_t fifoBuffer[64]{}; // FIFO storage buffer
 };
 
-class MPU6050Sensor : public MPUSensor {
-    public:
-        MPU6050Sensor() = default;
-        ~MPU6050Sensor() override  = default;
-        void motionSetup() override final;
-        void setSecond();
-        void motionLoop() override final;
-        void sendData() override final;
-        void startCalibration(int calibrationType) override final;
-    private:
-        MPU6050 imu {};
-        bool isSecond{false};
-        bool newData{false};
-        Quaternion rawQuat {};
-        // MPU dmp control/status vars
-        bool dmpReady{false};  // set true if DMP init was successful
-        uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
-        uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
-        uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
-        uint16_t fifoCount;     // count of all bytes currently in FIFO
-        uint8_t fifoBuffer[64] {}; // FIFO storage buffer
-};
+class MPU9250Sensor : public Sensor
+{
+public:
+    MPU9250Sensor(){};
+    ~MPU9250Sensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void startCalibration(int calibrationType) override final;
+    void getMPUScaled();
+    void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
-class MPU9250Sensor : public MPUSensor {
-    public:
-        MPU9250Sensor() = default;
-        ~MPU9250Sensor() override  = default;
-        void motionSetup() override final;
-        void motionLoop() override final;
-        void sendData() override final;
-        void startCalibration(int calibrationType) override final;
-        void getMPUScaled();
-        void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
-    private:
-        MPU9250 imu {};
-        //raw data and scaled as vector
-        int16_t ax, ay, az;
-        int16_t gx, gy, gz;
-        int16_t mx, my, mz;
-        float Axyz[3] {};
-        float Gxyz[3] {};
-        float Mxyz[3] {};
-        float rawMag[3] {};
-        // Loop timing globals
-        unsigned long now = 0, last = 0;   //micros() timers
-        float deltat = 0;                  //loop time in seconds
-        bool newData {false};
+private:
+    MPU9250 imu{};
+    //raw data and scaled as vector
+    int16_t ax, ay, az;
+    int16_t gx, gy, gz;
+    int16_t mx, my, mz;
+    float Axyz[3]{};
+    float Gxyz[3]{};
+    float Mxyz[3]{};
+    float rawMag[3]{};
+    float q[4]{1.0, 0.0, 0.0, 0.0};
+    // Loop timing globals
+    unsigned long now = 0, last = 0; //micros() timers
+    float deltat = 0;                //loop time in seconds
 };
 
 #endif // SLIMEVR_SENSOR_H_

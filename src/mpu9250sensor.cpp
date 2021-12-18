@@ -51,15 +51,6 @@ namespace {
 void MPU9250Sensor::motionSetup() {
     DeviceConfig * const config = getConfigPtr();
     calibration = &config->calibration;
-    uint8_t addr = 0x68;
-    if(!I2CSCAN::isI2CExist(addr)) {
-        addr = 0x69;
-        if(!I2CSCAN::isI2CExist(addr)) {
-            Serial.println("[ERR] Can't find I2C device on addr 0x68 or 0x69, returning");
-            signalAssert();
-            return;
-        }
-    }
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
@@ -83,13 +74,6 @@ void MPU9250Sensor::motionLoop() {
     if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;
         lastQuatSent = quaternion;
-    }
-}
-
-void MPU9250Sensor::sendData() {
-    if(newData) {
-        sendQuat(&quaternion, PACKET_ROTATION);
-        newData = false;
     }
 }
 
