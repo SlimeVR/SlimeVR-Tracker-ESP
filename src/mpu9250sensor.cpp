@@ -193,6 +193,7 @@ void MPU9250Sensor::getMPUScaled()
 {
     float temp[3];
     int i;
+    int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
     imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
 
     Gxyz[0] = ((float)gx - calibration->G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
@@ -229,9 +230,6 @@ void MPU9250Sensor::getMPUScaled()
         for (i = 0; i < 3; i++)
             Mxyz[i] = (Mxyz[i] - calibration->M_B[i]);
     }
-    rawMag[0] = Mxyz[0];
-    rawMag[1] = Mxyz[1];
-    rawMag[2] = Mxyz[2];
     vector_normalize(Mxyz);
 }
 
@@ -343,6 +341,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     delay(2000);
     for (int i = 0; i < calibrationSamples; i++)
     {
+        int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
         Gxyz[0] += float(gx);
         Gxyz[1] += float(gy);
@@ -367,6 +366,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     int calibrationDataMag[3];
     for (int i = 0; i < calibrationSamples; i++)
     {
+        int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
         digitalWrite(CALIBRATING_LED, LOW);
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
         calibrationDataAcc[0] = ax;

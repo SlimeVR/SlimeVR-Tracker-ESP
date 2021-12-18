@@ -47,6 +47,7 @@ class Sensor {
         bool isWorking() {
             return working;
         }
+        bool newData {false};
     protected:
         Quat quaternion {};
         Quat sensorOffset {Quat(Vector3(0, 0, 1), IMU_ROTATION)};
@@ -76,7 +77,6 @@ class BNO080Sensor : public Sensor {
         void setupBNO080(uint8_t sensorId = 0, uint8_t addr = 0x4B, uint8_t intPin = 255);
     private:
         BNO080 imu {};
-        bool newData {false};
         bool newMagData {false};
         uint8_t tap;
         unsigned long lastData = 0;
@@ -102,7 +102,6 @@ class BNO055Sensor : public Sensor {
         void startCalibration(int calibrationType) override final;
     private:
         Adafruit_BNO055  imu {Adafruit_BNO055(55, 0x28)};
-        bool newData {false};
 };
 
 class MPUSensor : public Sensor {
@@ -125,7 +124,6 @@ class MPU6050Sensor : public MPUSensor {
     protected:
         MPU6050 imu {};
         bool isSecond{false};
-        bool newData{false};
         Quaternion rawQuat {};
         // MPU dmp control/status vars
         bool dmpReady{false};  // set true if DMP init was successful
@@ -152,19 +150,11 @@ class MPU9250Sensor : public MPU6050Sensor {
     private:
         MPU9250 imu {};
         //raw data and scaled as vector
-        int16_t ax, ay, az;
-        int16_t gx, gy, gz;
-        int16_t mx, my, mz;
         float Axyz[3] {};
         float Gxyz[3] {};
         float Mxyz[3] {};
-        float rawMag[3] {};
         int skipCalcMag = 0;
         Quat correction{0,0,0,0};
-        // Loop timing globals
-        unsigned long now = 0, last = 0;   //micros() timers
-        float deltat = 0;                  //loop time in seconds
-        bool newData {false};
 };
 
 #endif // SLIMEVR_SENSOR_H_
