@@ -117,12 +117,12 @@ class MPU6050Sensor : public MPUSensor {
     public:
         MPU6050Sensor() = default;
         ~MPU6050Sensor() override  = default;
-        void motionSetup() override final;
+        void motionSetup() override;
         void setSecond();
-        void motionLoop() override final;
-        void sendData() override final;
-        void startCalibration(int calibrationType) override final;
-    private:
+        void motionLoop() override;
+        void sendData() override;
+        void startCalibration(int calibrationType) override;
+    protected:
         MPU6050 imu {};
         bool isSecond{false};
         bool newData{false};
@@ -136,7 +136,7 @@ class MPU6050Sensor : public MPUSensor {
         uint8_t fifoBuffer[64] {}; // FIFO storage buffer
 };
 
-class MPU9250Sensor : public MPUSensor {
+class MPU9250Sensor : public MPU6050Sensor {
     public:
         MPU9250Sensor() = default;
         ~MPU9250Sensor() override  = default;
@@ -147,6 +147,7 @@ class MPU9250Sensor : public MPUSensor {
         void getMPUScaled();
         void internalCalibration();
         void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
+        void updateCorrection(VectorFloat a, VectorFloat m, Quaternion q, Quaternion* c);
     private:
         MPU9250 imu {};
         //raw data and scaled as vector
@@ -157,6 +158,8 @@ class MPU9250Sensor : public MPUSensor {
         float Gxyz[3] {};
         float Mxyz[3] {};
         float rawMag[3] {};
+        int skipCalcMag = 0;
+        Quat correction{0,0,0,0};
         // Loop timing globals
         unsigned long now = 0, last = 0;   //micros() timers
         float deltat = 0;                  //loop time in seconds

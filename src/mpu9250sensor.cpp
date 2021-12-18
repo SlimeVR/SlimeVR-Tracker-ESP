@@ -36,6 +36,7 @@
 // with MPU-9250, angles start oscillating at Kp=40. Ki does not seem to help and is not required.
 #define Kp 10.0
 #define Ki 0.0
+#define SKIP_CALC_MAG_INTERVAL 10
 
 CalibrationConfig * calibration;
 
@@ -86,16 +87,89 @@ void MPU9250Sensor::motionSetup() {
         if(az>0 && 10.0*(ax*ax+ay*ay)<az*az) 
             internalCalibration();
     }
+    devStatus = imu.dmpInitialize();
+    if(devStatus == 0){
+        for(int i = 0; i < 5; ++i) {
+            delay(50);
+            digitalWrite(LOADING_LED, LOW);
+            delay(50);
+            digitalWrite(LOADING_LED, HIGH);
+        }
+
+        // turn on the DMP, now that it's ready
+        Serial.println(F("[NOTICE] Enabling DMP..."));
+        imu.setDMPEnabled(true);
+
+        // TODO: Add interrupt support
+        // mpuIntStatus = imu.getIntStatus();
+
+        // set our DMP Ready flag so the main loop() function knows it's okay to use it
+        Serial.println(F("[NOTICE] DMP ready! Waiting for first interrupt..."));
+        dmpReady = true;
+
+        // get expected DMP packet size for later comparison
+        packetSize = imu.dmpGetFIFOPacketSize();
+
+        if (isSecond) {
+            working = true;
+        }
+    } else {
+        // ERROR!
+        // 1 = initial memory load failed
+        // 2 = DMP configuration updates failed
+        // (if it's going to break, usually the code will be 1)
+        Serial.print(F("[ERR] DMP Initialization failed (code "));
+        Serial.print(devStatus);
+        Serial.println(F(")"));
+    }
+}
+
+Quat getQuatDCM(float* acc, float* mag){
+    Vector3 Mv(mag[1], mag[0] ,-mag[2]);
+    Vector3 Dv(acc[0], acc[1], acc[2]);
+    Dv.normalize();
+    Vector3 Rv = Dv.cross(Mv);
+    Rv.normalize();
+    Vector3 Fv = Rv.cross(Dv);
+    Fv.normalize();
+    float q04 = 2*sqrt(1+Fv.x+Rv.y+Dv.z);
+    return Quat(Rv.z-Dv.y,Dv.x-Fv.z,Fv.y-Rv.x,q04*q04/4).normalized();    
+}
+Quat getCorrection(float* acc,float* mag,Quat quat)
+{
+    Quat magQ = getQuatDCM(acc,mag);
+    //dmp.w=DCM.z
+    //dmp.x=DCM.y
+    //dmp.y=-DCM.x
+    //dmp.z=DCM.w
+    Quat trans(magQ.x, magQ.y, magQ.w, magQ.z);
+    Quat result = trans*quat.inverse();
+    return result;
 }
 
 void MPU9250Sensor::motionLoop() {
     // Update quaternion
-    now = micros();
-    deltat = (now - last) * 1.0e-6; //seconds since last update
-    last = now;
-    getMPUScaled();
-    MahonyQuaternionUpdate(Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat);
-    quaternion.set(-q[1], -q[2], -q[0], q[3]);
+    if(!dmpReady)
+        return;
+    Quaternion rawQuat{};
+    if(!imu.GetCurrentFIFOPacket(fifoBuffer,imu.dmpPacketSize)) return;
+    imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
+    Quat quat(-rawQuat.y,rawQuat.x,rawQuat.z,rawQuat.w);
+    if(correction.length_squared()==0.0f){
+        getMPUScaled();
+        if(Mxyz[0]==0.0f && Mxyz[1]==0.0f && Mxyz[2]==0.0f) return;
+        correction=getCorrection(Axyz,Mxyz,quat);
+        skipCalcMag = isSecond?SKIP_CALC_MAG_INTERVAL:SKIP_CALC_MAG_INTERVAL/2;
+    }
+    if(!skipCalcMag){
+        getMPUScaled();
+        if(Mxyz[0]==0.0f && Mxyz[1]==0.0f && Mxyz[2]==0.0f) return;
+        skipCalcMag=SKIP_CALC_MAG_INTERVAL;
+        correction = correction.slerp(getCorrection(Axyz,Mxyz,quat),0.002*SKIP_CALC_MAG_INTERVAL);
+    }else skipCalcMag--;
+    
+    quat=correction*quat;
+    quaternion=quat;
     quaternion *= sensorOffset;
     if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;

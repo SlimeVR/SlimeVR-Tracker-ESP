@@ -3263,3 +3263,43 @@ void MPU9250::PrintActiveOffsets() {
 	printfloatx("", Data[1], 5, 0, ",  ");
 	printfloatx("", Data[2], 5, 0, "\n");
 }
+
+/** Get latest byte from FIFO buffer no matter how much time has passed.
+ * ===                  GetCurrentFIFOPacket                    ===
+ * ================================================================
+ * Returns 1) when data was successfully read
+ *         2) when recovering from overflow, only the earliest packet is read
+ *         0) when no valid data is available
+ * ================================================================ */
+int8_t MPU9250::GetCurrentFIFOPacket(uint8_t *data, uint8_t length) { // overflow proof
+    uint16_t fifoCounter = getFIFOCount();
+    if (fifoCounter < length) { // If FIFO counter is smaller than packet size - there's nothing to read yet
+        return 0;
+    } else if (fifoCounter > 192) { // If FIFO counter exceeds our buffer size - read the first packet to keep it smooth and reset FIFO
+        getFIFOBytes(data, length);
+        resetFIFO();
+        return 2;
+    } else if (fifoCounter > length) { // If FIFO counter exceeds a size of one packet - read full packets and get the latest packet
+        uint8_t fifoBuf[192] = {0};
+        uint8_t bytesCounter = 0;
+        // Count only full packets and read them into buffer
+        fifoCounter = length * (fifoCounter / length);
+        do {
+            uint8_t i2cBuf[BUFFER_LENGTH] = {0};
+            uint8_t readBytes = min(fifoCounter, (uint16_t)BUFFER_LENGTH);
+            getFIFOBytes(i2cBuf, readBytes);
+            for (uint8_t i = 0; i < readBytes; i++) {
+                fifoBuf[i + bytesCounter] = i2cBuf[i];
+            }
+            fifoCounter -= readBytes;
+            bytesCounter += readBytes;
+        } while (fifoCounter);
+        // Read the last packet
+        for (uint8_t i = 0, start = bytesCounter - length; i < length; i++) {
+            data[i] = fifoBuf[start + i];
+        }
+        return 1;
+    }
+    getFIFOBytes(data, length); // If FIFO counter is exactly the packet size - read the packet
+    return 1;
+}

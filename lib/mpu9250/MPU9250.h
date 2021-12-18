@@ -643,6 +643,7 @@ class MPU9250 {
         // USER_CTRL register
         bool getFIFOEnabled();
         void setFIFOEnabled(bool enabled);
+        int8_t GetCurrentFIFOPacket(uint8_t *data, uint8_t length);
         bool getI2CMasterModeEnabled();
         void setI2CMasterModeEnabled(bool enabled);
         void switchSPIEnabled(bool enabled);
