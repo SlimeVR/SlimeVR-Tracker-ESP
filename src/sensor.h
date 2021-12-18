@@ -155,6 +155,7 @@ class MPU9250Sensor : public MPU6050Sensor {
         float Mxyz[3] {};
         int skipCalcMag = 0;
         Quat correction{0,0,0,0};
+        CalibrationConfig *calibration;
 };
 
 #endif // SLIMEVR_SENSOR_H_

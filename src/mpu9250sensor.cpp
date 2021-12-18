@@ -38,8 +38,6 @@
 #define Ki 0.0
 #define SKIP_CALC_MAG_INTERVAL 10
 
-CalibrationConfig * calibration;
-
 void get_MPU_scaled();
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
@@ -391,7 +389,7 @@ void MPU9250Sensor::internalCalibration()
     digitalWrite(CALIBRATING_LED, LOW);
     Serial.println("[NOTICE] Gathering raw data for device calibration...");
     int calibrationSamples = 300;
-    DeviceConfig config{};
+    DeviceConfig *config = getConfigPtr();
     // Reset values
     Gxyz[0] = 0;
     Gxyz[1] = 0;
@@ -412,9 +410,9 @@ void MPU9250Sensor::internalCalibration()
     Gxyz[1] /= calibrationSamples;
     Gxyz[2] /= calibrationSamples;
     Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
-    config.calibration[isSecond?1:0].G_off[0] = Gxyz[0];
-    config.calibration[isSecond?1:0].G_off[1] = Gxyz[1];
-    config.calibration[isSecond?1:0].G_off[2] = Gxyz[2];
+    config->calibration[isSecond?1:0].G_off[0] = Gxyz[0];
+    config->calibration[isSecond?1:0].G_off[1] = Gxyz[1];
+    config->calibration[isSecond?1:0].G_off[2] = Gxyz[2];
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("[NOTICE] After 3seconds, Gently rotate the device while it's gathering accelerometer and magnetometer data");
@@ -455,18 +453,18 @@ void MPU9250Sensor::internalCalibration()
     Serial.println("[NOTICE] Now Saving EEPROM");
     for (int i = 0; i < 3; i++)
     {
-        config.calibration[isSecond?1:0].A_B[i] = A_BAinv[0][i];
-        config.calibration[isSecond?1:0].A_Ainv[0][i] = A_BAinv[1][i];
-        config.calibration[isSecond?1:0].A_Ainv[1][i] = A_BAinv[2][i];
-        config.calibration[isSecond?1:0].A_Ainv[2][i] = A_BAinv[3][i];
+        config->calibration[isSecond?1:0].A_B[i] = A_BAinv[0][i];
+        config->calibration[isSecond?1:0].A_Ainv[0][i] = A_BAinv[1][i];
+        config->calibration[isSecond?1:0].A_Ainv[1][i] = A_BAinv[2][i];
+        config->calibration[isSecond?1:0].A_Ainv[2][i] = A_BAinv[3][i];
 
-        config.calibration[isSecond?1:0].M_B[i] = M_BAinv[0][i];
-        config.calibration[isSecond?1:0].M_Ainv[0][i] = M_BAinv[1][i];
-        config.calibration[isSecond?1:0].M_Ainv[1][i] = M_BAinv[2][i];
-        config.calibration[isSecond?1:0].M_Ainv[2][i] = M_BAinv[3][i];
+        config->calibration[isSecond?1:0].M_B[i] = M_BAinv[0][i];
+        config->calibration[isSecond?1:0].M_Ainv[0][i] = M_BAinv[1][i];
+        config->calibration[isSecond?1:0].M_Ainv[1][i] = M_BAinv[2][i];
+        config->calibration[isSecond?1:0].M_Ainv[2][i] = M_BAinv[3][i];
     }
 
-    setConfig(config);
+    setConfig(*config);
     Serial.println("[NOTICE] Finished Saving EEPROM");
     delay(4000);
 }
