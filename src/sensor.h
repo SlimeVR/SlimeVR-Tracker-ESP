@@ -142,6 +142,7 @@ class MPU9250Sensor : public MPU6050Sensor {
         ~MPU9250Sensor() override  = default;
         void motionSetup() override final;
         void motionLoop() override final;
+        void setSecond();
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
         void getMPUScaled();

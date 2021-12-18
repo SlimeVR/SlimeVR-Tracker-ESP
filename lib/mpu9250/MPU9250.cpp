@@ -1717,10 +1717,10 @@ void MPU9250::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int
 
 	//read mag
 	I2Cdev::writeByte(devAddr, MPU9250_RA_INT_PIN_CFG, 0x02); //set i2c bypass enable pin to true to access magnetometer
-	delay(10);
 	I2Cdev::writeByte(MPU9150_RA_MAG_ADDRESS, 0x0A, 0x01); //enable the magnetometer
 	delay(10);
 	I2Cdev::readBytes(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_XOUT_L, 6, buffer);
+	I2Cdev::writeByte(devAddr, MPU9250_RA_INT_PIN_CFG, 0x00); //set i2c bypass enable pin to false to avoid collision between second magnetometer
 	*mx = (((int16_t)buffer[1]) << 8) | buffer[0];
     *my = (((int16_t)buffer[3]) << 8) | buffer[2];
     *mz = (((int16_t)buffer[5]) << 8) | buffer[4];

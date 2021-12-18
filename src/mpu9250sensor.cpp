@@ -56,10 +56,10 @@ namespace {
 
 void MPU9250Sensor::motionSetup() {
     DeviceConfig * const config = getConfigPtr();
-    calibration = &config->calibration;
-    uint8_t addr = 0x68;
+    calibration = &config->calibration[isSecond?1:0];
+    uint8_t addr = isSecond?0x69:0x68;
     if(!I2CSCAN::isI2CExist(addr)) {
-        addr = 0x69;
+        addr = isSecond?0x68:0x69;
         if(!I2CSCAN::isI2CExist(addr)) {
             Serial.println("[ERR] Can't find I2C device on addr 0x68 or 0x69, returning");
             signalAssert();
@@ -179,9 +179,14 @@ void MPU9250Sensor::motionLoop() {
 
 void MPU9250Sensor::sendData() {
     if(newData) {
-        sendQuat(&quaternion, PACKET_ROTATION);
+        sendQuat(&quaternion, isSecond ? PACKET_ROTATION_2 : PACKET_ROTATION);
         newData = false;
     }
+}
+
+void MPU9250Sensor::setSecond() {
+    isSecond = true;
+    sensorOffset = {Quat(Vector3(0, 0, 1), SECOND_IMU_ROTATION)};
 }
 
 void MPU9250Sensor::getMPUScaled()
@@ -407,9 +412,9 @@ void MPU9250Sensor::internalCalibration()
     Gxyz[1] /= calibrationSamples;
     Gxyz[2] /= calibrationSamples;
     Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
-    config.calibration.G_off[0] = Gxyz[0];
-    config.calibration.G_off[1] = Gxyz[1];
-    config.calibration.G_off[2] = Gxyz[2];
+    config.calibration[isSecond?1:0].G_off[0] = Gxyz[0];
+    config.calibration[isSecond?1:0].G_off[1] = Gxyz[1];
+    config.calibration[isSecond?1:0].G_off[2] = Gxyz[2];
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("[NOTICE] After 3seconds, Gently rotate the device while it's gathering accelerometer and magnetometer data");
@@ -450,15 +455,15 @@ void MPU9250Sensor::internalCalibration()
     Serial.println("[NOTICE] Now Saving EEPROM");
     for (int i = 0; i < 3; i++)
     {
-        config.calibration.A_B[i] = A_BAinv[0][i];
-        config.calibration.A_Ainv[0][i] = A_BAinv[1][i];
-        config.calibration.A_Ainv[1][i] = A_BAinv[2][i];
-        config.calibration.A_Ainv[2][i] = A_BAinv[3][i];
+        config.calibration[isSecond?1:0].A_B[i] = A_BAinv[0][i];
+        config.calibration[isSecond?1:0].A_Ainv[0][i] = A_BAinv[1][i];
+        config.calibration[isSecond?1:0].A_Ainv[1][i] = A_BAinv[2][i];
+        config.calibration[isSecond?1:0].A_Ainv[2][i] = A_BAinv[3][i];
 
-        config.calibration.M_B[i] = M_BAinv[0][i];
-        config.calibration.M_Ainv[0][i] = M_BAinv[1][i];
-        config.calibration.M_Ainv[1][i] = M_BAinv[2][i];
-        config.calibration.M_Ainv[2][i] = M_BAinv[3][i];
+        config.calibration[isSecond?1:0].M_B[i] = M_BAinv[0][i];
+        config.calibration[isSecond?1:0].M_Ainv[0][i] = M_BAinv[1][i];
+        config.calibration[isSecond?1:0].M_Ainv[1][i] = M_BAinv[2][i];
+        config.calibration[isSecond?1:0].M_Ainv[2][i] = M_BAinv[3][i];
     }
 
     setConfig(config);
