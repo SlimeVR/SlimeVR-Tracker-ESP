@@ -10,7 +10,7 @@ void Sensor::setupSensor(uint8_t sensorId, uint8_t addr, uint8_t intPin) {
     this->intPin = intPin;
     this->sensorId = sensorId;
     this->sensorOffset = {Quat(Vector3(0, 0, 1), sensorId == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
-    };
+}
 
 void Sensor::sendData() {
     if(newData) {
@@ -28,4 +28,4 @@ void Sensor::sendData() {
             Serial.print("\n");
         #endif
     }
-};
+}

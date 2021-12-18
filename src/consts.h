@@ -41,6 +41,10 @@
 #define BOARD_TTGO_TBASE 7
 #define BOARD_ESP01 8
 
+#define BAT_EXTERNAL 1
+#define BAT_INTERNAL 2
+#define BAT_MCP3021 3
+
 #define DEG_0 0.f
 #define DEG_90 -PI / 2
 #define DEG_180 PI

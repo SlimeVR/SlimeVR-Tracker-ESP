@@ -33,16 +33,22 @@
 #define SEND_UPDATES_UNCONNECTED 1
 #define LED_INTERVAL_STANDBUY 10000
 #define STATUS_PRINT_INTERVAL 15000
+#define ENABLE_LEDS true
+
+#define LOADING_LED LED_BUILTIN
+#define CALIBRATING_LED LED_BUILTIN
+#define STATUS_LED LED_BUILTIN
 
 // Determines how often we sample and send data
 #define samplingRateInMillis 10
-#define batterySampleRate 10000
 
 // Setup for the Magnetometer
 #define useFullCalibrationMatrix true
 
-#define sensorIdTime 1000
-#define sensorIdInterval 100
+// Battery configuration
+#define batterySampleRate 10000
+#define BATTERY_LOW_VOLTAGE_DEEP_SLEEP false
+#define BATTERY_LOW_POWER_VOLTAGE 3.3 // Voltage to raise error
 
 // Send updates over network only when changes are substantial
 // If "false" updates are sent at the sensor update rate (usually 100 TPS)

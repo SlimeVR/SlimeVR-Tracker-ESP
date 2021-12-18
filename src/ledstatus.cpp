@@ -32,6 +32,9 @@
 #define IMU_ERROR_LENGTH DEFAULT_LENGTH
 #define IMU_ERROR_INTERVAL 1000
 #define IMU_ERROR_COUNT 5
+#define LOW_BATTERY_LENGTH DEFAULT_LENGTH
+#define LOW_BATTERY_INTERVAL 300
+#define LOW_BATTERY_COUNT 1
 #define WIFI_CONNECTING_LENGTH DEFAULT_LENGTH
 #define WIFI_CONNECTING_INTERVAL 3000
 #define WIFI_CONNECTING_COUNT 3
@@ -82,7 +85,23 @@ void ledStatusUpdate() {
             printStatus = true;
         }
     #endif
-    if((currentStatus & LED_STATUS_IMU_ERROR) > 0) {
+    if((currentStatus & LED_STATUS_LOW_BATTERY) > 0) {
+        count = LOW_BATTERY_COUNT;
+        switch(currentStage) {
+            case ON:
+            case OFF:
+                length = LOW_BATTERY_LENGTH;
+                break;
+            case GAP:
+                length = DEFAULT_GAP;
+                break;
+            case INTERVAL:
+                length = LOW_BATTERY_INTERVAL;
+                break;
+            }
+        if(printStatus)
+            Serial.println("[STATUS] LOW BATTERY");
+    } else if((currentStatus & LED_STATUS_IMU_ERROR) > 0) {
         count = IMU_ERROR_COUNT;
         switch(currentStage) {
             case ON:

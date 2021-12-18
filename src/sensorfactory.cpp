@@ -77,7 +77,7 @@ void SensorFactory::motionSetup()
 {
     sensor1->motionSetup();
     #ifdef SECOND_IMU
-    sensor2->motionSetup();
+        sensor2->motionSetup();
     #endif
 }
 
@@ -85,7 +85,7 @@ void SensorFactory::motionLoop()
 {
     sensor1->motionLoop();
     #ifdef SECOND_IMU
-    sensor2->motionLoop();
+        sensor2->motionLoop();
     #endif
 }
 
@@ -93,7 +93,7 @@ void SensorFactory::sendData()
 {
     sensor1->sendData();
     #ifdef SECOND_IMU
-    sensor2->sendData();
+        sensor2->sendData();
     #endif
 }
 

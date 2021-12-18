@@ -28,6 +28,7 @@
 
 #define LED_STATUS_SERVER_CONNECTING 2
 #define LED_STATUS_WIFI_CONNECTING 4
+#define LED_STATUS_LOW_BATTERY 128
 #define LED_STATUS_IMU_ERROR 256
 
 void setLedStatus(uint32_t status);

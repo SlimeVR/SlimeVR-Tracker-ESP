@@ -120,13 +120,6 @@ void MPU6050Sensor::motionLoop()
     }
 }
 
-void MPU6050Sensor::sendData() {
-    if(newData) {
-        sendQuat(&quaternion, isSecond ? PACKET_ROTATION_2 : PACKET_ROTATION);
-        newData = false;
-    }
-}
-
 void MPU6050Sensor::startCalibration(int calibrationType) {
     LEDMGR::On(CALIBRATING_LED);
 #ifdef IMU_MPU6050_RUNTIME_CALIBRATION
