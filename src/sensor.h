@@ -145,8 +145,6 @@ class MPU9250Sensor : public MPU6050Sensor {
         void startCalibration(int calibrationType) override final;
         void getMPUScaled();
         void internalCalibration();
-        void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
-    private:
         MPU9250 imu {};
         //raw data and scaled as vector
         float Axyz[3] {};
@@ -154,6 +152,7 @@ class MPU9250Sensor : public MPU6050Sensor {
         float Mxyz[3] {};
         int skipCalcMag = 0;
         Quat correction{0,0,0,0};
+        float adjustments[3] {};
         CalibrationConfig *calibration;
 };
 

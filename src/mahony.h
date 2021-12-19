@@ -21,20 +21,12 @@
     THE SOFTWARE.
 */
 
+#ifndef _MAHONY_H_
+#define _MAHONY_H_
+
 #include "helper_3dmath.h"
 
-// Fast inverse square root function (https://en.wikipedia.org/wiki/Fast_inverse_square_root).
-// Source: https://pizer.wordpress.com/2008/10/12/fast-inverse-square-root/
-float invSqrt(float x) {
-   uint32_t i = 0x5F1F1412 - (*(uint32_t*)&x >> 1);
-   float tmp = *(float*)&i;
-   return tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
-}
+void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float deltat);
+void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
-void vector_normalize(float a[3])
-{
-    float norm = invSqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-    a[0] *= norm;
-    a[1] *= norm;
-    a[2] *= norm;
-}
+#endif /* _MAHONY_H_ */
