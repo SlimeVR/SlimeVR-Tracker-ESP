@@ -143,8 +143,8 @@ class MPU9250Sensor : public MPU6050Sensor {
         void setSecond();
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
-        void getMPUScaled();
         void internalCalibration();
+        void getMPUScaled();
         void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
     private:
         MPU9250 imu {};
