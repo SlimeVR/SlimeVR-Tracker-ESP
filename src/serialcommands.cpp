@@ -51,7 +51,7 @@ void cmdReport(CmdParser * parser) {
 }
 
 void cmdReboot(CmdParser * parser) {
-    // TODO Reboot
+    ESP.restart();
 }
 
 void cmdFactoryReset(CmdParser * parser) {
