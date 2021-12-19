@@ -160,6 +160,7 @@ class MPU9250Sensor : public MPUSensor {
         unsigned long now = 0, last = 0;   //micros() timers
         float deltat = 0;                  //loop time in seconds
         bool newData {false};
+        CalibrationConfig * calibration;
 };
 
 #endif // SLIMEVR_SENSOR_H_
