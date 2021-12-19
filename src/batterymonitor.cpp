@@ -22,13 +22,13 @@
 */
 #include "batterymonitor.h"
 
-#if BATTERY_MONITOR == BAT_INTERNAL
+#if BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
 ADC_MODE(ADC_VCC);
 #endif
 
 void BatteryMonitor::Setup()
 {
-#if BATTERY_MONITOR == BAT_MCP3021
+#if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
     for (uint8_t i = 0x48; i < 0x4F; i++)
     {
         if (I2CSCAN::isI2CExist(i))
@@ -46,12 +46,12 @@ void BatteryMonitor::Setup()
 
 void BatteryMonitor::Loop()
 {
-    #if BATTERY_MONITOR == BAT_EXTERNAL || BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_MCP3021
+    #if BATTERY_MONITOR == BAT_EXTERNAL || BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
         auto now_ms = millis();
         if (now_ms - last_battery_sample >= batterySampleRate)
         {
             voltage = -1;
-            #if BATTERY_MONITOR == BAT_INTERNAL
+            #if BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
                 last_battery_sample = now_ms;
                 auto level = ESP.getVcc();
                 if (level > voltage_3_3)
@@ -74,10 +74,9 @@ void BatteryMonitor::Loop()
             #endif
             #if BATTERY_MONITOR == BAT_EXTERNAL
                 last_battery_sample = now_ms;
-                float e = ((float)analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
-                voltage = (voltage > 0) ? min(voltage, e) : e;
+                voltage = ((float)analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
             #endif
-            #if BATTERY_MONITOR == BAT_MCP3021
+            #if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
                 if (address > 0)
                 {
                     Wire.beginTransmission(address);

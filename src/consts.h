@@ -44,6 +44,7 @@
 #define BAT_EXTERNAL 1
 #define BAT_INTERNAL 2
 #define BAT_MCP3021 3
+#define BAT_INTERNAL_MCP3021 4
 
 #define DEG_0 0.f
 #define DEG_90 -PI / 2

@@ -44,10 +44,10 @@ public:
 
 private:
     unsigned long last_battery_sample = 0;
-#if BATTERY_MONITOR == BAT_MCP3021
+#if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
     uint8_t address = 0;
 #endif
-#if BATTERY_MONITOR == BAT_INTERNAL
+#if BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
     uint16_t voltage_3_3 = 3000;
 #endif
     float voltage = -1;

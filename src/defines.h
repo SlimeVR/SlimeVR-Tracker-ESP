@@ -40,7 +40,7 @@
 // Battery monitoring options (comment to disable):
 // BAT_EXTERNAL for ADC pin, BAT_INTERNAL for internal - can detect only low battery, BAT_MCP3021 for external ADC
 #define BATTERY_MONITOR BAT_EXTERNAL
-#define BATTERY_SHILED_RESISTANCE 180 //130k BatteryShield, 180k SlimeVR or fill in external resistor value in kOhm
+#define BATTERY_SHIELD_RESISTANCE 180 //130k BatteryShield, 180k SlimeVR or fill in external resistor value in kOhm
 
 // Imu-specific configurations
 #if IMU == IMU_BNO085
@@ -107,6 +107,7 @@
   #define PIN_IMU_SCL 0
   #define PIN_IMU_INT 255
   #define PIN_IMU_INT_2 255
+  #define ENABLE_LEDS false
 #elif BOARD == BOARD_TTGO_TBASE
   #define PIN_IMU_SDA 5
   #define PIN_IMU_SCL 4
@@ -128,8 +129,8 @@
   // Wemos D1 Mini has an internal Voltage Divider with R1=220K and R2=100K > this means, 3.3V analogRead input voltage results in 1023.0
   // Wemos D1 Mini with Wemos BatteryShiled v1.2.0 or higher: BatteryShield with J2 closed, has an additional 130K resistor. So the resulting Voltage Divider is R1=220K+100K=320K and R2=100K > this means, 4.5V analogRead input voltage results in 1023.0
   // SlimeVR Board can handle max 5V > so analogRead of 5.0V input will result in 1023.0
-  #define batteryADCMultiplier 1.0 / 1023.0 * (320 + BATTERY_SHILED_RESISTANCE) / 100
-#elif BATTERY_MONITOR == BAT_MCP3021
+  #define batteryADCMultiplier 1.0 / 1023.0 * (320 + BATTERY_SHIELD_RESISTANCE) / 100
+#elif BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
   // Default recommended resistors are 9.1k and 5.1k
   #define batteryADCMultiplier 3.3 / 1023.0 * 14.2 / 9.1
 #endif
