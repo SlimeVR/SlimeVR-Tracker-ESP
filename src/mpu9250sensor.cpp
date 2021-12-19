@@ -74,7 +74,6 @@ void MPU9250Sensor::motionSetup() {
         Serial.print("[OK] Connected to MPU, ID 0x");
         Serial.println(imu.getDeviceID(), HEX);
     }
-<<<<<<< HEAD
     int16_t ax,ay,az,dumb;
     imu.getMotion9(&ax, &ay, &az, &dumb, &dumb, &dumb, &dumb, &dumb, &dumb);
     // turn on while flip back to calibrate. then, flip again after 5 seconds.
@@ -145,14 +144,11 @@ Quat getCorrection(float* acc,float* mag,Quat quat)
     Quat trans(magQ.x, magQ.y, magQ.w, magQ.z);
     Quat result = trans*quat.inverse();
     return result;
-=======
     imu.getMagnetometerAdjustments(adjustments);
->>>>>>> deiteris/improved-mag
 }
 
 void MPU9250Sensor::motionLoop() {
     // Update quaternion
-<<<<<<< HEAD
     if(!dmpReady)
         return;
     Quaternion rawQuat{};
@@ -178,23 +174,6 @@ void MPU9250Sensor::motionLoop() {
     if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;
         lastQuatSent = quaternion;
-=======
-    now = micros();
-    deltat = now - last; //seconds since last update
-    if ((deltat * 1.0e-3) >= samplingRateInMillis) {
-        last = now;
-        getMPUScaled();
-        // Orientations of axes are set in accordance with the datasheet
-        // See Section 9.1 Orientation of Axes
-        // https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf
-        mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat * 1.0e-6);
-        quaternion.set(-q[1], -q[2], -q[0], q[3]);
-        quaternion *= sensorOffset;
-        if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
-            newData = true;
-            lastQuatSent = quaternion;
-        }
->>>>>>> deiteris/improved-mag
     }
 }
 
@@ -251,14 +230,7 @@ void MPU9250Sensor::getMPUScaled()
     #else
         for (i = 0; i < 3; i++)
             Mxyz[i] = (Mxyz[i] - calibration->M_B[i]);
-<<<<<<< HEAD
     }
-=======
-    #endif
-    rawMag[0] = Mxyz[0];
-    rawMag[1] = Mxyz[1];
-    rawMag[2] = Mxyz[2];
->>>>>>> deiteris/improved-mag
     vector_normalize(Mxyz);
 }
 
