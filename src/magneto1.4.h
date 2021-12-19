@@ -317,7 +317,6 @@ void CalculateCalibration(float *buf, int sampleCount, float BAinv[4][3])
 
     for (i = 0; i < 3; i++)
         BAinv[0][i] = B[i];
-
     for (i = 0; i < 3; i++)
     {
         BAinv[i + 1][0] = A_1[i * 3];
