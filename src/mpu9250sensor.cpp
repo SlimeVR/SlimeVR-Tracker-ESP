@@ -86,6 +86,7 @@ void MPU9250Sensor::motionSetup() {
         if(az>0 && 10.0*(ax*ax+ay*ay)<az*az) 
             internalCalibration();
     }
+    imu.getMagnetometerAdjustments(adjustments);
     devStatus = imu.dmpInitialize();
     if(devStatus == 0){
         for(int i = 0; i < 5; ++i) {
@@ -144,7 +145,6 @@ Quat getCorrection(float* acc,float* mag,Quat quat)
     Quat trans(magQ.x, magQ.y, magQ.w, magQ.z);
     Quat result = trans*quat.inverse();
     return result;
-    imu.getMagnetometerAdjustments(adjustments);
 }
 
 void MPU9250Sensor::motionLoop() {
@@ -230,7 +230,7 @@ void MPU9250Sensor::getMPUScaled()
     #else
         for (i = 0; i < 3; i++)
             Mxyz[i] = (Mxyz[i] - calibration->M_B[i]);
-    }
+    #endif
     vector_normalize(Mxyz);
 }
 
