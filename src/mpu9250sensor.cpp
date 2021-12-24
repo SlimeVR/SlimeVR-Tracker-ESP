@@ -30,6 +30,7 @@
 #include "calibration.h"
 #include "magneto1.4.h"
 #include "mahony.h"
+#include "dmpmag.h"
 
 constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
 
@@ -124,28 +125,6 @@ void MPU9250Sensor::motionSetup() {
     }
 }
 
-Quat getQuatDCM(float* acc, float* mag){
-    Vector3 Mv(mag[1], mag[0] ,-mag[2]);
-    Vector3 Dv(acc[0], acc[1], acc[2]);
-    Dv.normalize();
-    Vector3 Rv = Dv.cross(Mv);
-    Rv.normalize();
-    Vector3 Fv = Rv.cross(Dv);
-    Fv.normalize();
-    float q04 = 2*sqrt(1+Fv.x+Rv.y+Dv.z);
-    return Quat(Rv.z-Dv.y,Dv.x-Fv.z,Fv.y-Rv.x,q04*q04/4).normalized();    
-}
-Quat getCorrection(float* acc,float* mag,Quat quat)
-{
-    Quat magQ = getQuatDCM(acc,mag);
-    //dmp.w=DCM.z
-    //dmp.x=DCM.y
-    //dmp.y=-DCM.x
-    //dmp.z=DCM.w
-    Quat trans(magQ.x, magQ.y, magQ.w, magQ.z);
-    Quat result = trans*quat.inverse();
-    return result;
-}
 
 void MPU9250Sensor::motionLoop() {
     // Update quaternion
