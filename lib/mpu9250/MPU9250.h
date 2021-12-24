@@ -42,7 +42,7 @@ THE SOFTWARE.
 #include <pgmspace.h>
 
 // MotionApps 2.0 DMP implementation, built using the MPU-6050EVB evaluation board
-#define MPU9250_INCLUDE_DMP_MOTIONAPPS20
+#define MPU9250_INCLUDE_DMP_MOTIONAPPS41
 
 //Magnetometer Registers
 #define MPU9250_RA_MAG_ADDRESS      0x0C
