@@ -153,6 +153,7 @@ class MPU9250Sensor : public MPU6050Sensor {
         int skipCalcMag = 0;
         Quat correction{0,0,0,0};
         float adjustments[3] {};
+        unsigned long last = 0;   //micros() timers
         CalibrationConfig *calibration;
 };
 

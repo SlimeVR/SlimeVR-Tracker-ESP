@@ -166,7 +166,8 @@ void loop()
 #endif
     sensor.motionLoop();
 #ifdef HAS_SECOND_IMU
-    sensor2.motionLoop();
+    if(secondImuActive)
+        sensor2.motionLoop();
 #endif
 #ifndef UPDATE_IMU_UNCONNECTED
         }
@@ -178,6 +179,7 @@ void loop()
 #endif
         sensor.sendData();
 #ifdef HAS_SECOND_IMU
+    if(secondImuActive)
         sensor2.sendData();
 #endif
 #ifndef SEND_UPDATES_UNCONNECTED

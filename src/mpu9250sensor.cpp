@@ -30,19 +30,15 @@
 #include "calibration.h"
 #include "magneto1.4.h"
 #include "mahony.h"
+#ifndef _MAHONY_H_
 #include "dmpmag.h"
+#endif
 
 constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
 
-// These are the free parameters in the Mahony filter and fusion scheme,
-// Kp for proportional feedback, Ki for integral
-// with MPU-9250, angles start oscillating at Kp=40. Ki does not seem to help and is not required.
-#define Kp 10.0
-#define Ki 0.0
 #define SKIP_CALC_MAG_INTERVAL 10
+#define MAG_CORR_RATIO 0.2
 
-void get_MPU_scaled();
-void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 namespace {
     void signalAssert() {
         for(int i = 0; i < 200; ++i) {
@@ -88,6 +84,7 @@ void MPU9250Sensor::motionSetup() {
             internalCalibration();
     }
     imu.getMagnetometerAdjustments(adjustments);
+#ifndef _MAHONY_H_
     devStatus = imu.dmpInitialize();
     if(devStatus == 0){
         for(int i = 0; i < 5; ++i) {
@@ -123,10 +120,19 @@ void MPU9250Sensor::motionSetup() {
         Serial.print(devStatus);
         Serial.println(F(")"));
     }
+#endif
 }
 
 
 void MPU9250Sensor::motionLoop() {
+    unsigned long now = micros();
+    unsigned long deltat = now - last; //seconds since last update
+    last = now;
+    if(deltat<samplingRateInMillis*1000) {
+        delayMicroseconds(samplingRateInMillis*1000-deltat);
+        deltat = samplingRateInMillis*1000;
+    }
+#ifndef _MAHONY_H_
     // Update quaternion
     if(!dmpReady)
         return;
@@ -134,21 +140,26 @@ void MPU9250Sensor::motionLoop() {
     if(!imu.GetCurrentFIFOPacket(fifoBuffer,imu.dmpPacketSize)) return;
     imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
     Quat quat(-rawQuat.y,rawQuat.x,rawQuat.z,rawQuat.w);
-    if(correction.length_squared()==0.0f){
-        getMPUScaled();
-        if(Mxyz[0]==0.0f && Mxyz[1]==0.0f && Mxyz[2]==0.0f) return;
-        correction=getCorrection(Axyz,Mxyz,quat);
-        skipCalcMag = isSecond?SKIP_CALC_MAG_INTERVAL:SKIP_CALC_MAG_INTERVAL/2;
-    }
     if(!skipCalcMag){
         getMPUScaled();
         if(Mxyz[0]==0.0f && Mxyz[1]==0.0f && Mxyz[2]==0.0f) return;
         skipCalcMag=SKIP_CALC_MAG_INTERVAL;
-        correction = correction.slerp(getCorrection(Axyz,Mxyz,quat),0.002*SKIP_CALC_MAG_INTERVAL);
+        if(correction.length_squared()==0.0f) {
+            correction=getCorrection(Axyz,Mxyz,quat);
+            if(isSecond) skipCalcMag=SKIP_CALC_MAG_INTERVAL/2;
+        }
+        else correction = correction.slerp(getCorrection(Axyz,Mxyz,quat),MAG_CORR_RATIO);
     }else skipCalcMag--;
-    
-    quat=correction*quat;
-    quaternion=quat;
+    quaternion=correction*quat;
+#else
+    getMPUScaled();
+    // Orientations of axes are set in accordance with the datasheet
+    // See Section 9.1 Orientation of Axes
+    // https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf
+    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat * 1.0e-6);
+    quaternion.set(-q[1], -q[2], -q[0], q[3]);
+
+#endif
     quaternion *= sensorOffset;
     if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;
