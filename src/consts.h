@@ -46,6 +46,12 @@
 #define BAT_MCP3021 3
 #define BAT_INTERNAL_MCP3021 4
 
+#define POWER_SAVING_NONE 0
+#define POWER_SAVING_MINIMUM 1
+#define POWER_SAVING_MODERATE 2
+//Should not be used yet => disconnects a lot
+//#define POWER_SAVING_MAXIMUM 3
+
 #define DEG_0 0.f
 #define DEG_90 -PI / 2
 #define DEG_180 PI

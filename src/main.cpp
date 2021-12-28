@@ -39,6 +39,7 @@ SensorFactory sensors {};
 int sensorToCalibrate = -1;
 bool blinking = false;
 unsigned long blinkStart = 0;
+unsigned long loopTime = 0;
 bool secondImuActive = false;
 BatteryMonitor battery;
 
@@ -59,7 +60,8 @@ void commandReceived(int sensorId, int command, void * const commandData, int co
     }
 }
 
-void setup() {
+void setup()
+{
     //wifi_set_sleep_type(NONE_SLEEP_T);
     // Glow diode while loading
 #if ENABLE_LEDS
@@ -98,32 +100,56 @@ void setup() {
     otaSetup(otaPassword);
     battery.Setup();
     LEDMGR::Off(LOADING_LED);
+    loopTime = micros();
 }
 
-void loop() {
+void loop()
+{
     ledStatusUpdate();
     serialCommandsUpdate();
     wifiUpkeep();
     otaUpdate();
     clientUpdate(sensors.getFirst(), sensors.getSecond());
-    if(sensorToCalibrate >= 0) {
+    if (sensorToCalibrate >= 0)
+    {
         sensors.startCalibration(sensorToCalibrate, 0);
         sensorToCalibrate = -1;
     }
 #ifndef UPDATE_IMU_UNCONNECTED
-        if(isConnected()) {
+    if (isConnected())
+    {
 #endif
         sensors.motionLoop();
 #ifndef UPDATE_IMU_UNCONNECTED
-        }
+    }
 #endif
     // Send updates
 #ifndef SEND_UPDATES_UNCONNECTED
-    if(isConnected()) {
+    if (isConnected())
+    {
 #endif
         sensors.sendData();
 #ifndef SEND_UPDATES_UNCONNECTED
     }
 #endif
     battery.Loop();
+
+#ifdef TARGET_LOOPTIME_MICROS
+    auto elapsed = (micros() - loopTime);
+    if (elapsed < TARGET_LOOPTIME_MICROS)
+    {
+        auto sleepus = TARGET_LOOPTIME_MICROS - elapsed - 100;//µs to sleep
+        auto sleepms = sleepus / 1000;//ms to sleep
+        if (sleepms) // if >= 1 ms
+        {
+            delay(sleepms); // sleep ms = save power
+            sleepus -= sleepms * 1000;
+        }
+        if (sleepus > 100)
+        {
+            delayMicroseconds(sleepus);
+        }
+    }
+    loopTime = micros();
+#endif
 }
