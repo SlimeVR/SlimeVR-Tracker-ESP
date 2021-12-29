@@ -28,4 +28,4 @@ Firmware can work with both ESP8266 and ESP32. Please edit defines.h and set you
 
 #Uploading On Linux
 
-Follow the instructions in this link[Platformio](https://docs.platformio.org/en/latest//faq.html#platformio-udev-rules), this should solve any permission denied errors 
+Follow the instructions in this link [Platformio](https://docs.platformio.org/en/latest//faq.html#platformio-udev-rules), this should solve any permission denied errors
