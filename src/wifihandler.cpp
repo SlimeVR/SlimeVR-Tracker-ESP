@@ -62,6 +62,16 @@ void setUpWiFi() {
     Serial.printf("[NOTICE] Status: %d", status);
     wifiState = 1;
     wifiConnectionTimeout = millis();
+    
+#if POWERSAVING_MODE == POWER_SAVING_NONE
+    WiFi.setSleepMode(WIFI_NONE_SLEEP);
+#elif POWERSAVING_MODE == POWER_SAVING_MINIMUM
+    WiFi.setSleepMode(WIFI_MODEM_SLEEP);
+#elif POWERSAVING_MODE == POWER_SAVING_MODERATE
+    WiFi.setSleepMode(WIFI_MODEM_SLEEP, 10);
+// #elif POWERSAVING_MODE == POWER_SAVING_MAXIMUM
+//     WiFi.setSleepMode(WIFI_LIGHT_SLEEP, 10);
+#endif
 }
 
 void onConnected() {

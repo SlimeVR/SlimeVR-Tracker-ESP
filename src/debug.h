@@ -42,6 +42,12 @@
 // Determines how often we sample and send data
 #define samplingRateInMillis 10
 
+// Sleeping options
+#define POWERSAVING_MODE POWER_SAVING_MINIMUM
+#if POWERSAVING_MODE >= POWER_SAVING_MINIMUM
+    #define TARGET_LOOPTIME_MICROS (samplingRateInMillis * 1000)
+#endif
+
 // Setup for the Magnetometer
 #define useFullCalibrationMatrix true
 
