@@ -45,6 +45,18 @@ namespace {
 
 void BMI160Sensor::motionSetup() {
     uint8_t addr = 0x68;
+
+    if (isSecond) {
+        addr = 0x69;
+        if (!I2CSCAN::isI2CExist(addr)) {
+            Serial.println("[ERR] Can't find I2C device on addr 0x69, returning");
+            signalAssert();
+            return;
+        } else {
+            Serial.println("[INFO] Second I2C device on addr 0x69");
+        }
+    }
+
     if(!I2CSCAN::isI2CExist(addr)) {
         addr = 0x69;
         if(!I2CSCAN::isI2CExist(addr)) {
