@@ -112,9 +112,6 @@ THE SOFTWARE.
 #define BMI160_RA_ACCEL_CONF        0x40
 #define BMI160_RA_ACCEL_RANGE       0x41
 
-#define BMI160_GYRO_RATE_SEL_BIT    0
-#define BMI160_GYRO_RATE_SEL_LEN    4
-
 #define BMI160_RA_GYRO_CONF         0x42
 #define BMI160_RA_GYRO_RANGE        0x43
 
