@@ -75,6 +75,12 @@
   #define IMU_HAS_MAG false
   #define I2C_SPEED 400000
   #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
+#elif IMU == IMU_BMI160
+  #define IMU_NAME "BMI160"
+  #define IMU_HAS_ACCELL true
+  #define IMU_HAS_GYRO true
+  #define IMU_HAS_MAG false
+  #define I2C_SPEED 400000
 #else
     #error Select IMU in defines.h
 #endif

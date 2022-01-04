@@ -36,7 +36,7 @@ struct CalibrationConfig {
 };
 
 struct DeviceConfig {
-    CalibrationConfig calibration;
+    CalibrationConfig calibration[2];
     int deviceId;
     int deviceMode;
 };
@@ -44,5 +44,6 @@ struct DeviceConfig {
 DeviceConfig * const getConfigPtr();
 void setConfig(const DeviceConfig & config);
 void saveConfig();
+bool hasConfigStored();
 
 #endif // SLIMEVR_CONFIG_H_

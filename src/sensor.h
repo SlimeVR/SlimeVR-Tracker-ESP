@@ -25,6 +25,7 @@
 #define SLIMEVR_SENSOR_H_
 
 #include <BNO080.h>
+#include <BMI160.h>
 #include <MPU9250.h>
 #include <MPU6050.h>
 #include <quat.h>
@@ -156,6 +157,35 @@ class MPU9250Sensor : public MPUSensor {
         float Mxyz[3] {};
         float rawMag[3] {};
         float adjustments[3] {};
+        // Loop timing globals
+        unsigned long now = 0, last = 0;   //micros() timers
+        float deltat = 0;                  //loop time in seconds
+        bool newData {false};
+        CalibrationConfig * calibration;
+};
+
+class BMI160Sensor : public Sensor {
+    public:
+        BMI160Sensor() = default;
+        ~BMI160Sensor() override  = default;
+        void motionSetup() override final;
+        void motionLoop() override final;
+        void sendData() override final;
+        void setSecond();
+        void startCalibration(int calibrationType) override final;
+        void getScaledValues();
+    private:
+        BMI160 imu {};
+        bool isSecond{false};
+        float q[4] {1.0, 0.0, 0.0, 0.0};
+        //raw data and scaled as vector
+        int16_t ax, ay, az;
+        int16_t gx, gy, gz;
+        int16_t mx, my, mz;
+        float Axyz[3] {};
+        float Gxyz[3] {};
+        float Mxyz[3] {};
+        float rawMag[3] {};
         // Loop timing globals
         unsigned long now = 0, last = 0;   //micros() timers
         float deltat = 0;                  //loop time in seconds
