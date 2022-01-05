@@ -74,6 +74,7 @@ void MPU9250Sensor::motionSetup() {
     int16_t ax,ay,az,dumb;
 
     // turn on while flip back to calibrate. then, flip again after 5 seconds.    
+    // TODO: Move calibration invoke after calibrate button on slimeVR server available 
     imu.getMotion6(&ax, &ay, &az, &dumb, &dumb, &dumb);
     if(az<0 && 10.0*(ax*ax+ay*ay)<az*az) {
         digitalWrite(CALIBRATING_LED, HIGH);
