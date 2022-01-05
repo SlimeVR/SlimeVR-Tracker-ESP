@@ -28,7 +28,11 @@
 //Debug information
 //#define FULL_DEBUG
 #define serialDebug false // Set to true to get Serial output for debugging
-#define serialBaudRate 115200
+#ifdef ESP8266
+    #define serialBaudRate 74880
+#else
+    #define serialBaudRate 115200
+#endif
 #define UPDATE_IMU_UNCONNECTED 1
 #define SEND_UPDATES_UNCONNECTED 1
 #define LED_INTERVAL_STANDBUY 10000
