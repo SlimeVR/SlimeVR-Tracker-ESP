@@ -173,6 +173,28 @@ public:
 
   //DMP
 
+  //Gyro Bias
+  ICM_20948_Status_e SetBiasGyroX( int newValue);
+  ICM_20948_Status_e SetBiasGyroY( int newValue);
+  ICM_20948_Status_e SetBiasGyroZ( int newValue);
+  ICM_20948_Status_e GetBiasGyroX( int* bias);
+  ICM_20948_Status_e GetBiasGyroY( int* bias);
+  ICM_20948_Status_e GetBiasGyroZ( int* bias);
+  //Accel Bias
+  ICM_20948_Status_e SetBiasAccelX( int newValue);
+  ICM_20948_Status_e SetBiasAccelY( int newValue);
+  ICM_20948_Status_e SetBiasAccelZ( int newValue);
+  ICM_20948_Status_e GetBiasAccelX( int* bias);
+  ICM_20948_Status_e GetBiasAccelY( int* bias);
+  ICM_20948_Status_e GetBiasAccelZ( int* bias);
+  //CPass Bias
+  ICM_20948_Status_e SetBiasCPassX( int newValue);
+  ICM_20948_Status_e SetBiasCPassY( int newValue);
+  ICM_20948_Status_e SetBiasCPassZ( int newValue);
+  ICM_20948_Status_e GetBiasCPassX( int* bias);
+  ICM_20948_Status_e GetBiasCPassY( int* bias);
+  ICM_20948_Status_e GetBiasCPassZ( int* bias);
+
   // Done:
   //  Configure DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
   //  Load Firmware
