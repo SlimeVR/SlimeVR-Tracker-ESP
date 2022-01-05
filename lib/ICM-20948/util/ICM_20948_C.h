@@ -280,27 +280,7 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
   ICM_20948_Status_e inv_icm20948_read_dmp_data(ICM_20948_Device_t *pdev, icm_20948_DMP_data_t *data);
   ICM_20948_Status_e inv_icm20948_set_gyro_sf(ICM_20948_Device_t *pdev, unsigned char div, int gyro_level);
 
-  //Gyro Bias
-  ICM_20948_Status_e SetBiasGyroX(ICM_20948_Device_t* pdev, int newValue);
-  ICM_20948_Status_e SetBiasGyroY(ICM_20948_Device_t* pdev, int newValue);
-  ICM_20948_Status_e SetBiasGyroZ(ICM_20948_Device_t* pdev, int newValue);
-  ICM_20948_Status_e GetBiasGyroX(ICM_20948_Device_t* pdev, int* bias);
-  ICM_20948_Status_e GetBiasGyroY(ICM_20948_Device_t* pdev, int* bias);
-  ICM_20948_Status_e GetBiasGyroZ(ICM_20948_Device_t* pdev, int* bias);
-  //Accel Bias
-  ICM_20948_Status_e SetBiasAccelX(ICM_20948_Device_t* pdev, int newValue);
-  ICM_20948_Status_e SetBiasAccelY(ICM_20948_Device_t* pdev, int newValue);
-  ICM_20948_Status_e SetBiasAccelZ(ICM_20948_Device_t* pdev, int newValue);
-  ICM_20948_Status_e GetBiasAccelX(ICM_20948_Device_t* pdev, int* bias);
-  ICM_20948_Status_e GetBiasAccelY(ICM_20948_Device_t* pdev, int* bias);
-  ICM_20948_Status_e GetBiasAccelZ(ICM_20948_Device_t* pdev, int* bias);
-  //CPass Bias
-  ICM_20948_Status_e SetBiasCPassX(ICM_20948_Device_t* pdev, int newValue);
-  ICM_20948_Status_e SetBiasCPassY(ICM_20948_Device_t* pdev, int newValue);
-  ICM_20948_Status_e SetBiasCPassZ(ICM_20948_Device_t* pdev, int newValue);
-  ICM_20948_Status_e GetBiasCPassX(ICM_20948_Device_t* pdev, int* bias);
-  ICM_20948_Status_e GetBiasCPassY(ICM_20948_Device_t* pdev, int* bias);
-  ICM_20948_Status_e GetBiasCPassZ(ICM_20948_Device_t* pdev, int* bias);
+
   // ToDo:
 
   /*
