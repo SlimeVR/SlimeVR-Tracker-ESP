@@ -1,7 +1,7 @@
 #include "ICM_20948.h"
 
-#include "ICM_20948_REGISTERS.h"
-#include "AK09916_REGISTERS.h"
+#include "util/ICM_20948_REGISTERS.h"
+#include "util/AK09916_REGISTERS.h"
 
 // Forward Declarations
 ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t *data, uint32_t len, void *user);
