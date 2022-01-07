@@ -1,6 +1,7 @@
 /*
 Based on Demo's fork
 */
+//Spelling mistakes are probally mine - Threads
 
 #include <ICM_20948.h>
 #include "sensor.h"
@@ -57,27 +58,31 @@ void ICM20948Sensor::i2c_scan() { // Basically obsolete but kept for when adding
     }
 }
 
+//I'm not sure how we are meant to use bias data
 void ICM20948Sensor::save_bias(bool repeat) { 
-#if ESP32 && defined(SAVE_BIAS)
-  if (SAVE_BIAS) {
+#if defined(SAVE_BIAS)
+  if (SAVE_BIAS) 
+  {
     int bias_a[3], bias_g[3], bias_m[3];
     
-    icm20948.GetBiasGyroX(*bias_g[0]);
-    icm20948.GetBiasGyroY(*bias_g[1]);
-    icm20948.GetBiasGyroZ(*bias_g[2]);
+    imu.GetBiasGyroX(&bias_g[0]);
+    imu.GetBiasGyroY(&bias_g[1]);
+    imu.GetBiasGyroZ(&bias_g[2]);
 
-    icm20948.GetBiasAccelX(*bias_a[0]);
-    icm20948.GetBiasAccelY(*bias_a[1]);
-    icm20948.GetBiasAccelZ(*bias_a[2]);
+    imu.GetBiasAccelX(&bias_a[0]);
+    imu.GetBiasAccelY(&bias_a[1]);
+    imu.GetBiasAccelZ(&bias_a[2]);
 
-    icm20948.GetBiasCPassX(*bias_m[0]);
-    icm20948.GetBiasCPassY(*bias_m[1]);
-    icm20948.GetBiasCPassZ(*bias_m[2]);
+    imu.GetBiasCPassX(&bias_m[0]);
+    imu.GetBiasCPassY(&bias_m[1]);
+    imu.GetBiasCPassZ(&bias_m[2]);
 
     bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
     bool gyro_set = bias_g[0] && bias_g[1] && bias_g[2];
     bool mag_set = bias_m[0] && bias_m[1] && bias_m[2];
-         
+
+    //Demo saved them to Preferences but that are part of the libarary we can't use for licising issues
+
     #ifdef FULL_DEBUG
       Serial.println("bias gyro result:");
       Serial.println(bias_g[0]); 
@@ -98,50 +103,49 @@ void ICM20948Sensor::save_bias(bool repeat) {
       Serial.println("end mag"); 
     #endif
     
-    if (accel_set) {
-      // Save accel
-      prefs.putInt(auxiliary ? "ba01" : "ba00", bias_a[0]);
-      prefs.putInt(auxiliary ? "ba11" : "ba10", bias_a[1]);
-      prefs.putInt(auxiliary ? "ba21" : "ba20", bias_a[2]);
+    // if (accel_set) {
+    //   // Save accel
+    //   prefs.putInt(auxiliary ? "ba01" : "ba00", bias_a[0]);
+    //   prefs.putInt(auxiliary ? "ba11" : "ba10", bias_a[1]);
+    //   prefs.putInt(auxiliary ? "ba21" : "ba20", bias_a[2]);
 
-    #ifdef FULL_DEBUG
-            Serial.println("Wrote Accel Bias");
-    #endif
-    }
+    // #ifdef FULL_DEBUG
+    //         Serial.println("Wrote Accel Bias");
+    // #endif
+    // }
     
-    if (gyro_set) {
-      // Save gyro
-      prefs.putInt(auxiliary ? "bg01" : "bg00", bias_g[0]);
-      prefs.putInt(auxiliary ? "bg11" : "bg10", bias_g[1]);
-      prefs.putInt(auxiliary ? "bg21" : "bg20", bias_g[2]);
+    // if (gyro_set) {
+    //   // Save gyro
+    //   prefs.putInt(auxiliary ? "bg01" : "bg00", bias_g[0]);
+    //   prefs.putInt(auxiliary ? "bg11" : "bg10", bias_g[1]);
+    //   prefs.putInt(auxiliary ? "bg21" : "bg20", bias_g[2]);
 
-    #ifdef FULL_DEBUG
-        Serial.println("Wrote Gyro Bias");
-    #endif
-    }
+    // #ifdef FULL_DEBUG
+    //     Serial.println("Wrote Gyro Bias");
+    // #endif
+    // }
 
-    if (mag_set) {
-      // Save mag
-      prefs.putInt(auxiliary ? "bm01" : "bm00", bias_m[0]);
-      prefs.putInt(auxiliary ? "bm11" : "bm10", bias_m[1]);
-      prefs.putInt(auxiliary ? "bm21" : "bm20", bias_m[2]);
+    // if (mag_set) {
+    //   // Save mag
+    //   prefs.putInt(auxiliary ? "bm01" : "bm00", bias_m[0]);
+    //   prefs.putInt(auxiliary ? "bm11" : "bm10", bias_m[1]);
+    //   prefs.putInt(auxiliary ? "bm21" : "bm20", bias_m[2]);
 
-    #ifdef FULL_DEBUG
-        Serial.println("Wrote Mag Bias");
-    #endif
-    }    
+    // #ifdef FULL_DEBUG
+    //     Serial.println("Wrote Mag Bias");
+    // #endif
+    // }    
   }  
 
-    if (repeat) {
-        bias_save_counter++;
-        // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
-        if (sizeof(bias_save_periods) != bias_save_counter)
-        {
-            timer.in(bias_save_periods[bias_save_counter] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
-        }
-    }
-
-#endif // ifdef ESP32
+    // if (repeat) {
+    //     bias_save_counter++;
+    //     // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
+    //     if (sizeof(bias_save_periods) != bias_save_counter)
+    //     {
+    //         timer.in(bias_save_periods[bias_save_counter] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
+    //     }
+    // }
+#endif
 }
 
 void ICM20948Sensor::setupICM20948(bool auxiliary, uint8_t addr) {
@@ -160,17 +164,13 @@ void ICM20948Sensor::motionSetup() {
     }
 
     // Configure imu setup and load any stored bias values
-    #ifdef ESP32
-        prefs.begin("ICM20948", false);  
-    #endif
     poss_addresses[0] = addr;
     i2c_scan();
     Serial.println("Scan completed");
     if(imu.initializeDMP() == ICM_20948_Stat_Ok)
     {
-        Serial.print("[ERR] DMP Failed to initialize"); 
+        Serial.print("DMP initialized"); 
         Serial.println(IMU_NAME);
-        return;
     }
     else
     {
@@ -180,14 +180,13 @@ void ICM20948Sensor::motionSetup() {
     }
     if(imu.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
     {
-        Serial.print("[ERR] Enabling DMP Senor Failed");
+        Serial.print("Enabled DMP Senor for Game Rotation Vector");
         Serial.println(IMU_NAME);
-        return; 
     }
     else
     {
         {
-        Serial.print("[ERR] Enabling DMP Senor Failed");
+        Serial.print("[ERR] Enabling DMP Senor for Game Rotation Vector Failed");
         Serial.println(IMU_NAME);
         return; 
     }
@@ -195,69 +194,114 @@ void ICM20948Sensor::motionSetup() {
 
     if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok)
     {
-        Serial.print("[ERR] Enabling DMP Senor Failed");
+        Serial.print("Enabled DMP Senor for Raw Gyro");
         Serial.println(IMU_NAME);
-        return;
     }
     else
     {
-        {
-        Serial.print("[ERR] Enabling DMP Senor Failed");
+        Serial.print("[ERR] Enabling DMP Senor for Raw Gyro Failed");
         Serial.println(IMU_NAME);
         return;
-    }
     }
     if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
     {
-
+        Serial.print("Enabled DMP Senor for Raw Acc");
+        Serial.println(IMU_NAME);
     }
     else
     {
-
+        Serial.print("[ERR] Enabling DMP Senor for Raw Acc Failed");
+        Serial.println(IMU_NAME);
+        return;
     }
-    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok))
+    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok)
     {
-
+        Serial.print("Enabled DMP Senor for Magnetic Field Uncalibrated");
+        Serial.println(IMU_NAME);
     }
     else
     {
-        
+        Serial.print("[ERR] Enabling DMP Senor for Magnetic Field Uncalibrated Failed");
+        Serial.println(IMU_NAME);
+        return;
     }
     
+    //TODO I have no idea exactly what we need, so I have included everything, but we really should trim the un
+
     // Configuring DMP to output data at multiple ODRs:
     // DMP is capable of outputting multiple sensor data at different rates to FIFO.
     // Setting value can be calculated as follows:
     // Value = (DMP running rate / ODR ) - 1
     // E.g. For a 5Hz ODR rate when DMP is running at 55Hz, value = (55/5) - 1 = 10.
-    if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 10) == ICM_20948_Stat_Ok);        // Set to 5Hz
-    if(imu.setDMPODRrate(DMP_ODR_Reg_Accel, 54) == ICM_20948_Stat_Ok);        // Set to 1Hz
-    if(imu.setDMPODRrate(DMP_ODR_Reg_Gyro, 54) == ICM_20948_Stat_Ok);         // Set to 1Hz
-    if(imu.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 54) == ICM_20948_Stat_Ok);  // Set to 1Hz
-    if(imu.setDMPODRrate(DMP_ODR_Reg_Cpass, 54) == ICM_20948_Stat_Ok);        // Set to 1Hz
-    if(imu.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 54) == ICM_20948_Stat_Ok); // Set to 1Hz
+    // if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 10) == ICM_20948_Stat_Ok);        // Set to 5Hz
+    // if(imu.setDMPODRrate(DMP_ODR_Reg_Accel, 54) == ICM_20948_Stat_Ok);        // Set to 1Hz
+    // if(imu.setDMPODRrate(DMP_ODR_Reg_Gyro, 54) == ICM_20948_Stat_Ok);         // Set to 1Hz
+    // if(imu.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 54) == ICM_20948_Stat_Ok);  // Set to 1Hz
+    // if(imu.setDMPODRrate(DMP_ODR_Reg_Cpass, 54) == ICM_20948_Stat_Ok);        // Set to 1Hz
+    // if(imu.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 54) == ICM_20948_Stat_Ok); // Set to 1Hz
+
+    if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok)
+    {
+        Serial.print("Set Quat9 to Max frequency");
+        Serial.println(IMU_NAME);
+    }
+    else
+    {
+        Serial.print("[ERR] Failed to Set Quat9 to Max frequency");
+        Serial.println(IMU_NAME);
+        return;
+    }
 
     // Enable the FIFO
     if(imu.enableFIFO() == ICM_20948_Stat_Ok)
     {
-
+        Serial.print("FIFO Enabled");
+        Serial.println(IMU_NAME);
+    }
+    else
+    {
+        Serial.print("[ERR] FIFO Enabling Failed");
+        Serial.println(IMU_NAME);
+        return;
     }
 
     // Enable the DMP
     if(imu.enableDMP() == ICM_20948_Stat_Ok)
     {
-
+        Serial.print("DMP Enabled");
+        Serial.println(IMU_NAME);
+    }
+    else
+    {
+        Serial.print("[ERR] DMP Enabling Failed");
+        Serial.println(IMU_NAME);
+        return;
     }
 
     // Reset DMP
     if(imu.resetDMP() == ICM_20948_Stat_Ok)
     {
-
+        Serial.print("Reset DMP");
+        Serial.println(IMU_NAME);
+    }
+    else
+    {
+        Serial.print("[ERR] Failed to reset DMP");
+        Serial.println(IMU_NAME);
+        return;
     }
 
     // Reset FIFO
     if(imu.resetFIFO() == ICM_20948_Stat_Ok)
     {
-
+        Serial.print("Reset FIFO");
+        Serial.println(IMU_NAME);
+    }
+    else
+    {
+        Serial.print("[ERR] Failed to reset FIFO");
+        Serial.println(IMU_NAME);
+        return;
     }
 
 
@@ -286,42 +330,43 @@ void ICM20948Sensor::motionLoop() {
 
 void ICM20948Sensor::sendData() { 
     
-    if(imu.readDMPdataFromFIFO(&dmpData) == ICM_20948_Stat_Ok)
+    if((imu.status == ICM_20948_Stat_FIFOMoreDataAvail))
     {
-        
-        sendRotationData(dmpData.Quat9.Data.Q1, DATA_TYPE_NORMAL, 0, auxiliary, PACKET_ROTATION_DATA);
+        if(imu.readDMPdataFromFIFO(&dmpData) == ICM_20948_Stat_Ok)
+        {
+            if ((dmpData.header & DMP_header_bitmap_Quat9) > 0)
+            {
+                // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
+                // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+                // The quaternion data is scaled by 2^30.
+                // Scale to +/- 1
+                double q1 = ((double)dmpData.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+                double q2 = ((double)dmpData.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+                double q3 = ((double)dmpData.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+                double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+                quaternion.w = q0;
+                quaternion.x = q1;
+                quaternion.y = q2;
+                quaternion.z = q3;
+                sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, auxiliary, PACKET_ROTATION_DATA);
+            }
+        }
+        else
+        {
+            //This may lead to instability, or not
+            Serial.print("[ERR] Failed read DMP FIFO data");
+            Serial.println(IMU_NAME);
+        }
     }
-    
-
-// #ifdef FULL_DEBUG
-//     if (newData) {
-//         newData = false;
-//         sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, auxiliary, PACKET_ROTATION_DATA);
-// #ifdef FULL_DEBUG
-//             //Serial.print("[DBG] Quaternion: ");
-//             //Serial.print(quaternion.x);
-//             //Serial.print(",");
-//             //Serial.print(quaternion.y);
-//             //Serial.print(",");
-//             //Serial.print(quaternion.z);
-//             //Serial.print(",");
-//             //Serial.println(quaternion.w);
-// #endif
-//     }
-    
-//     if (newTap) {
-//         sendByte(1, auxiliary, PACKET_TAP);
-//         newTap = false;
-//     }
 }
 
 void ICM20948Sensor::startCalibration(int calibrationType) {
     // 20948 does continuous calibration and no need to use for ESP32 as it auto saves bias values
 
     // If ESP32, manually force a new save
-    #ifdef ESP32
-        save_bias(false);
-    #endif
+    // #ifdef ESP32
+    //     save_bias(false);
+    // #endif
     // TODO: If 8266, save the current bias values to eeprom
     //#ifdef 8266
     // Types are int, device config saves float - need to save and load like mpu6050 does
