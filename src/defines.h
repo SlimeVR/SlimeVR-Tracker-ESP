@@ -75,6 +75,27 @@
   #define IMU_HAS_MAG false
   #define I2C_SPEED 400000
   #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
+#elif IMU == IMU_ICM20948
+  #define IMU_NAME "ICM20948"
+  #define IMU_HAS_ACCELL true
+  #define IMU_HAS_GYRO true
+  #define IMU_HAS_MAG true
+  #define USE_6_AXIS true // uses 9 (with mag) if false
+  #define LOAD_BIAS 1 // Loads the bias values from NVS on start (ESP32 Only)
+  #define SAVE_BIAS 1 // Periodically saves bias calibration data to NVS (ESP32 Only)
+  #define ENABLE_TAP false // monitor accel for (tripple) tap events and send them. Uses more cpu, disable if problems. Server does nothing with value so disabled atm
+  #define ICM_ADDR_1 0x69
+  #define ICM_ADDR_2 0x68
+  #define I2C_SPEED 400000
+  #define SECOND_IMU true
+  #ifdef IMU_ROTATION // to not interfere with master repo
+    #undef IMU_ROTATION
+  #endif
+  #ifdef SECOND_IMU_ROTATION
+    #undef SECOND_IMU_ROTATION
+  #endif
+  #define IMU_ROTATION PI
+  #define SECOND_IMU_ROTATION IMU_ROTATION  
 #else
     #error Select IMU in defines.h
 #endif

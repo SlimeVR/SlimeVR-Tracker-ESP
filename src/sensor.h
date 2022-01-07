@@ -27,12 +27,13 @@
 #include <BNO080.h>
 #include <MPU9250.h>
 #include <MPU6050.h>
+#include <ICM_20948.h>
 #include <quat.h>
 #include <vector3.h>
 #include "configuration.h"
 #include <Adafruit_BNO055.h>
 #include "defines.h"
-#include <ICM20948.h>
+
 
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
@@ -175,24 +176,29 @@ public:
     void setupICM20948(bool auxiliary = false, uint8_t addr = 0x69);
 
 private:
+
     void i2c_scan();
     bool auxiliary{ false };
     unsigned long lastData = 0;
     uint8_t addr = 0x69;
+    uint8_t intPin = 2;
     int bias_save_counter = 0;
     uint8_t ICM_address;
     bool ICM_found = false;
     bool ICM_init = false;
     bool newData = false;
     bool newTap;
-    ICM_20948 icm20948;
-    ArduinoICM20948Settings icmSettings;
+    uint8_t lastReset = 0;
+    ICM_20948 imu;
+    ICM_20948_I2C imu_i2c;
+    ICM_20948_SPI imu_spi;
     ICM_20948_Device_t pdev;
+    icm_20948_DMP_data_t dmpData {};
 #ifdef ESP32
     Preferences prefs;
     Timer<> timer = timer_create_default();
 #endif
-    TapDetector tapDetector;
+    //TapDetector tapDetector;
 };
 
 #endif // SLIMEVR_SENSOR_H_

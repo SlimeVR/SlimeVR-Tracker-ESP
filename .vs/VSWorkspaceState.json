@@ -2,9 +2,10 @@
   "ExpandedNodes": [
     "",
     "\\lib",
-    "\\lib\\ICM-20948\\util",
+    "\\lib\\bno080",
+    "\\lib\\ICM20948",
     "\\src"
   ],
-  "SelectedNode": "\\src\\icm20948sensor.cpp",
+  "SelectedNode": "\\lib\\i2cscan",
   "PreviewInSolutionExplorer": false
 }
