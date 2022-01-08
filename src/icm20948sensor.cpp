@@ -77,9 +77,9 @@ void ICM20948Sensor::save_bias(bool repeat) {
     imu.GetBiasCPassY(&bias_m[1]);
     imu.GetBiasCPassZ(&bias_m[2]);
 
-    bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
-    bool gyro_set = bias_g[0] && bias_g[1] && bias_g[2];
-    bool mag_set = bias_m[0] && bias_m[1] && bias_m[2];
+    // bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
+    // bool gyro_set = bias_g[0] && bias_g[1] && bias_g[2];
+    // bool mag_set = bias_m[0] && bias_m[1] && bias_m[2];
 
     //Demo saved them to Preferences but that are part of the libarary we can't use for licising issues
 
@@ -160,6 +160,7 @@ void ICM20948Sensor::motionSetup() {
     if (imu_i2c.begin(Wire, intPin, addr) != ICM_20948_Stat_Ok) {
         Serial.print("[ERR] IMU ICM20948: Can't connect to ");
         Serial.println(IMU_NAME);
+        signalAssert();
         return;
     }
 
