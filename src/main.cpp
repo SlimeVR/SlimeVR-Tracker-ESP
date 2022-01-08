@@ -47,7 +47,7 @@
     MPU6050Sensor sensor{};
     #define HAS_SECOND_IMU true
     MPU6050Sensor sensor2{};
-#elif IMU == IMU_ICM20984
+#elif IMU == IMU_ICM20948
     ICM20948Sensor sensor{};
     #if defined(SECOND_IMU) && SECOND_IMU
         #define HAS_SECOND_IMU true
