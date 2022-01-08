@@ -7,8 +7,8 @@ A C++ interface to the ICM-20948
 #ifndef _ICM_20948_H_
 #define _ICM_20948_H_
 
-#include "util/ICM_20948_C.h" // The C backbone. ICM_20948_USE_DMP is defined in here.
-#include "util/AK09916_REGISTERS.h"
+#include "ICM_20948_C.h" // The C backbone. ICM_20948_USE_DMP is defined in here.
+#include "AK09916_REGISTERS.h"
 
 #include "Arduino.h" // Arduino support
 #include "Wire.h"
