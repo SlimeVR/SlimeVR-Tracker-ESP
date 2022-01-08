@@ -31,13 +31,13 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 const uint8_t number_i2c_addr = 1;
 uint8_t poss_addresses[number_i2c_addr] = {0X69}; // 0X68
 
-#ifndef USE_6_AXIS
-    #define USE_6_AXIS true
-#endif
+// #ifndef USE_6_AXIS
+//     #define USE_6_AXIS true
+// #endif
 
-#ifndef ENABLE_TAP
-    #define ENABLE_TAP false
-#endif
+// #ifndef ENABLE_TAP
+//     #define ENABLE_TAP false
+// #endif
 
 void ICM20948Sensor::i2c_scan() { // Basically obsolete but kept for when adding > 2 external 
     uint8_t error;
@@ -82,26 +82,6 @@ void ICM20948Sensor::save_bias(bool repeat) {
     // bool mag_set = bias_m[0] && bias_m[1] && bias_m[2];
 
     //Demo saved them to Preferences but that are part of the libarary we can't use for licising issues
-
-    #ifdef FULL_DEBUG
-      Serial.println("bias gyro result:");
-      Serial.println(bias_g[0]); 
-      Serial.println(bias_g[1]);
-      Serial.println(bias_g[2]);
-      Serial.println("end gyro");  
-    
-      Serial.println("bias accel result:");  
-      Serial.println(bias_a[0]); 
-      Serial.println(bias_a[1]);
-      Serial.println(bias_a[2]);
-      Serial.println("end accel");   
-    
-      Serial.println("bias mag result:");
-      Serial.println(bias_m[0]); 
-      Serial.println(bias_m[1]);
-      Serial.println(bias_m[2]);
-      Serial.println("end mag"); 
-    #endif
     
     // if (accel_set) {
     //   // Save accel
