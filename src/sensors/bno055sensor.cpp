@@ -20,9 +20,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#include "sensor.h"
-#include <i2cscan.h>
-#include <I2Cdev.h>
+#include "bno055sensor.h"
 #include "udpclient.h"
 #include "defines.h"
 #include "ledmgr.h"
@@ -38,8 +36,8 @@ void BNO055Sensor::motionSetup() {
     delay(3000);
     if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS))
     {
-        /* There was a problem detecting the BNO055 ... check your connections */
-        Serial.println("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+        Serial.print("[ERR] IMU BNO055: Can't connect to ");
+        Serial.println(getIMUNameByType(sensorType));
         signalAssert();
         return;
     }
@@ -48,7 +46,8 @@ void BNO055Sensor::motionSetup() {
     imu.setExtCrystalUse(false);
     imu.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
     imu.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
-    Serial.println("Connected to BNO055");
+    Serial.print("[NOTICE] Connected to");
+    Serial.println(getIMUNameByType(sensorType));
     working = true;
     configured = true;
 }

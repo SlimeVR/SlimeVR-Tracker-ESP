@@ -29,7 +29,7 @@
 #include "MPU6050_6Axis_MotionApps20.h"
 #endif
 
-#include "sensor.h"
+#include "mpu6050sensor.h"
 #include "udpclient.h"
 #include <i2cscan.h>
 #include "calibration.h"
@@ -49,7 +49,7 @@ void MPU6050Sensor::motionSetup()
     imu.initialize(addr);
     if (!imu.testConnection())
     {
-        Serial.print("[ERR] Can't communicate with MPU, response ");
+        Serial.print("[ERR] MPU6050: Can't communicate with MPU, response ");
         Serial.println(imu.getDeviceID(), HEX);
         return;
     }

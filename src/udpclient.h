@@ -33,7 +33,7 @@
 #include <Arduino.h>
 #include "quat.h"
 #include "configuration.h"
-#include "sensor.h"
+#include "sensors/sensor.h"
 #include "wifihandler.h"
 #include "defines.h"
 
@@ -51,7 +51,7 @@
 #define PACKET_SERIAL 11
 #define PACKET_BATTERY_LEVEL 12
 #define PACKET_TAP 13
-#define PACKET_RESET_REASON 14
+#define PACKET_ERROR 14
 #define PACKET_SENSOR_INFO 15
 #define PACKET_ROTATION_2 16
 #define PACKET_ROTATION_DATA 17
@@ -81,7 +81,7 @@ void sendFloat(float const value, int type);
 void send2Floats(float const value1, float const value2, int type);
 void sendByte(unsigned char const value, int type);
 void sendByte(uint8_t const value, uint8_t sensorId, int type);
-void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorState, int type);
+void sendSensorInfo(Sensor & sensor, int type);
 void sendRawCalibrationData(int * const data, int calibrationType, unsigned char const sensorId, int type);
 void sendRawCalibrationData(float * const data, int calibrationType, unsigned char const sensorId, int type);
 void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, int type);

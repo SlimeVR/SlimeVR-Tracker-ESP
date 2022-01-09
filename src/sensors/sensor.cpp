@@ -20,18 +20,21 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#include "defines.h"
 #include "sensor.h"
 #include "udpclient.h"
 #include <i2cscan.h>
 #include "calibration.h"
-#include "configuration.h"
 
-void Sensor::setupSensor(uint8_t sensorId, uint8_t addr, uint8_t intPin) {
+void Sensor::setupSensor(uint8_t expectedSensorType, uint8_t sensorId, uint8_t addr, uint8_t intPin) {
+    this->sensorType = expectedSensorType;
     this->addr = addr;
     this->intPin = intPin;
     this->sensorId = sensorId;
     this->sensorOffset = {Quat(Vector3(0, 0, 1), sensorId == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
+}
+
+uint8_t Sensor::getSensorState() {
+    return isWorking() ? 1 : 0;
 }
 
 void Sensor::sendData() {
@@ -50,4 +53,24 @@ void Sensor::sendData() {
             Serial.print("\n");
         #endif
     }
+}
+
+const char * getIMUNameByType(int imuType) {
+    switch(imuType) {
+        case IMU_MPU9250:
+            return "MPU9250";
+        case IMU_MPU6500:
+            return "MPU6500";
+        case IMU_BNO080:
+            return "BNO080";
+        case IMU_BNO085:
+            return "BNO085";
+        case IMU_BNO055:
+            return "BNO055";
+        case IMU_MPU6050:
+            return "MPU6050";
+        case IMU_BNO086:
+            return "BNO086";
+    }
+    return "Unknown";
 }

@@ -21,8 +21,7 @@
     THE SOFTWARE.
 */
 
-#include "MPU9250.h"
-#include "sensor.h"
+#include "mpu9250sensor.h"
 #include "udpclient.h"
 #include "defines.h"
 #include "helper_3dmath.h"
@@ -54,7 +53,7 @@ void MPU9250Sensor::motionSetup() {
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
-        Serial.print("[ERR] Can't communicate with MPU, response 0x");
+        Serial.print("[ERR] MPU9250: Can't communicate with MPU, response 0x");
         Serial.println(imu.getDeviceID(), HEX);
     } else {
         Serial.print("[OK] Connected to MPU, ID 0x");

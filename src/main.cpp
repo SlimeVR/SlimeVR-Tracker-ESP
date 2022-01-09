@@ -23,7 +23,7 @@
 
 #include "Wire.h"
 #include "ota.h"
-#include "sensorfactory.h"
+#include "sensors/sensorfactory.h"
 #include "configuration.h"
 #include "wifihandler.h"
 #include "udpclient.h"

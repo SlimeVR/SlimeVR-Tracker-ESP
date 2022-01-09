@@ -21,11 +21,8 @@
     THE SOFTWARE.
 */
 
-#include "BNO080.h"
-#include "sensor.h"
+#include "sensors/bno080sensor.h"
 #include "udpclient.h"
-#include "defines.h"
-#include <i2cscan.h>
 #include "ledstatus.h"
 #include "ledmgr.h"
 
@@ -37,7 +34,7 @@ namespace {
 
     void sendResetReason(uint8_t reason, uint8_t sensorId)
     {
-        sendByte(reason, sensorId, PACKET_RESET_REASON);
+        sendByte(reason, sensorId, PACKET_ERROR);
     }
 }
 
@@ -46,15 +43,14 @@ void BNO080Sensor::motionSetup()
 #ifdef FULL_DEBUG
     imu.enableDebugging(Serial);
 #endif
-    if (!imu.begin(addr, Wire, intPin))
-    {
+    if(!imu.begin(addr, Wire, intPin)) {
         Serial.print("[ERR] IMU BNO08X: Can't connect to ");
-        Serial.println(IMU_NAME);
+        Serial.println(getIMUNameByType(sensorType));
         signalAssert();
         return;
     }
     Serial.print("[NOTICE] IMU BNO08X: Connected to ");
-    Serial.print(IMU_NAME);
+    Serial.print(getIMUNameByType(sensorType));
     Serial.print(" on 0x");
     Serial.print(addr, HEX);
     Serial.print(". Info: SW Version Major: 0x");
@@ -67,29 +63,27 @@ void BNO080Sensor::motionSetup()
     Serial.print(imu.swBuildNumber, HEX);
     Serial.print(" SW Version Patch: 0x");
     Serial.println(imu.swVersionPatch, HEX);
-#if defined(BNO_HAS_ARVR_STABILIZATION) && BNO_HAS_ARVR_STABILIZATION
-    if (useMagnetometerAllTheTime)
-    {
-        imu.enableARVRStabilizedRotationVector(10);
-    }
-    else
-    {
-        imu.enableARVRStabilizedGameRotationVector(10);
-        if (useMagnetometerCorrection)
-            imu.enableRotationVector(1000);
-    }
-#else
-    if (useMagnetometerAllTheTime)
-    {
-        imu.enableRotationVector(10);
-    }
-    else
-    {
-        imu.enableGameRotationVector(10);
-        if (useMagnetometerCorrection)
-            imu.enableRotationVector(1000);
-    }
+    bool useStabilization = false;
+#ifdef BNO_USE_ARVR_STABILIZATION
+    useStabilization = true;
 #endif
+    if(useStabilization && (sensorType == IMU_BNO085 || sensorType == IMU_BNO086)) {
+        if(useMagnetometerAllTheTime) {
+            imu.enableARVRStabilizedRotationVector(10);
+        } else {
+            imu.enableARVRStabilizedGameRotationVector(10);
+            if (useMagnetometerCorrection)
+                imu.enableRotationVector(1000);
+        }
+    } else {
+        if(useMagnetometerAllTheTime) {
+            imu.enableRotationVector(10);
+        } else {
+            imu.enableGameRotationVector(10);
+            if(useMagnetometerCorrection)
+                imu.enableRotationVector(1000);
+        }
+    }
     imu.enableTapDetector(100);
     lastReset = imu.resetReason();
     lastData = millis();

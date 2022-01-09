@@ -25,6 +25,7 @@
 #include "consts.h"
 
 #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
+#define BNO_USE_ARVR_STABILIZATION // Comment to not use stabilization for BNO085+ IMUs
 
 //Debug information
 //#define FULL_DEBUG
@@ -63,7 +64,9 @@
 // Experimental
 #define OPTIMIZE_UPDATES true
 
-#define FIRMWARE_BUILD_NUMBER 8
-#define FIRMWARE_VERSION "0.1.2"
+#define I2C_SPEED 400000
+
+#define FIRMWARE_BUILD_NUMBER 9
+#define FIRMWARE_VERSION "0.2.0"
 
 #endif // SLIMEVR_DEBUG_H_

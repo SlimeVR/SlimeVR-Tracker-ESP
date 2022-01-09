@@ -32,7 +32,7 @@
 
 // Set parameters of IMU and board used
 #define IMU IMU_BNO085
-#define SECOND_IMU IMU_BNO085
+#define SECOND_IMU IMU
 #define BOARD BOARD_SLIMEVR
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
@@ -41,53 +41,6 @@
 // BAT_EXTERNAL for ADC pin, BAT_INTERNAL for internal - can detect only low battery, BAT_MCP3021 for external ADC
 #define BATTERY_MONITOR BAT_EXTERNAL
 #define BATTERY_SHIELD_RESISTANCE 180 //130k BatteryShield, 180k SlimeVR or fill in external resistor value in kOhm
-
-// Imu-specific configurations
-#if IMU == IMU_BNO085
-  #define IMU_NAME "BNO085"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG true
-  #define BNO_HAS_ARVR_STABILIZATION true
-  #define I2C_SPEED 400000
-#elif IMU == IMU_BNO080
-  #define IMU_NAME "BNO080"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG true
-  #define BNO_HAS_ARVR_STABILIZATION false
-  #define I2C_SPEED 400000
-#elif IMU == IMU_BNO055
-  #define IMU_NAME "BNO055"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG true
-  #define BNO_HAS_ARVR_STABILIZATION false
-  #define I2C_SPEED 400000
-#elif IMU == IMU_MPU9250
-  #error IMU_MPU9250 cannot be used yet. Use IMU_MPU6050.
-  #define IMU_NAME "MPU9250"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG true
-  #define I2C_SPEED 400000
-#elif IMU == IMU_MPU6050
-  #define IMU_NAME "MPU6050"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG false
-  #define I2C_SPEED 400000
-  #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
-#elif IMU == IMU_MPU6500
-  #define IMU_NAME "MPU6500"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG false
-  #define I2C_SPEED 400000
-  #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
-#else
-    #error Select IMU in defines.h
-#endif
 
 // Board-specific configurations
 #if BOARD == BOARD_SLIMEVR || BOARD == BOARD_SLIMEVR_DEV
@@ -122,17 +75,6 @@
   #define PIN_IMU_INT 23
   #define PIN_IMU_INT_2 25
   #define PIN_BATTERY_LEVEL 36
-#endif
-
-// Battery monitor configuration
-#if BATTERY_MONITOR == BAT_EXTERNAL
-  // Wemos D1 Mini has an internal Voltage Divider with R1=220K and R2=100K > this means, 3.3V analogRead input voltage results in 1023.0
-  // Wemos D1 Mini with Wemos BatteryShiled v1.2.0 or higher: BatteryShield with J2 closed, has an additional 130K resistor. So the resulting Voltage Divider is R1=220K+100K=320K and R2=100K > this means, 4.5V analogRead input voltage results in 1023.0
-  // SlimeVR Board can handle max 5V > so analogRead of 5.0V input will result in 1023.0
-  #define batteryADCMultiplier 1.0 / 1023.0 * (320 + BATTERY_SHIELD_RESISTANCE) / 100
-#elif BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
-  // Default recommended resistors are 9.1k and 5.1k
-  #define batteryADCMultiplier 3.3 / 1023.0 * 14.2 / 9.1
 #endif
 
 #endif // SLIMEVR_DEFINES_H_

@@ -20,8 +20,13 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#include "sensorfactory.h"
 #include <i2cscan.h>
+#include "sensorfactory.h"
+
+#include "bno055sensor.h"
+#include "bno080sensor.h"
+#include "mpu9250sensor.h"
+#include "mpu6050sensor.h"
 
 SensorFactory::SensorFactory()
 {
@@ -36,7 +41,7 @@ SensorFactory::~SensorFactory()
 void SensorFactory::create()
 {
     uint8_t first_addr = 0;
-    #if IMU == IMU_BNO080 || IMU == IMU_BNO085
+    #if IMU == IMU_BNO080 || IMU == IMU_BNO085 || IMU == IMU_BNO086
         this->sensor1 = new BNO080Sensor();
         first_addr = I2CSCAN::pickDevice(0x4A, 0x4B, true);
     #elif IMU == IMU_BNO055
@@ -52,20 +57,20 @@ void SensorFactory::create()
     #error Unsupported IMU
     #endif
 
-    if (first_addr == 0)
+    if(first_addr == 0)
         this->sensor1 = new EmptySensor();
-    this->sensor1->setupSensor(0, first_addr, PIN_IMU_INT);
+    this->sensor1->setupSensor(IMU, 0, first_addr, PIN_IMU_INT);
 
     uint8_t second_addr = 0;
     #ifndef SECOND_IMU
         this->sensor2 = new EmptySensor();
-    #elif SECOND_IMU == IMU_BNO080 || SECOND_IMU == IMU_BNO085
+    #elif SECOND_IMU == IMU_BNO080 || SECOND_IMU == IMU_BNO085 || SECOND_IMU == IMU_BNO086
         this->sensor2 = new BNO080Sensor();
         second_addr = I2CSCAN::pickDevice(0x4B, 0x4A, false);
-    #elif IMU == IMU_BNO055
+    #elif SECOND_IMU == IMU_BNO055
         this->sensor2 = new BNO055Sensor();
         second_addr = I2CSCAN::pickDevice(0x28, 0x29, false);
-    #elif IMU == IMU_MPU9250
+    #elif SECOND_IMU == IMU_MPU9250
         this->sensor2 = new MPU9250Sensor();
         second_addr = I2CSCAN::pickDevice(0x69, 0x68, false);
     #elif SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050
@@ -75,9 +80,9 @@ void SensorFactory::create()
     #error Unsupported secondary IMU
     #endif
 
-    if (first_addr == second_addr)
+    if(first_addr == second_addr)
         this->sensor2 = new EmptySensor();
-    this->sensor2->setupSensor(1, second_addr, PIN_IMU_INT_2);
+    this->sensor2->setupSensor(SECOND_IMU, 1, second_addr, PIN_IMU_INT_2);
 }
 
 void SensorFactory::motionSetup()

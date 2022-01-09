@@ -43,8 +43,8 @@ unsigned long lastPacketMs;
 uint8_t serialBuffer[128];
 size_t serialLength = 0;
 
-bool sensorStateNotified1 = false;
-bool sensorStateNotified2 = false;
+uint8_t sensorStateNotified1 = 0;
+uint8_t sensorStateNotified2 = 0;
 unsigned long lastSensorInfoPacket = 0;
 
 
@@ -428,9 +428,11 @@ void sendSerial(uint8_t *const data, int length, int type) {
     }
 }
 
-void sendSensorInfo(unsigned char const sensorId, unsigned char const sensorState, int type) {
+void sendSensorInfo(Sensor & sensor, int type) {
     if (Udp.beginPacket(host, port) > 0)
     {
+        uint8_t sensorId = sensor.getSensorId();
+        uint8_t sensorState = sensor.getSensorState();
         sendType(type);
         sendPacketNumber();
         Udp.write(&sensorId, 1);
@@ -472,9 +474,12 @@ void sendHandshake() {
         sendType(3);
         Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t)); // Packet number is always 0 for handshake
         Udp.write(convert_to_chars((uint32_t) BOARD, buf), sizeof(uint32_t));
+        // This is kept for backwards compatibility,
+        // but the latest SlimeVR server will not initialize trackers
+        // with firmware build > 8 until it recieves sensor info packet
         Udp.write(convert_to_chars((uint32_t) IMU, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) HARDWARE_MCU, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t)); // TODO Send actual IMU hw version read from the chip
+        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t)); 
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
         Udp.write(convert_to_chars((uint32_t) FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t)); // Firmware build number
@@ -522,10 +527,10 @@ void setCommandReceivedCallback(commandReceivedCallback callback)
 void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     if(millis() - lastSensorInfoPacket > 1000) {
         lastSensorInfoPacket = millis();
-        if(sensorStateNotified1 != sensor->isWorking())
-            sendSensorInfo(0, sensor->isWorking(), PACKET_SENSOR_INFO);
-        if(sensorStateNotified2 != sensor2->isWorking())
-            sendSensorInfo(1, sensor2->isWorking(), PACKET_SENSOR_INFO);
+        if(sensorStateNotified1 != sensor->getSensorState())
+            sendSensorInfo(*sensor, PACKET_SENSOR_INFO);
+        if(sensorStateNotified2 != sensor2->getSensorState())
+            sendSensorInfo(*sensor2, PACKET_SENSOR_INFO);
     }
 }
 
