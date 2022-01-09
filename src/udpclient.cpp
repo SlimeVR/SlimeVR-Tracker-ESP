@@ -551,13 +551,13 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
                 lastPacketMs = millis();
                 int len = Udp.read(incomingPacket, sizeof(incomingPacket));
                 // receive incoming UDP packets
-                if(serialDebug) {
+                #if serialDebug == true
                     Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
                     Serial.print("UDP packet contents: ");
                     for (int i = 0; i < len; ++i)
                         Serial.print((byte)incomingPacket[i]);
                     Serial.println();
-                }
+                #endif
 
                 switch (convert_chars<int>(incomingPacket))
                 {
@@ -579,9 +579,9 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
                         Serial.println("Command packet too short");
                         break;
                     }
-                    if(serialDebug) {
+                    #if serialDebug == true
                         Serial.printf("Received command %d\n", incomingPacket[4]);
-                    }
+                    #endif
                     if (fp_commandCallback)
                     {
                         fp_commandCallback(-1, incomingPacket[4], &incomingPacket[5], len - 6);
