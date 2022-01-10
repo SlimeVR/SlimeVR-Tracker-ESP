@@ -47,7 +47,6 @@ uint8_t sensorStateNotified1 = 0;
 uint8_t sensorStateNotified2 = 0;
 unsigned long lastSensorInfoPacket = 0;
 
-
 template <typename T>
 unsigned char * convert_to_chars(T src, unsigned char * target)
 {
@@ -433,10 +432,12 @@ void sendSensorInfo(Sensor & sensor, int type) {
     {
         uint8_t sensorId = sensor.getSensorId();
         uint8_t sensorState = sensor.getSensorState();
+        uint8_t sensorType = sensor.getSensorType();
         sendType(type);
         sendPacketNumber();
         Udp.write(&sensorId, 1);
         Udp.write(&sensorState, 1);
+        Udp.write(&sensorType, 1);
         if (Udp.endPacket() == 0)
         {
             //Serial.print("Write error: ");
