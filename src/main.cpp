@@ -40,6 +40,7 @@ int sensorToCalibrate = -1;
 bool blinking = false;
 unsigned long blinkStart = 0;
 unsigned long loopTime = 0;
+unsigned long last_rssi_sample = 0;
 bool secondImuActive = false;
 BatteryMonitor battery;
 
@@ -152,4 +153,9 @@ void loop()
     }
     loopTime = micros();
 #endif
+    if(micros() - last_rssi_sample >= 2000) {
+        last_rssi_sample = micros();
+        int8_t signalStrength = WiFi.RSSI();
+        sendByte(signalStrength, 0, PACKET_SIGNAL_STRENGTH);
+    }
 }
