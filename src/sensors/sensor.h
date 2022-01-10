@@ -83,4 +83,11 @@ public:
 
 const char * getIMUNameByType(int imuType);
 
+enum SensorStatus {
+    SENSOR_OFFLINE = 0,
+    SENSOR_OK = 1,
+    SENSOR_ERROR = 2
+};
+
+
 #endif // SLIMEVR_SENSOR_H_

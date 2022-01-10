@@ -34,7 +34,7 @@ void Sensor::setupSensor(uint8_t expectedSensorType, uint8_t sensorId, uint8_t a
 }
 
 uint8_t Sensor::getSensorState() {
-    return isWorking() ? 1 : 0;
+    return isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
 void Sensor::sendData() {
