@@ -181,7 +181,7 @@ private:
     bool auxiliary{ false };
     unsigned long lastData = 0;
     uint8_t addr = 0x69;
-    uint8_t intPin = 2;
+    uint8_t intPin = 0;
     int bias_save_counter = 0;
     uint8_t ICM_address;
     bool ICM_found = false;
@@ -189,9 +189,7 @@ private:
     bool newData = false;
     bool newTap;
     uint8_t lastReset = 0;
-    ICM_20948 imu;
-    ICM_20948_I2C imu_i2c;
-    ICM_20948_SPI imu_spi;
+    ICM_20948_I2C imu;
     ICM_20948_Device_t pdev;
     icm_20948_DMP_data_t dmpData {};
 #ifdef ESP32

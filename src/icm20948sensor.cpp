@@ -11,6 +11,8 @@ Based on Demo's fork
 #include <i2cscan.h>
 #include "ledstatus.h"
 
+#define BIAS_DEBUG true
+
 namespace {
     void signalAssert() {
         for (int i = 0; i < 200; ++i) {
@@ -58,7 +60,6 @@ void ICM20948Sensor::i2c_scan() { // Basically obsolete but kept for when adding
     }
 }
 
-//I'm not sure how we are meant to use bias data
 void ICM20948Sensor::save_bias(bool repeat) { 
 #if defined(SAVE_BIAS)
   if (SAVE_BIAS) 
@@ -69,13 +70,35 @@ void ICM20948Sensor::save_bias(bool repeat) {
     imu.GetBiasGyroY(&bias_g[1]);
     imu.GetBiasGyroZ(&bias_g[2]);
 
+    Serial.print("Starting Gyro Bias is ");
+    Serial.print(bias_g[0]);
+    Serial.print(",");
+    Serial.print(bias_g[1]);
+    Serial.print(",");
+    Serial.println(bias_g[2]);
+
+
     imu.GetBiasAccelX(&bias_a[0]);
     imu.GetBiasAccelY(&bias_a[1]);
     imu.GetBiasAccelZ(&bias_a[2]);
 
+    Serial.print("Starting Accel Bias is ");
+    Serial.print(bias_a[0]);
+    Serial.print(",");
+    Serial.print(bias_a[1]);
+    Serial.print(",");
+    Serial.println(bias_a[2]);
+
     imu.GetBiasCPassX(&bias_m[0]);
     imu.GetBiasCPassY(&bias_m[1]);
     imu.GetBiasCPassZ(&bias_m[2]);
+
+    Serial.print("Starting CPass Bias is ");
+    Serial.print(bias_m[0]);
+    Serial.print(",");
+    Serial.print(bias_m[1]);
+    Serial.print(",");
+    Serial.println(bias_m[2]);
 
     // bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
     // bool gyro_set = bias_g[0] && bias_g[1] && bias_g[2];
@@ -135,7 +158,7 @@ void ICM20948Sensor::setupICM20948(bool auxiliary, uint8_t addr) {
 
 void ICM20948Sensor::motionSetup() {
 
-    if (imu_i2c.begin(Wire, intPin, addr) != ICM_20948_Stat_Ok) {
+    if (imu.begin(Wire, intPin, addr) != ICM_20948_Stat_Ok) {
         Serial.print("[ERR] IMU ICM20948: Can't connect to ");
         Serial.println(IMU_NAME);
         signalAssert();
@@ -282,6 +305,112 @@ void ICM20948Sensor::motionSetup() {
         Serial.println(IMU_NAME);
         return;
     }
+
+    if(BIAS_DEBUG)
+    {
+        int bias_a[3], bias_g[3], bias_m[3];
+        
+        imu.GetBiasGyroX(&bias_g[0]);
+        imu.GetBiasGyroY(&bias_g[1]);
+        imu.GetBiasGyroZ(&bias_g[2]);
+
+        imu.GetBiasAccelX(&bias_a[0]);
+        imu.GetBiasAccelY(&bias_a[1]);
+        imu.GetBiasAccelZ(&bias_a[2]);
+
+        imu.GetBiasCPassX(&bias_m[0]);
+        imu.GetBiasCPassY(&bias_m[1]);
+        imu.GetBiasCPassZ(&bias_m[2]);
+
+        Serial.print("Starting Gyro Bias is ");
+        Serial.print(bias_g[0]);
+        Serial.print(",");
+        Serial.print(bias_g[1]);
+        Serial.print(",");
+        Serial.println(bias_g[2]);
+        Serial.print("Starting Accel Bias is ");
+        Serial.print(bias_a[0]);
+        Serial.print(",");
+        Serial.print(bias_a[1]);
+        Serial.print(",");
+        Serial.println(bias_a[2]);
+        Serial.print("Starting CPass Bias is ");
+        Serial.print(bias_m[0]);
+        Serial.print(",");
+        Serial.print(bias_m[1]);
+        Serial.print(",");
+        Serial.println(bias_m[2]);
+
+        //Sets all bias to 90
+        bias_g[0] = 90;
+        bias_g[1] = 90;
+        bias_g[2] = 90;
+        bias_a[0] = 90;
+        bias_a[1] = 90;
+        bias_a[2] = 90;
+        bias_m[0] = 90;
+        bias_m[1] = 90;
+        bias_m[2] = 90;
+
+        //Sets all bias to 0 in memory
+        imu.SetBiasGyroX(bias_g[0]);
+        imu.SetBiasGyroY(bias_g[1]);
+        imu.SetBiasGyroZ(bias_g[2]);
+
+        imu.SetBiasAccelX(bias_a[0]);
+        imu.SetBiasAccelY(bias_a[1]);
+        imu.SetBiasAccelZ(bias_a[2]);
+
+        imu.SetBiasCPassX(bias_m[0]);
+        imu.SetBiasCPassY(bias_m[1]);
+        imu.SetBiasCPassZ(bias_m[2]);
+
+        //Sets all bias to 0
+        bias_g[0] = 0;
+        bias_g[1] = 0;
+        bias_g[2] = 0;
+        bias_a[0] = 0;
+        bias_a[1] = 0;
+        bias_a[2] = 0;
+        bias_m[0] = 0;
+        bias_m[1] = 0;
+        bias_m[2] = 0;
+
+        //Reloads all bias from memory
+        imu.GetBiasGyroX(&bias_g[0]);
+        imu.GetBiasGyroY(&bias_g[1]);
+        imu.GetBiasGyroZ(&bias_g[2]);
+
+        imu.GetBiasAccelX(&bias_a[0]);
+        imu.GetBiasAccelY(&bias_a[1]);
+        imu.GetBiasAccelZ(&bias_a[2]);
+
+        imu.GetBiasCPassX(&bias_m[0]);
+        imu.GetBiasCPassY(&bias_m[1]);
+        imu.GetBiasCPassZ(&bias_m[2]);
+
+        Serial.println("All set bias should be 90");
+
+        Serial.print("Set Gyro Bias is ");
+        Serial.print(bias_g[0]);
+        Serial.print(",");
+        Serial.print(bias_g[1]);
+        Serial.print(",");
+        Serial.println(bias_g[2]);
+        Serial.print("Set Accel Bias is ");
+        Serial.print(bias_a[0]);
+        Serial.print(",");
+        Serial.print(bias_a[1]);
+        Serial.print(",");
+        Serial.println(bias_a[2]);
+        Serial.print("Set CPass Bias is ");
+        Serial.print(bias_m[0]);
+        Serial.print(",");
+        Serial.print(bias_m[1]);
+        Serial.print(",");
+        Serial.println(bias_m[2]);
+    }
+
 
 
     lastData = millis();
