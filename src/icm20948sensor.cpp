@@ -422,9 +422,9 @@ void ICM20948Sensor::motionLoop() {
 
     if(imu.dataReady())
     {
-        Serial.println("IMU Data ready, timeout Reset");
         lastReset = -1;
         lastData = millis();
+        Serial.println("IMU Data ready, timeout Reset");
     }
     
 
