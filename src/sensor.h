@@ -181,7 +181,7 @@ private:
     bool auxiliary{ false };
     unsigned long lastData = 0;
     uint8_t addr = 0x69;
-    uint8_t intPin = 0;
+    uint8_t ad0_Val = 1;
     int bias_save_counter = 0;
     uint8_t ICM_address;
     bool ICM_found = false;
