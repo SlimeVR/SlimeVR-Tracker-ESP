@@ -11,7 +11,7 @@ Based on Demo's fork
 #include <i2cscan.h>
 #include "ledstatus.h"
 
-#define BIAS_DEBUG true
+#define BIAS_DEBUG false
 
 namespace {
     void signalAssert() {
@@ -423,6 +423,7 @@ void ICM20948Sensor::motionLoop() {
 
     if(imu.dataReady())
     {
+        Serial.println("IMU Data ready, timeout Reset");
         lastReset = -1;
         lastData = millis();
     }
@@ -438,12 +439,17 @@ void ICM20948Sensor::motionLoop() {
 
 void ICM20948Sensor::sendData() { 
     
+    Serial.println("Check if my FIFO Data Availiable");
     if((imu.status == ICM_20948_Stat_FIFOMoreDataAvail))
     {
+        Serial.println("FIFO Data Availiable");
+        Serial.println("Attempt to read DMP Data");
         if(imu.readDMPdataFromFIFO(&dmpData) == ICM_20948_Stat_Ok)
         {
+            Serial.println("Reading DMP Data");
             if ((dmpData.header & DMP_header_bitmap_Quat9) > 0)
             {
+                Serial.println("Converting Rotation Data");
                 // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
                 // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
                 // The quaternion data is scaled by 2^30.
@@ -456,6 +462,7 @@ void ICM20948Sensor::sendData() {
                 quaternion.x = q1;
                 quaternion.y = q2;
                 quaternion.z = q3;
+                Serial.println("Sending Rotation Data to Server");
                 sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, auxiliary, PACKET_ROTATION_DATA);
             }
         }
