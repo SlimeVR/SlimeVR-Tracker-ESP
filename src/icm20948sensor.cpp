@@ -151,14 +151,13 @@ void ICM20948Sensor::save_bias(bool repeat) {
 
 void ICM20948Sensor::setupICM20948(bool auxiliary, uint8_t addr) {
     this->addr = addr;
-    this->intPin = intPin;
     this->auxiliary = auxiliary;
     this->sensorOffset = {Quat(Vector3(0, 0, 1), ((int)auxiliary) == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
 }
 
 void ICM20948Sensor::motionSetup() {
 
-    if (imu.begin(Wire, intPin, addr) != ICM_20948_Stat_Ok) {
+    if (imu.begin(Wire, ad0_Val) != ICM_20948_Stat_Ok) {
         Serial.print("[ERR] IMU ICM20948: Can't connect to ");
         Serial.println(IMU_NAME);
         signalAssert();
