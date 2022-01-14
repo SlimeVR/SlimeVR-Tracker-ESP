@@ -87,7 +87,7 @@
   #define ICM_ADDR_1 0x69
   #define ICM_ADDR_2 0x68
   #define I2C_SPEED 400000
-  #define SECOND_IMU true
+  #define SECOND_IMU false
   #ifdef IMU_ROTATION // to not interfere with master repo
     #undef IMU_ROTATION
   #endif
