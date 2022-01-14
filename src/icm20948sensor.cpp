@@ -153,6 +153,14 @@ void ICM20948Sensor::setupICM20948(bool auxiliary, uint8_t addr) {
     this->addr = addr;
     this->auxiliary = auxiliary;
     this->sensorOffset = {Quat(Vector3(0, 0, 1), ((int)auxiliary) == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
+    if(auxiliary)
+    {
+        Serial.println("2nd IMU setup");
+    }
+    else
+    {
+        Serial.println("1st IMU setup");
+    }
 }
 
 void ICM20948Sensor::motionSetup() {
@@ -439,10 +447,9 @@ void ICM20948Sensor::motionLoop() {
 void ICM20948Sensor::sendData() { 
     
     Serial.println("Check if my FIFO Data Availiable");
-    if((imu.status == ICM_20948_Stat_FIFOMoreDataAvail))
-    {
-        Serial.println("FIFO Data Availiable");
-        Serial.println("Attempt to read DMP Data");
+    Serial.print("Status is ");
+    Serial.println(imu.statusString(imu.status));
+    Serial.println("Attempt to read DMP Data");
         if(imu.readDMPdataFromFIFO(&dmpData) == ICM_20948_Stat_Ok)
         {
             Serial.println("Reading DMP Data");
@@ -471,7 +478,6 @@ void ICM20948Sensor::sendData() {
             Serial.print("[ERR] Failed read DMP FIFO data");
             Serial.println(IMU_NAME);
         }
-    }
 }
 
 void ICM20948Sensor::startCalibration(int calibrationType) {
