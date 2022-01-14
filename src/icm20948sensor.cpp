@@ -248,8 +248,8 @@ void ICM20948Sensor::motionSetup() {
         Serial.println(IMU_NAME);
         return;
     }
-    
-    //TODO I have no idea exactly what we need, so I have included everything, but we really should trim the un
+
+    // Will probally be needed later, when more features are needed
 
     // Configuring DMP to output data at multiple ODRs:
     // DMP is capable of outputting multiple sensor data at different rates to FIFO.
