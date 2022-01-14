@@ -195,7 +195,6 @@ void ICM20948Sensor::motionSetup() {
     }
     else
     {
-        {
         Serial.print("[ERR] Enabling DMP Senor for Game Rotation Vector Failed");
         Serial.println(IMU_NAME);
         return; 
@@ -208,11 +207,9 @@ void ICM20948Sensor::motionSetup() {
     }
     else
     {
-        {
         Serial.print("[ERR] Enabling DMP Senor for Sensor Rotation Vector Failed");
         Serial.println(IMU_NAME);
         return; 
-    }
     }
 
     if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok)
