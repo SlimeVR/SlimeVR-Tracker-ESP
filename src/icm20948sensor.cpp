@@ -450,7 +450,10 @@ void ICM20948Sensor::sendData() {
     Serial.print("Status is ");
     Serial.println(imu.statusString(imu.status));
     Serial.println("Attempt to read DMP Data");
-        if(imu.readDMPdataFromFIFO(&dmpData) == ICM_20948_Stat_Ok)
+    Serial.print("Read Status is ");
+    ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
+    Serial.println(imu.statusString(readStatus));
+        if(readStatus == ICM_20948_Stat_Ok)
         {
             Serial.println("Reading DMP Data");
             if ((dmpData.header & DMP_header_bitmap_Quat9) > 0)
@@ -475,8 +478,9 @@ void ICM20948Sensor::sendData() {
         else
         {
             //This may lead to instability, or not
-            Serial.print("[ERR] Failed read DMP FIFO data");
+            Serial.print("[ERR] Failed read DMP FIFO data ");
             Serial.println(IMU_NAME);
+            Serial.println(imu.statusString(imu.status));
         }
 }
 
