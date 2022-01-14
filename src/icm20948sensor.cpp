@@ -187,15 +187,29 @@ void ICM20948Sensor::motionSetup() {
         Serial.println(IMU_NAME);
         return;
     }
-    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
+    
+    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok)
     {
-        Serial.print("Enabled DMP Senor for Game Rotation Vector");
+        Serial.print("Enabled DMP Senor for Sensor Orientation");
         Serial.println(IMU_NAME);
     }
     else
     {
         {
         Serial.print("[ERR] Enabling DMP Senor for Game Rotation Vector Failed");
+        Serial.println(IMU_NAME);
+        return; 
+    }
+
+    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
+    {
+        Serial.print("Enabled DMP Senor for Sensor Rotation Vector");
+        Serial.println(IMU_NAME);
+    }
+    else
+    {
+        {
+        Serial.print("[ERR] Enabling DMP Senor for Sensor Rotation Vector Failed");
         Serial.println(IMU_NAME);
         return; 
     }
@@ -452,7 +466,6 @@ void ICM20948Sensor::sendData() {
     Serial.println("Attempt to read DMP Data");
     Serial.print("Read Status is ");
     ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
-    Serial.println(imu.statusString(readStatus));
         if(readStatus == ICM_20948_Stat_Ok)
         {
             Serial.println("Reading DMP Data");
@@ -480,7 +493,7 @@ void ICM20948Sensor::sendData() {
             //This may lead to instability, or not
             Serial.print("[ERR] Failed read DMP FIFO data ");
             Serial.println(IMU_NAME);
-            Serial.println(imu.statusString(imu.status));
+            Serial.println(imu.statusString(readStatus));
         }
 }
 
