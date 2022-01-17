@@ -167,7 +167,8 @@ void BMI160Sensor::getScaledValues()
 void BMI160Sensor::startCalibration(int calibrationType) {
     digitalWrite(CALIBRATING_LED, LOW);
     Serial.println("[NOTICE] Gathering raw data for device calibration...");
-    int calibrationSamples = 300;
+    uint16_t gyroCalibrationSamples = 3000;
+    uint8_t accelCalibrationSamples = 300;
     DeviceConfig config{};
     // Reset values
     Gxyz[0] = 0;
@@ -188,15 +189,16 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     // Y =  4.3 LSB/deg/s / 17.4 deg C =  0.24165707710
     // Z =  1.2 LSB/deg/s / 17.4 deg C =  0.06904487917
     Serial.printf("[NOTICE] Calibration temperature: %f\n", temperature);
+    for (int i = 0; i < gyroCalibrationSamples; i++)
     {
-        imu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+        imu.getRotation(&gx, &gy, &gz);
         Gxyz[0] += float(gx);
         Gxyz[1] += float(gy);
         Gxyz[2] += float(gz);
     }
-    Gxyz[0] /= calibrationSamples;
-    Gxyz[1] /= calibrationSamples;
-    Gxyz[2] /= calibrationSamples;
+    Gxyz[0] /= gyroCalibrationSamples;
+    Gxyz[1] /= gyroCalibrationSamples;
+    Gxyz[2] /= gyroCalibrationSamples;
     Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
     config.calibration[isSecond ? 1 : 0].G_off[0] = Gxyz[0];
     config.calibration[isSecond ? 1 : 0].G_off[1] = Gxyz[1];
@@ -210,11 +212,11 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     delay(1500);
     Serial.println("[NOTICE] Gathering accelerometer data start!");
 
-    float *calibrationDataAcc = (float*)malloc(calibrationSamples * 3 * sizeof(float));
-    for (int i = 0; i < calibrationSamples; i++)
+    float *calibrationDataAcc = (float*)malloc(accelCalibrationSamples * 3 * sizeof(float));
+    for (int i = 0; i < accelCalibrationSamples; i++)
     {
         digitalWrite(CALIBRATING_LED, LOW);
-        imu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+        imu.getAcceleration(&ax, &ay, &az);
         calibrationDataAcc[i * 3 + 0] = ax;
         calibrationDataAcc[i * 3 + 1] = ay;
         calibrationDataAcc[i * 3 + 2] = az;
@@ -226,7 +228,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     Serial.println("[NOTICE] Now Calculate Calibration data");
 
     float A_BAinv[4][3];
-    CalculateCalibration(calibrationDataAcc, calibrationSamples, A_BAinv);
+    CalculateCalibration(calibrationDataAcc, accelCalibrationSamples, A_BAinv);
     Serial.println("[NOTICE] Finished Calculate Calibration data");
     Serial.println("[NOTICE] Now Saving EEPROM");
     for (int i = 0; i < 3; i++)
