@@ -88,10 +88,12 @@ void BMI160Sensor::motionSetup() {
     if(!imu.testConnection()) {
         Serial.print("[ERR] Can't communicate with BMI160, response 0x");
         Serial.println(imu.getDeviceID(), HEX);
-    } else {
+        signalAssert();
+        return;
+    }
+
         Serial.print("[OK] Connected to BMI160, ID 0x");
         Serial.println(imu.getDeviceID(), HEX);
-    }
 
     DeviceConfig * const config = getConfigPtr();
     calibration = &config->calibration[isSecond ? 1 : 0];
