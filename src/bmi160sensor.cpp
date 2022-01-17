@@ -30,7 +30,24 @@
 #include "mahony.h"
 #include "magneto1.4.h"
 
-constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
+// Typical sensitivity at 25C
+// See p. 9 of https://www.mouser.com/datasheet/2/783/BST-BMI160-DS000-1509569.pdf
+// 65.6 LSB/deg/s = 500 deg/s
+#define TYPICAL_SENSITIVITY_LSB 65.6
+
+// LSB per temperature step.
+// These values were calculated for 500 deg/s sensitivity
+#define LSB_COMP_PER_TEMP_STEP_X -0.08055235903f
+#define LSB_COMP_PER_TEMP_STEP_Y  0.24165707710f
+#define LSB_COMP_PER_TEMP_STEP_Z  0.06904487917f
+
+// Temperature per step from -41 + 1/2^9 degrees C (0x8001) to 87 - 1/2^9 degrees C (0x7FFF)
+constexpr float TEMP_STEP = 128. / 65535;
+// Middle value is 23 degrees C (0x0000)
+#define TEMP_ZERO 23
+
+// Scale conversion steps: LSB/°/s -> °/s -> step/°/s -> step/rad/s
+constexpr float gscale = ((32768. / TYPICAL_SENSITIVITY_LSB) / 32768.) * (PI / 180.0);
 
 namespace {
     void signalAssert() {
@@ -65,6 +82,7 @@ void BMI160Sensor::motionSetup() {
             return;
         }
     }
+
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
@@ -119,11 +137,15 @@ void BMI160Sensor::getScaledValues()
     float temp[3];
     int i;
     imu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    float temperature = ((imu.getTemperature() * TEMP_STEP) + TEMP_ZERO) - calibration->temperature;
+    // TODO: Sensitivity over temp compensation?
+    // TODO: Cross-axis sensitivity compensation?
+    // TODO: Compensation over temperature change may be not linear but this should work just fine for now
+    Gxyz[0] = ((float)gx - (calibration->G_off[0] + (temperature * LSB_COMP_PER_TEMP_STEP_X))) * gscale;
+    Gxyz[1] = ((float)gy - (calibration->G_off[1] + (temperature * LSB_COMP_PER_TEMP_STEP_Y))) * gscale;
+    Gxyz[2] = ((float)gz - (calibration->G_off[2] + (temperature * LSB_COMP_PER_TEMP_STEP_Z))) * gscale;
 
-    Gxyz[0] = ((float)gx - calibration->G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
-    Gxyz[1] = ((float)gy - calibration->G_off[1]) * gscale;
-    Gxyz[2] = ((float)gz - calibration->G_off[2]) * gscale;
-    //Serial.printf("Gx = %f Gy = %f Gz = %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
+    //Serial.printf("{\"X\": \"%.2f\", \"Y\": \"%.2f\", \"Z\": \"%.2f\", \"T\": \"%.2f\"}\n", ((float)gx - (calibration->G_off[0] + (temperature * LSB_COMP_PER_TEMP_STEP_X))), ((float)gy - (calibration->G_off[1] + (temperature * LSB_COMP_PER_TEMP_STEP_Y))), ((float)gz - (calibration->G_off[2] + (temperature * LSB_COMP_PER_TEMP_STEP_Z))), temperature);
 
     Axyz[0] = (float)ax;
     Axyz[1] = (float)ay;
@@ -140,7 +162,6 @@ void BMI160Sensor::getScaledValues()
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
     #endif
     vector_normalize(Axyz);
-    //Serial.printf("Ax = %f Ay = %f Az = %f\n", Axyz[0], Axyz[1], Axyz[2]);
 }
 
 void BMI160Sensor::startCalibration(int calibrationType) {
@@ -156,7 +177,17 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     // Wait for sensor to calm down before calibration
     Serial.println("[NOTICE] Put down the device and wait for baseline gyro reading calibration");
     delay(2000);
-    for (int i = 0; i < calibrationSamples; i++)
+    float temperature = (imu.getTemperature() * TEMP_STEP) + TEMP_ZERO;
+    config.calibration[isSecond ? 1 : 0].temperature = temperature;
+    // [NOTICE] Calibration temperature: 33.547035
+    // [NOTICE] Gyro calibration results: -18.232334 -18.812000 6.854333
+    // [NOTICE] Calibration temperature: 50.924255
+    // [NOTICE] Gyro calibration results: -19.632668 -14.028666 8.021667
+    // Temp diff = 17.4
+    // X = -1.4 LSB/deg/s / 17.4 deg C = -0.08055235903
+    // Y =  4.3 LSB/deg/s / 17.4 deg C =  0.24165707710
+    // Z =  1.2 LSB/deg/s / 17.4 deg C =  0.06904487917
+    Serial.printf("[NOTICE] Calibration temperature: %f\n", temperature);
     {
         imu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
         Gxyz[0] += float(gx);

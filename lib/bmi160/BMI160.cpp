@@ -88,17 +88,17 @@ void BMI160::initialize(uint8_t addr)
     I2CdevMod::writeByte(devAddr, BMI160_RA_CMD, BMI160_CMD_GYR_MODE_NORMAL);
     delay(BMI160_GYRO_POWERUP_DELAY_MS);
 
-    setGyroRate(BMI160_GYRO_RATE_3200HZ);
+    setGyroRate(BMI160_GYRO_RATE_400HZ);
     delay(1);
-    setAccelRate(BMI160_ACCEL_RATE_1600HZ);
+    setAccelRate(BMI160_ACCEL_RATE_400HZ);
     delay(1);
-    setFullScaleGyroRange(BMI160_GYRO_RANGE_250);
+    setFullScaleGyroRange(BMI160_GYRO_RANGE_500);
     delay(1);
     setFullScaleAccelRange(BMI160_ACCEL_RANGE_2G);
     delay(1);
-    setGyroDLPFMode(BMI160_DLPF_MODE_OSR4);
+    setGyroDLPFMode(BMI160_DLPF_MODE_OSR2);
     delay(1);
-    setAccelDLPFMode(BMI160_DLPF_MODE_OSR4);
+    setAccelDLPFMode(BMI160_DLPF_MODE_OSR2);
     delay(1);
 
     uint8_t range = getFullScaleGyroRange();
