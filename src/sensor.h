@@ -32,6 +32,7 @@
 #include "configuration.h"
 #include <Adafruit_BNO055.h>
 #include "defines.h"
+#include <helper_3dmath.h>
 
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
@@ -155,6 +156,16 @@ class MPU9250Sensor : public MPU6050Sensor {
         float adjustments[3] {};
         unsigned long last = 0;   //micros() timers
         CalibrationConfig *calibration;
+        
+        bool newData{false};
+        Quaternion rawQuat {};
+        // MPU dmp control/status vars
+        bool dmpReady{false};  // set true if DMP init was successful
+        uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+        uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
+        uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
+        uint16_t fifoCount;     // count of all bytes currently in FIFO
+        uint8_t fifoBuffer[64] {}; // FIFO storage buffer
 };
 
 #endif // SLIMEVR_SENSOR_H_

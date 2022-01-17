@@ -407,7 +407,7 @@ THE SOFTWARE.
 #define MPU9250_BANKSEL_MEM_SEL_BIT         4
 #define MPU9250_BANKSEL_MEM_SEL_LENGTH      5
 
-#define MPU9250_WHO_AM_I_BIT        8
+#define MPU9250_WHO_AM_I_BIT        6
 #define MPU9250_WHO_AM_I_LENGTH     8
 
 #define MPU9250_DMP_MEMORY_BANKS        8
@@ -419,11 +419,10 @@ THE SOFTWARE.
 class MPU9250 {
     public:
         MPU9250();
+        MPU9250(uint8_t address);
 
         void initialize(uint8_t address = MPU9250_DEFAULT_ADDRESS);
         bool testConnection();
-
-        uint8_t getAddr();
 
         // AUX_VDDIO register
         uint8_t getAuxVDDIOLevel();
@@ -1013,3 +1012,4 @@ class MPU9250 {
 };
 
 #endif /* _MPU9250_H_ */
+

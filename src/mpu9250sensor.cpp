@@ -25,7 +25,6 @@
 #include "sensor.h"
 #include "udpclient.h"
 #include "defines.h"
-#include "helper_3dmath.h"
 #include <i2cscan.h>
 #include "calibration.h"
 #include "magneto1.4.h"
@@ -50,6 +49,11 @@ namespace {
     }
 }
 
+volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
+void dmpDataReady() {
+    mpuInterrupt = true;
+}
+
 void MPU9250Sensor::motionSetup() {
     DeviceConfig * const config = getConfigPtr();
     calibration = &config->calibration[isSecond?1:0];
@@ -62,14 +66,12 @@ void MPU9250Sensor::motionSetup() {
             return;
         }
     }
-    // initialize device
+
     imu.initialize(addr);
     if(!imu.testConnection()) {
-        Serial.print("[ERR] Can't communicate with MPU, response 0x");
+        Serial.print("[ERR] Can't communicate with MPU, response ");
         Serial.println(imu.getDeviceID(), HEX);
-    } else {
-        Serial.print("[OK] Connected to MPU, ID 0x");
-        Serial.println(imu.getDeviceID(), HEX);
+        return;
     }
     int16_t ax,ay,az,dumb;
 
@@ -99,9 +101,12 @@ void MPU9250Sensor::motionSetup() {
         // turn on the DMP, now that it's ready
         Serial.println(F("[NOTICE] Enabling DMP..."));
         imu.setDMPEnabled(true);
-
-        // TODO: Add interrupt support
-        // mpuIntStatus = imu.getIntStatus();
+        
+        // enable interrupt detection
+        Serial.println(F("[NOTICE] Enabling interrupt detection..."));
+        pinMode(PIN_IMU_INT_2, INPUT);
+        attachInterrupt(digitalPinToInterrupt(PIN_IMU_INT_2), dmpDataReady, RISING);
+        mpuIntStatus = imu.getIntStatus();
 
         // set our DMP Ready flag so the main loop() function knows it's okay to use it
         Serial.println(F("[NOTICE] DMP ready! Waiting for first interrupt..."));
@@ -187,10 +192,6 @@ void MPU9250Sensor::getMPUScaled()
     int i;
     int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
     imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-
-    Gxyz[0] = ((float)gx - calibration->G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
-    Gxyz[1] = ((float)gy - calibration->G_off[1]) * gscale;
-    Gxyz[2] = ((float)gz - calibration->G_off[2]) * gscale;
 
     Axyz[0] = (float)ax;
     Axyz[1] = (float)ay;

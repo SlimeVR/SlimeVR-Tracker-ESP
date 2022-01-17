@@ -46,6 +46,16 @@ MPU9250::MPU9250() {
     asaz = 0;
 }
 
+/** Specific address constructor.
+ * @param address I2C address
+ * @see MPU9250_DEFAULT_ADDRESS 
+ * @see MPU9250_ADDRESS_AD0_LOW
+ * @see MPU9250_ADDRESS_AD0_HIGH
+ */
+MPU9250::MPU9250(uint8_t address) {
+    devAddr = address;
+}
+
 /** Power on and prepare for general usage.
  * This will activate the device and take it out of sleep mode (which must be done
  * after start-up). This function also sets both the accelerometer and the gyroscope
@@ -93,7 +103,7 @@ void MPU9250::initialize(uint8_t address) {
     // Set up magnetometer as slave 0 for reading
     I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_ADDR, MPU9250_RA_MAG_ADDRESS|0x80);
     // Start reading from HXL register
-    I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_REG,  MPU9250_RA_MAG_XOUT_L);
+    I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_REG,  MPU9250_RA_MAG_WHOAMI);
     // Read 7 bytes (until ST2 register), group LSB and MSB
     I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_CTRL, 0x97);
     delay(10);
@@ -110,16 +120,12 @@ void MPU9250::getMagnetometerAdjustments(float adjustments[3]) {
     adjustments[2] = asaz;
 }
 
-uint8_t MPU9250::getAddr() {
-    return devAddr;
-}
-
 /** Verify the I2C connection.
  * Make sure the device is connected and responds as expected.
  * @return True if connection is valid, false otherwise
  */
 bool MPU9250::testConnection() {
-    return getDeviceID() > 0;
+    return getDeviceID() == 0x71;
 }
 
 // AUX_VDDIO register (InvenSense demo code calls this RA_*G_OFFS_TC)
@@ -909,7 +915,7 @@ void MPU9250::setMasterClockSpeed(uint8_t speed) {
  * operation, and if it is cleared, then it's a write operation. The remaining
  * bits (6-0) are the 7-bit device address of the slave device.
  *
- * In read mode, the result of the read is placed in the lowest available
+ * In read mode, the result of the read is placed in the lowest available 
  * EXT_SENS_DATA register. For further information regarding the allocation of
  * read results, please refer to the EXT_SENS_DATA register description
  * (Registers 73 - 96).
@@ -1763,7 +1769,7 @@ bool MPU9250::getIntDataReadyStatus() {
  * @see MPU9250_RA_ACCEL_XOUT_H
  */
 void MPU9250::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* mx, int16_t* my, int16_t* mz) {
-
+    
 	//get accel and gyro
 	getMotion6(ax, ay, az, gx, gy, gz);
 
@@ -2751,7 +2757,8 @@ void MPU9250::setFIFOByte(uint8_t data) {
  * @see MPU9250_WHO_AM_I_LENGTH
  */
 uint8_t MPU9250::getDeviceID() {
-    I2Cdev::readBits(devAddr, MPU9250_RA_WHO_AM_I, MPU9250_WHO_AM_I_BIT, MPU9250_WHO_AM_I_LENGTH, buffer);
+    //I2Cdev::readBits(devAddr, MPU9250_RA_WHO_AM_I, MPU9250_WHO_AM_I_BIT, MPU9250_WHO_AM_I_LENGTH, buffer);
+    I2Cdev::readByte(devAddr, MPU9250_RA_WHO_AM_I, buffer);
     return buffer[0];
 }
 /** Set Device ID.
@@ -3004,7 +3011,7 @@ void MPU9250::readMemoryBlock(uint8_t *data, uint16_t dataSize, uint8_t bank, ui
 
         // read the chunk of data as specified
         I2Cdev::readBytes(devAddr, MPU9250_RA_MEM_R_W, chunkSize, data + i);
-
+        
         // increase byte index by [chunkSize]
         i += chunkSize;
 
@@ -3038,7 +3045,7 @@ bool MPU9250::writeMemoryBlock(const uint8_t *data, uint16_t dataSize, uint8_t b
 
         // make sure this chunk doesn't go past the bank boundary (256 bytes)
         if (chunkSize > 256 - address) chunkSize = 256 - address;
-
+        
         if (useProgMem) {
             // write the chunk of data as specified
             for (j = 0; j < chunkSize; j++) progBuffer[j] = pgm_read_byte(data + i + j);
@@ -3152,7 +3159,7 @@ bool MPU9250::writeDMPConfigurationSet(const uint8_t *data, uint16_t dataSize, b
             Serial.println(" found...");*/
             if (special == 0x01) {
                 // enable DMP-related interrupts
-
+                
                 //setIntZeroMotionEnabled(true);
                 //setIntFIFOBufferOverflowEnabled(true);
                 //setIntDMPEnabled(true);
@@ -3164,7 +3171,7 @@ bool MPU9250::writeDMPConfigurationSet(const uint8_t *data, uint16_t dataSize, b
                 success = false;
             }
         }
-
+        
         if (!success) {
             if (useProgMem) free(progBuffer);
             return false; // uh oh
