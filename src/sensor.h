@@ -33,6 +33,7 @@
 #include "configuration.h"
 #include <Adafruit_BNO055.h>
 #include "defines.h"
+#include <arduino-timer.h> // Used for periodically saving bias
 
 
 #define DATA_TYPE_NORMAL 1
@@ -180,8 +181,9 @@ private:
     void i2c_scan();
     bool auxiliary{ false };
     unsigned long lastData = 0;
+    uint8_t first_imu;
+    uint8_t second_imu;
     uint8_t addr = 0x69;
-    uint8_t ad0_Val = 1;
     int bias_save_counter = 0;
     uint8_t ICM_address;
     bool ICM_found = false;
@@ -194,6 +196,9 @@ private:
     icm_20948_DMP_data_t dmpData {};
 #ifdef ESP32
     Preferences prefs;
+    Timer<> timer = timer_create_default();
+#endif
+#ifdef ESP8266
     Timer<> timer = timer_create_default();
 #endif
     //TapDetector tapDetector;
