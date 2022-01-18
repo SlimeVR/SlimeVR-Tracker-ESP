@@ -256,7 +256,7 @@ public:
 
   ICM_20948_I2C(); // Constructor
 
-  virtual ICM_20948_Status_e begin(TwoWire &wirePort = Wire, bool ad0val = true, uint8_t ad0pin = ICM_20948_ARD_UNUSED_PIN);
+  virtual ICM_20948_Status_e begin(TwoWire &wirePort = Wire, uint8_t addr = ICM_20948_ARD_UNUSED_PIN);
 };
 
 // SPI
