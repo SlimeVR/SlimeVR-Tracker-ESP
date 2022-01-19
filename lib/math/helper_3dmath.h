@@ -215,7 +215,8 @@ class VectorFloat {
         }
 };
 
-void vector_normalize(float a[3]);
 float invSqrt(float x);
+float vector_dot(float a[3], float b[3]);
+void vector_normalize(float a[3]);
 
 #endif /* _HELPER_3DMATH_H_ */

@@ -47,7 +47,7 @@ THE SOFTWARE.
     #include <avr/pgmspace.h>
 #else
     // Teensy 3.0 library conditional PROGMEM code from Paul Stoffregen
-    #ifndef __PGMSPACE_H_
+    #if not defined(__PGMSPACE_H_) && not defined(PGMSPACE_INCLUDE )
         #define __PGMSPACE_H_ 1
         #include <inttypes.h>
 
@@ -522,7 +522,7 @@ uint8_t MPU9250::dmpInitialize() {
             // setup AK8963 (0x0C) as Slave 0 in read mode
             DEBUG_PRINTLN(F("Setting up AK8963 read slave 0..."));
             I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_ADDR, MPU9250_RA_MAG_ADDRESS|0x80);
-            I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_REG,  MPU9250_RA_MAG_XOUT_L);
+            I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_REG,  MPU9250_RA_MAG_WHOAMI);
             I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_CTRL, 0xDA);
 
             // setup AK8963 (0x0C) as Slave 2 in write mode
@@ -534,7 +534,9 @@ uint8_t MPU9250::dmpInitialize() {
 
             // setup I2C timing/delay control
             DEBUG_PRINTLN(F("Setting up slave access delay..."));
-            I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV4_CTRL, 0x18);
+            // I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV4_CTRL, 0x18);
+            // samplerate, DMP output frequency is calculated easily using this equation: (200Hz / (1 + value))
+            I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV4_CTRL, 0x01);
             I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_MST_DELAY_CTRL, 0x05);
 
             // enable interrupts
