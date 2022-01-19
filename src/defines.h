@@ -80,7 +80,7 @@
   #define IMU_HAS_ACCELL true
   #define IMU_HAS_GYRO true
   #define IMU_HAS_MAG true
-  #define USE_6_AXIS false // uses 9 (with mag) if false
+  #define USE_6_AXIS true // uses 9 (with mag) if false
   #define LOAD_BIAS 1 // Loads the bias values from NVS on start (ESP32 Only)
   #define SAVE_BIAS 1 // Periodically saves bias calibration data to NVS (ESP32 Only)
   #define ENABLE_TAP false // monitor accel for (tripple) tap events and send them. Uses more cpu, disable if problems. Server does nothing with value so disabled atm

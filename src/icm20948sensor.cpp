@@ -84,7 +84,7 @@ void ICM20948Sensor::save_bias(bool repeat) {
 
         EEPROM.begin(4096); // max memory usage = 4096
         EEPROM.get(addr + 100, count); // 1st imu counter in EEPROM addr: 0x69+100=205, 2nd addr: 0x68+100=204
-        Serial.printf("[0x%02X] EEPROM ICM: %d, position: %d, getcount: %d \n", addr, (int)auxiliary, addr + 100, count);
+        Serial.printf("[0x%02X] EEPROM position: %d, count: %d \n", addr, addr + 100, count);
         if (count < 0 || count > 42) {
             count = (int)auxiliary; // 1st imu counter is even number, 2nd is odd
         } else if (repeat) {
@@ -134,7 +134,7 @@ void ICM20948Sensor::motionSetup() {
     #ifdef FULL_DEBUG
         imu.enableDebugging(Serial);
     #endif
-    if (imu.begin(Wire, ((int)auxiliary == 0 ? first_imu : second_imu)) != ICM_20948_Stat_Ok) {
+    if (imu.begin(Wire, 0, ((int)auxiliary == 0 ? first_imu : second_imu)) != ICM_20948_Stat_Ok) {
         Serial.print("[ERR] IMU ICM20948: Can't connect to ");
         Serial.println(IMU_NAME);
         signalAssert();
@@ -188,72 +188,72 @@ void ICM20948Sensor::motionSetup() {
         }
     }
 
-    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
-    {
-        Serial.print("Enabled DMP Senor for Sensor Rotation Vector");
-        Serial.println(IMU_NAME);
-    }
-    else
-    {
-        Serial.print("[ERR] Enabling DMP Senor for Sensor Rotation Vector Failed");
-        Serial.println(IMU_NAME);
-        return; 
-    }
-    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_LINEAR_ACCELERATION) == ICM_20948_Stat_Ok)
-    {
-        Serial.print("Enabled DMP Senor for LINEAR ACCELERATION Vector");
-        Serial.println(IMU_NAME);
-    }
-    else
-    {
-        Serial.print("[ERR] Enabling DMP Senor for LINEAR ACCELERATION Failed");
-        Serial.println(IMU_NAME);
-        return; 
-    }
-    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_GRAVITY) == ICM_20948_Stat_Ok)
-    {
-        Serial.print("Enabled DMP Senor for GRAVITY Vector");
-        Serial.println(IMU_NAME);
-    }
-    else
-    {
-        Serial.print("[ERR] Enabling DMP Senor for GRAVITY Failed");
-        Serial.println(IMU_NAME);
-        return; 
-    }
-    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok)
-    {
-        Serial.print("Enabled DMP Senor for Raw Gyro");
-        Serial.println(IMU_NAME);
-    }
-    else
-    {
-        Serial.print("[ERR] Enabling DMP Senor for Raw Gyro Failed");
-        Serial.println(IMU_NAME);
-        return;
-    }
-    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
-    {
-        Serial.print("Enabled DMP Senor for Raw Acc");
-        Serial.println(IMU_NAME);
-    }
-    else
-    {
-        Serial.print("[ERR] Enabling DMP Senor for Raw Acc Failed");
-        Serial.println(IMU_NAME);
-        return;
-    }
-    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok)
-    {
-        Serial.print("Enabled DMP Senor for Magnetic Field Uncalibrated");
-        Serial.println(IMU_NAME);
-    }
-    else
-    {
-        Serial.print("[ERR] Enabling DMP Senor for Magnetic Field Uncalibrated Failed");
-        Serial.println(IMU_NAME);
-        return;
-    }
+    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
+    // {
+    //     Serial.print("Enabled DMP Senor for Sensor Rotation Vector");
+    //     Serial.println(IMU_NAME);
+    // }
+    // else
+    // {
+    //     Serial.print("[ERR] Enabling DMP Senor for Sensor Rotation Vector Failed");
+    //     Serial.println(IMU_NAME);
+    //     return; 
+    // }
+    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_LINEAR_ACCELERATION) == ICM_20948_Stat_Ok)
+    // {
+    //     Serial.print("Enabled DMP Senor for LINEAR ACCELERATION Vector");
+    //     Serial.println(IMU_NAME);
+    // }
+    // else
+    // {
+    //     Serial.print("[ERR] Enabling DMP Senor for LINEAR ACCELERATION Failed");
+    //     Serial.println(IMU_NAME);
+    //     return; 
+    // }
+    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_GRAVITY) == ICM_20948_Stat_Ok)
+    // {
+    //     Serial.print("Enabled DMP Senor for GRAVITY Vector");
+    //     Serial.println(IMU_NAME);
+    // }
+    // else
+    // {
+    //     Serial.print("[ERR] Enabling DMP Senor for GRAVITY Failed");
+    //     Serial.println(IMU_NAME);
+    //     return; 
+    // }
+    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok)
+    // {
+    //     Serial.print("Enabled DMP Senor for Raw Gyro");
+    //     Serial.println(IMU_NAME);
+    // }
+    // else
+    // {
+    //     Serial.print("[ERR] Enabling DMP Senor for Raw Gyro Failed");
+    //     Serial.println(IMU_NAME);
+    //     return;
+    // }
+    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
+    // {
+    //     Serial.print("Enabled DMP Senor for Raw Acc");
+    //     Serial.println(IMU_NAME);
+    // }
+    // else
+    // {
+    //     Serial.print("[ERR] Enabling DMP Senor for Raw Acc Failed");
+    //     Serial.println(IMU_NAME);
+    //     return;
+    // }
+    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok)
+    // {
+    //     Serial.print("Enabled DMP Senor for Magnetic Field Uncalibrated");
+    //     Serial.println(IMU_NAME);
+    // }
+    // else
+    // {
+    //     Serial.print("[ERR] Enabling DMP Senor for Magnetic Field Uncalibrated Failed");
+    //     Serial.println(IMU_NAME);
+    //     return;
+    // }
 
     // Will probally be needed later, when more features are needed
 
@@ -356,7 +356,7 @@ void ICM20948Sensor::motionSetup() {
         count = 0;
         EEPROM.begin(4096); // max memory usage = 4096
         EEPROM.get(addr + 100, count); // 1st imu counter in EEPROM addr: 0x69+100=205, 2nd addr: 0x68+100=204
-        Serial.printf("[0x%02X] EEPROM ICM: %d, position: %d, getcount: %d \n", addr, (int)auxiliary, addr + 100, count);
+        Serial.printf("[0x%02X] EEPROM position: %d, count: %d \n", addr, addr + 100, count);
         if (count < 0 || count > 42) {
             count = (int)auxiliary; // 1st imu counter is even number, 2nd is odd
             EEPROM.put(addr + 100, count);
