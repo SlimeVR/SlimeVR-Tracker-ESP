@@ -1585,14 +1585,14 @@ ICM_20948_I2C::ICM_20948_I2C()
 {
 }
 
-ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, uint8_t addr)
+ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t ad0pin)
 {
   // Associate
   // _ad0 = ad0pin;
   _i2c = &wirePort;
   // _ad0val = ad0val;
-  _addr = addr;
-
+  _addr = ad0pin;
+  // Here ICM_20948_I2C_ADDR_AD0 is 0x68, But the AD0 of a single ICM may not be 0x68..?
   // _addr = ICM_20948_I2C_ADDR_AD0;
   // if (_ad0val)
   // {
