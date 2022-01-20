@@ -1,7 +1,25 @@
 /*
-Based on Demo's fork
+    SlimeVR Code is placed under the MIT license
+    Copyright (c) 2021 Eiren Rain, S.J. Remington
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
 */
-//Spelling mistakes are probally mine - Threads
 
 #include <ICM_20948.h>
 #include "sensor.h"
@@ -134,7 +152,7 @@ void ICM20948Sensor::motionSetup() {
     #ifdef FULL_DEBUG
         imu.enableDebugging(Serial);
     #endif
-    if (imu.begin(Wire, 0, ((int)auxiliary == 0 ? first_imu : second_imu)) != ICM_20948_Stat_Ok) {
+    if (imu.begin(Wire, addr) != ICM_20948_Stat_Ok) {
         Serial.print("[ERR] IMU ICM20948: Can't connect to ");
         Serial.println(IMU_NAME);
         signalAssert();
@@ -188,86 +206,9 @@ void ICM20948Sensor::motionSetup() {
         }
     }
 
-    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
-    // {
-    //     Serial.print("Enabled DMP Senor for Sensor Rotation Vector");
-    //     Serial.println(IMU_NAME);
-    // }
-    // else
-    // {
-    //     Serial.print("[ERR] Enabling DMP Senor for Sensor Rotation Vector Failed");
-    //     Serial.println(IMU_NAME);
-    //     return; 
-    // }
-    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_LINEAR_ACCELERATION) == ICM_20948_Stat_Ok)
-    // {
-    //     Serial.print("Enabled DMP Senor for LINEAR ACCELERATION Vector");
-    //     Serial.println(IMU_NAME);
-    // }
-    // else
-    // {
-    //     Serial.print("[ERR] Enabling DMP Senor for LINEAR ACCELERATION Failed");
-    //     Serial.println(IMU_NAME);
-    //     return; 
-    // }
-    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_GRAVITY) == ICM_20948_Stat_Ok)
-    // {
-    //     Serial.print("Enabled DMP Senor for GRAVITY Vector");
-    //     Serial.println(IMU_NAME);
-    // }
-    // else
-    // {
-    //     Serial.print("[ERR] Enabling DMP Senor for GRAVITY Failed");
-    //     Serial.println(IMU_NAME);
-    //     return; 
-    // }
-    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok)
-    // {
-    //     Serial.print("Enabled DMP Senor for Raw Gyro");
-    //     Serial.println(IMU_NAME);
-    // }
-    // else
-    // {
-    //     Serial.print("[ERR] Enabling DMP Senor for Raw Gyro Failed");
-    //     Serial.println(IMU_NAME);
-    //     return;
-    // }
-    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
-    // {
-    //     Serial.print("Enabled DMP Senor for Raw Acc");
-    //     Serial.println(IMU_NAME);
-    // }
-    // else
-    // {
-    //     Serial.print("[ERR] Enabling DMP Senor for Raw Acc Failed");
-    //     Serial.println(IMU_NAME);
-    //     return;
-    // }
-    // if(imu.enableDMPSensor(INV_ICM20948_SENSOR_MAGNETIC_FIELD_UNCALIBRATED) == ICM_20948_Stat_Ok)
-    // {
-    //     Serial.print("Enabled DMP Senor for Magnetic Field Uncalibrated");
-    //     Serial.println(IMU_NAME);
-    // }
-    // else
-    // {
-    //     Serial.print("[ERR] Enabling DMP Senor for Magnetic Field Uncalibrated Failed");
-    //     Serial.println(IMU_NAME);
-    //     return;
-    // }
+    
 
-    // Will probally be needed later, when more features are needed
-
-    // Configuring DMP to output data at multiple ODRs:
-    // DMP is capable of outputting multiple sensor data at different rates to FIFO.
-    // Setting value can be calculated as follows:
-    // Value = (DMP running rate / ODR ) - 1
-    // E.g. For a 5Hz ODR rate when DMP is running at 55Hz, value = (55/5) - 1 = 10.
-    // if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 10) == ICM_20948_Stat_Ok);        // Set to 5Hz
-    // if(imu.setDMPODRrate(DMP_ODR_Reg_Accel, 54) == ICM_20948_Stat_Ok);        // Set to 1Hz
-    // if(imu.setDMPODRrate(DMP_ODR_Reg_Gyro, 54) == ICM_20948_Stat_Ok);         // Set to 1Hz
-    // if(imu.setDMPODRrate(DMP_ODR_Reg_Gyro_Calibr, 54) == ICM_20948_Stat_Ok);  // Set to 1Hz
-    // if(imu.setDMPODRrate(DMP_ODR_Reg_Cpass, 54) == ICM_20948_Stat_Ok);        // Set to 1Hz
-    // if(imu.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 54) == ICM_20948_Stat_Ok); // Set to 1Hz
+    // Might need to set up other DMP functions later, just Quad6/Quad9 for now
 
     if (USE_6_AXIS)
     {
@@ -496,14 +437,12 @@ void ICM20948Sensor::motionSetup() {
 }
 
 
-//I don't think there is any need for a motionloop with the libary
 void ICM20948Sensor::motionLoop() {
     timer.tick();
     if(imu.dataReady())
     {
         lastReset = -1;
         lastData = millis();
-        // Serial.println("IMU Data ready, timeout Reset");
     }
     
 
@@ -516,20 +455,13 @@ void ICM20948Sensor::motionLoop() {
 }
 
 void ICM20948Sensor::sendData() { 
-    // Serial.println("Check if my FIFO Data Availiable");
-    // Serial.print("Status is ");
-    // Serial.println(imu.statusString(imu.status));
-    // Serial.println("Attempt to read DMP Data");
-    // Serial.print("Read Status is ");
     ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
         if(readStatus == ICM_20948_Stat_Ok)
         {
-            // Serial.println("Reading DMP Data");
             if (USE_6_AXIS)
             {
                 if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
                 {
-                    // Serial.println("Converting Rotation Data");
                     // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
                     // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
                     // The quaternion data is scaled by 2^30.
@@ -543,7 +475,6 @@ void ICM20948Sensor::sendData() {
                     quaternion.y = q2;
                     quaternion.z = q3;
                     quaternion *= sensorOffset; //imu rotation
-                    // Serial.println("Sending Rotation Data to Server");
                     sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, auxiliary, PACKET_ROTATION_DATA);
                 }
             }
@@ -551,7 +482,6 @@ void ICM20948Sensor::sendData() {
             {
                 if ((dmpData.header & DMP_header_bitmap_Quat9) > 0)
                 {
-                    // Serial.println("Converting Rotation Data");
                     // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
                     // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
                     // The quaternion data is scaled by 2^30.
@@ -565,30 +495,28 @@ void ICM20948Sensor::sendData() {
                     quaternion.y = q2;
                     quaternion.z = q3;
                     quaternion *= sensorOffset; //imu rotation
-                    // Serial.println("Sending Rotation Data to Server");
                     sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, auxiliary, PACKET_ROTATION_DATA);
                 }
             }
         }
         else
         {
-            //This may lead to instability, or not
-            // Serial.print("[ERR] Failed read DMP FIFO data ");
-            // Serial.println(IMU_NAME);
-            // Serial.println(imu.statusString(readStatus));
+            Serial.print("[ERR] Failed read DMP FIFO data ");
+            Serial.println(IMU_NAME);
+            Serial.println(imu.statusString(readStatus));
         }
 }
 
 void ICM20948Sensor::startCalibration(int calibrationType) {
-    // 20948 does continuous calibration and no need to use for ESP32 as it auto saves bias values
+    // 20948 does continuous calibration
 
-    // If ESP32, manually force a new save
+    // TODO If ESP32, manually force a new save
     // #ifdef ESP32
     //     save_bias(false);
     // #endif
-    // TODO: If 8266, save the current bias values to eeprom
+    // If 8266, save the current bias values to eeprom
     #ifdef ESP8266
-    // Types are int, device config saves float - need to save and load like mpu6050 does
+        // Types are int, device config saves float - need to save and load like mpu6050 does
         save_bias(false);
     #endif
 }
