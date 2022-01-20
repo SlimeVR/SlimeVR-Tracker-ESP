@@ -158,11 +158,9 @@ void setup()
 #endif
 
     sensor.motionSetup();
-// #ifdef HAS_SECOND_IMU
     if(secondImuActive) {
         sensor2.motionSetup();
     }
-// #endif
 
     setUpWiFi();
     otaSetup(otaPassword);
@@ -173,36 +171,23 @@ void setup()
 
 void loop()
 {
-    // too much print seems to cause it not to work properly...
-    // Serial.println("Main Loop Start");
     ledStatusUpdate();
-    // Serial.println("LED Updated");
     serialCommandsUpdate();
-    // Serial.println("Commands Updated");
     wifiUpkeep();
-    // Serial.println("Wifi upkeep");
     otaUpdate();
-    //Serial.println("OTA Updated");
     clientUpdate(&sensor, &sensor2);
-    // Serial.println("Client Updated");
     if (isCalibrating)
     {
-        // Serial.println("Started Calibration");
         sensor.startCalibration(0);
-        //sensor2.startCalibration(0);
         isCalibrating = false;
-        // Serial.println("Finished Calibration");
     }
 #ifndef UPDATE_IMU_UNCONNECTED
         if(isConnected()) {
 #endif
     sensor.motionLoop();
-// #ifdef HAS_SECOND_IMU
     if (secondImuActive) {
         sensor2.motionLoop();
     }
-// #endif
-// Serial.println("Motion loops Completed");
 #ifndef UPDATE_IMU_UNCONNECTED
         }
 #endif
@@ -211,16 +196,10 @@ void loop()
 #ifndef SEND_UPDATES_UNCONNECTED
     if(isConnected()) {
 #endif
-    // Serial.println("Send Data Sensor 1 Start");
     sensor.sendData();
-    // Serial.println("Send Data Sensor 1 Completed");
-// #ifdef HAS_SECOND_IMU
     if (secondImuActive) {
-        // Serial.println("Send Data Sensor 2 Start");
         sensor2.sendData();
-        // Serial.println("Send Data Sensor 2 Completed");
     }
-//#endif
 #ifndef SEND_UPDATES_UNCONNECTED
     }
 #endif
