@@ -40,7 +40,7 @@ uint8_t Sensor::getSensorState() {
 void Sensor::sendData() {
     if(newData) {
         newData = false;
-        sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
+        Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
         #ifdef FULL_DEBUG
             Serial.print("[DBG] Quaternion: ");
             Serial.print(quaternion.x);

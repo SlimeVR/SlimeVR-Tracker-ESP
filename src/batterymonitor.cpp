@@ -112,7 +112,7 @@ void BatteryMonitor::Loop()
                     level = 1;
                 else if (level < 0)
                     level = 0;
-                send2Floats(voltage, level, PACKET_BATTERY_LEVEL);
+                Network::sendBatteryLevel(voltage, level);
                 #ifdef BATTERY_LOW_POWER_VOLTAGE
                     if (voltage < (float)BATTERY_LOW_POWER_VOLTAGE)
                     {

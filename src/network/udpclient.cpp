@@ -147,59 +147,80 @@ namespace DataTransfer {
     }
 }
 
-void sendVector(float *const result, int type)
-{
-    if(DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
+// PACKET_HEARTBEAT 0
+void Network::sendHeartbeat() {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_HEARTBEAT);
         DataTransfer::sendPacketNumber();
-        DataTransfer::sendFloat(result[0]);
-        DataTransfer::sendFloat(result[1]);
-        DataTransfer::sendFloat(result[2]);
-        DataTransfer::sendFloat(result[3]);
         DataTransfer::endPacket();
     }
 }
 
-void sendFloat(float const value, int type)
-{
-    if (DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
+// PACKET_ACCEL 4
+void Network::sendAccel(float* vector, uint8_t sensorId) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_ACCEL);
         DataTransfer::sendPacketNumber();
-        DataTransfer::sendFloat(value);
+        DataTransfer::sendFloat(vector[0]);
+        DataTransfer::sendFloat(vector[1]);
+        DataTransfer::sendFloat(vector[2]);
         DataTransfer::endPacket();
     }
 }
 
-void send2Floats(float const value1, float const value2, int type)
-{
-    if (DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
+// PACKET_RAW_CALIBRATION_DATA 6
+void Network::sendRawCalibrationData(float* vector, uint8_t calibrationType, uint8_t sensorId) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_RAW_CALIBRATION_DATA);
         DataTransfer::sendPacketNumber();
-        DataTransfer::sendFloat(value1);
-        DataTransfer::sendFloat(value2);
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendInt(calibrationType);
+        DataTransfer::sendFloat(vector[0]);
+        DataTransfer::sendFloat(vector[1]);
+        DataTransfer::sendFloat(vector[2]);
         DataTransfer::endPacket();
     }
 }
 
-void sendByte(unsigned char const value, int type)
-{
-    if(DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
+void Network::sendRawCalibrationData(int* vector, uint8_t calibrationType, uint8_t sensorId) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_RAW_CALIBRATION_DATA);
         DataTransfer::sendPacketNumber();
-        DataTransfer::sendByte(value);
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendInt(calibrationType);
+        DataTransfer::sendInt(vector[0]);
+        DataTransfer::sendInt(vector[1]);
+        DataTransfer::sendInt(vector[2]);
         DataTransfer::endPacket();
     }
 }
 
-void sendByte(uint8_t const value, uint8_t sensorId, int type)
-{
-    if(DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
+// PACKET_CALIBRATION_FINISHED 7
+void Network::sendCalibrationFinished(uint8_t calibrationType, uint8_t sensorId) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_CALIBRATION_FINISHED);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendInt(calibrationType);
+        DataTransfer::endPacket();
+    }
+}
+
+// PACKET_BATTERY_LEVEL 12
+void Network::sendBatteryLevel(float batteryVoltage, float batteryPercentage) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_BATTERY_LEVEL);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendFloat(batteryVoltage);
+        DataTransfer::sendFloat(batteryPercentage);
+        DataTransfer::endPacket();
+    }
+}
+
+// PACKET_TAP 13
+void Network::sendTap(uint8_t value, uint8_t sensorId) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_TAP);
         DataTransfer::sendPacketNumber();
         DataTransfer::sendByte(sensorId);
         DataTransfer::sendByte(value);
@@ -207,24 +228,33 @@ void sendByte(uint8_t const value, uint8_t sensorId, int type)
     }
 }
 
-void sendQuat(Quat *const quaternion, int type)
-{
-    if(DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
+// PACKET_ERROR 14
+void Network::sendError(uint8_t reason, uint8_t sensorId) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_TAP);
         DataTransfer::sendPacketNumber();
-        DataTransfer::sendFloat(quaternion->x);
-        DataTransfer::sendFloat(quaternion->y);
-        DataTransfer::sendFloat(quaternion->z);
-        DataTransfer::sendFloat(quaternion->w);
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendByte(reason);
         DataTransfer::endPacket();
     }
 }
 
-void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId, int type) {
-    if(DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
+// PACKET_SENSOR_INFO 15
+void Network::sendSensorInfo(Sensor * sensor) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_SENSOR_INFO);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensor->getSensorId());
+        DataTransfer::sendByte(sensor->getSensorState());
+        DataTransfer::sendByte(sensor->getSensorType());
+        DataTransfer::endPacket();
+    }
+}
+
+// PACKET_ROTATION_DATA 17
+void Network::sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_ROTATION_DATA);
         DataTransfer::sendPacketNumber();
         DataTransfer::sendByte(sensorId);
         DataTransfer::sendByte(dataType);
@@ -237,10 +267,10 @@ void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accurac
     }
 }
 
-void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type) {
-    if(DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
+// PACKET_MAGNETOMETER_ACCURACY 18
+void Network::sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_MAGNETOMETER_ACCURACY);
         DataTransfer::sendPacketNumber();
         DataTransfer::sendByte(sensorId);
         DataTransfer::sendFloat(accuracyInfo);
@@ -248,96 +278,19 @@ void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type) {
     }
 }
 
-void sendQuat(float *const quaternion, int type)
-{
-    if(DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
+// PACKET_SIGNAL_STRENGTH 19
+void Network::sendSignalStrength(uint8_t signalStrength) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_SIGNAL_STRENGTH);
         DataTransfer::sendPacketNumber();
-        DataTransfer::sendFloat(quaternion[0]);
-        DataTransfer::sendFloat(quaternion[1]);
-        DataTransfer::sendFloat(quaternion[2]);
-        DataTransfer::sendFloat(quaternion[3]);
+        DataTransfer::sendByte(0);
+        DataTransfer::sendByte(signalStrength);
         DataTransfer::endPacket();
     }
 }
 
-void sendRawCalibrationData(int * const data, int calibrationType, unsigned char const sensorId, int type)
-{
-    if (DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
-        DataTransfer::sendPacketNumber();
-        DataTransfer::sendByte(sensorId);
-        DataTransfer::sendInt(calibrationType);
-        DataTransfer::sendInt(data[0]);
-        DataTransfer::sendInt(data[1]);
-        DataTransfer::sendInt(data[2]);
-        DataTransfer::endPacket();
-    }
-}
-
-void sendRawCalibrationData(float * const data, int calibrationType, unsigned char const sensorId, int type)
-{
-    if (DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
-        DataTransfer::sendPacketNumber();
-        DataTransfer::sendByte(sensorId);
-        DataTransfer::sendInt(calibrationType);
-        DataTransfer::sendFloat(data[0]);
-        DataTransfer::sendFloat(data[1]);
-        DataTransfer::sendFloat(data[2]);
-        DataTransfer::endPacket();
-    }
-}
-
-void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, int type) {
-    if (DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
-        DataTransfer::sendPacketNumber();
-        DataTransfer::sendByte(sensorId);
-        DataTransfer::sendInt(calibrationType);
-        DataTransfer::endPacket();
-    }
-}
-
-void sendSerial(uint8_t *const data, size_t length, int type) {
-    if (DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
-        DataTransfer::sendPacketNumber();
-        DataTransfer::sendInt(length);
-        DataTransfer::sendBytes(data, length);
-        DataTransfer::endPacket();
-    }
-}
-
-void sendSensorInfo(Sensor * sensor, int type) {
-    if (DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(type);
-        DataTransfer::sendPacketNumber();
-        DataTransfer::sendByte(sensor->getSensorId());
-        DataTransfer::sendByte(sensor->getSensorState());
-        DataTransfer::sendByte(sensor->getSensorType());
-        DataTransfer::endPacket();
-    }
-}
-
-void Network::sendHeartbeat() {
-    if (DataTransfer::beginPacket())
-    {
-        DataTransfer::sendPacketType(PACKET_HEARTBEAT);
-        DataTransfer::sendLong(0);
-        DataTransfer::endPacket();
-    }
-}
-
-void sendHandshake() {
-    if (DataTransfer::beginPacket())
-    {
+void Network::sendHandshake() {
+    if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_HANDSHAKE);
         DataTransfer::sendLong(0); // Packet number is always 0 for handshake
         DataTransfer::sendInt(BOARD);
@@ -365,8 +318,7 @@ void sendHandshake() {
 }
 
 void returnLastPacket(int len) {
-    if(DataTransfer::beginPacket())
-    {
+    if(DataTransfer::beginPacket()) {
         DataTransfer::sendBytes(incomingPacket, len);
         DataTransfer::endPacket();
     }
@@ -376,9 +328,9 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     if(millis() - lastSensorInfoPacket > 1000) {
         lastSensorInfoPacket = millis();
         if(sensorStateNotified1 != sensor->getSensorState())
-            sendSensorInfo(sensor, PACKET_SENSOR_INFO);
+            Network::sendSensorInfo(sensor);
         if(sensorStateNotified2 != sensor2->getSensorState())
-            sendSensorInfo(sensor2, PACKET_SENSOR_INFO);
+            Network::sendSensorInfo(sensor2);
     }
 }
 
@@ -411,7 +363,7 @@ void Network::update(Sensor * const sensor, Sensor * const sensor2)
                 switch (convert_chars<int>(incomingPacket))
                 {
                 case PACKET_RECEIVE_HEARTBEAT:
-                    sendHeartbeat();
+                    Network::sendHeartbeat();
                     break;
                 case PACKET_RECEIVE_VIBRATE:
                     
@@ -495,7 +447,7 @@ void Network::connect()
                 connected = true;
                 LEDManager::unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
 #ifndef SEND_UPDATES_UNCONNECTED
-                LEDMGR::off(LOADING_LED);
+                LEDManager::off(LOADING_LED);
 #endif
                 Serial.printf("[Handshake] Handshale successful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
@@ -514,13 +466,13 @@ void Network::connect()
         Serial.println("Looking for the server...");
         sendHandshake();
 #ifndef SEND_UPDATES_UNCONNECTED
-        LEDMGR::on(LOADING_LED);
+        LEDManager::on(LOADING_LED);
 #endif
     }
 #ifndef SEND_UPDATES_UNCONNECTED
     else if(lastConnectionAttemptMs + 20 < now)
     {
-        LEDMGR::off(LOADING_LED);
+        LEDManager::off(LOADING_LED);
     }
 #endif
 }

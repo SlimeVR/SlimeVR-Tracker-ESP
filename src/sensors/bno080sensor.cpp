@@ -25,13 +25,6 @@
 #include "network/network.h"
 #include "ledmgr.h"
 
-namespace {
-    void sendResetReason(uint8_t reason, uint8_t sensorId)
-    {
-        sendByte(reason, sensorId, PACKET_ERROR);
-    }
-}
-
 void BNO080Sensor::motionSetup()
 {
 #ifdef FULL_DEBUG
@@ -129,7 +122,7 @@ void BNO080Sensor::motionLoop()
             float v[3];
             uint8_t acc;
             imu.getAccel(v[0], v[1], v[2], acc);
-            sendVector(v, PACKET_ACCEL);
+            Network::sendAccel(v, PACKET_ACCEL);
         }
         if (intPin == 255 || imu.I2CTimedOut())
             break;
@@ -143,7 +136,7 @@ void BNO080Sensor::motionLoop()
         if (rr != lastReset)
         {
             lastReset = rr;
-            sendResetReason(rr, this->sensorId);
+            Network::sendError(rr, this->sensorId);
         }
         Serial.print("[ERR] Sensor ");
         Serial.print(sensorId);
@@ -161,9 +154,9 @@ void BNO080Sensor::sendData()
     if (newData)
     {
         newData = false;
-        sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
+        Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
         if (useMagnetometerAllTheTime)
-            sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGNETOMETER_ACCURACY);
+            Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
 #ifdef FULL_DEBUG
         Serial.print("[DBG] Quaternion: ");
         Serial.print(quaternion.x);
@@ -178,12 +171,12 @@ void BNO080Sensor::sendData()
     if (newMagData)
     {
         newMagData = false;
-        sendRotationData(&magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
-        sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGNETOMETER_ACCURACY);
+        Network::sendRotationData(&magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy, sensorId);
+        Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
     }
     if (tap != 0)
     {
-        sendByte(tap, sensorId, PACKET_TAP);
+        Network::sendTap(tap, sensorId);
         tap = 0;
     }
 }

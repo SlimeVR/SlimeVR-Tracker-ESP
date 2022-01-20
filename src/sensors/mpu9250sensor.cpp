@@ -233,7 +233,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     Gxyz[1] /= calibrationSamples;
     Gxyz[2] /= calibrationSamples;
     Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
-    sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0, PACKET_RAW_CALIBRATION_DATA);
+    Network::sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0);
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("[NOTICE] Gently rotate the device while it's gathering accelerometer and magnetometer data");
@@ -250,12 +250,12 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         calibrationDataMag[0] = mx;
         calibrationDataMag[1] = my;
         calibrationDataMag[2] = mz;
-        sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
-        sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0, PACKET_RAW_CALIBRATION_DATA);
+        Network::sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
+        Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
         LEDManager::off(CALIBRATING_LED);
         delay(250);
     }
     Serial.println("[NOTICE] Calibration data gathered and sent");
     LEDManager::off(CALIBRATING_LED);
-    sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0, PACKET_RAW_CALIBRATION_DATA);
+    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0);
 }

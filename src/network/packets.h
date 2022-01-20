@@ -56,11 +56,15 @@ namespace Network {
     // PACKET_HEARTBEAT 0
     void sendHeartbeat();
 
+    // PACKET_HANDSHAKE 3
+    void sendHandshake();
+
     // PACKET_ACCEL 4
     void sendAccel(float* vector, uint8_t sensorId);
 
     // PACKET_RAW_CALIBRATION_DATA 6
     void sendRawCalibrationData(float* vector, uint8_t calibrationType, uint8_t sensorId);
+    void sendRawCalibrationData(int* vector, uint8_t calibrationType, uint8_t sensorId);
 
     // PACKET_CALIBRATION_FINISHED 7
     void sendCalibrationFinished(uint8_t calibrationType, uint8_t sensorId);
@@ -75,7 +79,7 @@ namespace Network {
     void sendError(uint8_t reason, uint8_t sensorId);
 
     // PACKET_SENSOR_INFO 15
-    void sendSensorInfo(Sensor& sensor);
+    void sendSensorInfo(Sensor * sensor);
 
     // PACKET_ROTATION_DATA 17
     void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId);
@@ -84,7 +88,7 @@ namespace Network {
     void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId);
 
     // PACKET_SIGNAL_STRENGTH 19
-    void sendSignalStrength(int32_t signalStrength);
+    void sendSignalStrength(uint8_t signalStrength);
 }
 
 namespace DataTransfer {

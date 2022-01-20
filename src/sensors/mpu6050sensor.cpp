@@ -123,10 +123,10 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     switch (calibrationType)
     {
     case CALIBRATION_TYPE_INTERNAL_ACCEL:
-        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_CALIBRATION_FINISHED);
+        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);
         break;
     case CALIBRATION_TYPE_INTERNAL_GYRO:
-        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_CALIBRATION_FINISHED);
+        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);
         break;
     }
     LEDManager::off(CALIBRATING_LED);
