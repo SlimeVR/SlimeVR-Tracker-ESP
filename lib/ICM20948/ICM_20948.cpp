@@ -1458,8 +1458,8 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
   // Set gyro sample rate divider with GYRO_SMPLRT_DIV
   // Set accel sample rate divider with ACCEL_SMPLRT_DIV_2
   ICM_20948_smplrt_t mySmplrt;
-  mySmplrt.g = 19; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 19 = 55Hz. InvenSense Nucleo example uses 19 (0x13).
-  mySmplrt.a = 19; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 19 = 56.25Hz. InvenSense Nucleo example uses 19 (0x13).
+  mySmplrt.g = 8; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 19 = 55Hz. InvenSense Nucleo example uses 19 (0x13).
+  mySmplrt.a = 8; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 19 = 56.25Hz. InvenSense Nucleo example uses 19 (0x13).
   //mySmplrt.g = 4; // 225Hz
   //mySmplrt.a = 4; // 225Hz
   //mySmplrt.g = 8; // 112Hz
@@ -1534,7 +1534,7 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
   //            0=1125Hz sample rate, 1=562.5Hz sample rate, ... 4=225Hz sample rate, ...
   //            10=102.2727Hz sample rate, ... etc.
   // @param[in] gyro_level 0=250 dps, 1=500 dps, 2=1000 dps, 3=2000 dps
-  result = setGyroSF(19, 3); if (result > worstResult) worstResult = result; // 19 = 55Hz (see above), 3 = 2000dps (see above)
+  result = setGyroSF(8, 3); if (result > worstResult) worstResult = result; // 19 = 55Hz (see above), 3 = 2000dps (see above)
 
   // Configure the Gyro full scale
   // 2000dps : 2^28
@@ -1545,21 +1545,21 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
   result = writeDMPmems(GYRO_FULLSCALE, 4, &gyroFullScale[0]); if (result > worstResult) worstResult = result;
 
   // Configure the Accel Only Gain: 15252014 (225Hz) 30504029 (112Hz) 61117001 (56Hz)
-  const unsigned char accelOnlyGain[4] = {0x03, 0xA4, 0x92, 0x49}; // 56Hz
+  // const unsigned char accelOnlyGain[4] = {0x03, 0xA4, 0x92, 0x49}; // 56Hz
   //const unsigned char accelOnlyGain[4] = {0x00, 0xE8, 0xBA, 0x2E}; // 225Hz
-  //const unsigned char accelOnlyGain[4] = {0x01, 0xD1, 0x74, 0x5D}; // 112Hz
+  const unsigned char accelOnlyGain[4] = {0x01, 0xD1, 0x74, 0x5D}; // 112Hz
   result = writeDMPmems(ACCEL_ONLY_GAIN, 4, &accelOnlyGain[0]); if (result > worstResult) worstResult = result;
 
   // Configure the Accel Alpha Var: 1026019965 (225Hz) 977872018 (112Hz) 882002213 (56Hz)
-  const unsigned char accelAlphaVar[4] = {0x34, 0x92, 0x49, 0x25}; // 56Hz
+  // const unsigned char accelAlphaVar[4] = {0x34, 0x92, 0x49, 0x25}; // 56Hz
   //const unsigned char accelAlphaVar[4] = {0x3D, 0x27, 0xD2, 0x7D}; // 225Hz
-  //const unsigned char accelAlphaVar[4] = {0x3A, 0x49, 0x24, 0x92}; // 112Hz
+  const unsigned char accelAlphaVar[4] = {0x3A, 0x49, 0x24, 0x92}; // 112Hz
   result = writeDMPmems(ACCEL_ALPHA_VAR, 4, &accelAlphaVar[0]); if (result > worstResult) worstResult = result;
 
   // Configure the Accel A Var: 47721859 (225Hz) 95869806 (112Hz) 191739611 (56Hz)
-  const unsigned char accelAVar[4] = {0x0B, 0x6D, 0xB6, 0xDB}; // 56Hz
+  // const unsigned char accelAVar[4] = {0x0B, 0x6D, 0xB6, 0xDB}; // 56Hz
   //const unsigned char accelAVar[4] = {0x02, 0xD8, 0x2D, 0x83}; // 225Hz
-  //const unsigned char accelAVar[4] = {0x05, 0xB6, 0xDB, 0x6E}; // 112Hz
+  const unsigned char accelAVar[4] = {0x05, 0xB6, 0xDB, 0x6E}; // 112Hz
   result = writeDMPmems(ACCEL_A_VAR, 4, &accelAVar[0]); if (result > worstResult) worstResult = result;
 
   // Configure the Accel Cal Rate
@@ -1588,27 +1588,28 @@ ICM_20948_I2C::ICM_20948_I2C()
 ICM_20948_Status_e ICM_20948_I2C::begin(TwoWire &wirePort, bool ad0val, uint8_t ad0pin)
 {
   // Associate
-  _ad0 = ad0pin;
+  // _ad0 = ad0pin;
   _i2c = &wirePort;
-  _ad0val = ad0val;
+  // _ad0val = ad0val;
+  _addr = ad0pin;
+  // Here ICM_20948_I2C_ADDR_AD0 is 0x68, But the AD0 of a single ICM may not be 0x68..?
+  // _addr = ICM_20948_I2C_ADDR_AD0;
+  // if (_ad0val)
+  // {
+  //   _addr = ICM_20948_I2C_ADDR_AD1;
+  // }
 
-  _addr = ICM_20948_I2C_ADDR_AD0;
-  if (_ad0val)
-  {
-    _addr = ICM_20948_I2C_ADDR_AD1;
-  }
+  // // Set pinmodes
+  // if (_ad0 != ICM_20948_ARD_UNUSED_PIN)
+  // {
+  //   pinMode(_ad0, OUTPUT);
+  // }
 
-  // Set pinmodes
-  if (_ad0 != ICM_20948_ARD_UNUSED_PIN)
-  {
-    pinMode(_ad0, OUTPUT);
-  }
-
-  // Set pins to default positions
-  if (_ad0 != ICM_20948_ARD_UNUSED_PIN)
-  {
-    digitalWrite(_ad0, _ad0val);
-  }
+  // // Set pins to default positions
+  // if (_ad0 != ICM_20948_ARD_UNUSED_PIN)
+  // {
+  //   digitalWrite(_ad0, _ad0val);
+  // }
 
   // _i2c->begin(); // Moved into user's sketch
 
