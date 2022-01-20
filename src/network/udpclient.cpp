@@ -31,7 +31,7 @@ WiFiUDP Udp;
 unsigned char incomingPacket[128]; // buffer for incoming packets
 uint64_t packetNumber = 1;
 unsigned char handshake[12] = {0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
-unsigned char buf[128];
+
 
 int port = 6969;
 IPAddress host = IPAddress(255, 255, 255, 255);
@@ -45,6 +45,8 @@ size_t serialLength = 0;
 uint8_t sensorStateNotified1 = 0;
 uint8_t sensorStateNotified2 = 0;
 unsigned long lastSensorInfoPacket = 0;
+
+unsigned char buf[8];
 
 template <typename T>
 unsigned char * convert_to_chars(T src, unsigned char * target)
@@ -77,440 +79,296 @@ T convert_chars(unsigned char * const src)
     return un.v;
 }
 
-void sendPacketNumber()
-{
-    //uint64_t pn = packetNumber++;
-    // TODO Send packet number
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-}
+namespace DataTransfer {
 
-void sendType(int type)
-{
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(0);
-    Udp.write(type);
+    bool beginPacket() {
+        int r = Udp.beginPacket(host, port);
+        if(r == 0) {
+            // Print error
+        }
+        return r > 0;
+    }
+
+    bool endPacket() {
+        int r = Udp.endPacket();
+        if(r == 0) {
+            // Print error
+        }
+        return r > 0;
+    }
+
+    void sendPacketType(uint8_t type) {
+        Udp.write(0);
+        Udp.write(0);
+        Udp.write(0);
+        Udp.write(type);
+    }
+
+    void sendPacketNumber() {
+        //uint64_t pn = packetNumber++;
+        // TODO Send packet number
+        sendLong(0);
+    }
+
+    void sendFloat(float f) {
+        Udp.write(convert_to_chars(f, buf), sizeof(f));
+    }
+
+    void sendByte(uint8_t c) {
+        Udp.write(&c, 1);
+    }
+
+    void sendInt(int i) {
+        Udp.write(convert_to_chars(i, buf), sizeof(i));
+    }
+
+    void sendLong(uint64_t l) {
+        Udp.write(convert_to_chars(l, buf), sizeof(l));
+    }
+
+    void sendBytes(const uint8_t * c, size_t length) {
+        Udp.write(c, length);
+    }
+
+    void sendShortString(const char * str) {
+        uint8_t size = strlen(str);
+        sendByte(size); // String size
+        sendBytes((const uint8_t *) str, size); // Firmware version string
+    }
+    
+    void sendLongString(const char * str) {
+        int size = strlen(str);
+        sendInt(size); // String size
+        sendBytes((const uint8_t *) str, size); // Firmware version string
+    }
+
+    int getWriteError() {
+        return Udp.getWriteError();
+    }
 }
 
 void sendVector(float *const result, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if(DataTransfer::beginPacket())
     {
-        float x = result[0];
-        float y = result[1];
-        float z = result[2];
-        float w = 0;
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        Udp.write(convert_to_chars(w, buf), sizeof(w));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendFloat(result[0]);
+        DataTransfer::sendFloat(result[1]);
+        DataTransfer::sendFloat(result[2]);
+        DataTransfer::sendFloat(result[3]);
+        DataTransfer::endPacket();
     }
 }
 
 void sendFloat(float const value, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (DataTransfer::beginPacket())
     {
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(convert_to_chars(value, buf), sizeof(value));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendFloat(value);
+        DataTransfer::endPacket();
     }
 }
 
 void send2Floats(float const value1, float const value2, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (DataTransfer::beginPacket())
     {
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(convert_to_chars(value1, buf), sizeof(value1));
-        Udp.write(convert_to_chars(value2, buf), sizeof(value2));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendFloat(value1);
+        DataTransfer::sendFloat(value2);
+        DataTransfer::endPacket();
     }
 }
 
 void sendByte(unsigned char const value, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if(DataTransfer::beginPacket())
     {
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(&value, 1);
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(value);
+        DataTransfer::endPacket();
     }
 }
 
 void sendByte(uint8_t const value, uint8_t sensorId, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if(DataTransfer::beginPacket())
     {
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(&value, 1);
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendByte(value);
+        DataTransfer::endPacket();
     }
 }
 
 void sendQuat(Quat *const quaternion, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if(DataTransfer::beginPacket())
     {
-        float x = quaternion->x;
-        float y = quaternion->y;
-        float z = quaternion->z;
-        float w = quaternion->w;
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        Udp.write(convert_to_chars(w, buf), sizeof(w));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendFloat(quaternion->x);
+        DataTransfer::sendFloat(quaternion->y);
+        DataTransfer::sendFloat(quaternion->z);
+        DataTransfer::sendFloat(quaternion->w);
+        DataTransfer::endPacket();
     }
 }
 
 void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+    if(DataTransfer::beginPacket())
     {
-        float x = quaternion->x;
-        float y = quaternion->y;
-        float z = quaternion->z;
-        float w = quaternion->w;
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(&dataType, 1);
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        Udp.write(convert_to_chars(w, buf), sizeof(w));
-        Udp.write(&accuracyInfo, 1);
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendByte(dataType);
+        DataTransfer::sendFloat(quaternion->x);
+        DataTransfer::sendFloat(quaternion->y);
+        DataTransfer::sendFloat(quaternion->z);
+        DataTransfer::sendFloat(quaternion->w);
+        DataTransfer::sendByte(accuracyInfo);
+        DataTransfer::endPacket();
     }
 }
 
 void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+    if(DataTransfer::beginPacket())
     {
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(convert_to_chars(accuracyInfo, buf), sizeof(accuracyInfo));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendFloat(accuracyInfo);
+        DataTransfer::endPacket();
     }
 }
 
 void sendQuat(float *const quaternion, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if(DataTransfer::beginPacket())
     {
-        float x = quaternion[0];
-        float y = quaternion[1];
-        float z = quaternion[2];
-        float w = quaternion[3];
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        Udp.write(convert_to_chars(w, buf), sizeof(w));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
-    }
-}
-
-void sendConfig(DeviceConfig * const config, int type)
-{
-    if (Udp.beginPacket(host, port) > 0)
-    {
-        DeviceConfig data = *config;
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(convert_to_chars(data, buf), sizeof(data));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendFloat(quaternion[0]);
+        DataTransfer::sendFloat(quaternion[1]);
+        DataTransfer::sendFloat(quaternion[2]);
+        DataTransfer::sendFloat(quaternion[3]);
+        DataTransfer::endPacket();
     }
 }
 
 void sendRawCalibrationData(int * const data, int calibrationType, unsigned char const sensorId, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (DataTransfer::beginPacket())
     {
-        int x = data[0];
-        int y = data[1];
-        int z = data[2];
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendInt(calibrationType);
+        DataTransfer::sendInt(data[0]);
+        DataTransfer::sendInt(data[1]);
+        DataTransfer::sendInt(data[2]);
+        DataTransfer::endPacket();
     }
 }
 
 void sendRawCalibrationData(float * const data, int calibrationType, unsigned char const sensorId, int type)
 {
-    if (Udp.beginPacket(host, port) > 0)
+    if (DataTransfer::beginPacket())
     {
-        float x = data[0];
-        float y = data[1];
-        float z = data[2];
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
-        Udp.write(convert_to_chars(x, buf), sizeof(x));
-        Udp.write(convert_to_chars(y, buf), sizeof(y));
-        Udp.write(convert_to_chars(z, buf), sizeof(z));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendInt(calibrationType);
+        DataTransfer::sendFloat(data[0]);
+        DataTransfer::sendFloat(data[1]);
+        DataTransfer::sendFloat(data[2]);
+        DataTransfer::endPacket();
     }
 }
 
 void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+    if (DataTransfer::beginPacket())
     {
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(convert_to_chars(calibrationType, buf), sizeof(calibrationType));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendInt(calibrationType);
+        DataTransfer::endPacket();
     }
 }
 
-void sendSerial(uint8_t *const data, int length, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+void sendSerial(uint8_t *const data, size_t length, int type) {
+    if (DataTransfer::beginPacket())
     {
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(convert_to_chars(length, buf), sizeof(length));
-        Udp.write(data, length);
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendInt(length);
+        DataTransfer::sendBytes(data, length);
+        DataTransfer::endPacket();
     }
 }
 
-void sendSensorInfo(Sensor & sensor, int type) {
-    if (Udp.beginPacket(host, port) > 0)
+void sendSensorInfo(Sensor * sensor, int type) {
+    if (DataTransfer::beginPacket())
     {
-        uint8_t sensorId = sensor.getSensorId();
-        uint8_t sensorState = sensor.getSensorState();
-        uint8_t sensorType = sensor.getSensorType();
-        sendType(type);
-        sendPacketNumber();
-        Udp.write(&sensorId, 1);
-        Udp.write(&sensorState, 1);
-        Udp.write(&sensorType, 1);
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(type);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensor->getSensorId());
+        DataTransfer::sendByte(sensor->getSensorState());
+        DataTransfer::sendByte(sensor->getSensorType());
+        DataTransfer::endPacket();
     }
 }
 
 void Network::sendHeartbeat() {
-    if (Udp.beginPacket(host, port) > 0)
+    if (DataTransfer::beginPacket())
     {
-        sendType(PACKET_HEARTBEAT);
-        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t));
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
-    }
-    else
-    {
-        //Serial.print("Write error: ");
-        //Serial.println(Udp.getWriteError());
+        DataTransfer::sendPacketType(PACKET_HEARTBEAT);
+        DataTransfer::sendLong(0);
+        DataTransfer::endPacket();
     }
 }
 
 void sendHandshake() {
-    if (Udp.beginPacket(host, port) > 0)
+    if (DataTransfer::beginPacket())
     {
-        sendType(3);
-        Udp.write(convert_to_chars((uint64_t) 0, buf), sizeof(uint64_t)); // Packet number is always 0 for handshake
-        Udp.write(convert_to_chars((uint32_t) BOARD, buf), sizeof(uint32_t));
+        DataTransfer::sendPacketType(PACKET_HANDSHAKE);
+        DataTransfer::sendLong(0); // Packet number is always 0 for handshake
+        DataTransfer::sendInt(BOARD);
         // This is kept for backwards compatibility,
         // but the latest SlimeVR server will not initialize trackers
         // with firmware build > 8 until it recieves sensor info packet
-        Udp.write(convert_to_chars((uint32_t) IMU, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) HARDWARE_MCU, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t)); 
-        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) 0, buf), sizeof(uint32_t));
-        Udp.write(convert_to_chars((uint32_t) FIRMWARE_BUILD_NUMBER, buf), sizeof(uint32_t)); // Firmware build number
-        uint8_t size = (uint8_t) sizeof(FIRMWARE_VERSION);
-        Udp.write(&size, 1); // Firmware version string size
-        Udp.write((const unsigned char *) FIRMWARE_VERSION, sizeof(FIRMWARE_VERSION)); // Firmware version string
+        DataTransfer::sendInt(IMU);
+        DataTransfer::sendInt(HARDWARE_MCU);
+        DataTransfer::sendInt(0); 
+        DataTransfer::sendInt(0);
+        DataTransfer::sendInt(0);
+        DataTransfer::sendInt(FIRMWARE_BUILD_NUMBER); // Firmware build number
+        DataTransfer::sendShortString(FIRMWARE_VERSION);
         uint8_t mac[6];
         WiFi.macAddress(mac);
-        Udp.write(mac, 6); // MAC address string
-        if (Udp.endPacket() == 0)
-        {
-            Serial.print("Write error: ");
+        DataTransfer::sendBytes(mac, 6); // MAC address string
+        if(DataTransfer::endPacket()) {
+            Serial.print("Handshale write error: ");
             Serial.println(Udp.getWriteError());
         }
-    }
-    else
-    {
-        Serial.print("Write error: ");
+    } else {
+        Serial.print("Handshale write error: ");
         Serial.println(Udp.getWriteError());
     }
 }
 
 void returnLastPacket(int len) {
-    if (Udp.beginPacket(host, port) > 0)
+    if(DataTransfer::beginPacket())
     {
-        Udp.write(incomingPacket, len);
-        if (Udp.endPacket() == 0)
-        {
-            //Serial.print("Write error: ");
-            //Serial.println(Udp.getWriteError());
-        }
+        DataTransfer::sendBytes(incomingPacket, len);
+        DataTransfer::endPacket();
     }
 }
 
@@ -518,9 +376,9 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     if(millis() - lastSensorInfoPacket > 1000) {
         lastSensorInfoPacket = millis();
         if(sensorStateNotified1 != sensor->getSensorState())
-            sendSensorInfo(*sensor, PACKET_SENSOR_INFO);
+            sendSensorInfo(sensor, PACKET_SENSOR_INFO);
         if(sensorStateNotified2 != sensor2->getSensorState())
-            sendSensorInfo(*sensor2, PACKET_SENSOR_INFO);
+            sendSensorInfo(sensor2, PACKET_SENSOR_INFO);
     }
 }
 

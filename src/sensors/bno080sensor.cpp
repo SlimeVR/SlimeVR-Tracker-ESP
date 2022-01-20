@@ -79,7 +79,7 @@ void BNO080Sensor::motionSetup()
         }
     }
     imu.enableTapDetector(100);
-    lastReset = imu.resetReason();
+    lastReset = 0;
     lastData = millis();
     working = true;
     configured = true;
@@ -90,7 +90,7 @@ void BNO080Sensor::motionLoop()
     //Look for reports from the IMU
     while (imu.dataAvailable())
     {
-        lastReset = -1;
+        lastReset = 0;
         lastData = millis();
         if (useMagnetometerAllTheTime || !useMagnetometerCorrection)
         {

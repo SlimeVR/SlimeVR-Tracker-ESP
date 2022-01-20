@@ -84,7 +84,24 @@ namespace Network {
     void sendMagnetometerAccuracy(float accuracyInfo, uint8_t sensorId);
 
     // PACKET_SIGNAL_STRENGTH 19
-    void sendSignalStrength(uint8_t signalStrength);
+    void sendSignalStrength(int32_t signalStrength);
+}
+
+namespace DataTransfer {
+    bool beginPacket();
+    bool endPacket();
+    void sendPacketType(uint8_t type);
+    void sendPacketNumber();
+
+    void sendFloat(float f);
+    void sendByte(uint8_t c);
+    void sendInt(int i);
+    void sendLong(uint64_t l);
+    void sendBytes(const uint8_t * c, size_t length);
+    void sendShortString(const char * str);
+    void sendLongString(const char * str);
+
+    int getWriteError();
 }
 
 #endif // SLIMEVR_PACKETS_H_

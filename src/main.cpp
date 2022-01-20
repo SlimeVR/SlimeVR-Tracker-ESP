@@ -126,9 +126,10 @@ void loop()
     }
     loopTime = micros();
 #endif
+    // TODO Move to WiFi handler
     if(micros() - last_rssi_sample >= 2000) {
         last_rssi_sample = micros();
-        int8_t signalStrength = WiFi.RSSI();
+        int8_t signalStrength = WiFi.RSSI(); // TODO Overflow
         sendByte(signalStrength, 0, PACKET_SIGNAL_STRENGTH);
     }
 }
