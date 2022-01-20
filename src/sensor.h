@@ -190,10 +190,13 @@ private:
     bool ICM_init = false;
     bool newData = false;
     bool newTap;
+    
     uint8_t lastReset = 0;
     ICM_20948_I2C imu;
     ICM_20948_Device_t pdev;
     icm_20948_DMP_data_t dmpData {};
+
+    #define OVERRIDEDMPSETUP false
 #ifdef ESP32
     Preferences prefs;
     Timer<> timer = timer_create_default();

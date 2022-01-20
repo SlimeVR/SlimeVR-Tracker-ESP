@@ -13,6 +13,7 @@
         "ranges": "cpp",
         "*.tcc": "cpp",
         "memory": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "algorithm": "cpp"
     }
 }
