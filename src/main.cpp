@@ -25,13 +25,11 @@
 #include "ota.h"
 #include "sensors/sensorfactory.h"
 #include "configuration.h"
-#include "wifihandler.h"
-#include "udpclient.h"
+#include "network/network.h"
 #include "defines.h"
 #include "credentials.h"
 #include <i2cscan.h>
-#include "serialcommands.h"
-#include "ledstatus.h"
+#include "serial/serialcommands.h"
 #include "ledmgr.h"
 #include "batterymonitor.h"
 
@@ -44,23 +42,6 @@ unsigned long last_rssi_sample = 0;
 bool secondImuActive = false;
 BatteryMonitor battery;
 
-void commandReceived(int sensorId, int command, void * const commandData, int commandDataLength)
-{
-    switch (command)
-    {
-    case COMMAND_CALLIBRATE:
-        sensorToCalibrate = sensorId;
-        break;
-    case COMMAND_SEND_CONFIG:
-        sendConfig(getConfigPtr(), PACKET_CONFIG);
-        break;
-    case COMMAND_BLINK:
-        blinking = true;
-        blinkStart = millis();
-        break;
-    }
-}
-
 void setup()
 {
     //wifi_set_sleep_type(NONE_SLEEP_T);
@@ -68,12 +49,12 @@ void setup()
 #if ENABLE_LEDS
     pinMode(LOADING_LED, OUTPUT);
     pinMode(CALIBRATING_LED, OUTPUT);
-    digitalWrite(CALIBRATING_LED, HIGH);
-    digitalWrite(LOADING_LED, LOW);
+    LEDManager::off(CALIBRATING_LED);
+    LEDManager::on(LOADING_LED);
 #endif
 
     Serial.begin(serialBaudRate);
-    setUpSerialCommands();
+    SerialCommands::setUp();
     Serial.println();
     Serial.println();
     Serial.println();
@@ -89,33 +70,25 @@ void setup()
     Wire.setClock(I2C_SPEED);
 
     getConfigPtr();
-    setConfigReceivedCallback(setConfig);
-    setCommandReceivedCallback(commandReceived);
     // Wait for IMU to boot
     delay(500);
     
     sensors.create();
     sensors.motionSetup();
 
-    setUpWiFi();
-    otaSetup(otaPassword);
+    Network::setUpWiFi();
+    OTA::otaSetup(otaPassword);
     battery.Setup();
-    LEDMGR::Off(LOADING_LED);
+    LEDManager::off(LOADING_LED);
     loopTime = micros();
 }
 
 void loop()
 {
-    ledStatusUpdate();
-    serialCommandsUpdate();
-    wifiUpkeep();
-    otaUpdate();
-    clientUpdate(sensors.getFirst(), sensors.getSecond());
-    if (sensorToCalibrate >= 0)
-    {
-        sensors.startCalibration(sensorToCalibrate, 0);
-        sensorToCalibrate = -1;
-    }
+    LEDManager::ledStatusUpdate();
+    SerialCommands::update();
+    OTA::otaUpdate();
+    Network::update(sensors.getFirst(), sensors.getSecond());
 #ifndef UPDATE_IMU_UNCONNECTED
     if (isConnected())
     {

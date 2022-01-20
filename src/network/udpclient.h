@@ -24,11 +24,6 @@
 #ifndef SLIMEVR_UDP_CLIENT_H_
 #define SLIMEVR_UDP_CLIENT_H_
 
-#ifdef ESP8266
-    #include <ESP8266WiFi.h>
-#else
-    #include <WiFi.h>
-#endif
 #include <WiFiUdp.h>
 #include <Arduino.h>
 #include "quat.h"
@@ -37,41 +32,7 @@
 #include "wifihandler.h"
 #include "defines.h"
 
-#define PACKET_HEARTBEAT 0
-#define PACKET_ROTATION 1
-#define PACKET_GYRO 2
-#define PACKET_HANDSHAKE 3
-#define PACKET_ACCEL 4
-#define PACKET_MAG 5
-#define PACKET_RAW_CALIBRATION_DATA 6
-#define PACKET_CALIBRATION_FINISHED 7
-#define PACKET_CONFIG 8
-#define PACKET_RAW_MAGNETOMETER 9
-#define PACKET_PING_PONG 10
-#define PACKET_SERIAL 11
-#define PACKET_BATTERY_LEVEL 12
-#define PACKET_TAP 13
-#define PACKET_ERROR 14
-#define PACKET_SENSOR_INFO 15
-#define PACKET_ROTATION_2 16
-#define PACKET_ROTATION_DATA 17
-#define PACKET_MAGNETOMETER_ACCURACY 18
-#define PACKET_SIGNAL_STRENGTH 19
-
-#define PACKET_RECEIVE_HEARTBEAT 1
-#define PACKET_RECEIVE_VIBRATE 2
-#define PACKET_RECEIVE_HANDSHAKE 3
-#define PACKET_RECEIVE_COMMAND 4
-
-#define COMMAND_CALLIBRATE 1
-#define COMMAND_SEND_CONFIG 2
-#define COMMAND_BLINK 3
-
-typedef void (* configReceivedCallback)(const DeviceConfig & newConfig);
-typedef void (* commandReceivedCallback)(int sensorId, int command, void * const commandData, int commandDataLength);
-
-void connectClient();
-void clientUpdate(Sensor * const sensor, Sensor * const sensor2);
+// TODO : Hide this behind stuff in packet.h
 void sendQuat(float * const quaternion, int type);
 void sendQuat(Quat * const quaternion, int type);
 void sendRotationData(Quat * const quaternion, uint8_t dataType, uint8_t accuracyInfo, uint8_t sensorId, int type);
@@ -86,13 +47,13 @@ void sendSensorInfo(Sensor & sensor, int type);
 void sendRawCalibrationData(int * const data, int calibrationType, unsigned char const sensorId, int type);
 void sendRawCalibrationData(float * const data, int calibrationType, unsigned char const sensorId, int type);
 void sendCalibrationFinished(int calibrationType, unsigned char const sensorId, int type);
-void setConfigReceivedCallback(configReceivedCallback);
-void setCommandReceivedCallback(commandReceivedCallback);
 void sendSerial(uint8_t *const data, int length, int type);
-void onWiFiConnected();
-bool isConnected();
 
-template<typename T> T convert_chars(unsigned char* src);
-template<typename T> unsigned char* convert_to_chars(T src, unsigned char* target);
+namespace Network {
+    void connect();
+    void update(Sensor * const sensor, Sensor * const sensor2);
+    void onWiFiConnected();
+    bool isConnected();
+}
 
 #endif // SLIMEVR_UDP_CLIENT_H_

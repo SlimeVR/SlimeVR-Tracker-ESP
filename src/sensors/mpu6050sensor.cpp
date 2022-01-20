@@ -30,17 +30,11 @@
 #endif
 
 #include "mpu6050sensor.h"
-#include "udpclient.h"
+#include "network/network.h"
 #include <i2cscan.h>
 #include "calibration.h"
 #include "configuration.h"
 #include "ledmgr.h"
-
-namespace {
-    void signalAssert() {
-        LEDMGR::Pattern(LOADING_LED, 50, 50, 200);
-    }
-}
 
 void MPU6050Sensor::motionSetup()
 {
@@ -71,7 +65,7 @@ void MPU6050Sensor::motionSetup()
         imu.PrintActiveOffsets();
 #endif // IMU_MPU6050_RUNTIME_CALIBRATION
 
-        LEDMGR::Pattern(LOADING_LED, 50, 50, 5);
+        LEDManager::pattern(LOADING_LED, 50, 50, 5);
 
         // turn on the DMP, now that it's ready
         Serial.println(F("[NOTICE] Enabling DMP..."));
@@ -121,7 +115,7 @@ void MPU6050Sensor::motionLoop()
 }
 
 void MPU6050Sensor::startCalibration(int calibrationType) {
-    LEDMGR::On(CALIBRATING_LED);
+    LEDManager::on(CALIBRATING_LED);
 #ifdef IMU_MPU6050_RUNTIME_CALIBRATION
     Serial.println("MPU is using automatic runtime calibration. Place down the device and it should automatically calibrate after a few seconds");
 
@@ -129,13 +123,13 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     switch (calibrationType)
     {
     case CALIBRATION_TYPE_INTERNAL_ACCEL:
-        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_CALIBRATION_FINISHED);
         break;
     case CALIBRATION_TYPE_INTERNAL_GYRO:
-        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_CALIBRATION_FINISHED);
         break;
     }
-    LEDMGR::Off(CALIBRATING_LED);
+    LEDManager::off(CALIBRATING_LED);
 
 #else //!IMU_MPU6050_RUNTIME_CALIBRATION
     Serial.println("Put down the device and wait for baseline gyro reading calibration");
@@ -171,7 +165,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     }
 
     Serial.println("[NOTICE] Process is over");
-    LEDMGR::Off(CALIBRATING_LED);
+    LEDMGR::off(CALIBRATING_LED);
 
 #endif // !IMU_MPU6050_RUNTIME_CALIBRATION
 }

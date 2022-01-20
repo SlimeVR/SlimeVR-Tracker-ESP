@@ -22,7 +22,8 @@
 */
 
 #include "udpclient.h"
-#include "ledstatus.h"
+#include "ledmgr.h"
+#include "packets.h"
 
 #define TIMEOUT 3000UL
 
@@ -31,8 +32,6 @@ unsigned char incomingPacket[128]; // buffer for incoming packets
 uint64_t packetNumber = 1;
 unsigned char handshake[12] = {0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char buf[128];
-configReceivedCallback fp_configCallback;
-commandReceivedCallback fp_commandCallback;
 
 int port = 6969;
 IPAddress host = IPAddress(255, 255, 255, 255);
@@ -66,7 +65,7 @@ unsigned char * convert_to_chars(T src, unsigned char * target)
 template <typename T>
 T convert_chars(unsigned char * const src)
 {
-    union
+    union uwunion
     {
         unsigned char c[sizeof(T)];
         T v;
@@ -451,7 +450,7 @@ void sendSensorInfo(Sensor & sensor, int type) {
     }
 }
 
-void sendHeartbeat() {
+void Network::sendHeartbeat() {
     if (Udp.beginPacket(host, port) > 0)
     {
         sendType(PACKET_HEARTBEAT);
@@ -515,16 +514,6 @@ void returnLastPacket(int len) {
     }
 }
 
-void setConfigReceivedCallback(configReceivedCallback callback)
-{
-    fp_configCallback = callback;
-}
-
-void setCommandReceivedCallback(commandReceivedCallback callback)
-{
-    fp_commandCallback = callback;
-}
-
 void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     if(millis() - lastSensorInfoPacket > 1000) {
         lastSensorInfoPacket = millis();
@@ -535,14 +524,15 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     }
 }
 
-void onWiFiConnected() {
+void Network::onWiFiConnected() {
     Udp.begin(port);
     connected = false;
-    setLedStatus(LED_STATUS_SERVER_CONNECTING);
+    LEDManager::setLedStatus(LED_STATUS_SERVER_CONNECTING);
 }
 
-void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
+void Network::update(Sensor * const sensor, Sensor * const sensor2)
 {
+    wifiUpkeep();
     if (isWiFiConnected())
     {
         if(connected) {
@@ -566,38 +556,17 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
                     sendHeartbeat();
                     break;
                 case PACKET_RECEIVE_VIBRATE:
-                    if(fp_commandCallback) {
-                        fp_commandCallback(-1, COMMAND_BLINK, nullptr, 0);
-                    }
+                    
                     break;
                 case PACKET_RECEIVE_HANDSHAKE:
                     // Assume handshake successful
                     Serial.println("Handshale received again, ignoring");
                     break;
                 case PACKET_RECEIVE_COMMAND:
-                    if (len < 6)
-                    {
-                        Serial.println("Command packet too short");
-                        break;
-                    }
-                    #if serialDebug == true
-                        Serial.printf("Received command %d\n", incomingPacket[4]);
-                    #endif
-                    if (fp_commandCallback)
-                    {
-                        fp_commandCallback(-1, incomingPacket[4], &incomingPacket[5], len - 6);
-                    }
+                    
                     break;
                 case PACKET_CONFIG:
-                    if (len < sizeof(DeviceConfig) + 4)
-                    {
-                        Serial.println("config packet too short");
-                        break;
-                    }
-                    if (fp_configCallback)
-                    {
-                        fp_configCallback(convert_chars<DeviceConfig>(&incomingPacket[4]));
-                    }
+                    
                     break;
                 case PACKET_PING_PONG:
                     returnLastPacket(len);
@@ -621,7 +590,7 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
             //}
             if(lastPacketMs + TIMEOUT < millis())
             {
-                setLedStatus(LED_STATUS_SERVER_CONNECTING);
+                LEDManager::setLedStatus(LED_STATUS_SERVER_CONNECTING);
                 connected = false;
                 sensorStateNotified1 = false;
                 sensorStateNotified2 = false;
@@ -630,18 +599,18 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
         }
             
         if(!connected) {
-            connectClient();
+            connect();
         } else if(sensorStateNotified1 != sensor->isWorking() || sensorStateNotified2 != sensor2->isWorking()) {
             updateSensorState(sensor, sensor2);
         }
     }
 }
 
-bool isConnected() {
+bool Network::isConnected() {
     return connected;
 }
 
-void connectClient()
+void Network::connect()
 {
     unsigned long now = millis();
     while(true) {
@@ -666,9 +635,9 @@ void connectClient()
                 port = Udp.remotePort();
                 lastPacketMs = now;
                 connected = true;
-                unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
+                LEDManager::unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
 #ifndef SEND_UPDATES_UNCONNECTED
-                LEDMGR::Off(LOADING_LED);
+                LEDMGR::off(LOADING_LED);
 #endif
                 Serial.printf("[Handshake] Handshale successful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
@@ -687,13 +656,13 @@ void connectClient()
         Serial.println("Looking for the server...");
         sendHandshake();
 #ifndef SEND_UPDATES_UNCONNECTED
-        LEDMGR::On(LOADING_LED);
+        LEDMGR::on(LOADING_LED);
 #endif
     }
 #ifndef SEND_UPDATES_UNCONNECTED
     else if(lastConnectionAttemptMs + 20 < now)
     {
-        LEDMGR::Off(LOADING_LED);
+        LEDMGR::off(LOADING_LED);
     }
 #endif
 }

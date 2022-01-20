@@ -22,14 +22,14 @@
 */
 #include "ledmgr.h"
 
-namespace LEDMGR
+namespace LEDManager
 {
     /*!
     *  @brief  Turn a LED on
     *  @param  pin
     *          LED pin
     */
-    void On(uint8_t pin)
+    void on(uint8_t pin)
     {
         #if ENABLE_LEDS
             digitalWrite(pin, LOW);
@@ -41,7 +41,7 @@ namespace LEDMGR
     *  @param  pin
     *          LED pin
     */
-    void Off(uint8_t pin)
+    void off(uint8_t pin)
     {
         #if ENABLE_LEDS
             digitalWrite(pin, HIGH);
@@ -57,7 +57,7 @@ namespace LEDMGR
     *  @param  direction
     *          Direction turn the LED on, usually LOW
     */
-    void Blink(uint8_t pin, unsigned long time, uint8_t direction)
+    void blink(uint8_t pin, unsigned long time, uint8_t direction)
     {
         #if ENABLE_LEDS
             digitalWrite(pin, direction);
@@ -79,7 +79,7 @@ namespace LEDMGR
     *  @param  direction
     *          Direction turn the LED on, usually LOW
     */
-    void Pattern(uint8_t pin, unsigned long timeon, unsigned long timeoff, int times, uint8_t direction)
+    void pattern(uint8_t pin, unsigned long timeon, unsigned long timeoff, int times, uint8_t direction)
     {
         #if ENABLE_LEDS
             for (int i = 0; i < times; i++)
@@ -90,5 +90,159 @@ namespace LEDMGR
                 delay(timeoff);
             }
         #endif
+    }
+
+    uint32_t currentStatus = 0;
+    uint8_t currentCount = 0;
+    unsigned long timer = 0;
+    Stage currentStage = OFF;
+    unsigned long statusPrintInterval = 0;
+    unsigned long lastUpdate = millis();
+
+    void setLedStatus(uint32_t status) {
+        currentStatus |= status;
+    }
+
+    void unsetLedStatus(uint32_t status) {
+        currentStatus &= ~status;
+    }
+
+    void ledStatusUpdate() {
+        unsigned long time = millis();
+        unsigned long diff = time - lastUpdate;
+        if(diff < 10)
+            return;
+        lastUpdate = time;
+
+        unsigned int length;
+        unsigned int count;
+        bool printStatus = false;
+        #if defined(STATUS_PRINT_INTERVAL) && STATUS_PRINT_INTERVAL > 0
+            if(statusPrintInterval += diff > STATUS_PRINT_INTERVAL) {
+                statusPrintInterval = 0;
+                printStatus = true;
+            }
+        #endif
+        if((currentStatus & LED_STATUS_LOW_BATTERY) > 0) {
+            count = LOW_BATTERY_COUNT;
+            switch(currentStage) {
+                case ON:
+                case OFF:
+                    length = LOW_BATTERY_LENGTH;
+                    break;
+                case GAP:
+                    length = DEFAULT_GAP;
+                    break;
+                case INTERVAL:
+                    length = LOW_BATTERY_INTERVAL;
+                    break;
+                }
+            if(printStatus)
+                Serial.println("[STATUS] LOW BATTERY");
+        } else if((currentStatus & LED_STATUS_IMU_ERROR) > 0) {
+            count = IMU_ERROR_COUNT;
+            switch(currentStage) {
+                case ON:
+                case OFF:
+                    length = IMU_ERROR_LENGTH;
+                    break;
+                case GAP:
+                    length = DEFAULT_GAP;
+                    break;
+                case INTERVAL:
+                    length = IMU_ERROR_INTERVAL;
+                    break;
+                }
+            if(printStatus)
+                Serial.println("[STATUS] IMU ERROR");
+        } else if((currentStatus & LED_STATUS_WIFI_CONNECTING) > 0) {
+            count = WIFI_CONNECTING_COUNT;
+            switch(currentStage) {
+                case ON:
+                case OFF:
+                    length = WIFI_CONNECTING_LENGTH;
+                    break;
+                case GAP:
+                    length = DEFAULT_GAP;
+                    break;
+                case INTERVAL:
+                    length = WIFI_CONNECTING_INTERVAL;
+                    break;
+                }
+            if(printStatus)
+                Serial.println("[STATUS] WIFI CONNECTING");
+        } else if((currentStatus & LED_STATUS_SERVER_CONNECTING) > 0) {
+            count = SERVER_CONNECTING_COUNT;
+            switch(currentStage) {
+                case ON:
+                case OFF:
+                    length = SERVER_CONNECTING_LENGTH;
+                    break;
+                case GAP:
+                    length = DEFAULT_GAP;
+                    break;
+                case INTERVAL:
+                    length = SERVER_CONNECTING_INTERVAL;
+                    break;
+                }
+            if(printStatus)
+                Serial.println("[STATUS] SERVER CONNECTING");
+        } else {
+            if(printStatus)
+                Serial.println("[STATUS] OK");
+            #if defined(LED_INTERVAL_STANDBUY) && LED_INTERVAL_STANDBUY > 0
+                count = 1;
+                switch(currentStage) {
+                case ON:
+                case OFF:
+                    length = STANDBUY_LENGTH;
+                    break;
+                case GAP:
+                    length = DEFAULT_GAP;
+                    break;
+                case INTERVAL:
+                    length = LED_INTERVAL_STANDBUY;
+                    break;
+                }
+            #else
+                return;
+            #endif
+        }
+
+        if(currentStage == OFF || timer + diff >= length) {
+            timer = 0;
+            // Advance stage
+            switch(currentStage) {
+            case OFF:
+                on(STATUS_LED);
+                currentStage = ON;
+                currentCount = 0;
+                break;
+            case ON:
+                off(STATUS_LED);
+                currentCount++;
+                if(currentCount >= count) {
+                    currentCount = 0;
+                    currentStage = INTERVAL;
+                } else {
+                    currentStage = GAP;
+                }
+                break;
+            case GAP:
+            case INTERVAL:
+                on(STATUS_LED);
+                currentStage = ON;
+                break;
+                on(STATUS_LED);
+                currentStage = ON;
+                break;
+            }
+        } else {
+            timer += diff;
+        }
+    }
+
+    void signalAssert() {
+        pattern(LOADING_LED, 50, 50, 200);
     }
 }

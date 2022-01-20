@@ -22,7 +22,7 @@
 */
 
 #include "mpu9250sensor.h"
-#include "udpclient.h"
+#include "network/network.h"
 #include "defines.h"
 #include "helper_3dmath.h"
 #include <i2cscan.h>
@@ -40,12 +40,6 @@ CalibrationConfig * calibration;
 
 void get_MPU_scaled();
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
-
-namespace {
-    void signalAssert() {
-        LEDMGR::Pattern(LOADING_LED, 50, 50, 200);
-    }
-}
 
 void MPU9250Sensor::motionSetup() {
     DeviceConfig * const config = getConfigPtr();
@@ -217,7 +211,7 @@ void MPU9250Sensor::MahonyQuaternionUpdate(float ax, float ay, float az, float g
 }
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
-    LEDMGR::On(CALIBRATING_LED);
+    LEDManager::on(CALIBRATING_LED);
     Serial.println("[NOTICE] Gathering raw data for device calibration...");
     int calibrationSamples = 300;
     // Reset values
@@ -243,12 +237,12 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("[NOTICE] Gently rotate the device while it's gathering accelerometer and magnetometer data");
-    LEDMGR::Pattern(CALIBRATING_LED, 15, 300, 3000/310);
+    LEDManager::pattern(CALIBRATING_LED, 15, 300, 3000/310);
     int calibrationDataAcc[3];
     int calibrationDataMag[3];
     for (int i = 0; i < calibrationSamples; i++)
     {
-        LEDMGR::On(CALIBRATING_LED);
+        LEDManager::on(CALIBRATING_LED);
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
         calibrationDataAcc[0] = ax;
         calibrationDataAcc[1] = ay;
@@ -258,10 +252,10 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         calibrationDataMag[2] = mz;
         sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
         sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0, PACKET_RAW_CALIBRATION_DATA);
-        LEDMGR::Off(CALIBRATING_LED);
+        LEDManager::off(CALIBRATING_LED);
         delay(250);
     }
     Serial.println("[NOTICE] Calibration data gathered and sent");
-    LEDMGR::Off(CALIBRATING_LED);
+    LEDManager::off(CALIBRATING_LED);
     sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0, PACKET_RAW_CALIBRATION_DATA);
 }

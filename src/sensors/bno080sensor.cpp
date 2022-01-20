@@ -22,16 +22,10 @@
 */
 
 #include "sensors/bno080sensor.h"
-#include "udpclient.h"
-#include "ledstatus.h"
+#include "network/network.h"
 #include "ledmgr.h"
 
 namespace {
-    void signalAssert()
-    {
-        LEDMGR::Pattern(LOADING_LED, 50, 50, 200);
-    }
-
     void sendResetReason(uint8_t reason, uint8_t sensorId)
     {
         sendByte(reason, sensorId, PACKET_ERROR);
@@ -46,7 +40,7 @@ void BNO080Sensor::motionSetup()
     if(!imu.begin(addr, Wire, intPin)) {
         Serial.print("[ERR] IMU BNO08X: Can't connect to ");
         Serial.println(getIMUNameByType(sensorType));
-        signalAssert();
+        LEDManager::signalAssert();
         return;
     }
     Serial.print("[NOTICE] IMU BNO08X: Connected to ");
@@ -142,7 +136,7 @@ void BNO080Sensor::motionLoop()
     }
     if (lastData + 1000 < millis() && configured)
     {
-        setLedStatus(LED_STATUS_IMU_ERROR);
+        LEDManager::setLedStatus(LED_STATUS_IMU_ERROR);
         working = false;
         lastData = millis();
         uint8_t rr = imu.resetReason();
@@ -197,16 +191,16 @@ void BNO080Sensor::sendData()
 void BNO080Sensor::startCalibration(int calibrationType)
 {
     // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
-    LEDMGR::Pattern(CALIBRATING_LED, 20, 20, 10);
-    LEDMGR::Blink(CALIBRATING_LED, 2000);
+    LEDManager::pattern(CALIBRATING_LED, 20, 20, 10);
+    LEDManager::blink(CALIBRATING_LED, 2000);
     imu.calibrateGyro();
     do
     {
-        LEDMGR::On(CALIBRATING_LED);
+        LEDManager::on(CALIBRATING_LED);
         imu.requestCalibrationStatus();
         delay(20);
         imu.getReadings();
-        LEDMGR::Off(CALIBRATING_LED);
+        LEDManager::off(CALIBRATING_LED);
         delay(20);
     } while (!imu.calibrationComplete());
     imu.saveCalibration();

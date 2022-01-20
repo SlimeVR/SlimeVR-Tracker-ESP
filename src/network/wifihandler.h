@@ -20,19 +20,22 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_LEDSTATUS_H_
-#define SLIMEVR_LEDSTATUS_H_
 
-#include "defines.h"
-#include "Arduino.h"
+#ifndef SLIMEVR_WIFI_H_
+#define SLIMEVR_WIFI_H_
 
-#define LED_STATUS_SERVER_CONNECTING 2
-#define LED_STATUS_WIFI_CONNECTING 4
-#define LED_STATUS_LOW_BATTERY 128
-#define LED_STATUS_IMU_ERROR 256
+#include "configuration.h"
+#ifdef ESP8266
+    #include <ESP8266WiFi.h>
+#else
+    #include <WiFi.h>
+#endif
 
-void setLedStatus(uint32_t status);
-void unsetLedStatus(uint32_t status);
-void ledStatusUpdate();
+namespace Network {
+    bool isWiFiConnected();
+    void setUpWiFi();
+    void wifiUpkeep();
+    void setWiFiCredentials(const char * SSID, const char * pass);
+}
 
-#endif // SLIMEVR_LEDSTATUS_H_
+#endif // SLIMEVR_WIFI_H_

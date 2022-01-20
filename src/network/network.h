@@ -20,11 +20,11 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_NETWORK_H_
+#define SLIMEVR_NETWORK_H_
 
-#ifndef SLIMEVR_SERIALCOMMANDS_H_
-#define SLIMEVR_SERIALCOMMANDS_H_
+#include "wifihandler.h"
+#include "udpclient.h"
+#include "packets.h"
 
-void setUpSerialCommands();
-void serialCommandsUpdate();
-
-#endif // SLIMEVR_SERIALCOMMANDS_H_
+#endif // SLIMEVR_NETWORK_H_

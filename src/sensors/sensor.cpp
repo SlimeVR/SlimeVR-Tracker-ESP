@@ -21,7 +21,7 @@
     THE SOFTWARE.
 */
 #include "sensor.h"
-#include "udpclient.h"
+#include "network/network.h"
 #include <i2cscan.h>
 #include "calibration.h"
 

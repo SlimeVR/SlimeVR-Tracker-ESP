@@ -21,14 +21,12 @@
     THE SOFTWARE.
 */
 
-#ifndef SLIMEVR_WIFI_H_
-#define SLIMEVR_WIFI_H_
+#ifndef SLIMEVR_SERIALCOMMANDS_H_
+#define SLIMEVR_SERIALCOMMANDS_H_
 
-#include "configuration.h"
+namespace SerialCommands {
+    void setUp();
+    void update();
+}
 
-bool isWiFiConnected();
-void setUpWiFi();
-void wifiUpkeep();
-void setWiFiCredentials(const char * SSID, const char * pass);
-
-#endif // SLIMEVR_WIFI_H_
+#endif // SLIMEVR_SERIALCOMMANDS_H_

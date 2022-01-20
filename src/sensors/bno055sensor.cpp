@@ -21,15 +21,9 @@
     THE SOFTWARE.
 */
 #include "bno055sensor.h"
-#include "udpclient.h"
+#include "network/network.h"
 #include "defines.h"
 #include "ledmgr.h"
-
-namespace {
-    void signalAssert() {
-        LEDMGR::Pattern(LOADING_LED, 50, 50, 200);
-    }
-}
 
 void BNO055Sensor::motionSetup() {
     imu = Adafruit_BNO055(sensorId, addr);
@@ -38,7 +32,7 @@ void BNO055Sensor::motionSetup() {
     {
         Serial.print("[ERR] IMU BNO055: Can't connect to ");
         Serial.println(getIMUNameByType(sensorType));
-        signalAssert();
+        LEDManager::signalAssert();
         return;
     }
 
