@@ -152,7 +152,7 @@ void ICM20948Sensor::motionSetup() {
     #ifdef FULL_DEBUG
         imu.enableDebugging(Serial);
     #endif
-    if (imu.begin(Wire, addr) != ICM_20948_Stat_Ok) {
+    if (imu.begin(Wire, auxiliary) != ICM_20948_Stat_Ok) {
         Serial.print("[ERR] IMU ICM20948: Can't connect to ");
         Serial.println(IMU_NAME);
         signalAssert();
