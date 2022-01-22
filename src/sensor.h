@@ -34,6 +34,9 @@
 #include <Adafruit_BNO055.h>
 #include "defines.h"
 #include <arduino-timer.h> // Used for periodically saving bias
+#ifdef ESP32
+    #include <Preferences.h> // ICM bias saving. ESP8266 use eprom
+#endif
 
 
 #define DATA_TYPE_NORMAL 1
