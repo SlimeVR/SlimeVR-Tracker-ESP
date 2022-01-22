@@ -199,7 +199,7 @@ private:
     ICM_20948_Device_t pdev;
     icm_20948_DMP_data_t dmpData {};
 
-    #define OVERRIDEDMPSETUP false
+    #define OVERRIDEDMPSETUP true
 #ifdef ESP32
     Preferences prefs;
     Timer<> timer = timer_create_default();
