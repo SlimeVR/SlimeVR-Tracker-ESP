@@ -527,8 +527,7 @@ void ICM20948Sensor::motionLoop() {
     timer.tick();
 
     ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
-    //if(readStatus == ICM_20948_Stat_Ok || ICM_20948_Stat_FIFOMoreDataAvail)
-    if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail)
+    if((readStatus == ICM_20948_Stat_FIFOMoreDataAvail) || (readStatus == ICM_20948_Stat_Ok))
         {
             if (USE_6_AXIS)
             {
