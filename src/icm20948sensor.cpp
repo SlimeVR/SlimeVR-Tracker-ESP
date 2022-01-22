@@ -80,55 +80,141 @@ void ICM20948Sensor::i2c_scan() { // Basically obsolete but kept for when adding
 }
 
 void ICM20948Sensor::save_bias(bool repeat) { 
-    #if defined(SAVE_BIAS) && SAVE_BIAS && ESP8266
-        int8_t count;
-        int32_t bias_a[3], bias_g[3], bias_m[3];
+    #if defined(SAVE_BIAS) && SAVE_BIAS
+        #if ESP8266
+            int8_t count;
+            int32_t bias_a[3], bias_g[3], bias_m[3];
 
-        imu.GetBiasGyroX(&bias_g[0]);
-        imu.GetBiasGyroY(&bias_g[1]);
-        imu.GetBiasGyroZ(&bias_g[2]);
+            imu.GetBiasGyroX(&bias_g[0]);
+            imu.GetBiasGyroY(&bias_g[1]);
+            imu.GetBiasGyroZ(&bias_g[2]);
 
-        imu.GetBiasAccelX(&bias_a[0]);
-        imu.GetBiasAccelY(&bias_a[1]);
-        imu.GetBiasAccelZ(&bias_a[2]);
+            imu.GetBiasAccelX(&bias_a[0]);
+            imu.GetBiasAccelY(&bias_a[1]);
+            imu.GetBiasAccelZ(&bias_a[2]);
 
-        imu.GetBiasCPassX(&bias_m[0]);
-        imu.GetBiasCPassY(&bias_m[1]);
-        imu.GetBiasCPassZ(&bias_m[2]);
+            imu.GetBiasCPassX(&bias_m[0]);
+            imu.GetBiasCPassY(&bias_m[1]);
+            imu.GetBiasCPassZ(&bias_m[2]);
 
-        bool gyro_set  = bias_g[0] && bias_g[1] && bias_g[2];
-        bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
-        bool CPass_set = bias_m[0] && bias_m[1] && bias_m[2];
+            bool gyro_set  = bias_g[0] && bias_g[1] && bias_g[2];
+            bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
+            bool CPass_set = bias_m[0] && bias_m[1] && bias_m[2];
 
-        EEPROM.begin(4096); // max memory usage = 4096
-        EEPROM.get(addr + 100, count); // 1st imu counter in EEPROM addr: 0x69+100=205, 2nd addr: 0x68+100=204
-        Serial.printf("[0x%02X] EEPROM position: %d, count: %d \n", addr, addr + 100, count);
-        if (count < 0 || count > 42) {
-            count = (int)auxiliary; // 1st imu counter is even number, 2nd is odd
-        } else if (repeat) {
-            count++;
-        }
-        EEPROM.put(addr + 100, count);
-        Serial.printf("[0x%02X] bias gyro  save(%d): [%d, %d, %d] \n", addr, count * 12, bias_g[0], bias_g[1], bias_g[2]);
-        Serial.printf("[0x%02X] bias accel save(%d): [%d, %d, %d] \n", addr, count * 12, bias_a[0], bias_a[1], bias_a[2]);
-        Serial.printf("[0x%02X] bias CPass save(%d): [%d, %d, %d] \n\n", addr, count * 12, bias_m[0], bias_m[1], bias_m[2]);
-        if (gyro_set) {
-            EEPROM.put(1024 + (count * 12), bias_g); // 1024 ~ 2008
-        }
-        if (accel_set) {
-            EEPROM.put(2046 + (count * 12), bias_a); // 2046 ~ 3030
-        }
-        if (CPass_set) {
-            EEPROM.put(3072 + (count * 12), bias_m); // 3072 ~ 4056
-        }
-        EEPROM.end(); // save and end
-        if (repeat) {
-            bias_save_counter++;
-            // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
-            if (sizeof(bias_save_periods) != bias_save_counter) {
-                timer.in(bias_save_periods[bias_save_counter] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
+            EEPROM.begin(4096); // max memory usage = 4096
+            EEPROM.get(addr + 100, count); // 1st imu counter in EEPROM addr: 0x69+100=205, 2nd addr: 0x68+100=204
+            Serial.printf("[0x%02X] EEPROM position: %d, count: %d \n", addr, addr + 100, count);
+            if (count < 0 || count > 42) {
+                count = (int)auxiliary; // 1st imu counter is even number, 2nd is odd
+            } else if (repeat) {
+                count++;
             }
-        }
+            EEPROM.put(addr + 100, count);
+            Serial.printf("[0x%02X] bias gyro  save(%d): [%d, %d, %d] \n", addr, count * 12, bias_g[0], bias_g[1], bias_g[2]);
+            Serial.printf("[0x%02X] bias accel save(%d): [%d, %d, %d] \n", addr, count * 12, bias_a[0], bias_a[1], bias_a[2]);
+            Serial.printf("[0x%02X] bias CPass save(%d): [%d, %d, %d] \n\n", addr, count * 12, bias_m[0], bias_m[1], bias_m[2]);
+            if (gyro_set) {
+                EEPROM.put(1024 + (count * 12), bias_g); // 1024 ~ 2008
+            }
+            if (accel_set) {
+                EEPROM.put(2046 + (count * 12), bias_a); // 2046 ~ 3030
+            }
+            if (CPass_set) {
+                EEPROM.put(3072 + (count * 12), bias_m); // 3072 ~ 4056
+            }
+            EEPROM.end(); // save and end
+            if (repeat) {
+                bias_save_counter++;
+                // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
+                if (sizeof(bias_save_periods) != bias_save_counter) {
+                    timer.in(bias_save_periods[bias_save_counter] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
+                }
+            }
+        #elif ESP32
+
+            int bias_a[3], bias_g[3], bias_m[3];
+        
+            imu.GetBiasGyroX(&bias_g[0]);
+            imu.GetBiasGyroY(&bias_g[1]);
+            imu.GetBiasGyroZ(&bias_g[2]);
+
+            imu.GetBiasAccelX(&bias_a[0]);
+            imu.GetBiasAccelY(&bias_a[1]);
+            imu.GetBiasAccelZ(&bias_a[2]);
+
+            imu.GetBiasCPassX(&bias_m[0]);
+            imu.GetBiasCPassY(&bias_m[1]);
+            imu.GetBiasCPassZ(&bias_m[2]);
+
+            bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
+            bool gyro_set = bias_g[0] && bias_g[1] && bias_g[2];
+            bool mag_set = bias_m[0] && bias_m[1] && bias_m[2];
+                
+            #ifdef FULL_DEBUG
+            Serial.println("bias gyro result:");
+            Serial.println(bias_g[0]); 
+            Serial.println(bias_g[1]);
+            Serial.println(bias_g[2]);
+            Serial.println("end gyro");  
+            
+            Serial.println("bias accel result:");  
+            Serial.println(bias_a[0]); 
+            Serial.println(bias_a[1]);
+            Serial.println(bias_a[2]);
+            Serial.println("end accel");   
+            
+            Serial.println("bias mag result:");
+            Serial.println(bias_m[0]); 
+            Serial.println(bias_m[1]);
+            Serial.println(bias_m[2]);
+            Serial.println("end mag"); 
+            #endif
+            
+            if (accel_set) {
+            // Save accel
+            prefs.putInt(auxiliary ? "ba01" : "ba00", bias_a[0]);
+            prefs.putInt(auxiliary ? "ba11" : "ba10", bias_a[1]);
+            prefs.putInt(auxiliary ? "ba21" : "ba20", bias_a[2]);
+
+            #ifdef FULL_DEBUG
+                    Serial.println("Wrote Accel Bias");
+            #endif
+            }
+            
+            if (gyro_set) {
+            // Save gyro
+            prefs.putInt(auxiliary ? "bg01" : "bg00", bias_g[0]);
+            prefs.putInt(auxiliary ? "bg11" : "bg10", bias_g[1]);
+            prefs.putInt(auxiliary ? "bg21" : "bg20", bias_g[2]);
+
+            #ifdef FULL_DEBUG
+                Serial.println("Wrote Gyro Bias");
+            #endif
+            }
+
+            if (mag_set) {
+            // Save mag
+            prefs.putInt(auxiliary ? "bm01" : "bm00", bias_m[0]);
+            prefs.putInt(auxiliary ? "bm11" : "bm10", bias_m[1]);
+            prefs.putInt(auxiliary ? "bm21" : "bm20", bias_m[2]);
+
+            #ifdef FULL_DEBUG
+                Serial.println("Wrote Mag Bias");
+            #endif
+            }    
+        #endif  
+
+            if (repeat) {
+                bias_save_counter++;
+                // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
+                if (sizeof(bias_save_periods) != bias_save_counter)
+                {
+                    timer.in(bias_save_periods[bias_save_counter] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
+                }
+            }
+
+        
+
     #endif
 }
 
@@ -439,24 +525,14 @@ void ICM20948Sensor::motionSetup() {
 
 void ICM20948Sensor::motionLoop() {
     timer.tick();
-    if(imu.dataReady())
-    {
-        lastReset = -1;
-        lastData = millis();
-    }
-    
+    // if(imu.dataReady())
+    // {
+    //     lastReset = -1;
+    //     lastData = millis();
+    // }
 
-    if (lastData + 1000 < millis()) {
-        working = false;
-        lastData = millis();        
-        Serial.print("[ERR] Sensor timeout ");
-        Serial.println(addr);
-    }
-}
-
-void ICM20948Sensor::sendData() { 
     ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
-        if(readStatus == ICM_20948_Stat_Ok || ICM_20948_Stat_FIFOMoreDataAvail)
+        if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail)
         {
             if (USE_6_AXIS)
             {
@@ -498,16 +574,41 @@ void ICM20948Sensor::sendData() {
                     sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, auxiliary, PACKET_ROTATION_DATA);
                 }
             }
+            lastReset = -1;
+            lastData = millis();
+        }
+    
+
+    if (lastData + 1000 < millis()) {
+        working = false;
+        lastData = millis();        
+        Serial.print("[ERR] Sensor timeout ");
+        Serial.println(addr);
+    }
+}
+
+void ICM20948Sensor::sendData() { 
+    ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
+        if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail)
+        {
+            if (USE_6_AXIS)
+            {
+                sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, auxiliary, PACKET_ROTATION_DATA);
+            }
+            else
+            {
+                sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, auxiliary, PACKET_ROTATION_DATA);
+            }
         }
 }
 
 void ICM20948Sensor::startCalibration(int calibrationType) {
     // 20948 does continuous calibration
 
-    // TODO If ESP32, manually force a new save
-    // #ifdef ESP32
-    //     save_bias(false);
-    // #endif
+    // If ESP32, manually force a new save
+    #ifdef ESP32
+        save_bias(false);
+    #endif
     // If 8266, save the current bias values to eeprom
     #ifdef ESP8266
         // Types are int, device config saves float - need to save and load like mpu6050 does
