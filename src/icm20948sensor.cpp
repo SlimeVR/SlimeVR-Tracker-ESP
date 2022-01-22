@@ -525,14 +525,10 @@ void ICM20948Sensor::motionSetup() {
 
 void ICM20948Sensor::motionLoop() {
     timer.tick();
-    // if(imu.dataReady())
-    // {
-    //     lastReset = -1;
-    //     lastData = millis();
-    // }
 
     ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
-        if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail)
+    //if(readStatus == ICM_20948_Stat_Ok || ICM_20948_Stat_FIFOMoreDataAvail)
+    if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail)
         {
             if (USE_6_AXIS)
             {
@@ -551,7 +547,7 @@ void ICM20948Sensor::motionLoop() {
                     quaternion.y = q2;
                     quaternion.z = q3;
                     quaternion *= sensorOffset; //imu rotation
-                    sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, auxiliary, PACKET_ROTATION_DATA);
+                    newData = true;
                 }
             }
             else
@@ -571,7 +567,7 @@ void ICM20948Sensor::motionLoop() {
                     quaternion.y = q2;
                     quaternion.z = q3;
                     quaternion *= sensorOffset; //imu rotation
-                    sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, auxiliary, PACKET_ROTATION_DATA);
+                    newData = true;
                 }
             }
             lastReset = -1;
@@ -588,9 +584,9 @@ void ICM20948Sensor::motionLoop() {
 }
 
 void ICM20948Sensor::sendData() { 
-    ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
-        if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail)
+        if(newData)
         {
+            newData = false;
             if (USE_6_AXIS)
             {
                 sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, auxiliary, PACKET_ROTATION_DATA);
