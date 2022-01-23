@@ -221,14 +221,24 @@ void ICM20948Sensor::save_bias(bool repeat) {
 void ICM20948Sensor::setupICM20948(bool auxiliary, uint8_t addr) {
     this->addr = addr;
     this->auxiliary = auxiliary;
-    this->sensorOffset = {Quat(Vector3(0, 0, 1), ((int)auxiliary) == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
-    if(auxiliary)
+    
+    if(SECOND_IMU)
     {
-        Serial.println("2nd IMU setup");
-        second_imu = addr;
+        this->sensorOffset = {Quat(Vector3(0, 0, 1), ((int)auxiliary) == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
+        if(auxiliary)
+        {
+            Serial.println("2nd IMU setup");
+            second_imu = addr;
+        }
+        else
+        {
+            Serial.println("1st IMU setup");
+            first_imu = addr;
+        }
     }
     else
     {
+        this->sensorOffset = {Quat(Vector3(0, 0, 1), IMU_ROTATION)};
         Serial.println("1st IMU setup");
         first_imu = addr;
     }
