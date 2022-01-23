@@ -154,7 +154,7 @@ void setup()
         }
     #else
     uint8_t addr =I2CSCAN::pickDevice(ICM_ADDR_1, ICM_ADDR_2, true);
-    sensor.setupICM20948(addr == ICM_ADDR_2, addr);
+    sensor.setupICM20948(false, addr);
     #endif
 #endif
 
