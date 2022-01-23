@@ -566,7 +566,7 @@ void clientUpdate(Sensor * const sensor, Sensor * const sensor2)
                     break;
                 case PACKET_RECEIVE_HANDSHAKE:
                     // Assume handshake successful
-                    Serial.println("Handshale received again, ignoring");
+                    Serial.println("Handshake received again, ignoring");
                     break;
                 case PACKET_RECEIVE_COMMAND:
                     if (len < 6)
@@ -664,7 +664,7 @@ void connectClient()
 #ifndef SEND_UPDATES_UNCONNECTED
                 digitalWrite(LOADING_LED, HIGH);
 #endif
-                Serial.printf("[Handshake] Handshale successful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
+                Serial.printf("[Handshake] Handshake successful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
             default:
             continue;
