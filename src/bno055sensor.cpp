@@ -37,8 +37,15 @@ namespace {
     }
 }
 
+void BNO055Sensor::setupBNO055(uint8_t sensorId, uint8_t addr, uint8_t intPin) {
+    this->addr = addr;
+    this->intPin = intPin;
+    this->sensorId = sensorId;
+    this->imu = Adafruit_BNO055(this->sensorId, this->addr);
+    
+}
+
 void BNO055Sensor::motionSetup() {
-    delay(3000);
     if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS))
     {
         /* There was a problem detecting the BNO055 ... check your connections */
@@ -46,12 +53,11 @@ void BNO055Sensor::motionSetup() {
         signalAssert();
         return;
     }
-
-    delay(1000);
     imu.setExtCrystalUse(false);
     imu.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
     imu.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
     Serial.println("Connected to BNO055");
+    working = true;
 }
 
 void BNO055Sensor::motionLoop() {
@@ -68,9 +74,10 @@ void BNO055Sensor::motionLoop() {
 void BNO055Sensor::sendData() {
     if(newData) {
         newData = false;
-        sendQuat(&quaternion, PACKET_ROTATION);
+        //sendQuat(&quaternion, PACKET_ROTATION);
+        sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId, PACKET_ROTATION_DATA);
         #ifdef FULL_DEBUG
-            Serial.print("Quaternion: ");
+            Serial.printf("SensorID: %d -> Quaternion: ", sensorId);
             Serial.print(quaternion.x);
             Serial.print(",");
             Serial.print(quaternion.y);
@@ -78,6 +85,7 @@ void BNO055Sensor::sendData() {
             Serial.print(quaternion.z);
             Serial.print(",");
             Serial.print(quaternion.w);
+            Serial.printf("\n");
         #endif
     }
 }

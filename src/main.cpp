@@ -41,6 +41,10 @@
     #endif
 #elif IMU == IMU_BNO055
     BNO055Sensor sensor{};
+    #if defined(PIN_IMU_INT_2)
+        #define HAS_SECOND_IMU true    
+        BNO055Sensor sensor2{};
+    #endif
 #elif IMU == IMU_MPU9250
     MPU9250Sensor sensor{};
 #elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
@@ -121,6 +125,21 @@ void setup()
         }
     #else
     sensor.setupBNO080(0, I2CSCAN::pickDevice(0x4A, 0x4B, true), PIN_IMU_INT);
+    #endif
+#endif
+#if IMU == IMU_BNO055
+    #ifdef HAS_SECOND_IMU
+        uint8_t first = I2CSCAN::pickDevice(0x29, 0x28, true);
+        uint8_t second = I2CSCAN::pickDevice(0x28, 0x29, false);
+        if(first != second) {
+            sensor.setupBNO055(0, first, PIN_IMU_INT);
+            sensor2.setupBNO055(1, second, PIN_IMU_INT_2);
+            secondImuActive = true;
+        } else {
+            sensor.setupBNO055(0, first, PIN_IMU_INT);
+        }
+    #else
+    sensor.setupBNO055(0, I2CSCAN::pickDevice(0x29, 0x28, true), PIN_IMU_INT);
     #endif
 #endif
 #if IMU == IMU_MPU6050 || IMU == IMU_MPU6500

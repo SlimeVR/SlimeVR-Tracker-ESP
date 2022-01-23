@@ -96,12 +96,15 @@ class BNO055Sensor : public Sensor {
     public:
         BNO055Sensor() = default;
         ~BNO055Sensor() override = default;
+        void setupBNO055(uint8_t sensorId, uint8_t addr, uint8_t intPin);
         void motionSetup() override final;
         void motionLoop() override final;
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
     private:
-        Adafruit_BNO055  imu {Adafruit_BNO055(55, 0x28)};
+        Adafruit_BNO055  imu {};
+        uint8_t addr = 0x28;
+        uint8_t intPin = 255;
         bool newData {false};
 };
 
