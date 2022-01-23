@@ -77,15 +77,14 @@ void BNO055Sensor::sendData() {
         //sendQuat(&quaternion, PACKET_ROTATION);
         sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId, PACKET_ROTATION_DATA);
         #ifdef FULL_DEBUG
-            Serial.printf("SensorID: %d -> Quaternion: ", sensorId);
+            Serial.printf("Quaternion: ");
             Serial.print(quaternion.x);
             Serial.print(",");
             Serial.print(quaternion.y);
             Serial.print(",");
             Serial.print(quaternion.z);
             Serial.print(",");
-            Serial.print(quaternion.w);
-            Serial.printf("\n");
+            Serial.println(quaternion.w);
         #endif
     }
 }
