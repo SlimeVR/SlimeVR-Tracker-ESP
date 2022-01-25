@@ -23,7 +23,7 @@
 
 #include "mpu9250sensor.h"
 #include "network/network.h"
-#include "defines.h"
+#include "globals.h"
 #include "helper_3dmath.h"
 #include <i2cscan.h>
 #include "calibration.h"

@@ -28,7 +28,7 @@
 #include <quat.h>
 #include <vector3.h>
 #include "configuration.h"
-#include "defines.h"
+#include "globals.h"
 
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2

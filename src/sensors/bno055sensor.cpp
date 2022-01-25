@@ -22,7 +22,7 @@
 */
 #include "bno055sensor.h"
 #include "network/network.h"
-#include "defines.h"
+#include "globals.h"
 #include "ledmgr.h"
 
 void BNO055Sensor::motionSetup() {

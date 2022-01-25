@@ -24,7 +24,7 @@
 #define SLIMEVR_BATTERYMONITOR_H_
 
 #include <Arduino.h>
-#include "defines.h"
+#include "globals.h"
 #include "network/network.h"
 #include <i2cscan.h>
 #include <i2cdev.h>

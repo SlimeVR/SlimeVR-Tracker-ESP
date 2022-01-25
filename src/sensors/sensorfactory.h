@@ -23,7 +23,7 @@
 #ifndef SLIMEVR_SENSORFACTORY_H_
 #define SLIMEVR_SENSORFACTORY_H_
 
-#include "defines.h"
+#include "globals.h"
 #include "sensor.h"
 
 class SensorFactory

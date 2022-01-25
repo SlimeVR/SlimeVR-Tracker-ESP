@@ -26,7 +26,7 @@
 #include "sensors/sensorfactory.h"
 #include "configuration.h"
 #include "network/network.h"
-#include "defines.h"
+#include "globals.h"
 #include "credentials.h"
 #include <i2cscan.h>
 #include "serial/serialcommands.h"

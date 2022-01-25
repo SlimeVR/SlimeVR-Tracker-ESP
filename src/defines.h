@@ -20,15 +20,10 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-
 // ================================================
 // See docs for configuration options and examples:
 // https://docs.slimevr.dev/configuring-project.html#configuring-definesh
 // ================================================
-#ifndef SLIMEVR_DEFINES_H_
-#define SLIMEVR_DEFINES_H_
-#include "consts.h"
-#include "debug.h"
 
 // Set parameters of IMU and board used
 #define IMU IMU_BNO085
@@ -76,5 +71,3 @@
   #define PIN_IMU_INT_2 25
   #define PIN_BATTERY_LEVEL 36
 #endif
-
-#endif // SLIMEVR_DEFINES_H_

@@ -20,23 +20,23 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_GLOBALS_H_
+#define SLIMEVR_GLOBALS_H_
 
-#ifndef SLIMEVR_UDP_CLIENT_H_
-#define SLIMEVR_UDP_CLIENT_H_
+#include "consts.h"
+#include "debug.h"
+#include "defines.h"
 
-#include <WiFiUdp.h>
-#include <Arduino.h>
-#include "quat.h"
-#include "configuration.h"
-#include "sensors/sensor.h"
-#include "wifihandler.h"
-#include "globals.h"
+#ifndef SECOND_IMU
+#define SECOND_IMU IMU
+#endif
 
-namespace Network {
-    void connect();
-    void update(Sensor * const sensor, Sensor * const sensor2);
-    void onWiFiConnected();
-    bool isConnected();
-}
+#ifndef SECOND_IMU_ROTATION
+#define SECOND_IMU_ROTATION IMU_ROTATION
+#endif
 
-#endif // SLIMEVR_UDP_CLIENT_H_
+#ifndef BATTERY_MONITOR
+#define BATTERY_MONITOR BAT_INTERNAL
+#endif
+
+#endif // SLIMEVR_GLOBALS_H_

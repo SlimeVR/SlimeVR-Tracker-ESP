@@ -23,7 +23,7 @@
 
 #include "wifihandler.h"
 #include "udpclient.h"
-#include "defines.h"
+#include "globals.h"
 #include "ledmgr.h"
 
 unsigned long lastWifiReportTime = 0;

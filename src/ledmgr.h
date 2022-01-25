@@ -24,7 +24,7 @@
 #define SLIMEVR_LEDMGR_H_
 
 #include <Arduino.h>
-#include "defines.h"
+#include "globals.h"
 
 #define LED_STATUS_SERVER_CONNECTING 2
 #define LED_STATUS_WIFI_CONNECTING 4

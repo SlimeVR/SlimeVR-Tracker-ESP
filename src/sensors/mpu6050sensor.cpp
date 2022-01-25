@@ -21,7 +21,7 @@
     THE SOFTWARE.
 */
 
-#include "defines.h"
+#include "globals.h"
 
 #ifdef IMU_MPU6050_RUNTIME_CALIBRATION
 #include "MPU6050_6Axis_MotionApps_V6_12.h"
