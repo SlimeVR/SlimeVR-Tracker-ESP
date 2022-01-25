@@ -29,21 +29,22 @@
 
 WiFiUDP Udp;
 unsigned char incomingPacket[128]; // buffer for incoming packets
-uint64_t packetNumber = 1;
+uint64_t packetNumber = 0;
 unsigned char handshake[12] = {0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
 
 int port = 6969;
 IPAddress host = IPAddress(255, 255, 255, 255);
-bool connected = false;
 unsigned long lastConnectionAttemptMs;
 unsigned long lastPacketMs;
 
-uint8_t serialBuffer[128];
-size_t serialLength = 0;
+bool connected = false;
 
 uint8_t sensorStateNotified1 = 0;
 uint8_t sensorStateNotified2 = 0;
 unsigned long lastSensorInfoPacket = 0;
+
+uint8_t serialBuffer[128];
+size_t serialLength = 0;
 
 unsigned char buf[8];
 
@@ -332,93 +333,7 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     }
 }
 
-void Network::onWiFiConnected() {
-    Udp.begin(port);
-    connected = false;
-    LEDManager::setLedStatus(LED_STATUS_SERVER_CONNECTING);
-}
-
-void Network::update(Sensor * const sensor, Sensor * const sensor2)
-{
-    wifiUpkeep();
-    if (isWiFiConnected())
-    {
-        if(connected) {
-            int packetSize = Udp.parsePacket();
-            if (packetSize)
-            {
-                lastPacketMs = millis();
-                int len = Udp.read(incomingPacket, sizeof(incomingPacket));
-                // receive incoming UDP packets
-                #if serialDebug == true
-                    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
-                    Serial.print("UDP packet contents: ");
-                    for (int i = 0; i < len; ++i)
-                        Serial.print((byte)incomingPacket[i]);
-                    Serial.println();
-                #endif
-
-                switch (convert_chars<int>(incomingPacket))
-                {
-                case PACKET_RECEIVE_HEARTBEAT:
-                    Network::sendHeartbeat();
-                    break;
-                case PACKET_RECEIVE_VIBRATE:
-                    
-                    break;
-                case PACKET_RECEIVE_HANDSHAKE:
-                    // Assume handshake successful
-                    Serial.println("Handshale received again, ignoring");
-                    break;
-                case PACKET_RECEIVE_COMMAND:
-                    
-                    break;
-                case PACKET_CONFIG:
-                    
-                    break;
-                case PACKET_PING_PONG:
-                    returnLastPacket(len);
-                    break;
-                case PACKET_SENSOR_INFO:
-                    if(len < 6) {
-                        Serial.println("Wrong sensor info packet");
-                        break;
-                    }
-                    if(incomingPacket[4] == 0) {
-                        sensorStateNotified1 = incomingPacket[5];
-                    } else if(incomingPacket[4] == 1) {
-                        sensorStateNotified2 = incomingPacket[5];
-                    }
-                    break;
-                }
-            }
-            //while(Serial.available()) {
-            //    size_t bytesRead = Serial.readBytes(serialBuffer, min(Serial.available(), sizeof(serialBuffer)));
-            //    sendSerial(serialBuffer, bytesRead, PACKET_SERIAL);
-            //}
-            if(lastPacketMs + TIMEOUT < millis())
-            {
-                LEDManager::setLedStatus(LED_STATUS_SERVER_CONNECTING);
-                connected = false;
-                sensorStateNotified1 = false;
-                sensorStateNotified2 = false;
-                Serial.println("Connection to server timed out");
-            }
-        }
-            
-        if(!connected) {
-            connect();
-        } else if(sensorStateNotified1 != sensor->isWorking() || sensorStateNotified2 != sensor2->isWorking()) {
-            updateSensorState(sensor, sensor2);
-        }
-    }
-}
-
-bool Network::isConnected() {
-    return connected;
-}
-
-void Network::connect()
+void ServerConnection::connect()
 {
     unsigned long now = millis();
     while(true) {
@@ -462,7 +377,7 @@ void Network::connect()
     {
         lastConnectionAttemptMs = now;
         Serial.println("Looking for the server...");
-        sendHandshake();
+        Network::sendHandshake();
 #ifndef SEND_UPDATES_UNCONNECTED
         LEDManager::on(LOADING_LED);
 #endif
@@ -474,3 +389,81 @@ void Network::connect()
     }
 #endif
 }
+
+void ServerConnection::resetConnection() {
+    Udp.begin(port);
+    connected = false;
+    LEDManager::setLedStatus(LED_STATUS_SERVER_CONNECTING);
+}
+
+void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
+    if(connected) {
+        int packetSize = Udp.parsePacket();
+        if (packetSize)
+        {
+            lastPacketMs = millis();
+            int len = Udp.read(incomingPacket, sizeof(incomingPacket));
+            // receive incoming UDP packets
+            #if serialDebug == true
+                Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+                Serial.print("UDP packet contents: ");
+                for (int i = 0; i < len; ++i)
+                    Serial.print((byte)incomingPacket[i]);
+                Serial.println();
+            #endif
+
+            switch (convert_chars<int>(incomingPacket))
+            {
+            case PACKET_RECEIVE_HEARTBEAT:
+                Network::sendHeartbeat();
+                break;
+            case PACKET_RECEIVE_VIBRATE:
+                
+                break;
+            case PACKET_RECEIVE_HANDSHAKE:
+                // Assume handshake successful
+                Serial.println("Handshale received again, ignoring");
+                break;
+            case PACKET_RECEIVE_COMMAND:
+                
+                break;
+            case PACKET_CONFIG:
+                
+                break;
+            case PACKET_PING_PONG:
+                returnLastPacket(len);
+                break;
+            case PACKET_SENSOR_INFO:
+                if(len < 6) {
+                    Serial.println("Wrong sensor info packet");
+                    break;
+                }
+                if(incomingPacket[4] == 0) {
+                    sensorStateNotified1 = incomingPacket[5];
+                } else if(incomingPacket[4] == 1) {
+                    sensorStateNotified2 = incomingPacket[5];
+                }
+                break;
+            }
+        }
+        //while(Serial.available()) {
+        //    size_t bytesRead = Serial.readBytes(serialBuffer, min(Serial.available(), sizeof(serialBuffer)));
+        //    sendSerial(serialBuffer, bytesRead, PACKET_SERIAL);
+        //}
+        if(lastPacketMs + TIMEOUT < millis())
+        {
+            LEDManager::setLedStatus(LED_STATUS_SERVER_CONNECTING);
+            connected = false;
+            sensorStateNotified1 = false;
+            sensorStateNotified2 = false;
+            Serial.println("Connection to server timed out");
+        }
+    }
+        
+    if(!connected) {
+        connect();
+    } else if(sensorStateNotified1 != sensor->isWorking() || sensorStateNotified2 != sensor2->isWorking()) {
+        updateSensorState(sensor, sensor2);
+    }
+}
+

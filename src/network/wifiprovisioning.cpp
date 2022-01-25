@@ -20,18 +20,34 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_NETWORK_H_
-#define SLIMEVR_NETWORK_H_
+#include "network.h"
 
-#include "globals.h"
-#include "wifihandler.h"
-#include "udpclient.h"
-#include "packets.h"
-#include "wifiprovisioning.h"
+// TODO Currently provisioning implemented via SmartConfig
+// it sucks.
+// TODO: New implementation: https://github.com/SlimeVR/SlimeVR-Tracker-ESP/issues/71
 
-namespace Network {
-    void update(Sensor * const sensor, Sensor * const sensor2);
-    void setUp();
+bool provisioning = false;
+
+void WiFiNetwork::upkeepProvisioning() {
+    // Called even when not provisioning to do things like provide neighbours or other upkeep
 }
 
-#endif // SLIMEVR_NETWORK_H_
+void WiFiNetwork::startProvisioning() {
+    if(WiFi.beginSmartConfig()) {
+        provisioning = true;
+        Serial.println("[NOTICE] WiFi: SmartConfig started");
+    }
+}
+
+void WiFiNetwork::stopProvisioning() {
+    WiFi.stopSmartConfig();
+    provisioning = false;
+}
+
+void WiFiNetwork::provideNeighbours() {
+    // TODO: SmartConfig can't do this, created for future
+}
+
+bool WiFiNetwork::isProvisioning() {
+    return provisioning && !WiFi.smartConfigDone();
+}

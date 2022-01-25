@@ -20,18 +20,24 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_NETWORK_H_
-#define SLIMEVR_NETWORK_H_
+#include "network.h"
+#include "ledmgr.h"
 
-#include "globals.h"
-#include "wifihandler.h"
-#include "udpclient.h"
-#include "packets.h"
-#include "wifiprovisioning.h"
+bool lastWifiConnected = false;
 
-namespace Network {
-    void update(Sensor * const sensor, Sensor * const sensor2);
-    void setUp();
+void Network::setUp() {
+    WiFiNetwork::setUp();
 }
 
-#endif // SLIMEVR_NETWORK_H_
+void Network::update(Sensor * const sensor, Sensor * const sensor2) {
+    WiFiNetwork::upkeep();
+    if(WiFiNetwork::isConnected()) {
+        if(lastWifiConnected == false) {
+            lastWifiConnected = true;
+            ServerConnection::resetConnection(); // WiFi was reconnected, reconnect to the server
+        }
+        ServerConnection::update(sensor, sensor2);
+    } else {
+        lastWifiConnected = false;
+    }
+}

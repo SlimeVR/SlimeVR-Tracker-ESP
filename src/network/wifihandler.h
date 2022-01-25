@@ -20,7 +20,6 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-
 #ifndef SLIMEVR_WIFI_H_
 #define SLIMEVR_WIFI_H_
 
@@ -31,10 +30,10 @@
     #include <WiFi.h>
 #endif
 
-namespace Network {
-    bool isWiFiConnected();
-    void setUpWiFi();
-    void wifiUpkeep();
+namespace WiFiNetwork {
+    bool isConnected();
+    void setUp();
+    void upkeep();
     void setWiFiCredentials(const char * SSID, const char * pass);
 }
 

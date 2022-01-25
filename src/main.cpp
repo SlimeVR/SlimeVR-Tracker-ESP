@@ -75,8 +75,8 @@ void setup()
     
     sensors.create();
     sensors.motionSetup();
-
-    Network::setUpWiFi();
+    
+    Network::setUp();
     OTA::otaSetup(otaPassword);
     battery.Setup();
     LEDManager::off(LOADING_LED);

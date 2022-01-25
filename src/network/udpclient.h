@@ -20,7 +20,6 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-
 #ifndef SLIMEVR_UDP_CLIENT_H_
 #define SLIMEVR_UDP_CLIENT_H_
 
@@ -32,10 +31,10 @@
 #include "wifihandler.h"
 #include "globals.h"
 
-namespace Network {
+namespace ServerConnection {
     void connect();
     void update(Sensor * const sensor, Sensor * const sensor2);
-    void onWiFiConnected();
+    void resetConnection();
     bool isConnected();
 }
 

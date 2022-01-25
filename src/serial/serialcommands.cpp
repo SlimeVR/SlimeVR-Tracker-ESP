@@ -36,7 +36,7 @@ namespace SerialCommands {
                 Serial.println("[ERR] CMD SET WIFI ERROR: Too few arguments");
                 Serial.println("[NOTICE] Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
             } else {
-                Network::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
+                WiFiNetwork::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
                 Serial.println("[OK] CMD SET WIFI OK: New wifi credentials set, reconnecting");
             }
         } else {
