@@ -46,6 +46,7 @@
 #define PACKET_ROTATION_DATA 17
 #define PACKET_MAGNETOMETER_ACCURACY 18
 #define PACKET_SIGNAL_STRENGTH 19
+#define PACKET_TEMPERATURE 20
 
 #define PACKET_RECEIVE_HEARTBEAT 1
 #define PACKET_RECEIVE_VIBRATE 2
@@ -89,6 +90,9 @@ namespace Network {
 
     // PACKET_SIGNAL_STRENGTH 19
     void sendSignalStrength(uint8_t signalStrength);
+
+    // PACKET_TEMPERATURE 20
+    void sendTemperature(float temperature, uint8_t sensorId);
 }
 
 namespace DataTransfer {

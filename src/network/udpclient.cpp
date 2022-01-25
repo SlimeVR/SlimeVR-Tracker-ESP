@@ -288,6 +288,17 @@ void Network::sendSignalStrength(uint8_t signalStrength) {
     }
 }
 
+// PACKET_TEMPERATURE 20
+void Network::sendTemperature(float temperature, uint8_t sensorId) {
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_TEMPERATURE);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendFloat(temperature);
+        DataTransfer::endPacket();
+    }
+}
+
 void Network::sendHandshake() {
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_HANDSHAKE);
