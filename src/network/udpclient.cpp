@@ -32,7 +32,6 @@ unsigned char incomingPacket[128]; // buffer for incoming packets
 uint64_t packetNumber = 1;
 unsigned char handshake[12] = {0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
 
-
 int port = 6969;
 IPAddress host = IPAddress(255, 255, 255, 255);
 bool connected = false;
@@ -105,9 +104,8 @@ namespace DataTransfer {
     }
 
     void sendPacketNumber() {
-        //uint64_t pn = packetNumber++;
-        // TODO Send packet number
-        sendLong(0);
+        uint64_t pn = packetNumber++;
+        sendLong(pn);
     }
 
     void sendFloat(float f) {
