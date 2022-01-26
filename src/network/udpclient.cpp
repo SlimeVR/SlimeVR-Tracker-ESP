@@ -318,11 +318,11 @@ void Network::sendHandshake() {
         WiFi.macAddress(mac);
         DataTransfer::sendBytes(mac, 6); // MAC address string
         if(DataTransfer::endPacket()) {
-            Serial.print("Handshale write error: ");
+            Serial.print("Handshake write error: ");
             Serial.println(Udp.getWriteError());
         }
     } else {
-        Serial.print("Handshale write error: ");
+        Serial.print("Handshake write error: ");
         Serial.println(Udp.getWriteError());
     }
 }
@@ -373,7 +373,7 @@ void ServerConnection::connect()
 #ifndef SEND_UPDATES_UNCONNECTED
                 LEDManager::off(LOADING_LED);
 #endif
-                Serial.printf("[Handshake] Handshale successful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
+                Serial.printf("[Handshake] Handshake successful, server is %s:%d\n", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
             default:
             continue;
@@ -433,7 +433,7 @@ void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
                 break;
             case PACKET_RECEIVE_HANDSHAKE:
                 // Assume handshake successful
-                Serial.println("Handshale received again, ignoring");
+                Serial.println("Handshake received again, ignoring");
                 break;
             case PACKET_RECEIVE_COMMAND:
                 
