@@ -35,6 +35,7 @@ namespace WiFiNetwork {
     void setUp();
     void upkeep();
     void setWiFiCredentials(const char * SSID, const char * pass);
+    IPAddress WiFiNetwork::getAddress();
 }
 
 #endif // SLIMEVR_WIFI_H_

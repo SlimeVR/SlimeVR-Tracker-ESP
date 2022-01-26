@@ -50,6 +50,10 @@ void WiFiNetwork::setWiFiCredentials(const char * SSID, const char * pass) {
     wifiConnectionTimeout = millis();
 }
 
+IPAddress WiFiNetwork::getAddress() {
+    return WiFi.localIP();
+}
+
 void WiFiNetwork::setUp() {
     Serial.println("[NOTICE] WiFi: Setting up WiFi");
     WiFi.persistent(true);

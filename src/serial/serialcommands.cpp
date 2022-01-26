@@ -45,6 +45,20 @@ namespace SerialCommands {
     }
 
     void cmdGet(CmdParser * parser) {
+        if(parser->getParamCount() != 1 && parser->equalCmdParam(1, "INFO")  ) {
+            Serial.print("[OK] SlimeVR Tracker, ");
+            Serial.print("board: ");
+            Serial.print(BOARD);
+            Serial.print(", hardware: ");
+            Serial.print(HARDWARE_MCU);
+            Serial.print(", build: ");
+            Serial.print(FIRMWARE_BUILD_NUMBER);
+            Serial.print(", firmware: ");
+            Serial.print(FIRMWARE_VERSION);
+            Serial.print(", address: ");
+            Serial.println(WiFiNetwork::getAddress().toString());
+            // TODO Print sensors number and types
+        }
     }
 
     void cmdReport(CmdParser * parser) {
