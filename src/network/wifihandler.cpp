@@ -23,6 +23,9 @@
 #include "globals.h"
 #include "network.h"
 #include "ledmgr.h"
+#if !ESP8266
+#include "esp_wifi.h"
+#endif
 
 unsigned long lastWifiReportTime = 0;
 unsigned long wifiConnectionTimeout = millis();
@@ -65,14 +68,35 @@ void WiFiNetwork::setUp() {
     wifiState = 1;
     wifiConnectionTimeout = millis();
     
+#if ESP8266
 #if POWERSAVING_MODE == POWER_SAVING_NONE
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
 #elif POWERSAVING_MODE == POWER_SAVING_MINIMUM
     WiFi.setSleepMode(WIFI_MODEM_SLEEP);
 #elif POWERSAVING_MODE == POWER_SAVING_MODERATE
     WiFi.setSleepMode(WIFI_MODEM_SLEEP, 10);
-// #elif POWERSAVING_MODE == POWER_SAVING_MAXIMUM
-//     WiFi.setSleepMode(WIFI_LIGHT_SLEEP, 10);
+#elif POWERSAVING_MODE == POWER_SAVING_MAXIMUM
+    WiFi.setSleepMode(WIFI_LIGHT_SLEEP, 10);
+#error "MAX POWER SAVING NOT WORKING YET, please disable!"
+#endif
+#else
+#if POWERSAVING_MODE == POWER_SAVING_NONE
+    WiFi.setSleep(WIFI_PS_NONE);
+#elif POWERSAVING_MODE == POWER_SAVING_MINIMUM
+    WiFi.setSleep(WIFI_PS_MIN_MODEM);
+#elif POWERSAVING_MODE == POWER_SAVING_MODERATE || POWERSAVING_MODE == POWER_SAVING_MAXIMUM
+    wifi_config_t conf;
+    if (esp_wifi_get_config(WIFI_IF_STA, &conf) == ESP_OK)
+    {
+        conf.sta.listen_interval = 10;
+        esp_wifi_set_config(WIFI_IF_STA, &conf);
+        WiFi.setSleep(WIFI_PS_MAX_MODEM);
+    }
+    else
+    {
+        Serial.println("[ERR] Unable to get wifi config, power saving not enabled!");
+    }
+#endif
 #endif
 }
 
