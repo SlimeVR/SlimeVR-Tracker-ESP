@@ -23,6 +23,7 @@
 #ifndef SLIMEVR_GLOBALS_H_
 #define SLIMEVR_GLOBALS_H_
 
+#include <Arduino.h>
 #include "consts.h"
 #include "debug.h"
 #include "defines.h"
