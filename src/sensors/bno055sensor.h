@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,53 +20,19 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_CONSTS_H_
-#define SLIMEVR_CONSTS_H_
+#include "sensor.h"
 
-// List of constants used in other places
-#define IMU_MPU9250 1
-#define IMU_MPU6500 2
-#define IMU_BNO080 3
-#define IMU_BNO085 4
-#define IMU_BNO055 5
-#define IMU_MPU6050 6
-#define IMU_BNO086 7
+#include <Adafruit_BNO055.h>
 
-#define BOARD_SLIMEVR 1
-#define BOARD_SLIMEVR_DEV 2
-#define BOARD_NODEMCU 3
-#define BOARD_CUSTOM 4
-#define BOARD_WROOM32 5
-#define BOARD_WEMOSD1MINI 6
-#define BOARD_TTGO_TBASE 7
-#define BOARD_ESP01 8
+class BNO055Sensor : public Sensor
+{
+public:
+    BNO055Sensor(){};
+    ~BNO055Sensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void startCalibration(int calibrationType) override final;
 
-#define BAT_EXTERNAL 1
-#define BAT_INTERNAL 2
-#define BAT_MCP3021 3
-#define BAT_INTERNAL_MCP3021 4
-
-#define POWER_SAVING_NONE 0
-#define POWER_SAVING_MINIMUM 1
-#define POWER_SAVING_MODERATE 2
-//Should not be used yet => disconnects a lot
-//#define POWER_SAVING_MAXIMUM 3
-
-#define DEG_0 0.f
-#define DEG_90 -PI / 2
-#define DEG_180 PI
-#define DEG_270 PI / 2
-
-#ifndef LED_BUILTIN
-#define LED_BUILTIN 2
-#endif
-
-#ifdef ESP8266
-  #define HARDWARE_MCU 1
-#elif defined(ESP32)
-  #define HARDWARE_MCU 2
-#else
-  #define HARDWARE_MCU 0
-#endif
-
-#endif // SLIMEVR_CONSTS_H_
+private:
+    Adafruit_BNO055 imu;
+};

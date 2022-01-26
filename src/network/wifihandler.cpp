@@ -20,11 +20,9 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-
-#include "wifihandler.h"
-#include "udpclient.h"
-#include "defines.h"
-#include "ledstatus.h"
+#include "globals.h"
+#include "network.h"
+#include "ledmgr.h"
 
 unsigned long lastWifiReportTime = 0;
 unsigned long wifiConnectionTimeout = millis();
@@ -32,27 +30,27 @@ bool isWifiConnected = false;
 uint8_t wifiState = 0;
 bool hadWifi = false;
 
-namespace {
-    void reportWifiError() {
-        if(lastWifiReportTime + 1000 < millis()) {
-            lastWifiReportTime = millis();
-            Serial.print(".");
-        }
+void reportWifiError() {
+    if(lastWifiReportTime + 1000 < millis()) {
+        lastWifiReportTime = millis();
+        Serial.print(".");
     }
 }
 
-bool isWiFiConnected() {
+bool WiFiNetwork::isConnected() {
     return isWifiConnected;
 }
 
-void setWiFiCredentials(const char * SSID, const char * pass) {
-    WiFi.stopSmartConfig();
+void WiFiNetwork::setWiFiCredentials(const char * SSID, const char * pass) {
+    stopProvisioning();
     WiFi.begin(SSID, pass);
+    // Reset state, will get back into provisioning if can't connect
+    hadWifi = false;
     wifiState = 2;
     wifiConnectionTimeout = millis();
 }
 
-void setUpWiFi() {
+void WiFiNetwork::setUp() {
     Serial.println("[NOTICE] WiFi: Setting up WiFi");
     WiFi.persistent(true);
     WiFi.mode(WIFI_STA);
@@ -62,23 +60,34 @@ void setUpWiFi() {
     Serial.printf("[NOTICE] Status: %d", status);
     wifiState = 1;
     wifiConnectionTimeout = millis();
+    
+#if POWERSAVING_MODE == POWER_SAVING_NONE
+    WiFi.setSleepMode(WIFI_NONE_SLEEP);
+#elif POWERSAVING_MODE == POWER_SAVING_MINIMUM
+    WiFi.setSleepMode(WIFI_MODEM_SLEEP);
+#elif POWERSAVING_MODE == POWER_SAVING_MODERATE
+    WiFi.setSleepMode(WIFI_MODEM_SLEEP, 10);
+// #elif POWERSAVING_MODE == POWER_SAVING_MAXIMUM
+//     WiFi.setSleepMode(WIFI_LIGHT_SLEEP, 10);
+#endif
 }
 
 void onConnected() {
-    unsetLedStatus(LED_STATUS_WIFI_CONNECTING);
+    WiFiNetwork::stopProvisioning();
+    LEDManager::unsetLedStatus(LED_STATUS_WIFI_CONNECTING);
     isWifiConnected = true;
     hadWifi = true;
     Serial.printf("[NOTICE] WiFi: Connected successfully to SSID '%s', ip address %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
-    onWiFiConnected();
 }
 
-void wifiUpkeep() {
+void WiFiNetwork::upkeep() {
+    upkeepProvisioning();
     if(WiFi.status() != WL_CONNECTED) {
         if(isWifiConnected) {
             Serial.printf("[NOTICE] WiFi: Connection to WiFi lost, reconnecting...");
             isWifiConnected = false;
         }
-        setLedStatus(LED_STATUS_WIFI_CONNECTING);
+        LEDManager::setLedStatus(LED_STATUS_WIFI_CONNECTING);
         reportWifiError();
         if(wifiConnectionTimeout + 11000 < millis()) {
             switch(wifiState) {
@@ -97,12 +106,10 @@ void wifiUpkeep() {
                 case 2: // Couldn't connect with second set of credentials
                     // Start smart config
                     if(!hadWifi && !WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
-                        if (WiFi.status() != WL_IDLE_STATUS) {
+                        if(WiFi.status() != WL_IDLE_STATUS) {
                             Serial.printf("[NOTICE] WiFi: Can't connect from any credentials, status: %d.\n", WiFi.status());
                         }
-                        if(WiFi.beginSmartConfig()) {
-                            Serial.println("[NOTICE] WiFi: SmartConfig started");
-                        }
+                        startProvisioning();
                     }
                 return;
             }

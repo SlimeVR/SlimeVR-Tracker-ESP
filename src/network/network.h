@@ -20,15 +20,18 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_NETWORK_H_
+#define SLIMEVR_NETWORK_H_
 
-#ifndef SLIMEVR_WIFI_H_
-#define SLIMEVR_WIFI_H_
+#include "globals.h"
+#include "wifihandler.h"
+#include "udpclient.h"
+#include "packets.h"
+#include "wifiprovisioning.h"
 
-#include "configuration.h"
+namespace Network {
+    void update(Sensor * const sensor, Sensor * const sensor2);
+    void setUp();
+}
 
-bool isWiFiConnected();
-void setUpWiFi();
-void wifiUpkeep();
-void setWiFiCredentials(const char * SSID, const char * pass);
-
-#endif // SLIMEVR_WIFI_H_
+#endif // SLIMEVR_NETWORK_H_

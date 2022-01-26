@@ -20,53 +20,34 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_CONSTS_H_
-#define SLIMEVR_CONSTS_H_
+#include "network.h"
 
-// List of constants used in other places
-#define IMU_MPU9250 1
-#define IMU_MPU6500 2
-#define IMU_BNO080 3
-#define IMU_BNO085 4
-#define IMU_BNO055 5
-#define IMU_MPU6050 6
-#define IMU_BNO086 7
+// TODO Currently provisioning implemented via SmartConfig
+// it sucks.
+// TODO: New implementation: https://github.com/SlimeVR/SlimeVR-Tracker-ESP/issues/71
 
-#define BOARD_SLIMEVR 1
-#define BOARD_SLIMEVR_DEV 2
-#define BOARD_NODEMCU 3
-#define BOARD_CUSTOM 4
-#define BOARD_WROOM32 5
-#define BOARD_WEMOSD1MINI 6
-#define BOARD_TTGO_TBASE 7
-#define BOARD_ESP01 8
+bool provisioning = false;
 
-#define BAT_EXTERNAL 1
-#define BAT_INTERNAL 2
-#define BAT_MCP3021 3
-#define BAT_INTERNAL_MCP3021 4
+void WiFiNetwork::upkeepProvisioning() {
+    // Called even when not provisioning to do things like provide neighbours or other upkeep
+}
 
-#define POWER_SAVING_NONE 0
-#define POWER_SAVING_MINIMUM 1
-#define POWER_SAVING_MODERATE 2
-//Should not be used yet => disconnects a lot
-//#define POWER_SAVING_MAXIMUM 3
+void WiFiNetwork::startProvisioning() {
+    if(WiFi.beginSmartConfig()) {
+        provisioning = true;
+        Serial.println("[NOTICE] WiFi: SmartConfig started");
+    }
+}
 
-#define DEG_0 0.f
-#define DEG_90 -PI / 2
-#define DEG_180 PI
-#define DEG_270 PI / 2
+void WiFiNetwork::stopProvisioning() {
+    WiFi.stopSmartConfig();
+    provisioning = false;
+}
 
-#ifndef LED_BUILTIN
-#define LED_BUILTIN 2
-#endif
+void WiFiNetwork::provideNeighbours() {
+    // TODO: SmartConfig can't do this, created for future
+}
 
-#ifdef ESP8266
-  #define HARDWARE_MCU 1
-#elif defined(ESP32)
-  #define HARDWARE_MCU 2
-#else
-  #define HARDWARE_MCU 0
-#endif
-
-#endif // SLIMEVR_CONSTS_H_
+bool WiFiNetwork::isProvisioning() {
+    return provisioning && !WiFi.smartConfigDone();
+}
