@@ -46,11 +46,11 @@
 #define BAT_MCP3021 3
 #define BAT_INTERNAL_MCP3021 4
 
-#define POWER_SAVING_NONE 0
-#define POWER_SAVING_MINIMUM 1
-#define POWER_SAVING_MODERATE 2
-//Should not be used yet => disconnects a lot
-//#define POWER_SAVING_MAXIMUM 3
+#define POWER_SAVING_LEGACY 0 // No sleeping, but PS enabled
+#define POWER_SAVING_NONE 1 // No sleeping, no PS => for connection issues
+#define POWER_SAVING_MINIMUM 2 // Sleeping and PS => default
+#define POWER_SAVING_MODERATE 3 // Sleeping and better PS => might miss broadcasts, use at own risk
+#define POWER_SAVING_MAXIMUM 4 // Actual CPU sleeping, currently has issues with disconnecting
 
 #define DEG_0 0.f
 #define DEG_90 -PI / 2
