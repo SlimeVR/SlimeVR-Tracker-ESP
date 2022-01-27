@@ -153,8 +153,7 @@ void setup()
             secondImuActive = false; // if not found 2nd imu then false
         }
     #else
-    uint8_t addr =I2CSCAN::pickDevice(ICM_ADDR_1, ICM_ADDR_2, true);
-    sensor.setupICM20948(false, addr);
+    sensor.setupICM20948(false, I2CSCAN::pickDevice(ICM_ADDR_1, ICM_ADDR_2, true));
     #endif
 #endif
 
