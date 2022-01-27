@@ -282,7 +282,7 @@ void Network::sendSignalStrength(uint8_t signalStrength) {
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_SIGNAL_STRENGTH);
         DataTransfer::sendPacketNumber();
-        DataTransfer::sendByte(0);
+        DataTransfer::sendByte(255);
         DataTransfer::sendByte(signalStrength);
         DataTransfer::endPacket();
     }
