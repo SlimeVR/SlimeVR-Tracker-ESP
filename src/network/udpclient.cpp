@@ -230,7 +230,7 @@ void Network::sendTap(uint8_t value, uint8_t sensorId) {
 // PACKET_ERROR 14
 void Network::sendError(uint8_t reason, uint8_t sensorId) {
     if(DataTransfer::beginPacket()) {
-        DataTransfer::sendPacketType(PACKET_TAP);
+        DataTransfer::sendPacketType(PACKET_ERROR);
         DataTransfer::sendPacketNumber();
         DataTransfer::sendByte(sensorId);
         DataTransfer::sendByte(reason);
