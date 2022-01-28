@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,15 +20,19 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#include "sensor.h"
 
-#ifndef _OTA_H_
-#define _OTA_H 1
+#include <Adafruit_BNO055.h>
 
-#include <ArduinoOTA.h>
+class BNO055Sensor : public Sensor
+{
+public:
+    BNO055Sensor(){};
+    ~BNO055Sensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void startCalibration(int calibrationType) override final;
 
-namespace OTA {
-    void otaSetup(const char * const otaPassword);
-    void otaUpdate();
-}
-
-#endif // _OTA_H_
+private:
+    Adafruit_BNO055 imu;
+};

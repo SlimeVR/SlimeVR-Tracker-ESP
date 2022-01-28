@@ -20,15 +20,22 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_UDP_CLIENT_H_
+#define SLIMEVR_UDP_CLIENT_H_
 
-#ifndef _OTA_H_
-#define _OTA_H 1
+#include <WiFiUdp.h>
+#include <Arduino.h>
+#include "quat.h"
+#include "configuration.h"
+#include "sensors/sensor.h"
+#include "wifihandler.h"
+#include "globals.h"
 
-#include <ArduinoOTA.h>
-
-namespace OTA {
-    void otaSetup(const char * const otaPassword);
-    void otaUpdate();
+namespace ServerConnection {
+    void connect();
+    void update(Sensor * const sensor, Sensor * const sensor2);
+    void resetConnection();
+    bool isConnected();
 }
 
-#endif // _OTA_H_
+#endif // SLIMEVR_UDP_CLIENT_H_

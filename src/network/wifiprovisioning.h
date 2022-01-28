@@ -20,15 +20,15 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_WIFIPROVISIONING_H_
+#define SLIMEVR_WIFIPROVISIONING_H_
 
-#ifndef _OTA_H_
-#define _OTA_H 1
-
-#include <ArduinoOTA.h>
-
-namespace OTA {
-    void otaSetup(const char * const otaPassword);
-    void otaUpdate();
+namespace WiFiNetwork {
+    void upkeepProvisioning();
+    void startProvisioning();
+    void stopProvisioning();
+    bool isProvisioning();
+    void provideNeighbours();
 }
 
-#endif // _OTA_H_
+#endif // SLIMEVR_WIFIPROVISIONING_H_
