@@ -123,7 +123,7 @@ THE SOFTWARE.
 #define MPU6050_DMP_CODE_SIZE       3062    // dmpMemory[]
 
 /* ================================================================ *
- | Default MotionApps v6.12 28-byte FIFO packet structure:           |
+ | Default MotionApps v6.12 28-byte FIFO packet structure:          |
  |                                                                  |
  | [QUAT W][      ][QUAT X][      ][QUAT Y][      ][QUAT Z][      ] |
  |   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  |
