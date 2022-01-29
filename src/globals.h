@@ -20,15 +20,24 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_GLOBALS_H_
+#define SLIMEVR_GLOBALS_H_
 
-#ifndef _OTA_H_
-#define _OTA_H 1
+#include <Arduino.h>
+#include "consts.h"
+#include "debug.h"
+#include "defines.h"
 
-#include <ArduinoOTA.h>
+#ifndef SECOND_IMU
+#define SECOND_IMU IMU
+#endif
 
-namespace OTA {
-    void otaSetup(const char * const otaPassword);
-    void otaUpdate();
-}
+#ifndef SECOND_IMU_ROTATION
+#define SECOND_IMU_ROTATION IMU_ROTATION
+#endif
 
-#endif // _OTA_H_
+#ifndef BATTERY_MONITOR
+#define BATTERY_MONITOR BAT_INTERNAL
+#endif
+
+#endif // SLIMEVR_GLOBALS_H_

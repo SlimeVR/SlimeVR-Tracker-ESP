@@ -21,14 +21,12 @@
     THE SOFTWARE.
 */
 
-#ifndef _OTA_H_
-#define _OTA_H 1
+#ifndef SLIMEVR_SERIALCOMMANDS_H_
+#define SLIMEVR_SERIALCOMMANDS_H_
 
-#include <ArduinoOTA.h>
-
-namespace OTA {
-    void otaSetup(const char * const otaPassword);
-    void otaUpdate();
+namespace SerialCommands {
+    void setUp();
+    void update();
 }
 
-#endif // _OTA_H_
+#endif // SLIMEVR_SERIALCOMMANDS_H_

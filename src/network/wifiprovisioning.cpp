@@ -20,15 +20,34 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#include "network.h"
 
-#ifndef _OTA_H_
-#define _OTA_H 1
+// TODO Currently provisioning implemented via SmartConfig
+// it sucks.
+// TODO: New implementation: https://github.com/SlimeVR/SlimeVR-Tracker-ESP/issues/71
 
-#include <ArduinoOTA.h>
+bool provisioning = false;
 
-namespace OTA {
-    void otaSetup(const char * const otaPassword);
-    void otaUpdate();
+void WiFiNetwork::upkeepProvisioning() {
+    // Called even when not provisioning to do things like provide neighbours or other upkeep
 }
 
-#endif // _OTA_H_
+void WiFiNetwork::startProvisioning() {
+    if(WiFi.beginSmartConfig()) {
+        provisioning = true;
+        Serial.println("[NOTICE] WiFi: SmartConfig started");
+    }
+}
+
+void WiFiNetwork::stopProvisioning() {
+    WiFi.stopSmartConfig();
+    provisioning = false;
+}
+
+void WiFiNetwork::provideNeighbours() {
+    // TODO: SmartConfig can't do this, created for future
+}
+
+bool WiFiNetwork::isProvisioning() {
+    return provisioning && !WiFi.smartConfigDone();
+}

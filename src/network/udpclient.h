@@ -1,17 +1,14 @@
 /*
     SlimeVR Code is placed under the MIT license
     Copyright (c) 2021 Eiren Rain
-
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
     in the Software without restriction, including without limitation the rights
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-
     The above copyright notice and this permission notice shall be included in
     all copies or substantial portions of the Software.
-
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,11 +17,29 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_UDP_CLIENT_H_
+#define SLIMEVR_UDP_CLIENT_H_
+#ifdef ESP8266
+    #include <ESP8266WiFi.h>
+    #include <ESPAsyncUDP.h>
+#else
+    #include <WiFi.h>
+    #include <AsyncUDP.h>
+#endif
+#include <Arduino.h>
+#include "quat.h"
+#include "configuration.h"
+#include "sensors/sensor.h"
+#include "wifihandler.h"
+#include "globals.h"
 
-#ifndef SLIMEVR_SERIALCOMMANDS_H_
-#define SLIMEVR_SERIALCOMMANDS_H_
+namespace ServerConnection {
+    void connect();
+    void update(Sensor * const sensor, Sensor * const sensor2);
+    void resetConnection();
+    bool isConnected();
+    size_t packet_read(AsyncUDPPacket packet, uint8_t *data, size_t len);
+    void onPacketCallBack(AsyncUDPPacket packet);
+}
 
-void setUpSerialCommands();
-void serialCommandsUpdate();
-
-#endif // SLIMEVR_SERIALCOMMANDS_H_
+#endif // SLIMEVR_UDP_CLIENT_H_

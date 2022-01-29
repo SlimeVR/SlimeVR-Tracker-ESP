@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,15 +20,32 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#include "sensor.h"
+#include <BNO080.h>
 
-#ifndef _OTA_H_
-#define _OTA_H 1
+class BNO080Sensor : public Sensor
+{
+public:
+    BNO080Sensor(){};
+    ~BNO080Sensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void sendData() override final;
+    void startCalibration(int calibrationType) override final;
+    uint8_t getSensorState() override final;
 
-#include <ArduinoOTA.h>
+private:
+    BNO080 imu{};
 
-namespace OTA {
-    void otaSetup(const char * const otaPassword);
-    void otaUpdate();
-}
+    uint8_t tap;
+    unsigned long lastData = 0;
+    uint8_t lastReset = 0;
 
-#endif // _OTA_H_
+    // Magnetometer specific members
+    Quat magQuaternion{};
+    uint8_t magCalibrationAccuracy = 0;
+    float magneticAccuracyEstimate = 999;
+    bool useMagnetometerAllTheTime = false;
+    bool useMagnetometerCorrection = false;
+    bool newMagData = false;
+};

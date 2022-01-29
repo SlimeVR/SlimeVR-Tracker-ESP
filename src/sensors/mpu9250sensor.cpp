@@ -21,13 +21,13 @@
     THE SOFTWARE.
 */
 
-#include "MPU9250.h"
-#include "sensor.h"
-#include "udpclient.h"
-#include "defines.h"
+#include "mpu9250sensor.h"
+#include "network/network.h"
+#include "globals.h"
 #include "helper_3dmath.h"
 #include <i2cscan.h>
 #include "calibration.h"
+#include "ledmgr.h"
 
 #define gscale (250. / 32768.0) * (PI / 180.0) //gyro default 250 LSB per d/s -> rad/s
 // These are the free parameters in the Mahony filter and fusion scheme,
@@ -41,33 +41,13 @@ CalibrationConfig * calibration;
 void get_MPU_scaled();
 void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
-namespace {
-    void signalAssert() {
-        for(int i = 0; i < 200; ++i) {
-            delay(50);
-            digitalWrite(LOADING_LED, LOW);
-            delay(50);
-            digitalWrite(LOADING_LED, HIGH);
-        }
-    }
-}
-
 void MPU9250Sensor::motionSetup() {
     DeviceConfig * const config = getConfigPtr();
     calibration = &config->calibration;
-    uint8_t addr = 0x68;
-    if(!I2CSCAN::isI2CExist(addr)) {
-        addr = 0x69;
-        if(!I2CSCAN::isI2CExist(addr)) {
-            Serial.println("[ERR] Can't find I2C device on addr 0x68 or 0x69, returning");
-            signalAssert();
-            return;
-        }
-    }
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
-        Serial.print("[ERR] Can't communicate with MPU, response 0x");
+        Serial.print("[ERR] MPU9250: Can't communicate with MPU, response 0x");
         Serial.println(imu.getDeviceID(), HEX);
     } else {
         Serial.print("[OK] Connected to MPU, ID 0x");
@@ -87,13 +67,6 @@ void MPU9250Sensor::motionLoop() {
     if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;
         lastQuatSent = quaternion;
-    }
-}
-
-void MPU9250Sensor::sendData() {
-    if(newData) {
-        sendQuat(&quaternion, PACKET_ROTATION);
-        newData = false;
     }
 }
 
@@ -238,7 +211,7 @@ void MPU9250Sensor::MahonyQuaternionUpdate(float ax, float ay, float az, float g
 }
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
-    digitalWrite(CALIBRATING_LED, LOW);
+    LEDManager::on(CALIBRATING_LED);
     Serial.println("[NOTICE] Gathering raw data for device calibration...");
     int calibrationSamples = 300;
     // Reset values
@@ -260,22 +233,16 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     Gxyz[1] /= calibrationSamples;
     Gxyz[2] /= calibrationSamples;
     Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
-    sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0, PACKET_RAW_CALIBRATION_DATA);
+    Network::sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0);
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("[NOTICE] Gently rotate the device while it's gathering accelerometer and magnetometer data");
-    for (int i = 0; i < 3000 / 310; ++i)
-    {
-        digitalWrite(CALIBRATING_LED, LOW);
-        delay(15);
-        digitalWrite(CALIBRATING_LED, HIGH);
-        delay(300);
-    }
+    LEDManager::pattern(CALIBRATING_LED, 15, 300, 3000/310);
     int calibrationDataAcc[3];
     int calibrationDataMag[3];
     for (int i = 0; i < calibrationSamples; i++)
     {
-        digitalWrite(CALIBRATING_LED, LOW);
+        LEDManager::on(CALIBRATING_LED);
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
         calibrationDataAcc[0] = ax;
         calibrationDataAcc[1] = ay;
@@ -283,12 +250,12 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         calibrationDataMag[0] = mx;
         calibrationDataMag[1] = my;
         calibrationDataMag[2] = mz;
-        sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
-        sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0, PACKET_RAW_CALIBRATION_DATA);
-        digitalWrite(CALIBRATING_LED, HIGH);
+        Network::sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
+        Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
+        LEDManager::off(CALIBRATING_LED);
         delay(250);
     }
     Serial.println("[NOTICE] Calibration data gathered and sent");
-    digitalWrite(CALIBRATING_LED, HIGH);
-    sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0, PACKET_RAW_CALIBRATION_DATA);
+    LEDManager::off(CALIBRATING_LED);
+    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0);
 }

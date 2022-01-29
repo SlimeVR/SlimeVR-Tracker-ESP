@@ -20,15 +20,24 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#include "network.h"
+#include "ledmgr.h"
 
-#ifndef _OTA_H_
-#define _OTA_H 1
+bool lastWifiConnected = false;
 
-#include <ArduinoOTA.h>
-
-namespace OTA {
-    void otaSetup(const char * const otaPassword);
-    void otaUpdate();
+void Network::setUp() {
+    WiFiNetwork::setUp();
 }
 
-#endif // _OTA_H_
+void Network::update(Sensor * const sensor, Sensor * const sensor2) {
+    WiFiNetwork::upkeep();
+    if(WiFiNetwork::isConnected()) {
+        if(lastWifiConnected == false) {
+            lastWifiConnected = true;
+            ServerConnection::resetConnection(); // WiFi was reconnected, reconnect to the server
+        }
+        ServerConnection::update(sensor, sensor2);
+    } else {
+        lastWifiConnected = false;
+    }
+}
