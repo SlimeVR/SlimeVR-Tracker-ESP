@@ -22,7 +22,7 @@
 */
 #include "sensor.h"
 
-#include <MPU9250.h>
+#include <MPU9250_6Axis_MotionApps_V6_12.h>
 
 class MPU9250Sensor : public Sensor
 {
@@ -49,6 +49,7 @@ private:
     int skipCalcMag = 0;
     float magAdjustments[3] {};
     CalibrationConfig *calibration;
+    Quat correction{};
     // Loop timing globals
     unsigned long now = 0, last = 0; //micros() timers
     float deltat = 0;                //loop time in seconds

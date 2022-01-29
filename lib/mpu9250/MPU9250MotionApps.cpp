@@ -30,24 +30,20 @@ THE SOFTWARE.
 ===============================================
 */
 
-#ifndef _MPU9250_9AXIS_MOTIONAPPS41_H_
-#define _MPU9250_9AXIS_MOTIONAPPS41_H_
-
-#include "I2Cdev.h"
-#include "helper_3dmath.h"
-
 // MotionApps 4.1 DMP implementation, built using the MPU-9250 "MotionFit" board
 #define MPU9250_INCLUDE_DMP_MOTIONAPPS41
 
-#include "MPU9250.h"
+#include "MPU9250MotionApps.h"
 
 // Tom Carpenter's conditional PROGMEM code
 // http://forum.arduino.cc/index.php?topic=129407.0
 #ifdef __AVR__
     #include <avr/pgmspace.h>
+#elif defined(ESP32)
+    #include <pgmspace.h>
 #else
     // Teensy 3.0 library conditional PROGMEM code from Paul Stoffregen
-    #if not defined(__PGMSPACE_H_) && not defined(PGMSPACE_INCLUDE )
+    #ifndef __PGMSPACE_H_
         #define __PGMSPACE_H_ 1
         #include <inttypes.h>
 
@@ -347,10 +343,10 @@ uint8_t MPU9250::dmpInitialize() {
     setSleepEnabled(false);
 
     // get MPU product ID
-    DEBUG_PRINTLN(F("Getting product ID..."));
+    //DEBUG_PRINTLN(F("Getting product ID..."));
     //uint8_t productID = 0; //getProductID();
-    DEBUG_PRINT(F("Product ID = "));
-    DEBUG_PRINT(productID);
+    //DEBUG_PRINT(F("Product ID = "));
+    //DEBUG_PRINT(productID);
 
     // get MPU hardware revision
     DEBUG_PRINTLN(F("Selecting user bank 16..."));
@@ -536,7 +532,7 @@ uint8_t MPU9250::dmpInitialize() {
             DEBUG_PRINTLN(F("Setting up slave access delay..."));
             // I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV4_CTRL, 0x18);
             // samplerate, DMP output frequency is calculated easily using this equation: (200Hz / (1 + value))
-            I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV4_CTRL, 0x01);
+            I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV4_CTRL, 0x01); 
             I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_MST_DELAY_CTRL, 0x05);
 
             // enable interrupts
@@ -852,6 +848,4 @@ uint8_t MPU9250::dmpReadAndProcessFIFOPacket(uint8_t numPackets, uint8_t *proces
 uint16_t MPU9250::dmpGetFIFOPacketSize() {
     return dmpPacketSize;
 }
-
-#endif /* _MPU9250_9AXIS_MOTIONAPPS41_H_ */
 
