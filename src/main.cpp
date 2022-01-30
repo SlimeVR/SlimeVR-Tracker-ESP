@@ -43,6 +43,8 @@
     BNO055Sensor sensor{};
 #elif IMU == IMU_MPU9250
     MPU9250Sensor sensor{};
+    #define HAS_SECOND_IMU true
+    MPU9250Sensor sensor2{};
 #elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
     MPU6050Sensor sensor{};
     #define HAS_SECOND_IMU true
@@ -122,7 +124,7 @@ void setup()
     sensor.setupBNO080(0, I2CSCAN::pickDevice(0x4A, 0x4B, true), PIN_IMU_INT);
     #endif
 #endif
-#if IMU == IMU_MPU6050 || IMU == IMU_MPU6500
+#if IMU == IMU_MPU6050 || IMU == IMU_MPU6500 || IMU == IMU_MPU9250
     #ifdef HAS_SECOND_IMU
         uint8_t first = I2CSCAN::pickDevice(0x68, 0x69, true);
         uint8_t second = I2CSCAN::pickDevice(0x69, 0x68, false);
@@ -164,7 +166,8 @@ void loop()
 #endif
     sensor.motionLoop();
 #ifdef HAS_SECOND_IMU
-    sensor2.motionLoop();
+    if(secondImuActive)
+        sensor2.motionLoop();
 #endif
 #ifndef UPDATE_IMU_UNCONNECTED
         }
@@ -176,6 +179,7 @@ void loop()
 #endif
         sensor.sendData();
 #ifdef HAS_SECOND_IMU
+    if(secondImuActive)
         sensor2.sendData();
 #endif
 #ifndef SEND_UPDATES_UNCONNECTED

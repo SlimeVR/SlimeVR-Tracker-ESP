@@ -97,8 +97,10 @@ void wifiUpkeep() {
                 case 2: // Couldn't connect with second set of credentials
                     // Start smart config
                     if(!hadWifi && !WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
-                        if(WiFi.beginSmartConfig()) {
+                        if (WiFi.status() != WL_IDLE_STATUS) {
                             Serial.printf("[NOTICE] WiFi: Can't connect from any credentials, status: %d.\n", WiFi.status());
+                        }
+                        if(WiFi.beginSmartConfig()) {
                             Serial.println("[NOTICE] WiFi: SmartConfig started");
                         }
                     }

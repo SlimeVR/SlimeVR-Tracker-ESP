@@ -47,6 +47,7 @@ class Sensor {
         bool isWorking() {
             return working;
         }
+        bool newData {false};
     protected:
         Quat quaternion {};
         Quat sensorOffset {Quat(Vector3(0, 0, 1), IMU_ROTATION)};
@@ -76,7 +77,6 @@ class BNO080Sensor : public Sensor {
         void setupBNO080(uint8_t sensorId = 0, uint8_t addr = 0x4B, uint8_t intPin = 255);
     private:
         BNO080 imu {};
-        bool newData {false};
         bool newMagData {false};
         uint8_t tap;
         unsigned long lastData = 0;
@@ -102,7 +102,6 @@ class BNO055Sensor : public Sensor {
         void startCalibration(int calibrationType) override final;
     private:
         Adafruit_BNO055  imu {Adafruit_BNO055(55, 0x28)};
-        bool newData {false};
 };
 
 class MPUSensor : public Sensor {
@@ -117,15 +116,14 @@ class MPU6050Sensor : public MPUSensor {
     public:
         MPU6050Sensor() = default;
         ~MPU6050Sensor() override  = default;
-        void motionSetup() override final;
+        void motionSetup() override;
         void setSecond();
-        void motionLoop() override final;
-        void sendData() override final;
-        void startCalibration(int calibrationType) override final;
-    private:
+        void motionLoop() override;
+        void sendData() override;
+        void startCalibration(int calibrationType) override;
+    protected:
         MPU6050 imu {};
         bool isSecond{false};
-        bool newData{false};
         Quaternion rawQuat {};
         // MPU dmp control/status vars
         bool dmpReady{false};  // set true if DMP init was successful
@@ -136,34 +134,28 @@ class MPU6050Sensor : public MPUSensor {
         uint8_t fifoBuffer[64] {}; // FIFO storage buffer
 };
 
-class MPU9250Sensor : public MPUSensor {
+class MPU9250Sensor : public MPU6050Sensor {
     public:
         MPU9250Sensor() = default;
         ~MPU9250Sensor() override  = default;
         void motionSetup() override final;
         void motionLoop() override final;
+        void setSecond();
         void sendData() override final;
         void startCalibration(int calibrationType) override final;
         void getMPUScaled();
-        void setSecond(); 
-        void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
-    private:
+        void internalCalibration();
         MPU9250 imu {};
         bool isSecond{false};
         //raw data and scaled as vector
-        int16_t ax, ay, az;
-        int16_t gx, gy, gz;
-        int16_t mx, my, mz;
         float Axyz[3] {};
         float Gxyz[3] {};
         float Mxyz[3] {};
-        float rawMag[3] {};
-        int16_t *Mbias;
-        uint8_t reset_next_update=1;
-        // Loop timing globals
-        unsigned long now = 0, last = 0;   //micros() timers
-        float deltat = 0;                  //loop time in seconds
-        bool newData {false};
+        int skipCalcMag = 0;
+        Quat correction{0,0,0,0};
+        float adjustments[3] {};
+        unsigned long last = 0;   //micros() timers
+        CalibrationConfig *calibration;
 };
 
 #endif // SLIMEVR_SENSOR_H_

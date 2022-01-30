@@ -41,6 +41,9 @@ THE SOFTWARE.
  */
 MPU9250::MPU9250() {
     devAddr = MPU9250_DEFAULT_ADDRESS;
+    asax = 0;
+    asay = 0;
+    asaz = 0;
 }
 
 /** Power on and prepare for general usage.
@@ -56,6 +59,55 @@ void MPU9250::initialize(uint8_t address) {
     setFullScaleGyroRange(MPU9250_GYRO_FS_250);
     setFullScaleAccelRange(MPU9250_ACCEL_FS_2);
     setSleepEnabled(false); // thanks to Jack Elston for pointing this one out!
+
+    // Enable I2C bypass to access magnetometer
+    setI2CBypassEnabled(true);
+    // Power down magnetometer
+    I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x00);
+    delay(10);
+
+    // Enable FUSE rom access
+    I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x0F);
+    delay(10);
+
+    // Read and store magnetometer factory sensitivity adjustments
+    uint8_t adjx = 0, adjy = 0, adjz = 0;
+    I2Cdev::readByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_ASAX, &adjx);
+    I2Cdev::readByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_ASAY, &adjy);
+    I2Cdev::readByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_ASAZ, &adjz);
+    asax = (0.5 * (adjx - 128)) / 128 + 1;
+    asay = (0.5 * (adjy - 128)) / 128 + 1;
+    asaz = (0.5 * (adjz - 128)) / 128 + 1;
+
+    // Power down magnetometer
+    I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x00);
+    delay(10);
+
+    // Enable magnetometer in continuous reading mode 16-bit 100hz
+    I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x16);
+    delay(10);
+
+    // Disable I2C bypass to avoid conflicts with aux tracker's magnetometer
+    setI2CBypassEnabled(false);
+
+    // Set up magnetometer as slave 0 for reading
+    I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_ADDR, MPU9250_RA_MAG_ADDRESS|0x80);
+    // Start reading from HXL register
+    I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_REG,  MPU9250_RA_MAG_XOUT_L);
+    // Read 7 bytes (until ST2 register), group LSB and MSB
+    I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_CTRL, 0x97);
+    delay(10);
+
+    // Enable I2C master to read from magnetometer
+    setI2CMasterModeEnabled(true);
+    // Set I2C clock speed to 400kHz
+    setMasterClockSpeed(13);
+}
+
+void MPU9250::getMagnetometerAdjustments(float adjustments[3]) {
+    adjustments[0] = asax;
+    adjustments[1] = asay;
+    adjustments[2] = asaz;
 }
 
 uint8_t MPU9250::getAddr() {
@@ -1715,15 +1767,13 @@ void MPU9250::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int
 	//get accel and gyro
 	getMotion6(ax, ay, az, gx, gy, gz);
 
-	//read mag
-	I2Cdev::writeByte(devAddr, MPU9250_RA_INT_PIN_CFG, 0x02); //set i2c bypass enable pin to true to access magnetometer
-	delay(10);
-	I2Cdev::writeByte(MPU9150_RA_MAG_ADDRESS, 0x0A, 0x01); //enable the magnetometer
-	delay(10);
-	I2Cdev::readBytes(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_XOUT_L, 6, buffer);
-	*mx = (((int16_t)buffer[1]) << 8) | buffer[0];
-    *my = (((int16_t)buffer[3]) << 8) | buffer[2];
-    *mz = (((int16_t)buffer[5]) << 8) | buffer[4];
+	//read mag from SLV0 external sensor registers
+    I2Cdev::readBytes(devAddr, MPU9250_RA_EXT_SENS_DATA_00, 7, buffer);
+    if (!(buffer[6] & 0x8)) { // Check ST2 for sensor overflow
+        *mx = (((int16_t)buffer[1]) << 8) | buffer[0];
+        *my = (((int16_t)buffer[3]) << 8) | buffer[2];
+        *mz = (((int16_t)buffer[5]) << 8) | buffer[4];
+    }
 }
 /** Get raw 6-axis motion sensor readings (accel/gyro).
  * Retrieves all currently available motion sensor values.
@@ -3262,4 +3312,44 @@ void MPU9250::PrintActiveOffsets() {
 	printfloatx("", Data[0], 5, 0, ",  ");
 	printfloatx("", Data[1], 5, 0, ",  ");
 	printfloatx("", Data[2], 5, 0, "\n");
+}
+
+/** Get latest byte from FIFO buffer no matter how much time has passed.
+ * ===                  GetCurrentFIFOPacket                    ===
+ * ================================================================
+ * Returns 1) when data was successfully read
+ *         2) when recovering from overflow, only the earliest packet is read
+ *         0) when no valid data is available
+ * ================================================================ */
+int8_t MPU9250::GetCurrentFIFOPacket(uint8_t *data, uint8_t length) { // overflow proof
+    uint16_t fifoCounter = getFIFOCount();
+    if (fifoCounter < length) { // If FIFO counter is smaller than packet size - there's nothing to read yet
+        return 0;
+    } else if (fifoCounter > 192) { // If FIFO counter exceeds our buffer size - read the first packet to keep it smooth and reset FIFO
+        getFIFOBytes(data, length);
+        resetFIFO();
+        return 2;
+    } else if (fifoCounter > length) { // If FIFO counter exceeds a size of one packet - read full packets and get the latest packet
+        uint8_t fifoBuf[192] = {0};
+        uint8_t bytesCounter = 0;
+        // Count only full packets and read them into buffer
+        fifoCounter = length * (fifoCounter / length);
+        do {
+            uint8_t i2cBuf[BUFFER_LENGTH] = {0};
+            uint8_t readBytes = min(fifoCounter, (uint16_t)BUFFER_LENGTH);
+            getFIFOBytes(i2cBuf, readBytes);
+            for (uint8_t i = 0; i < readBytes; i++) {
+                fifoBuf[i + bytesCounter] = i2cBuf[i];
+            }
+            fifoCounter -= readBytes;
+            bytesCounter += readBytes;
+        } while (fifoCounter);
+        // Read the last packet
+        for (uint8_t i = 0, start = bytesCounter - length; i < length; i++) {
+            data[i] = fifoBuf[start + i];
+        }
+        return 1;
+    }
+    getFIFOBytes(data, length); // If FIFO counter is exactly the packet size - read the packet
+    return 1;
 }
