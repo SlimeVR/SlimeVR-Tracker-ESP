@@ -222,11 +222,20 @@ void MPU9250Sensor::motionLoop() {
 
 
         if(Mxyz[0]==0.0f && Mxyz[1]==0.0f && Mxyz[2]==0.0f) return;
+        VectorFloat grav;
+        imu.dmpGetGravity(&grav,&rawQuat);
+        float Grav[3]={grav.x,grav.y,grav.z};
         skipCalcMag=SKIP_CALC_MAG_INTERVAL;
         if(correction.length_squared()==0.0f) {
-            correction=getCorrection(Axyz,Mxyz,quat);
+            correction=getCorrection(Grav,Mxyz,quat);
+            if (sensorId == 1) // second sensor
+                skipCalcMag = SKIP_CALC_MAG_INTERVAL / 2;
         }
-        else correction = correction.slerp(getCorrection(Axyz,Mxyz,quat),MAG_CORR_RATIO);
+        else {
+            Quat newCorr = getCorrection(Grav, Mxyz, quat);
+            if(!__isnanf(newCorr.w))
+                correction = correction.slerp(newCorr, MAG_CORR_RATIO);
+        }
     }else skipCalcMag--;
     quaternion=correction*quat;
     quaternion *= sensorOffset;
