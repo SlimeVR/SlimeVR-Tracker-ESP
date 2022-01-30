@@ -41,9 +41,6 @@ THE SOFTWARE.
  */
 MPU9250::MPU9250() {
     devAddr = MPU9250_DEFAULT_ADDRESS;
-    asax = 0;
-    asay = 0;
-    asaz = 0;
 }
 
 /** Power on and prepare for general usage.
@@ -70,15 +67,6 @@ void MPU9250::initialize(uint8_t address) {
     I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x0F);
     delay(10);
 
-    // Read and store magnetometer factory sensitivity adjustments
-    uint8_t adjx = 0, adjy = 0, adjz = 0;
-    I2Cdev::readByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_ASAX, &adjx);
-    I2Cdev::readByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_ASAY, &adjy);
-    I2Cdev::readByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_ASAZ, &adjz);
-    asax = (0.5 * (adjx - 128)) / 128 + 1;
-    asay = (0.5 * (adjy - 128)) / 128 + 1;
-    asaz = (0.5 * (adjz - 128)) / 128 + 1;
-
     // Power down magnetometer
     I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x00);
     delay(10);
@@ -102,12 +90,6 @@ void MPU9250::initialize(uint8_t address) {
     setI2CMasterModeEnabled(true);
     // Set I2C clock speed to 400kHz
     setMasterClockSpeed(13);
-}
-
-void MPU9250::getMagnetometerAdjustments(float adjustments[3]) {
-    adjustments[0] = asax;
-    adjustments[1] = asay;
-    adjustments[2] = asaz;
 }
 
 uint8_t MPU9250::getAddr() {

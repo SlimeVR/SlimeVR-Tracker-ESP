@@ -66,7 +66,6 @@ void MPU9250Sensor::motionSetup() {
         if(az>0 && 10.0*(ax*ax+ay*ay)<az*az) 
             startCalibration(0);
     }
-    imu.getMagnetometerAdjustments(adjustments);
 #ifndef _MAHONY_H_
     devStatus = imu.dmpInitialize();
     if(devStatus == 0){
@@ -177,10 +176,9 @@ void MPU9250Sensor::getMPUScaled()
     #endif
     vector_normalize(Axyz);
 
-    // Apply correction for 16-bit mode and factory sensitivity adjustments
-    Mxyz[0] = (float)mx * 0.15f * adjustments[0];
-    Mxyz[1] = (float)my * 0.15f * adjustments[1];
-    Mxyz[2] = (float)mz * 0.15f * adjustments[2];
+    Mxyz[0] = (float)mx;
+    Mxyz[1] = (float)my;
+    Mxyz[2] = (float)mz;
     //apply offsets and scale factors from Magneto
     #if useFullCalibrationMatrix == true
         for (i = 0; i < 3; i++)

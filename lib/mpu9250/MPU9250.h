@@ -1005,11 +1005,9 @@ class MPU9250 {
             uint16_t dmpGetFIFOPacketSize();
         #endif
 
-        void getMagnetometerAdjustments(float *adjustments);
     private:
         uint8_t devAddr;
         uint8_t buffer[14];
-        float asax, asay, asaz;
 };
 
 #endif /* _MPU9250_H_ */

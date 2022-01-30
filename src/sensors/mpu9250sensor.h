@@ -38,7 +38,6 @@ public:
 private:
     MPU9250 imu{};
     CalibrationConfig *calibration;
-    float adjustments[3];
     bool dmpReady = false;    // set true if DMP init was successful
     uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
     uint8_t devStatus;        // return status after each device operation (0 = success, !0 = error)
