@@ -21,48 +21,23 @@
     THE SOFTWARE.
 */
 
-#include "BNO080.h"
-#include "sensor.h"
-#include "udpclient.h"
-#include "defines.h"
-#include <i2cscan.h>
-#include "ledstatus.h"
-
-namespace {
-    void signalAssert() {
-        for(int i = 0; i < 200; ++i) {
-            delay(50);
-            digitalWrite(LOADING_LED, LOW);
-            delay(50);
-            digitalWrite(LOADING_LED, HIGH);
-        }
-    }
-    
-    void sendResetReason(uint8_t reason, uint8_t sensorId) {
-        sendByte(reason, sensorId, PACKET_RESET_REASON);
-    }
-}
-
-void BNO080Sensor::setupBNO080(uint8_t sensorId, uint8_t addr, uint8_t intPin) {
-    this->addr = addr;
-    this->intPin = intPin;
-    this->sensorId = sensorId;
-    this->sensorOffset = {Quat(Vector3(0, 0, 1), sensorId == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
-}
+#include "sensors/bno080sensor.h"
+#include "network/network.h"
+#include "ledmgr.h"
 
 void BNO080Sensor::motionSetup()
 {
 #ifdef FULL_DEBUG
-        imu.enableDebugging(Serial);
+    imu.enableDebugging(Serial);
 #endif
     if(!imu.begin(addr, Wire, intPin)) {
         Serial.print("[ERR] IMU BNO08X: Can't connect to ");
-        Serial.println(IMU_NAME);
-        signalAssert();
+        Serial.println(getIMUNameByType(sensorType));
+        LEDManager::signalAssert();
         return;
     }
     Serial.print("[NOTICE] IMU BNO08X: Connected to ");
-    Serial.print(IMU_NAME);
+    Serial.print(getIMUNameByType(sensorType));
     Serial.print(" on 0x");
     Serial.print(addr, HEX);
     Serial.print(". Info: SW Version Major: 0x");
@@ -75,78 +50,93 @@ void BNO080Sensor::motionSetup()
     Serial.print(imu.swBuildNumber, HEX);
     Serial.print(" SW Version Patch: 0x");
     Serial.println(imu.swVersionPatch, HEX);
-#if defined(BNO_HAS_ARVR_STABILIZATION) && BNO_HAS_ARVR_STABILIZATION
+    bool useStabilization = false;
+#ifdef BNO_USE_ARVR_STABILIZATION
+    useStabilization = true;
+#endif
+    if(useStabilization && (sensorType == IMU_BNO085 || sensorType == IMU_BNO086)) {
         if(useMagnetometerAllTheTime) {
             imu.enableARVRStabilizedRotationVector(10);
         } else {
             imu.enableARVRStabilizedGameRotationVector(10);
+            if (useMagnetometerCorrection)
+                imu.enableRotationVector(1000);
+        }
+    } else {
+        if(useMagnetometerAllTheTime) {
+            imu.enableRotationVector(10);
+        } else {
+            imu.enableGameRotationVector(10);
             if(useMagnetometerCorrection)
                 imu.enableRotationVector(1000);
         }
-#else
-    if(useMagnetometerAllTheTime) {
-        imu.enableRotationVector(10);
-    } else {
-        imu.enableGameRotationVector(10);
-        if(useMagnetometerCorrection)
-            imu.enableRotationVector(1000);
     }
-#endif
     imu.enableTapDetector(100);
-    lastReset = imu.resetReason();
+    lastReset = 0;
     lastData = millis();
     working = true;
-    setUp = true;
+    configured = true;
 }
 
 void BNO080Sensor::motionLoop()
 {
     //Look for reports from the IMU
-    while(imu.dataAvailable())
+    while (imu.dataAvailable())
     {
-        lastReset = -1;
+        lastReset = 0;
         lastData = millis();
-        if(useMagnetometerAllTheTime || !useMagnetometerCorrection) {
-            if(imu.hasNewQuat()) {
+        if (useMagnetometerAllTheTime || !useMagnetometerCorrection)
+        {
+            if (imu.hasNewQuat())
+            {
                 imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
                 quaternion *= sensorOffset;
-                if(!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion)) {
+                if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
+                {
                     newData = true;
                     lastQuatSent = quaternion;
                 }
             }
-        } else {
-            if(imu.hasNewGameQuat()) {
+        }
+        else
+        {
+            if (imu.hasNewGameQuat())
+            {
                 imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
                 quaternion *= sensorOffset;
                 newData = true;
             }
-            if(imu.hasNewMagQuat()) {
+            if (imu.hasNewMagQuat())
+            {
                 imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
                 magQuaternion *= sensorOffset;
                 newMagData = true;
             }
         }
-        if(imu.getTapDetected()) {
+        if (imu.getTapDetected())
+        {
             tap = imu.getTapDetector();
         }
-        if(imu.hasNewAccel()) {
+        if (imu.hasNewAccel())
+        {
             float v[3];
             uint8_t acc;
             imu.getAccel(v[0], v[1], v[2], acc);
-            sendVector(v, PACKET_ACCEL);
+            Network::sendAccel(v, PACKET_ACCEL);
         }
-        if(intPin == 255 || imu.I2CTimedOut())
+        if (intPin == 255 || imu.I2CTimedOut())
             break;
     }
-    if(lastData + 1000 < millis() && setUp) {
-        setLedStatus(LED_STATUS_IMU_ERROR);
+    if (lastData + 1000 < millis() && configured)
+    {
+        LEDManager::setLedStatus(LED_STATUS_IMU_ERROR);
         working = false;
         lastData = millis();
         uint8_t rr = imu.resetReason();
-        if(rr != lastReset) {
+        if (rr != lastReset)
+        {
             lastReset = rr;
-            sendResetReason(rr, this->sensorId);
+            Network::sendError(rr, this->sensorId);
         }
         Serial.print("[ERR] Sensor ");
         Serial.print(sensorId);
@@ -155,53 +145,56 @@ void BNO080Sensor::motionLoop()
     }
 }
 
-void BNO080Sensor::sendData() {
-    if(newData) {
+uint8_t BNO080Sensor::getSensorState() {
+    return lastReset > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
+}
+
+void BNO080Sensor::sendData()
+{
+    if (newData)
+    {
         newData = false;
-        sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
-        if(useMagnetometerAllTheTime)
-            sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGNETOMETER_ACCURACY);
+        Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
+        if (useMagnetometerAllTheTime)
+            Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
 #ifdef FULL_DEBUG
-            Serial.print("[DBG] Quaternion: ");
-            Serial.print(quaternion.x);
-            Serial.print(",");
-            Serial.print(quaternion.y);
-            Serial.print(",");
-            Serial.print(quaternion.z);
-            Serial.print(",");
-            Serial.println(quaternion.w);
+        Serial.print("[DBG] Quaternion: ");
+        Serial.print(quaternion.x);
+        Serial.print(",");
+        Serial.print(quaternion.y);
+        Serial.print(",");
+        Serial.print(quaternion.z);
+        Serial.print(",");
+        Serial.println(quaternion.w);
 #endif
     }
-    if(newMagData) {
+    if (newMagData)
+    {
         newMagData = false;
-        sendRotationData(&magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy, sensorId, PACKET_ROTATION_DATA);
-        sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId, PACKET_MAGNETOMETER_ACCURACY);
+        Network::sendRotationData(&magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy, sensorId);
+        Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
     }
-    if(tap != 0) {
-        sendByte(tap, sensorId, PACKET_TAP);
+    if (tap != 0)
+    {
+        Network::sendTap(tap, sensorId);
         tap = 0;
     }
 }
 
-void BNO080Sensor::startCalibration(int calibrationType) {
+void BNO080Sensor::startCalibration(int calibrationType)
+{
     // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
-    for(int i = 0; i < 10; ++i) {
-        digitalWrite(CALIBRATING_LED, LOW);
-        delay(20);
-        digitalWrite(CALIBRATING_LED, HIGH);
-        delay(20);
-    }
-    digitalWrite(CALIBRATING_LED, LOW);
-    delay(2000);
-    digitalWrite(CALIBRATING_LED, HIGH);
+    LEDManager::pattern(CALIBRATING_LED, 20, 20, 10);
+    LEDManager::blink(CALIBRATING_LED, 2000);
     imu.calibrateGyro();
-    do {
-        digitalWrite(CALIBRATING_LED, LOW);
+    do
+    {
+        LEDManager::on(CALIBRATING_LED);
         imu.requestCalibrationStatus();
         delay(20);
         imu.getReadings();
-        digitalWrite(CALIBRATING_LED, HIGH);
+        LEDManager::off(CALIBRATING_LED);
         delay(20);
-    } while(!imu.calibrationComplete());
+    } while (!imu.calibrationComplete());
     imu.saveCalibration();
 }

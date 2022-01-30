@@ -21,10 +21,9 @@
     THE SOFTWARE.
 */
 
-#include "MPU9250.h"
-#include "sensor.h"
-#include "udpclient.h"
-#include "defines.h"
+#include "mpu9250sensor.h"
+#include "network/network.h"
+#include "globals.h"
 #include "helper_3dmath.h"
 #include <i2cscan.h>
 #include "calibration.h"
@@ -33,44 +32,22 @@
 #ifndef _MAHONY_H_
 #include "dmpmag.h"
 #endif
+#include "ledmgr.h"
 
 constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
 
 #define SKIP_CALC_MAG_INTERVAL 10
 #define MAG_CORR_RATIO 0.2
 
-namespace {
-    void signalAssert() {
-        for(int i = 0; i < 200; ++i) {
-            delay(50);
-            digitalWrite(LOADING_LED, LOW);
-            delay(50);
-            digitalWrite(LOADING_LED, HIGH);
-        }
-    }
-}
-
-void MPU9250Sensor::setSecond() {
-    isSecond = true;
-    sensorOffset = {Quat(Vector3(0, 0, 1), SECOND_IMU_ROTATION)};
-}
 void MPU9250Sensor::motionSetup() {
     DeviceConfig * const config = getConfigPtr();
-    calibration = &config->calibration[isSecond?1:0];
-    uint8_t addr = isSecond?0x69:0x68;
-    if(!I2CSCAN::isI2CExist(addr)) {
-        addr = isSecond?0x68:0x69;
-        if(!I2CSCAN::isI2CExist(addr)) {
-            Serial.println("[ERR] Can't find I2C device on addr 0x68 or 0x69, returning");
-            signalAssert();
-            return;
-        }
-    }
+    calibration = &config->calibration[sensorId];
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
-        Serial.print("[ERR] Can't communicate with MPU, response 0x");
+        Serial.print("[ERR] MPU9250: Can't communicate with MPU, response 0x");
         Serial.println(imu.getDeviceID(), HEX);
+        return;
     } else {
         Serial.print("[OK] Connected to MPU, ID 0x");
         Serial.println(imu.getDeviceID(), HEX);
@@ -113,10 +90,7 @@ void MPU9250Sensor::motionSetup() {
 
         // get expected DMP packet size for later comparison
         packetSize = imu.dmpGetFIFOPacketSize();
-
-        if (isSecond) {
-            working = true;
-        }
+        working = true;
     } else {
         // ERROR!
         // 1 = initial memory load failed
@@ -126,6 +100,9 @@ void MPU9250Sensor::motionSetup() {
         Serial.print(devStatus);
         Serial.println(F(")"));
     }
+#else
+    working = true;
+    configured = true;
 #endif
 }
 
@@ -134,10 +111,6 @@ void MPU9250Sensor::motionLoop() {
     unsigned long now = micros();
     unsigned long deltat = now - last; //seconds since last update
     last = now;
-    if(deltat<samplingRateInMillis*1000) {
-        delayMicroseconds(samplingRateInMillis*1000-deltat);
-        deltat = samplingRateInMillis*1000;
-    }
 #ifndef _MAHONY_H_
     // Update quaternion
     if(!dmpReady)
@@ -152,7 +125,7 @@ void MPU9250Sensor::motionLoop() {
         skipCalcMag=SKIP_CALC_MAG_INTERVAL;
         if(correction.length_squared()==0.0f) {
             correction=getCorrection(Axyz,Mxyz,quat);
-            if(isSecond) skipCalcMag=SKIP_CALC_MAG_INTERVAL/2;
+            if(sensorId) skipCalcMag=SKIP_CALC_MAG_INTERVAL/2;
         }
         else correction = correction.slerp(getCorrection(Axyz,Mxyz,quat),MAG_CORR_RATIO);
     }else skipCalcMag--;
@@ -170,13 +143,6 @@ void MPU9250Sensor::motionLoop() {
     if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;
         lastQuatSent = quaternion;
-    }
-}
-
-void MPU9250Sensor::sendData() {
-    if(newData) {
-        sendQuat(&quaternion, isSecond ? PACKET_ROTATION_2 : PACKET_ROTATION);
-        newData = false;
     }
 }
 
@@ -227,12 +193,12 @@ void MPU9250Sensor::getMPUScaled()
             Mxyz[i] = (Mxyz[i] - calibration->M_B[i]);
     #endif
     vector_normalize(Mxyz);
-    // if(!isSecond) Serial.printf("ax:%+6d\tay:%+6d\taz:%+6d\tmx:%+6d\tmy:%+6d\tmz:%+6d\tmxs:%+f\tmys:%+f\tmzs:%+f\tdt:%f\n",ax, ay, az, mx, my, mz, rawMag[0], rawMag[1], rawMag[2], deltat);
+    // if(!sensorId) Serial.printf("ax:%+6d\tay:%+6d\taz:%+6d\tmx:%+6d\tmy:%+6d\tmz:%+6d\tmxs:%+f\tmys:%+f\tmzs:%+f\tdt:%f\n",ax, ay, az, mx, my, mz, rawMag[0], rawMag[1], rawMag[2], deltat);
     
 }
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
-    digitalWrite(CALIBRATING_LED, LOW);
+    LEDManager::on(CALIBRATING_LED);
     Serial.println("[NOTICE] Gathering raw data for device calibration...");
     constexpr int calibrationSamples = 300;
     DeviceConfig *config = getConfigPtr();
@@ -256,25 +222,20 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     Gxyz[1] /= calibrationSamples;
     Gxyz[2] /= calibrationSamples;
     Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
-    sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0, PACKET_RAW_CALIBRATION_DATA);
-    config->calibration[isSecond?1:0].G_off[0] = Gxyz[0];
-    config->calibration[isSecond?1:0].G_off[1] = Gxyz[1];
-    config->calibration[isSecond?1:0].G_off[2] = Gxyz[2];
+    Network::sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0);
+    config->calibration[sensorId?1:0].G_off[0] = Gxyz[0];
+    config->calibration[sensorId?1:0].G_off[1] = Gxyz[1];
+    config->calibration[sensorId?1:0].G_off[2] = Gxyz[2];
 
     // Blink calibrating led before user should rotate the sensor
-    Serial.println("[NOTICE] After 3seconds, Gently rotate the device while it's gathering accelerometer and magnetometer data");
-    digitalWrite(CALIBRATING_LED, LOW);
-    delay(1500);
-    digitalWrite(CALIBRATING_LED, HIGH);
-    delay(1500);
-    Serial.println("[NOTICE] Gathering accelerometer and magnetometer data start!!");
-
+    Serial.println("[NOTICE] Gently rotate the device while it's gathering accelerometer and magnetometer data");
+    LEDManager::pattern(CALIBRATING_LED, 15, 300, 3000/310);
     float *calibrationDataAcc = (float*)malloc(calibrationSamples * 3 * sizeof(float));
     float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
     for (int i = 0; i < calibrationSamples; i++)
     {
+        LEDManager::on(CALIBRATING_LED);
         int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
-        digitalWrite(CALIBRATING_LED, LOW);
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
         calibrationDataAcc[i * 3 + 0] = ax;
         calibrationDataAcc[i * 3 + 1] = ay;
@@ -282,14 +243,11 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         calibrationDataMag[i * 3 + 0] = mx;
         calibrationDataMag[i * 3 + 1] = my;
         calibrationDataMag[i * 3 + 2] = mz;
-        sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
-        sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0, PACKET_RAW_CALIBRATION_DATA);
-        digitalWrite(CALIBRATING_LED, HIGH);
-        delay(100);
+        Network::sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
+        Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
+        LEDManager::off(CALIBRATING_LED);
+        delay(250);
     }
-    Serial.println("[NOTICE] Calibration data gathered");
-    digitalWrite(CALIBRATING_LED, HIGH);
-    delay(250);
     Serial.println("[NOTICE] Now Calculate Calibration data");
 
     float A_BAinv[4][3];
@@ -302,19 +260,19 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     Serial.println("[NOTICE] Now Saving EEPROM");
     for (int i = 0; i < 3; i++)
     {
-        config->calibration[isSecond?1:0].A_B[i] = A_BAinv[0][i];
-        config->calibration[isSecond?1:0].A_Ainv[0][i] = A_BAinv[1][i];
-        config->calibration[isSecond?1:0].A_Ainv[1][i] = A_BAinv[2][i];
-        config->calibration[isSecond?1:0].A_Ainv[2][i] = A_BAinv[3][i];
+        config->calibration[sensorId?1:0].A_B[i] = A_BAinv[0][i];
+        config->calibration[sensorId?1:0].A_Ainv[0][i] = A_BAinv[1][i];
+        config->calibration[sensorId?1:0].A_Ainv[1][i] = A_BAinv[2][i];
+        config->calibration[sensorId?1:0].A_Ainv[2][i] = A_BAinv[3][i];
 
-        config->calibration[isSecond?1:0].M_B[i] = M_BAinv[0][i];
-        config->calibration[isSecond?1:0].M_Ainv[0][i] = M_BAinv[1][i];
-        config->calibration[isSecond?1:0].M_Ainv[1][i] = M_BAinv[2][i];
-        config->calibration[isSecond?1:0].M_Ainv[2][i] = M_BAinv[3][i];
+        config->calibration[sensorId?1:0].M_B[i] = M_BAinv[0][i];
+        config->calibration[sensorId?1:0].M_Ainv[0][i] = M_BAinv[1][i];
+        config->calibration[sensorId?1:0].M_Ainv[1][i] = M_BAinv[2][i];
+        config->calibration[sensorId?1:0].M_Ainv[2][i] = M_BAinv[3][i];
     }
-
     setConfig(*config);
-    sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0, PACKET_RAW_CALIBRATION_DATA);
+    LEDManager::off(CALIBRATING_LED);
+    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0);
     Serial.println("[NOTICE] Finished Saving EEPROM");
-    delay(4000);
+    Serial.println("[NOTICE] Calibration data gathered and sent");
 }

@@ -20,64 +20,24 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_DEFINES_H_
-#define SLIMEVR_DEFINES_H_
-
-#include "consts.h"
-#include "debug.h"
+// ================================================
+// See docs for configuration options and examples:
+// https://docs.slimevr.dev/configuring-project.html#configuring-definesh
+// ================================================
 
 // Set parameters of IMU and board used
-#define IMU IMU_MPU9250
-#define BOARD BOARD_WEMOSD1MINI
+#define IMU IMU_BNO085
+#define SECOND_IMU IMU
+#define BOARD BOARD_SLIMEVR
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
-#define BATTERY_SHIELD_130K false
 
-#if IMU == IMU_BNO085
-  #define IMU_NAME "BNO085"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG true
-  #define BNO_HAS_ARVR_STABILIZATION true
-  #define I2C_SPEED 400000
-#elif IMU == IMU_BNO080
-  #define IMU_NAME "BNO080"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG true
-  #define BNO_HAS_ARVR_STABILIZATION false
-  #define I2C_SPEED 400000
-#elif IMU == IMU_BNO055
-  #define IMU_NAME "BNO055"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG true
-  #define BNO_HAS_ARVR_STABILIZATION false
-  #define I2C_SPEED 400000
-#elif IMU == IMU_MPU9250
-  #define IMU_NAME "MPU9250"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG true
-  #define I2C_SPEED 400000
-#elif IMU == IMU_MPU6050
-  #define IMU_NAME "MPU6050"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG false
-  #define I2C_SPEED 400000
-  #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
-#elif IMU == IMU_MPU6500
-  #define IMU_NAME "MPU6500"
-  #define IMU_HAS_ACCELL true
-  #define IMU_HAS_GYRO true
-  #define IMU_HAS_MAG false
-  #define I2C_SPEED 400000
-  #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
-#else
-    #error Select IMU in defines.h
-#endif
+// Battery monitoring options (comment to disable):
+// BAT_EXTERNAL for ADC pin, BAT_INTERNAL for internal - can detect only low battery, BAT_MCP3021 for external ADC
+#define BATTERY_MONITOR BAT_EXTERNAL
+#define BATTERY_SHIELD_RESISTANCE 180 //130k BatteryShield, 180k SlimeVR or fill in external resistor value in kOhm
 
+// Board-specific configurations
 #if BOARD == BOARD_SLIMEVR || BOARD == BOARD_SLIMEVR_DEV
   #define PIN_IMU_SDA 4
   #define PIN_IMU_SCL 5
@@ -90,6 +50,12 @@
   #define PIN_IMU_INT D5
   #define PIN_IMU_INT_2 D6
   #define PIN_BATTERY_LEVEL A0
+#elif BOARD == BOARD_ESP01
+  #define PIN_IMU_SDA 2
+  #define PIN_IMU_SCL 0
+  #define PIN_IMU_INT 255
+  #define PIN_IMU_INT_2 255
+  #define ENABLE_LEDS false
 #elif BOARD == BOARD_TTGO_TBASE
   #define PIN_IMU_SDA 5
   #define PIN_IMU_SCL 4
@@ -105,18 +71,3 @@
   #define PIN_IMU_INT_2 25
   #define PIN_BATTERY_LEVEL 36
 #endif
-
-#define LOADING_LED LED_BUILTIN
-#define CALIBRATING_LED LED_BUILTIN
-#define STATUS_LED LED_BUILTIN
-
-#if defined(BATTERY_SHIELD_130K) && BATTERY_SHIELD_130K == true
-  // Wemos D1 Mini has an internal Voltage Divider with R1=220K and R2=100K > this means, 3.3V analogRead input voltage results in 1023.0
-  // Wemos D1 Mini with Wemos BatteryShiled v1.2.0 or higher: BatteryShield with J2 closed, has an additional 130K resistor. So the resulting Voltage Divider is R1=220K+100K=320K and R2=100K > this means, 4.5V analogRead input voltage results in 1023.0
-  #define batteryADCMultiplier 1.0 / 1023.0 * 4.5
-#else
-  // SlimeVR Board can handle max 5V > so analogRead of 5.0V input will result in 1023.0
-  #define batteryADCMultiplier 1.0 / 1023.0 * 5.0
-#endif
-
-#endif // SLIMEVR_DEFINES_H_

@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,15 +20,28 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_SENSORFACTORY_H_
+#define SLIMEVR_SENSORFACTORY_H_
 
-#ifndef _OTA_H_
-#define _OTA_H 1
+#include "globals.h"
+#include "sensor.h"
 
-#include <ArduinoOTA.h>
+class SensorFactory
+{
+public:
+    SensorFactory();
+    ~SensorFactory();
+    void create();
+    void motionSetup();
+    void motionLoop();
+    void sendData();
+    void startCalibration(int sensorId, int calibrationType);
+    Sensor *getFirst() { return sensor1; };
+    Sensor *getSecond() { return sensor2; };
 
-namespace OTA {
-    void otaSetup(const char * const otaPassword);
-    void otaUpdate();
-}
+protected:
+    Sensor *sensor1;
+    Sensor *sensor2;
+};
 
-#endif // _OTA_H_
+#endif // SLIMEVR_SENSORFACTORY_H_

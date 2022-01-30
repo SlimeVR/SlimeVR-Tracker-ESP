@@ -20,11 +20,24 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#include "network.h"
+#include "ledmgr.h"
 
-#ifndef SLIMEVR_SERIALCOMMANDS_H_
-#define SLIMEVR_SERIALCOMMANDS_H_
+bool lastWifiConnected = false;
 
-void setUpSerialCommands();
-void serialCommandsUpdate();
+void Network::setUp() {
+    WiFiNetwork::setUp();
+}
 
-#endif // SLIMEVR_SERIALCOMMANDS_H_
+void Network::update(Sensor * const sensor, Sensor * const sensor2) {
+    WiFiNetwork::upkeep();
+    if(WiFiNetwork::isConnected()) {
+        if(lastWifiConnected == false) {
+            lastWifiConnected = true;
+            ServerConnection::resetConnection(); // WiFi was reconnected, reconnect to the server
+        }
+        ServerConnection::update(sensor, sensor2);
+    } else {
+        lastWifiConnected = false;
+    }
+}

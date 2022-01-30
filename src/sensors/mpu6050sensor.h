@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,26 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_LEDSTATUS_H_
-#define SLIMEVR_LEDSTATUS_H_
+#include "sensor.h"
+#include <MPU6050.h>
 
-#include "defines.h"
-#include "Arduino.h"
+class MPU6050Sensor : public Sensor
+{
+public:
+    MPU6050Sensor(){};
+    ~MPU6050Sensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void startCalibration(int calibrationType) override final;
 
-#define LED_STATUS_SERVER_CONNECTING 2
-#define LED_STATUS_WIFI_CONNECTING 4
-#define LED_STATUS_IMU_ERROR 256
-
-void setLedStatus(uint32_t status);
-void unsetLedStatus(uint32_t status);
-void ledStatusUpdate();
-
-#endif // SLIMEVR_LEDSTATUS_H_
+private:
+    MPU6050 imu{};
+    Quaternion rawQuat{};
+    // MPU dmp control/status vars
+    bool dmpReady = false;    // set true if DMP init was successful
+    uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
+    uint8_t devStatus;        // return status after each device operation (0 = success, !0 = error)
+    uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
+    uint16_t fifoCount;       // count of all bytes currently in FIFO
+    uint8_t fifoBuffer[64]{}; // FIFO storage buffer
+};
