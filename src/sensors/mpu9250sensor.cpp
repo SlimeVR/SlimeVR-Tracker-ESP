@@ -203,9 +203,9 @@ void MPU9250Sensor::motionLoop() {
         int16_t mx, my, mz;
         imu.getMagnetometer(&mx, &my, &mz);
         // Apply correction for 16-bit mode and factory sensitivity adjustments
-        Mxyz[0] = (float)my * mscale * magAdjustments[1];
-        Mxyz[1] = (float)mx * mscale * magAdjustments[0];
-        Mxyz[2] = -(float)mz * mscale * magAdjustments[2];
+        Mxyz[0] = (float)my;
+        Mxyz[1] = (float)mx;
+        Mxyz[2] = -(float)mz;
 
         float temp[3];
         //apply offsets and scale factors from Magneto
@@ -263,9 +263,9 @@ void MPU9250Sensor::getMPUScaled()
     int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
     imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
 
-    Axyz[0] = (float)ax * ascale;
-    Axyz[1] = (float)ay * ascale;
-    Axyz[2] = (float)az * ascale;
+    Axyz[0] = (float)ax;
+    Axyz[1] = (float)ay;
+    Axyz[2] = (float)az;
     //apply offsets (bias) and scale factors from Magneto
     #if useFullCalibrationMatrix == true
         for (i = 0; i < 3; i++)
@@ -285,9 +285,9 @@ void MPU9250Sensor::getMPUScaled()
         Gxyz[i] = (Gxyz[i] - calibration[sensorId].G_off[i]);
 
     // Apply correction for 16-bit mode and factory sensitivity adjustments
-    Mxyz[0] = (float)my * mscale * magAdjustments[1];
-    Mxyz[1] = (float)mx * mscale * magAdjustments[0];
-    Mxyz[2] = -(float)mz * mscale * magAdjustments[2];
+    Mxyz[0] = (float)my;
+    Mxyz[1] = (float)mx;
+    Mxyz[2] = -(float)mz;
     //apply offsets and scale factors from Magneto
     #if useFullCalibrationMatrix == true
         for (i = 0; i < 3; i++)
@@ -357,9 +357,9 @@ bool MPU9250Sensor::getDMPScaled() {
         // See MPU-9250 Product Specification - 9.1 Orientation of Axes
         // XYZ to YX-Z 
         imu.getMagnetometer(&rawMag[0], &rawMag[1], &rawMag[2]);
-        Mxyz[0] = (float)rawMag[1] * mscale * magAdjustments[1];
-        Mxyz[1] = (float)rawMag[0] * mscale * magAdjustments[0];
-        Mxyz[2] = -(float)rawMag[2] * mscale * magAdjustments[2];
+        Mxyz[0] = (float)rawMag[1];
+        Mxyz[1] = (float)rawMag[0];
+        Mxyz[2] = -(float)rawMag[2];
 
         //apply offsets and scale factors from Magneto
         #if useFullCalibrationMatrix == true
@@ -401,9 +401,9 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     {
         digitalWrite(CALIBRATING_LED, LOW);
         while(!getDMPScaled());
-        calibrationDataMag[i * 3 + 0] = (float)rawMag[1] * mscale * magAdjustments[1];
-        calibrationDataMag[i * 3 + 1] = (float)rawMag[0] * mscale * magAdjustments[0];
-        calibrationDataMag[i * 3 + 2] = -(float)rawMag[2] * mscale * magAdjustments[2];
+        calibrationDataMag[i * 3 + 0] = (float)rawMag[1];
+        calibrationDataMag[i * 3 + 1] = (float)rawMag[0];
+        calibrationDataMag[i * 3 + 2] = -(float)rawMag[2];
         digitalWrite(CALIBRATING_LED, HIGH);
         delay(80);
     }
@@ -481,12 +481,12 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
         LEDManager::on(CALIBRATING_LED);
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-        calibrationDataAcc[i * 3 + 0] = (float)ax * ascale;
-        calibrationDataAcc[i * 3 + 1] = (float)ay * ascale;
-        calibrationDataAcc[i * 3 + 2] = (float)az * ascale;
-        calibrationDataMag[i * 3 + 0] = (float)my * mscale * magAdjustments[1];
-        calibrationDataMag[i * 3 + 1] = (float)mx * mscale * magAdjustments[0];
-        calibrationDataMag[i * 3 + 2] = -(float)mz * mscale * magAdjustments[2];
+        calibrationDataAcc[i * 3 + 0] = (float)ax;
+        calibrationDataAcc[i * 3 + 1] = (float)ay;
+        calibrationDataAcc[i * 3 + 2] = (float)az;
+        calibrationDataMag[i * 3 + 0] = (float)my;
+        calibrationDataMag[i * 3 + 1] = (float)mx;
+        calibrationDataMag[i * 3 + 2] = -(float)mz;
         Network::sendRawCalibrationData(calibrationDataAcc + (i * 3), CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
         Network::sendRawCalibrationData(calibrationDataMag + (i * 3), CALIBRATION_TYPE_EXTERNAL_MAG, 0);
         LEDManager::off(CALIBRATING_LED);
