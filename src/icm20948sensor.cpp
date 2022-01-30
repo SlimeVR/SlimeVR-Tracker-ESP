@@ -59,7 +59,7 @@ uint8_t poss_addresses[number_i2c_addr] = {0X69}; // 0X68
 // #ifndef ENABLE_TAP
 //     #define ENABLE_TAP false
 // #endif
-
+/* // you cant add more than 2 sensor on 1 i2c bus also upstream library does not allow it
 void ICM20948Sensor::i2c_scan() { // Basically obsolete but kept for when adding > 2 external 
     uint8_t error;
 
@@ -78,7 +78,7 @@ void ICM20948Sensor::i2c_scan() { // Basically obsolete but kept for when adding
         }
     }
 }
-
+*/
 void ICM20948Sensor::save_bias(bool repeat) { 
     #if defined(SAVE_BIAS) && SAVE_BIAS
         #if ESP8266
@@ -220,27 +220,55 @@ void ICM20948Sensor::save_bias(bool repeat) {
 
 void ICM20948Sensor::setupICM20948(bool auxiliary, uint8_t addr) {
     this->addr = addr;
-    this->auxiliary = auxiliary;
-    this->sensorOffset = {Quat(Vector3(0, 0, 1), ((int)auxiliary) == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
-    if(auxiliary)
-    {
-        Serial.println("2nd IMU setup");
-        second_imu = addr;
+    this->auxiliary = auxiliary; // keep this for compatibility with eeprom
+    // auxiliary false = sensor 0 or main tracker
+    //           true  = sensor 1 or auxiliary tracker
+    // addr : the address used for this tracker.
+    if (!auxiliary) {
+        // Main Sensor
+        Serial.print("[INFO] 1st IMU setup: Type: ");
+        Serial.print(IMU_NAME);
+        Serial.print(" Address: ");
+        Serial.println(addr, HEX);
+        this->sensorId = 0;
+        this->sensorOffset = {Quat(Vector3(0, 0, 1), IMU_ROTATION)};
     }
-    else
-    {
-        Serial.println("1st IMU setup");
-        first_imu = addr;
+    else {
+        // Second Sensor
+        Serial.print("[INFO] 2nd IMU setup: Type: ");
+        Serial.print(IMU_NAME);
+        Serial.print(" Address: ");
+        Serial.println(addr, HEX);
+        this->sensorId = 1;
+        this->sensorOffset = {Quat(Vector3(0, 0, 1), SECOND_IMU_ROTATION)};
     }
+    
 }
 
 void ICM20948Sensor::motionSetup() {
     #ifdef FULL_DEBUG
         imu.enableDebugging(Serial);
     #endif
-    if (imu.begin(Wire, auxiliary) != ICM_20948_Stat_Ok) {
+    // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
+    boolean tracker = false;
+    
+    if (addr == 0x68) {
+         tracker = false;
+    } else if (addr == 0x69)
+    {
+        tracker = true;
+    } else {
+        Serial.print("[ERR] IMU ICM20948: I2C Address not supportet by ICM20948 library: ");
+        Serial.println(addr, HEX);
+        return;
+    }
+
+    ICM_20948_Status_e imu_err = imu.begin(Wire, tracker);
+    if (imu_err != ICM_20948_Stat_Ok) {
         Serial.print("[ERR] IMU ICM20948: Can't connect to ");
-        Serial.println(IMU_NAME);
+        Serial.print(addr, HEX);
+        Serial.print("  Error Code: ");
+        Serial.println(imu_err, HEX);
         signalAssert();
         return;
     }
@@ -588,11 +616,11 @@ void ICM20948Sensor::sendData() {
             newData = false;
             if (USE_6_AXIS)
             {
-                sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, auxiliary, PACKET_ROTATION_DATA);
+                sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId, PACKET_ROTATION_DATA);
             }
             else
             {
-                sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, auxiliary, PACKET_ROTATION_DATA);
+                sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId, PACKET_ROTATION_DATA);
             }
         }
 }

@@ -181,16 +181,16 @@ public:
 
 private:
 
-    void i2c_scan();
+//    void i2c_scan();
     bool auxiliary{ false };
     unsigned long lastData = 0;
-    uint8_t first_imu;
-    uint8_t second_imu;
+//    uint8_t first_imu;
+//    uint8_t second_imu;
     uint8_t addr = 0x69;
     int bias_save_counter = 0;
-    uint8_t ICM_address;
-    bool ICM_found = false;
-    bool ICM_init = false;
+//    uint8_t ICM_address;
+//    bool ICM_found = false;
+//    bool ICM_init = false;
     bool newData = false;
     bool newTap;
     
