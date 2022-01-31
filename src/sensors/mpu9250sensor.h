@@ -33,12 +33,12 @@ public:
     void motionLoop() override final;
     void startCalibration(int calibrationType) override final;
     void getMPUScaled();
-    bool getDMPScaled();
     void MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
 
 private:
     MPU9250 imu{};
     CalibrationConfig *calibration;
+
     bool dmpReady = false;    // set true if DMP init was successful
     uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
     uint8_t devStatus;        // return status after each device operation (0 = success, !0 = error)
@@ -46,25 +46,13 @@ private:
     uint16_t fifoCount;       // count of all bytes currently in FIFO
     uint8_t fifoBuffer[64]{}; // FIFO storage buffer
     //raw data and scaled as vector
-    int16_t rawAcc[3] {};
-    int16_t rawGyro[3] {};
-    int16_t rawMag[3] {};
+    int skipCalcMag = 0;
     float Axyz[3]{};
     float Gxyz[3]{};
     float Mxyz[3]{};
-    float q[4]{1.0, 0.0, 0.0, 0.0};
-    int skipCalcMag = 0;
-    float magAdjustments[3] {};
-    CalibrationConfig *calibration;
-    Quat correction{};
+    float rawMag[3]{};
+    Quat correction{0,0,0,0};
     // Loop timing globals
     unsigned long now = 0, last = 0; //micros() timers
     float deltat = 0;                //loop time in seconds
-    // MPU dmp control/status vars
-    bool dmpReady = false;    // set true if DMP init was successful
-    uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
-    uint8_t devStatus;        // return status after each device operation (0 = success, !0 = error)
-    uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
-    uint16_t fifoCount;       // count of all bytes currently in FIFO
-    uint8_t fifoBuffer[64]{}; // FIFO storage buffer
 };
