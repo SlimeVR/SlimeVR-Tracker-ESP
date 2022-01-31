@@ -41,9 +41,6 @@ THE SOFTWARE.
  */
 MPU9250_Base::MPU9250_Base() {
     devAddr = MPU9250_DEFAULT_ADDRESS;
-    asax = 0;
-    asay = 0;
-    asaz = 0;
 }
 
 /** Power on and prepare for general usage.
@@ -63,11 +60,49 @@ void MPU9250_Base::initialize(uint8_t address) {
     // Enable Magnetometer
     initilaizeMagnetometer();
 
+<<<<<<< HEAD
+=======
+    // Enable I2C bypass to access magnetometer
+    setI2CBypassEnabled(true);
+    // Power down magnetometer
+    I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x00);
+    delay(10);
+
+    // Enable FUSE rom access
+    I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x0F);
+    delay(10);
+
+    // Power down magnetometer
+    I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x00);
+    delay(10);
+
+    // Enable magnetometer in continuous reading mode 16-bit 100hz
+    I2Cdev::writeByte(MPU9250_RA_MAG_ADDRESS, MPU9250_RA_MAG_CNTL1, 0x16);
+    delay(10);
+
+    // Disable I2C bypass to avoid conflicts with aux tracker's magnetometer
+    setI2CBypassEnabled(false);
+
+    // Set up magnetometer as slave 0 for reading
+    I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_ADDR, MPU9250_RA_MAG_ADDRESS|0x80);
+    // Start reading from HXL register
+    I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_REG,  MPU9250_RA_MAG_XOUT_L);
+    // Read 7 bytes (until ST2 register), group LSB and MSB
+    I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_CTRL, 0x97);
+    delay(10);
+
+    // Enable I2C master to read from magnetometer
+    setI2CMasterModeEnabled(true);
+>>>>>>> main
     // Set I2C clock speed to 400kHz
     setMasterClockSpeed(13);
 }
 
+<<<<<<< HEAD
 uint8_t MPU9250_Base::getAddr() {
+=======
+uint8_t MPU9250::getAddr() {
+>>>>>>> main
     return devAddr;
 }
 

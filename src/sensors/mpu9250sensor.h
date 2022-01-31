@@ -38,6 +38,13 @@ public:
 
 private:
     MPU9250 imu{};
+    CalibrationConfig *calibration;
+    bool dmpReady = false;    // set true if DMP init was successful
+    uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
+    uint8_t devStatus;        // return status after each device operation (0 = success, !0 = error)
+    uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
+    uint16_t fifoCount;       // count of all bytes currently in FIFO
+    uint8_t fifoBuffer[64]{}; // FIFO storage buffer
     //raw data and scaled as vector
     int16_t rawAcc[3] {};
     int16_t rawGyro[3] {};
