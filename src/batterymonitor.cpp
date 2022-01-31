@@ -114,7 +114,7 @@ void BatteryMonitor::Loop()
                     level = 0;
                 Network::sendBatteryLevel(voltage, level);
                 #ifdef BATTERY_LOW_POWER_VOLTAGE
-                    if (voltage < (float)BATTERY_LOW_POWER_VOLTAGE)
+                    if (voltage < BATTERY_LOW_POWER_VOLTAGE)
                     {
                         #if defined(BATTERY_LOW_VOLTAGE_DEEP_SLEEP) && BATTERY_LOW_VOLTAGE_DEEP_SLEEP
                             ESP.deepSleep(0);
