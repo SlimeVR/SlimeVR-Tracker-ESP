@@ -250,20 +250,20 @@ void ICM20948Sensor::motionSetup() {
         imu.enableDebugging(Serial);
     #endif
     // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
-    boolean tracker = false;
+    // boolean tracker = false;
     
-    if (addr == 0x68) {
-         tracker = false;
-    } else if (addr == 0x69)
-    {
-        tracker = true;
-    } else {
-        Serial.print("[ERR] IMU ICM20948: I2C Address not supportet by ICM20948 library: ");
-        Serial.println(addr, HEX);
-        return;
-    }
+    // if (addr == 0x68) {
+    //      tracker = false;
+    // } else if (addr == 0x69)
+    // {
+    //     tracker = true;
+    // } else {
+    //     Serial.print("[ERR] IMU ICM20948: I2C Address not supportet by ICM20948 library: ");
+    //     Serial.println(addr, HEX);
+    //     return;
+    // }
 
-    ICM_20948_Status_e imu_err = imu.begin(Wire, tracker);
+    ICM_20948_Status_e imu_err = imu.begin(Wire, (uint8_t) (addr % 2));
     if (imu_err != ICM_20948_Stat_Ok) {
         Serial.print("[ERR] IMU ICM20948: Can't connect to ");
         Serial.print(addr, HEX);
