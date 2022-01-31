@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,27 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#include "sensor.h"
+#include "mahony.h"
+#include "magneto1.4.h"
+#include "ledmgr.h"
 
-#ifndef SLIMEVR_CONFIG_H_
-#define SLIMEVR_CONFIG_H_
+#include <BMI160.h>
 
-struct CalibrationConfig {
-    //accel offsets and correction matrix
-    float A_B[3];
-    float A_Ainv[3][3];
-    // mag offsets and correction matrix
-    float M_B[3];
-    float M_Ainv[3][3];
-    //raw offsets, determined for gyro at rest
-    float G_off[3];
-    // calibration temperature for dynamic compensation
-    float temperature;
+class BMI160Sensor : public Sensor {
+    public:
+        BMI160Sensor(){};
+        ~BMI160Sensor(){};
+        void motionSetup() override final;
+        void motionLoop() override final;
+        void startCalibration(int calibrationType) override final;
+        void getScaledValues(float Gxyz[3], float Axyz[3]);
+        float getTemperature();
+    private:
+        BMI160 imu {};
+        CalibrationConfig * calibration;
+        float q[4] {1.0f, 0.0f, 0.0f, 0.0f};
+        // Loop timing globals
+        uint32_t now = 0, last = 0;   //micros() timers
+        float deltat = 0;                  //loop time in seconds
 };
-
-struct DeviceConfig {
-    CalibrationConfig calibration[2];
-    int deviceId;
-    int deviceMode;
-};
-
-DeviceConfig * const getConfigPtr();
-void setConfig(const DeviceConfig & config);
-void saveConfig();
-
-#endif // SLIMEVR_CONFIG_H_
