@@ -18,8 +18,7 @@ The following IMUs and their corresponding `IMU` values are supported by the fir
 * BNO055 (IMU_BNO055)
   * Should be roughly equal BNO080, but cheaper. Not tested thoroughly, please report your results on Discord if you're willing to try.
 * MPU-9250 (IMU_MPU9250)
-  * Using Mahony sensor fusion of Gyroscope, Accelerometer with DMP and magnetometer, requires good magnetic environment.
-  * NOTE: Require wiring interrupt pin.
+  * Using Mahony sensor fusion of Gyroscope, Magnetometer and Accelerometer, requires good magnetic environment.
   * NOTE: Currently can only be used as MPU-6050 without magnetometer. To use it as MPU-6050, specify `IMU_MPU6500` in your `defines.h`.
 * MPU-6500 (IMU_MPU6500) & MPU-6050 (IMU_MPU6050)
   * Using internal DMP to fuse Gyroscope and Accelerometer. Can drift substantially.
