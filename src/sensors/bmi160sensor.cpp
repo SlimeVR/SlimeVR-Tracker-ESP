@@ -133,7 +133,6 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
         for (uint8_t i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
     #endif
-    vector_normalize(Axyz);
 }
 
 void BMI160Sensor::startCalibration(int calibrationType) {
