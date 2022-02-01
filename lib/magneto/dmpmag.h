@@ -4,7 +4,7 @@
 //Get rotation quaternion from gravity vector and geomagnetic vector by Direction Cosine Matrix
 //https://www.vectornav.com/resources/inertial-navigation-primer/math-fundamentals/math-attitudetran
 Quat getQuatDCM(float* acc, float* mag){
-    Vector3 Mv(mag[1], mag[0] ,-mag[2]);
+    Vector3 Mv(mag[0], mag[1], mag[2]);
     Vector3 Dv(acc[0], acc[1], acc[2]);
     Dv.normalize();
     Vector3 Rv = Dv.cross(Mv);

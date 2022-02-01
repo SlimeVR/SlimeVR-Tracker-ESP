@@ -31,6 +31,11 @@ float invSqrt(float x) {
    return tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
 }
 
+float vector_dot(float a[3], float b[3])
+{
+    return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]);
+}
+
 void vector_normalize(float a[3])
 {
     float norm = invSqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);

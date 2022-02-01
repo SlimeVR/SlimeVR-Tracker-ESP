@@ -33,7 +33,6 @@
 // Modified from Madgwick version to remove Z component of magnetometer:
 // reference vectors are Up (Acc) and West (Acc cross Mag)
 // sjr 12/2020
-// input vectors ax, ay, az and mx, my, mz MUST be normalized!
 // gx, gy, gz must be in units of radians/second
 void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat)
 {
@@ -46,7 +45,7 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     float hx, hy, hz;  //observed West vector W = AxM
     float ux, uy, uz, wx, wy, wz; //calculated A (Up) and W in body frame
     float ex, ey, ez;
-    float pa, pb, pc;
+    float qa, qb, qc;
 
     // Auxiliary variables to avoid repeated arithmetic
     float q1q1 = q1 * q1;
@@ -60,55 +59,83 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     float q3q4 = q3 * q4;
     float q4q4 = q4 * q4;
 
-    // Measured horizon vector = a x m (in body frame)
-    hx = ay * mz - az * my;
-    hy = az * mx - ax * mz;
-    hz = ax * my - ay * mx;
-    // Normalise horizon vector
-    norm = invSqrt(hx * hx + hy * hy + hz * hz);
-    hx *= norm;
-    hy *= norm;
-    hz *= norm;
+    // Compute feedback only if magnetometer measurement valid (avoids NaN in magnetometer normalisation)
+    float tmp = mx * mx + my * my + mz * mz;
+    if (tmp == 0.0f) {
+        mahonyQuaternionUpdate(q, ax, ay, az, gx, gy, gz, deltat);
+        return;
+    }
+    // Normalise magnetometer
+    norm = invSqrt(tmp);
+    mx *= norm;
+    my *= norm;
+    mz *= norm;
 
-    // Estimated direction of Up reference vector
-    ux = 2.0f * (q2q4 - q1q3);
-    uy = 2.0f * (q1q2 + q3q4);
-    uz = q1q1 - q2q2 - q3q3 + q4q4;
-
-    // estimated direction of horizon (West) reference vector
-    wx = 2.0f * (q2q3 + q1q4);
-    wy = q1q1 - q2q2 + q3q3 - q4q4;
-    wz = 2.0f * (q3q4 - q1q2);
-
-    // Error is cross product between estimated direction and measured direction of the reference vectors
-    ex = (ay * uz - az * uy) + (hy * wz - hz * wy);
-    ey = (az * ux - ax * uz) + (hz * wx - hx * wz);
-    ez = (ax * uy - ay * ux) + (hx * wy - hy * wx);
-
-    if (Ki > 0.0f)
+    // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
+    tmp = ax * ax + ay * ay + az * az;
+    if (tmp > 0.0f)
     {
-        eInt[0] += ex; // accumulate integral error
-        eInt[1] += ey;
-        eInt[2] += ez;
-        // Apply I feedback
-        gx += Ki * eInt[0];
-        gy += Ki * eInt[1];
-        gz += Ki * eInt[2];
+        // Normalise accelerometer (assumed to measure the direction of gravity in body frame)
+        norm = invSqrt(tmp);
+        ax *= norm;
+        ay *= norm;
+        az *= norm;
+
+        // Measured horizon vector = a x m (in body frame)
+        hx = ay * mz - az * my;
+        hy = az * mx - ax * mz;
+        hz = ax * my - ay * mx;
+
+        // Normalise horizon vector
+        norm = invSqrt(hx * hx + hy * hy + hz * hz);
+        hx *= norm;
+        hy *= norm;
+        hz *= norm;
+
+        // Estimated direction of Up reference vector
+        ux = 2.0f * (q2q4 - q1q3);
+        uy = 2.0f * (q1q2 + q3q4);
+        uz = q1q1 - q2q2 - q3q3 + q4q4;
+
+        // estimated direction of horizon (West) reference vector
+        wx = 2.0f * (q2q3 + q1q4);
+        wy = q1q1 - q2q2 + q3q3 - q4q4;
+        wz = 2.0f * (q3q4 - q1q2);
+
+        // Error is cross product between estimated direction and measured direction of the reference vectors
+        ex = (ay * uz - az * uy) + (hy * wz - hz * wy);
+        ey = (az * ux - ax * uz) + (hz * wx - hx * wz);
+        ez = (ax * uy - ay * ux) + (hx * wy - hy * wx);
+
+        if (Ki > 0.0f)
+        {
+            eInt[0] += ex; // accumulate integral error
+            eInt[1] += ey;
+            eInt[2] += ez;
+            // Apply I feedback
+            gx += Ki * eInt[0];
+            gy += Ki * eInt[1];
+            gz += Ki * eInt[2];
+        }
+
+        // Apply P feedback
+        gx = gx + Kp * ex;
+        gy = gy + Kp * ey;
+        gz = gz + Kp * ez;
     }
 
-    // Apply P feedback
-    gx = gx + Kp * ex;
-    gy = gy + Kp * ey;
-    gz = gz + Kp * ez;
-
     // Integrate rate of change of quaternion
-    pa = q2;
-    pb = q3;
-    pc = q4;
-    q1 = q1 + (-q2 * gx - q3 * gy - q4 * gz) * (0.5f * deltat);
-    q2 = pa + (q1 * gx + pb * gz - pc * gy) * (0.5f * deltat);
-    q3 = pb + (q1 * gy - pa * gz + pc * gx) * (0.5f * deltat);
-    q4 = pc + (q1 * gz + pa * gy - pb * gx) * (0.5f * deltat);
+    // small correction 1/11/2022, see https://github.com/kriswiner/MPU9250/issues/447
+    gx = gx * (0.5*deltat); // pre-multiply common factors
+    gy = gy * (0.5*deltat);
+    gz = gz * (0.5*deltat);
+    qa = q1;
+    qb = q2;
+    qc = q3;
+    q1 += (-qb * gx - qc * gy - q4 * gz);
+    q2 += (qa * gx + qc * gz - q4 * gy);
+    q3 += (qa * gy - qb * gz + q4 * gx);
+    q4 += (qa * gz + qb * gy - qc * gx);
 
     // Normalise quaternion
     norm = invSqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);

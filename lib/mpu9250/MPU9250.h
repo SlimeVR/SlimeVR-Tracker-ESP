@@ -39,12 +39,14 @@ THE SOFTWARE.
 
 #include "I2Cdev.h"
 #include "helper_3dmath.h"
-#include <pgmspace.h>
 
-// MotionApps 2.0 DMP implementation, built using the MPU-6050EVB evaluation board
-#define MPU9250_INCLUDE_DMP_MOTIONAPPS41
+#ifdef __AVR__
+    #include <avr/pgmspace.h>
+#elif defined(ESP32)
+    #include <pgmspace.h>
+#endif
 
-//Magnetometer Registers
+//Magnetometer Registers, AK8963
 #define MPU9250_RA_MAG_ADDRESS      0x0C
 #define MPU9250_RA_MAG_WHOAMI       0x01
 #define MPU9250_RA_MAG_ST1          0x02
@@ -59,6 +61,40 @@ THE SOFTWARE.
 #define MPU9250_RA_MAG_ASAY         0x11
 #define MPU9250_RA_MAG_ASAZ         0x12
 #define MPU9250_RA_MAG_CNTL1        0x0A
+#define MPU9250_RA_MAG_CNTL2        0x0B
+#define MPU9250_RA_MAG_ASTC         0x0C
+// #define MPU9250_RA_MAG_TS1          0x0D // SHIPMENT TEST, DO NOT USE
+// #define MPU9250_RA_MAG_TS2          0x0E // SHIPMENT TEST, DO NOT USE
+#define MPU9250_RA_MAG_I2CDIS       0x0F
+#define MPU9250_RA_MAG_ASAX         0x10
+#define MPU9250_RA_MAG_ASAY         0x11
+#define MPU9250_RA_MAG_ASAZ         0x12
+
+#define MPU9250_MAG_ST1_DRDY_BIT             0
+#define MPU9250_MAG_ST1_DOR_BIT              1
+
+#define MPU9250_MAG_ST2_HOFL_BIT             3
+#define MPU9250_MAG_ST2_BITM_BIT             4
+
+#define MPU9250_MAG_CNTL1_MODE_BIT           3
+#define MPU9250_MAG_CNTL1_MODE_LENGTH        4
+#define MPU9250_MAG_CNTL1_RES_BIT            4
+
+#define MPU9250_MAG_CNTL2_RESET              0x01
+
+#define MPU9250_MAG_MODE_POWERDOWN           0x0
+#define MPU9250_MAG_MODE_SINGLE              0x1
+#define MPU9250_MAG_MODE_CONTINUOUS_8HZ      0x2
+#define MPU9250_MAG_MODE_EXTERNAL            0x4
+#define MPU9250_MAG_MODE_CONTINUOUS_100HZ    0x6
+#define MPU9250_MAG_MODE_SELFTEST            0x8
+#define MPU9250_MAG_MODE_FUSEROM             0xF
+
+#define MPU9250_MAG_RES_14_BIT               0
+#define MPU9250_MAG_RES_16_BIT               1
+
+#define MPU9250_MAG_CNTL2_SRST_BIT           0
+
 
 #define MPU9250_ADDRESS_AD0_LOW     0x68 // address pin low (GND), default for InvenSense evaluation board
 #define MPU9250_ADDRESS_AD0_HIGH    0x69 // address pin high (VCC)
@@ -70,18 +106,28 @@ THE SOFTWARE.
 #define MPU9250_RA_X_FINE_GAIN      0x03 //[7:0] X_FINE_GAIN
 #define MPU9250_RA_Y_FINE_GAIN      0x04 //[7:0] Y_FINE_GAIN
 #define MPU9250_RA_Z_FINE_GAIN      0x05 //[7:0] Z_FINE_GAIN
-#define MPU9250_RA_XA_OFFS_H        0x06 //[15:0] XA_OFFS
-#define MPU9250_RA_XA_OFFS_L_TC     0x07
-#define MPU9250_RA_YA_OFFS_H        0x08 //[15:0] YA_OFFS
-#define MPU9250_RA_YA_OFFS_L_TC     0x09
-#define MPU9250_RA_ZA_OFFS_H        0x0A //[15:0] ZA_OFFS
-#define MPU9250_RA_ZA_OFFS_L_TC     0x0B
+
+#define MPU9250_RA_XA_OFFS_H        0x77 //[15:0] XA_OFFS
+#define MPU9250_RA_XA_OFFS_L_TC     0x78
+#define MPU9250_RA_YA_OFFS_H        0x7A //[15:0] YA_OFFS
+#define MPU9250_RA_YA_OFFS_L_TC     0x7B
+#define MPU9250_RA_ZA_OFFS_H        0x7D //[15:0] ZA_OFFS
+#define MPU9250_RA_ZA_OFFS_L_TC     0x7E
+
+// #define MPU9250_RA_XA_OFFS_H        0x06 //[15:0] XA_OFFS
+// #define MPU9250_RA_XA_OFFS_L_TC     0x07
+// #define MPU9250_RA_YA_OFFS_H        0x08 //[15:0] YA_OFFS
+// #define MPU9250_RA_YA_OFFS_L_TC     0x09
+// #define MPU9250_RA_ZA_OFFS_H        0x0A //[15:0] ZA_OFFS
+// #define MPU9250_RA_ZA_OFFS_L_TC     0x0B
+
 #define MPU9250_RA_XG_OFFS_USRH     0x13 //[15:0] XG_OFFS_USR
 #define MPU9250_RA_XG_OFFS_USRL     0x14
 #define MPU9250_RA_YG_OFFS_USRH     0x15 //[15:0] YG_OFFS_USR
 #define MPU9250_RA_YG_OFFS_USRL     0x16
 #define MPU9250_RA_ZG_OFFS_USRH     0x17 //[15:0] ZG_OFFS_USR
 #define MPU9250_RA_ZG_OFFS_USRL     0x18
+
 #define MPU9250_RA_SMPLRT_DIV       0x19
 #define MPU9250_RA_CONFIG           0x1A
 #define MPU9250_RA_GYRO_CONFIG      0x1B
@@ -416,9 +462,9 @@ THE SOFTWARE.
 
 // note: DMP code memory blocks defined at end of header file
 
-class MPU9250 {
+class MPU9250_Base {
     public:
-        MPU9250();
+        MPU9250_Base();
 
         void initialize(uint8_t address = MPU9250_DEFAULT_ADDRESS);
         bool testConnection();
@@ -802,212 +848,30 @@ class MPU9250 {
 		void PID(uint8_t ReadAddress, float kP,float kI, uint8_t Loops);  // Does the math
 		void PrintActiveOffsets(); // See the results of the Calibration
 
-        // special methods for MotionApps 2.0 implementation
-        #ifdef MPU9250_INCLUDE_DMP_MOTIONAPPS20
-            uint8_t *dmpPacketBuffer;
-            uint16_t dmpPacketSize;
+        // AK8963 Magnetomter Functions
+        void initilaizeMagnetometer();
+        bool testConnectionMagnetometer();
+        int8_t getMagnetometerDeviceID();
+        void getMagnetometerAdjustments(float *adjustments);
+        void getMagnetometer(int16_t* x, int16_t* y, int16_t* z);
+        int16_t getMagnetometerX();
+        int16_t getMagnetometerY();
+        int16_t getMagnetometerZ();
 
-            uint8_t dmpInitialize();
-            bool dmpPacketAvailable();
+        // See MPU-9250 Product Specification - 9.1 Orientation of Axes
+        // MPU9250 is XYZ, but AK8963 which is inside MPU9250 is YX-Z
+        float getHeading(float mx, float my, float mz);
+        float getTeiltHeading(float ax, float ay, float az, float mx, float my, float mz);
 
-            uint8_t dmpSetFIFORate(uint8_t fifoRate);
-            uint8_t dmpGetFIFORate();
-            uint8_t dmpGetSampleStepSizeMS();
-            uint8_t dmpGetSampleFrequency();
-            int32_t dmpDecodeTemperature(int8_t tempReg);
-            
-            // Register callbacks after a packet of FIFO data is processed
-            //uint8_t dmpRegisterFIFORateProcess(inv_obj_func func, int16_t priority);
-            //uint8_t dmpUnregisterFIFORateProcess(inv_obj_func func);
-            uint8_t dmpRunFIFORateProcesses();
-            
-            // Setup FIFO for various output
-            uint8_t dmpSendQuaternion(uint_fast16_t accuracy);
-            uint8_t dmpSendGyro(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendAccel(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendLinearAccel(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendLinearAccelInWorld(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendControlData(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendSensorData(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendExternalSensorData(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendGravity(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendPacketNumber(uint_fast16_t accuracy);
-            uint8_t dmpSendQuantizedAccel(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendEIS(uint_fast16_t elements, uint_fast16_t accuracy);
-
-            // Get Fixed Point data from FIFO
-            uint8_t dmpGetAccel(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetAccel(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetAccel(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetQuaternion(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuaternion(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuaternion(Quaternion *q, const uint8_t* packet=0);
-            uint8_t dmpGet6AxisQuaternion(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGet6AxisQuaternion(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGet6AxisQuaternion(Quaternion *q, const uint8_t* packet=0);
-            uint8_t dmpGetRelativeQuaternion(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetRelativeQuaternion(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetRelativeQuaternion(Quaternion *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyro(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyro(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyro(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpSetLinearAccelFilterCoefficient(float coef);
-            uint8_t dmpGetLinearAccel(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccel(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccel(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccel(VectorInt16 *v, VectorInt16 *vRaw, VectorFloat *gravity);
-            uint8_t dmpGetLinearAccelInWorld(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccelInWorld(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccelInWorld(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccelInWorld(VectorInt16 *v, VectorInt16 *vReal, Quaternion *q);
-            uint8_t dmpGetGyroAndAccelSensor(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyroAndAccelSensor(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyroAndAccelSensor(VectorInt16 *g, VectorInt16 *a, const uint8_t* packet=0);
-            uint8_t dmpGetGyroSensor(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyroSensor(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyroSensor(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetControlData(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetTemperature(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGravity(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGravity(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGravity(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetGravity(VectorFloat *v, Quaternion *q);
-            uint8_t dmpGetUnquantizedAccel(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetUnquantizedAccel(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetUnquantizedAccel(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetQuantizedAccel(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuantizedAccel(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuantizedAccel(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetExternalSensorData(int32_t *data, uint16_t size, const uint8_t* packet=0);
-            uint8_t dmpGetEIS(int32_t *data, const uint8_t* packet=0);
-            
-            uint8_t dmpGetEuler(float *data, Quaternion *q);
-            uint8_t dmpGetYawPitchRoll(float *data, Quaternion *q, VectorFloat *gravity);
-
-            // Get Floating Point data from FIFO
-            uint8_t dmpGetAccelFloat(float *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuaternionFloat(float *data, const uint8_t* packet=0);
-
-            uint8_t dmpProcessFIFOPacket(const unsigned char *dmpData);
-            uint8_t dmpReadAndProcessFIFOPacket(uint8_t numPackets, uint8_t *processed=NULL);
-
-            uint8_t dmpSetFIFOProcessedCallback(void (*func) (void));
-
-            uint8_t dmpInitFIFOParam();
-            uint8_t dmpCloseFIFO();
-            uint8_t dmpSetGyroDataSource(uint8_t source);
-            uint8_t dmpDecodeQuantizedAccel();
-            uint32_t dmpGetGyroSumOfSquare();
-            uint32_t dmpGetAccelSumOfSquare();
-            void dmpOverrideQuaternion(long *q);
-            uint16_t dmpGetFIFOPacketSize();
-        #endif
-
-        // special methods for MotionApps 4.1 implementation
-        #ifdef MPU9250_INCLUDE_DMP_MOTIONAPPS41
-            uint8_t *dmpPacketBuffer;
-            uint16_t dmpPacketSize;
-
-            uint8_t dmpInitialize();
-            bool dmpPacketAvailable();
-
-            uint8_t dmpSetFIFORate(uint8_t fifoRate);
-            uint8_t dmpGetFIFORate();
-            uint8_t dmpGetSampleStepSizeMS();
-            uint8_t dmpGetSampleFrequency();
-            int32_t dmpDecodeTemperature(int8_t tempReg);
-            
-            // Register callbacks after a packet of FIFO data is processed
-            //uint8_t dmpRegisterFIFORateProcess(inv_obj_func func, int16_t priority);
-            //uint8_t dmpUnregisterFIFORateProcess(inv_obj_func func);
-            uint8_t dmpRunFIFORateProcesses();
-            
-            // Setup FIFO for various output
-            uint8_t dmpSendQuaternion(uint_fast16_t accuracy);
-            uint8_t dmpSendGyro(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendAccel(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendLinearAccel(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendLinearAccelInWorld(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendControlData(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendSensorData(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendExternalSensorData(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendGravity(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendPacketNumber(uint_fast16_t accuracy);
-            uint8_t dmpSendQuantizedAccel(uint_fast16_t elements, uint_fast16_t accuracy);
-            uint8_t dmpSendEIS(uint_fast16_t elements, uint_fast16_t accuracy);
-
-            // Get Fixed Point data from FIFO
-            uint8_t dmpGetAccel(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetAccel(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetAccel(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetQuaternion(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuaternion(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuaternion(Quaternion *q, const uint8_t* packet=0);
-            uint8_t dmpGet6AxisQuaternion(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGet6AxisQuaternion(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGet6AxisQuaternion(Quaternion *q, const uint8_t* packet=0);
-            uint8_t dmpGetRelativeQuaternion(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetRelativeQuaternion(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetRelativeQuaternion(Quaternion *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyro(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyro(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyro(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetMag(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpSetLinearAccelFilterCoefficient(float coef);
-            uint8_t dmpGetLinearAccel(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccel(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccel(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccel(VectorInt16 *v, VectorInt16 *vRaw, VectorFloat *gravity);
-            uint8_t dmpGetLinearAccelInWorld(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccelInWorld(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccelInWorld(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetLinearAccelInWorld(VectorInt16 *v, VectorInt16 *vReal, Quaternion *q);
-            uint8_t dmpGetGyroAndAccelSensor(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyroAndAccelSensor(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyroAndAccelSensor(VectorInt16 *g, VectorInt16 *a, const uint8_t* packet=0);
-            uint8_t dmpGetGyroSensor(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyroSensor(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGyroSensor(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetControlData(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetTemperature(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGravity(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGravity(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetGravity(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetGravity(VectorFloat *v, Quaternion *q);
-            uint8_t dmpGetUnquantizedAccel(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetUnquantizedAccel(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetUnquantizedAccel(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetQuantizedAccel(int32_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuantizedAccel(int16_t *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuantizedAccel(VectorInt16 *v, const uint8_t* packet=0);
-            uint8_t dmpGetExternalSensorData(int32_t *data, uint16_t size, const uint8_t* packet=0);
-            uint8_t dmpGetEIS(int32_t *data, const uint8_t* packet=0);
-            
-            uint8_t dmpGetEuler(float *data, Quaternion *q);
-            uint8_t dmpGetYawPitchRoll(float *data, Quaternion *q, VectorFloat *gravity);
-
-            // Get Floating Point data from FIFO
-            uint8_t dmpGetAccelFloat(float *data, const uint8_t* packet=0);
-            uint8_t dmpGetQuaternionFloat(float *data, const uint8_t* packet=0);
-
-            uint8_t dmpProcessFIFOPacket(const unsigned char *dmpData);
-            uint8_t dmpReadAndProcessFIFOPacket(uint8_t numPackets, uint8_t *processed=NULL);
-
-            uint8_t dmpSetFIFOProcessedCallback(void (*func) (void));
-
-            uint8_t dmpInitFIFOParam();
-            uint8_t dmpCloseFIFO();
-            uint8_t dmpSetGyroDataSource(uint8_t source);
-            uint8_t dmpDecodeQuantizedAccel();
-            uint32_t dmpGetGyroSumOfSquare();
-            uint32_t dmpGetAccelSumOfSquare();
-            void dmpOverrideQuaternion(long *q);
-            uint16_t dmpGetFIFOPacketSize();
-        #endif
-
-    private:
+    protected:
         uint8_t devAddr;
         uint8_t buffer[14];
+        float asax, asay, asaz;
 };
+
+#ifndef I2CDEVLIB_MPU9250_TYPDEF
+#define I2CDEVLIB_MPU9250_TYPDEF
+typedef MPU9250_Base MPU9250;
+#endif
 
 #endif /* _MPU9250_H_ */

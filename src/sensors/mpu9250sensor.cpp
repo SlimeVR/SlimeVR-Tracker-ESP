@@ -1,17 +1,14 @@
 /*
     SlimeVR Code is placed under the MIT license
     Copyright (c) 2021 Eiren Rain, S.J. Remington
-
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
     in the Software without restriction, including without limitation the rights
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-
     The above copyright notice and this permission notice shall be included in
     all copies or substantial portions of the Software.
-
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,7 +26,8 @@
 #include "calibration.h"
 #include "magneto1.4.h"
 // #include "mahony.h"
-#ifndef _MAHONY_H_
+// #include "madgwick.h"
+#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
 #include "dmpmag.h"
 #endif
 #include "ledmgr.h"
@@ -52,17 +50,17 @@ void MPU9250Sensor::motionSetup() {
         Serial.print("[OK] Connected to MPU, ID 0x");
         Serial.println(imu.getDeviceID(), HEX);
     }
-    int16_t ax,ay,az,dumb;
+    int16_t ax,ay,az;
 
     // turn on while flip back to calibrate. then, flip again after 5 seconds.    
     // TODO: Move calibration invoke after calibrate button on slimeVR server available 
-    imu.getMotion6(&ax, &ay, &az, &dumb, &dumb, &dumb);
+    imu.getAcceleration(&ax, &ay, &az);
     if(az<0 && 10.0*(ax*ax+ay*ay)<az*az) {
         digitalWrite(CALIBRATING_LED, HIGH);
         Serial.println("Calling Calibration... Flip front to confirm start calibration.");
         delay(5000);
         digitalWrite(CALIBRATING_LED, LOW);
-        imu.getMotion6(&ax, &ay, &az, &dumb, &dumb, &dumb);
+        imu.getAcceleration(&ax, &ay, &az);
         if(az>0 && 10.0*(ax*ax+ay*ay)<az*az) 
             startCalibration(0);
     }
@@ -110,12 +108,12 @@ void MPU9250Sensor::motionLoop() {
     unsigned long now = micros();
     unsigned long deltat = now - last; //seconds since last update
     last = now;
-#ifndef _MAHONY_H_
+#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
     // Update quaternion
     if(!dmpReady)
         return;
     Quaternion rawQuat{};
-    if(!imu.GetCurrentFIFOPacket(fifoBuffer,imu.dmpPacketSize)) return;
+    if(!imu.GetCurrentFIFOPacket(fifoBuffer,imu.dmpGetFIFOPacketSize())) return;
     imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
     Quat quat(-rawQuat.y,rawQuat.x,rawQuat.z,rawQuat.w);
     if(!skipCalcMag){
@@ -137,11 +135,9 @@ void MPU9250Sensor::motionLoop() {
     quaternion=correction*quat;
 #else
     getMPUScaled();
-    // Orientations of axes are set in accordance with the datasheet
-    // See Section 9.1 Orientation of Axes
-    // https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf
-    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat * 1.0e-6);
-    quaternion.set(-q[1], -q[2], -q[0], q[3]);
+    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
+    // madgwickQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
+    quaternion.set(-q[2], q[1], q[3], q[0]);
 
 #endif
     quaternion *= sensorOffset;
@@ -180,11 +176,13 @@ void MPU9250Sensor::getMPUScaled()
         for (i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
     #endif
-    vector_normalize(Axyz);
 
-    Mxyz[0] = (float)mx;
-    Mxyz[1] = (float)my;
-    Mxyz[2] = (float)mz;
+    // Orientations of axes are set in accordance with the datasheet
+    // See Section 9.1 Orientation of Axes
+    // https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf
+    Mxyz[0] = (float)my;
+    Mxyz[1] = (float)mx;
+    Mxyz[2] = -(float)mz;
     //apply offsets and scale factors from Magneto
     #if useFullCalibrationMatrix == true
         for (i = 0; i < 3; i++)
@@ -195,10 +193,7 @@ void MPU9250Sensor::getMPUScaled()
     #else
         for (i = 0; i < 3; i++)
             Mxyz[i] = (Mxyz[i] - calibration->M_B[i]);
-    #endif
-    vector_normalize(Mxyz);
-    // if(!sensorId) Serial.printf("ax:%+6d\tay:%+6d\taz:%+6d\tmx:%+6d\tmy:%+6d\tmz:%+6d\tmxs:%+f\tmys:%+f\tmzs:%+f\tdt:%f\n",ax, ay, az, mx, my, mz, rawMag[0], rawMag[1], rawMag[2], deltat);
-    
+    #endif    
 }
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
@@ -227,9 +222,9 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     Gxyz[2] /= calibrationSamples;
     Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", Gxyz[0], Gxyz[1], Gxyz[2]);
     Network::sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0);
-    config->calibration[sensorId?1:0].G_off[0] = Gxyz[0];
-    config->calibration[sensorId?1:0].G_off[1] = Gxyz[1];
-    config->calibration[sensorId?1:0].G_off[2] = Gxyz[2];
+    config->calibration[sensorId].G_off[0] = Gxyz[0];
+    config->calibration[sensorId].G_off[1] = Gxyz[1];
+    config->calibration[sensorId].G_off[2] = Gxyz[2];
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("[NOTICE] Gently rotate the device while it's gathering accelerometer and magnetometer data");
@@ -244,9 +239,9 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         calibrationDataAcc[i * 3 + 0] = ax;
         calibrationDataAcc[i * 3 + 1] = ay;
         calibrationDataAcc[i * 3 + 2] = az;
-        calibrationDataMag[i * 3 + 0] = mx;
-        calibrationDataMag[i * 3 + 1] = my;
-        calibrationDataMag[i * 3 + 2] = mz;
+        calibrationDataMag[i * 3 + 0] = my;
+        calibrationDataMag[i * 3 + 1] = mx;
+        calibrationDataMag[i * 3 + 2] = -mz;
         Network::sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
         Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
         LEDManager::off(CALIBRATING_LED);
@@ -264,15 +259,15 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     Serial.println("[NOTICE] Now Saving EEPROM");
     for (int i = 0; i < 3; i++)
     {
-        config->calibration[sensorId?1:0].A_B[i] = A_BAinv[0][i];
-        config->calibration[sensorId?1:0].A_Ainv[0][i] = A_BAinv[1][i];
-        config->calibration[sensorId?1:0].A_Ainv[1][i] = A_BAinv[2][i];
-        config->calibration[sensorId?1:0].A_Ainv[2][i] = A_BAinv[3][i];
+        config->calibration[sensorId].A_B[i] = A_BAinv[0][i];
+        config->calibration[sensorId].A_Ainv[0][i] = A_BAinv[1][i];
+        config->calibration[sensorId].A_Ainv[1][i] = A_BAinv[2][i];
+        config->calibration[sensorId].A_Ainv[2][i] = A_BAinv[3][i];
 
-        config->calibration[sensorId?1:0].M_B[i] = M_BAinv[0][i];
-        config->calibration[sensorId?1:0].M_Ainv[0][i] = M_BAinv[1][i];
-        config->calibration[sensorId?1:0].M_Ainv[1][i] = M_BAinv[2][i];
-        config->calibration[sensorId?1:0].M_Ainv[2][i] = M_BAinv[3][i];
+        config->calibration[sensorId].M_B[i] = M_BAinv[0][i];
+        config->calibration[sensorId].M_Ainv[0][i] = M_BAinv[1][i];
+        config->calibration[sensorId].M_Ainv[1][i] = M_BAinv[2][i];
+        config->calibration[sensorId].M_Ainv[2][i] = M_BAinv[3][i];
     }
     setConfig(*config);
     LEDManager::off(CALIBRATING_LED);

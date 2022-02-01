@@ -22,7 +22,7 @@
 */
 #include "sensor.h"
 
-#include <MPU9250.h>
+#include <MPU9250_6Axis_MotionApps_V6_12.h>
 
 class MPU9250Sensor : public Sensor
 {
@@ -46,6 +46,7 @@ private:
     uint8_t fifoBuffer[64]{}; // FIFO storage buffer
     //raw data and scaled as vector
     int skipCalcMag = 0;
+    float q[4]{1.0f, 0.0f, 0.0f, 0.0f}; // for raw filter
     float Axyz[3]{};
     float Gxyz[3]{};
     float Mxyz[3]{};
