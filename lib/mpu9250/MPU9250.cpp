@@ -73,7 +73,7 @@ uint8_t MPU9250_Base::getAddr() {
  * @return True if connection is valid, false otherwise
  */
 bool MPU9250_Base::testConnection() {
-    return getDeviceID() > 0;
+    return getDeviceID() == 0x71;
 }
 
 // AUX_VDDIO register (InvenSense demo code calls this RA_*G_OFFS_TC)
