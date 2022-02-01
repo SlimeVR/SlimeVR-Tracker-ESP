@@ -125,13 +125,17 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     }
 
     // Integrate rate of change of quaternion
-    pa = q2;
-    pb = q3;
-    pc = q4;
-    q1 = q1 + (-q2 * gx - q3 * gy - q4 * gz) * (0.5f * deltat);
-    q2 = pa + (q1 * gx + pb * gz - pc * gy) * (0.5f * deltat);
-    q3 = pb + (q1 * gy - pa * gz + pc * gx) * (0.5f * deltat);
-    q4 = pc + (q1 * gz + pa * gy - pb * gx) * (0.5f * deltat);
+    // small correction 1/11/2022, see https://github.com/kriswiner/MPU9250/issues/447
+    gx = gx * (0.5*deltat); // pre-multiply common factors
+    gy = gy * (0.5*deltat);
+    gz = gz * (0.5*deltat);
+    qa = q1;
+    qb = q2;
+    qc = q3;
+    q1 += (-qb * gx - qc * gy - q4 * gz);
+    q2 += (qa * gx + qc * gz - q4 * gy);
+    q3 += (qa * gy - qb * gz + q4 * gx);
+    q4 += (qa * gz + qb * gy - qc * gx);
 
     // Normalise quaternion
     norm = invSqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);

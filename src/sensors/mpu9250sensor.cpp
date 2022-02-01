@@ -135,11 +135,8 @@ void MPU9250Sensor::motionLoop() {
     quaternion=correction*quat;
 #else
     getMPUScaled();
-    // Orientations of axes are set in accordance with the datasheet
-    // See Section 9.1 Orientation of Axes
-    // https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf
-    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[1], Mxyz[0], -Mxyz[2], deltat * 1.0e-6);
-    quaternion.set(-q[1], -q[2], -q[0], q[3]);
+    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
+    quaternion.set(-q[2], q[1], q[3], q[0]);
 
 #endif
     quaternion *= sensorOffset;
@@ -179,6 +176,9 @@ void MPU9250Sensor::getMPUScaled()
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
     #endif
 
+    // Orientations of axes are set in accordance with the datasheet
+    // See Section 9.1 Orientation of Axes
+    // https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf
     Mxyz[0] = (float)my;
     Mxyz[1] = (float)mx;
     Mxyz[2] = -(float)mz;
