@@ -66,6 +66,17 @@ void BMI160Sensor::motionSetup() {
     Serial.print("[OK] Connected to BMI160, ID 0x");
     Serial.println(imu.getDeviceID(), HEX);
 
+    int16_t ax, ay, az;
+    imu.getAcceleration(&ax, &ay, &az);
+    if(az < 0 && 10 * (ax * ax + ay * ay) < az * az) {
+        digitalWrite(CALIBRATING_LED, HIGH);
+        Serial.println("Calling Calibration... Flip front to confirm start calibration.");
+        imu.getAcceleration(&ax, &ay, &az);
+        if(az > 0 && 10 * (ax * ax + ay * ay) < az * az)
+            startCalibration(0);
+        digitalWrite(CALIBRATING_LED, LOW);
+    }
+
     DeviceConfig * const config = getConfigPtr();
     calibration = &config->calibration[sensorId];
     working = true;
@@ -133,7 +144,6 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
         for (uint8_t i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
     #endif
-    vector_normalize(Axyz);
 }
 
 void BMI160Sensor::startCalibration(int calibrationType) {
