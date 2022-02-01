@@ -71,6 +71,7 @@ void BMI160Sensor::motionSetup() {
     if(az < 0 && 10 * (ax * ax + ay * ay) < az * az) {
         digitalWrite(CALIBRATING_LED, HIGH);
         Serial.println("Calling Calibration... Flip front to confirm start calibration.");
+        delay(5000);
         imu.getAcceleration(&ax, &ay, &az);
         if(az > 0 && 10 * (ax * ax + ay * ay) < az * az)
             startCalibration(0);
