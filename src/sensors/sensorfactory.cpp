@@ -27,6 +27,7 @@
 #include "bno080sensor.h"
 #include "mpu9250sensor.h"
 #include "mpu6050sensor.h"
+#include "bmi160sensor.h"
 
 SensorFactory::SensorFactory()
 {
@@ -50,6 +51,9 @@ void SensorFactory::create()
     #elif IMU == IMU_MPU9250
         this->sensor1 = new MPU9250Sensor();
         first_addr = I2CSCAN::pickDevice(0x68, 0x69, true);
+    #elif IMU == IMU_BMI160
+        this->sensor1 = new BMI160Sensor();
+        first_addr = I2CSCAN::pickDevice(0x68, 0x69, true);
     #elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
         this->sensor1 = new MPU6050Sensor();
         first_addr = I2CSCAN::pickDevice(0x68, 0x69, true);
@@ -72,6 +76,9 @@ void SensorFactory::create()
         second_addr = I2CSCAN::pickDevice(0x28, 0x29, false);
     #elif SECOND_IMU == IMU_MPU9250
         this->sensor2 = new MPU9250Sensor();
+        second_addr = I2CSCAN::pickDevice(0x69, 0x68, false);
+    #elif SECOND_IMU == IMU_BMI160
+        this->sensor2 = new BMI160Sensor();
         second_addr = I2CSCAN::pickDevice(0x69, 0x68, false);
     #elif SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050
         this->sensor2 = new MPU6050Sensor();

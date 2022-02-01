@@ -127,8 +127,8 @@ void loop()
     loopTime = micros();
 #endif
     // TODO Move to WiFi handler
-    if(micros() - last_rssi_sample >= 2000) {
-        last_rssi_sample = micros();
+    if(millis() - last_rssi_sample >= 2000) {
+        last_rssi_sample = millis();
         uint8_t signalStrength = WiFi.RSSI();
         Network::sendSignalStrength(signalStrength);
     }
