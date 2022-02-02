@@ -73,7 +73,8 @@ uint8_t MPU9250_Base::getAddr() {
  * @return True if connection is valid, false otherwise
  */
 bool MPU9250_Base::testConnection() {
-    return getDeviceID() == 0x71;
+    uint8_t deviceId = getDeviceID();
+    return deviceId == 0x71 || deviceId == 0x73; // MPU9250 or MPU9255
 }
 
 // AUX_VDDIO register (InvenSense demo code calls this RA_*G_OFFS_TC)
@@ -2700,7 +2701,7 @@ void MPU9250_Base::setFIFOByte(uint8_t data) {
  * @see MPU9250_WHO_AM_I_LENGTH
  */
 uint8_t MPU9250_Base::getDeviceID() {
-    I2Cdev::readBits(devAddr, MPU9250_RA_WHO_AM_I, MPU9250_WHO_AM_I_BIT, MPU9250_WHO_AM_I_LENGTH, buffer);
+    I2Cdev::readByte(devAddr, MPU9250_RA_WHO_AM_I, buffer);
     return buffer[0];
 }
 /** Set Device ID.
