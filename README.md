@@ -15,18 +15,40 @@ The following IMUs and their corresponding `IMU` values are supported by the fir
   * Using any fusion in internal DMP. Best results with ARVR Stabilized Game Rotation Vector or ARVR Stabilized Rotation Vector if in good magnetic environment.
 * BNO080 (IMU_BNO080)
   * Using any fusion in internal DMP. Doesn't have BNO085's ARVR stabilization, but still gives good results.
-* BNO055 (IMU_BNO055)
-  * Should be roughly equal BNO080, but cheaper. Not tested thoroughly, please report your results on Discord if you're willing to try.
-* MPU-9250 (IMU_MPU9250)
-  * Using Mahony sensor fusion of Gyroscope, Magnetometer and Accelerometer, requires good magnetic environment.
-  * NOTE: Currently can only be used as MPU-6050 without magnetometer. To use it as MPU-6050, specify `IMU_MPU6500` in your `defines.h`.
 * MPU-6500 (IMU_MPU6500) & MPU-6050 (IMU_MPU6050)
   * Using internal DMP to fuse Gyroscope and Accelerometer. Can drift substantially.
   * NOTE: Currently the MPU will auto calibrate when powered on. You *must* place it on the ground and *DO NOT* move it until calibration is complete (for a few seconds). **LED on the ESP will blink 5 times after calibration is over.**
+* BNO055 (IMU_BNO055)
+  * Performs much worse than BNO080, despite having the same hardware. Not recommended for use.
+* MPU-9250 (IMU_MPU9250)
+  * Using Mahony sensor fusion of Gyroscope, Magnetometer and Accelerometer, requires good magnetic environment.
+  * See *Sensor calibration* below for info on calibrating this sensor.
+  * Specify `IMU_MPU6500` in your `defines.h` to use without magentometer in 6DoF mode.
+  * Experimental support!
+* BMI160 (IMU_BMI160)
+  * Using Mahony sensor fusion of Gyroscope and Accelerometer
+  * See *Sensor calibration* below for info on calibrating this sensor.
+  * Experimental support!
+* ICM-20948 (IMU_ICM20948)
+  * Using fision in internal DMP for 6Dof or 9DoF, 9DoF mode requires good magentic environment.
+  * Comment out `USE_6DOF` in `debug.h` for 9DoF mode.
+  * Experimental support!
 
-Firmware can work with both ESP8266 and ESP32. Please edit defines.h and set your pinout properly according to how you connected the IMU.
+Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set your pinout properly according to how you connected the IMU.
 
-#Uploading On Linux
+## Sensor calibration
+
+*It is generally recommended to turn trackers on and let them lay down on a flat surface for a few seconds.** This will calibrate them better.
+
+**Some trackers require special calibration steps on startup:**
+* MPU-9250, BMI160
+  * Turn them on with chip facing down. Flip up and put on a surface for a couple of seconds, the LED will light up.
+  * After a few blinks, the LED will light up again
+  * Slowly rotate the tracker in an 8-motion facing different derections for about 30 seconds, while LED is blinking
+  * LED will turn off when calibration is complete
+  * You don't have to calibrate next time you power it off, calibration values will be saved for the next use
+
+## Uploading On Linux
 
 Follow the instructions in this link [Platformio](https://docs.platformio.org/en/latest//faq.html#platformio-udev-rules), this should solve any permission denied errors
 
