@@ -46,10 +46,11 @@ void MPU9250Sensor::motionSetup() {
         Serial.print("[ERR] MPU9250: Can't communicate with MPU, response 0x");
         Serial.println(imu.getDeviceID(), HEX);
         return;
-    } else {
-        Serial.print("[OK] Connected to MPU, ID 0x");
-        Serial.println(imu.getDeviceID(), HEX);
     }
+
+    Serial.print("[OK] MPU9250: Connected to MPU, ID 0x");
+        Serial.println(imu.getDeviceID(), HEX);
+
     int16_t ax,ay,az;
 
     // turn on while flip back to calibrate. then, flip again after 5 seconds.    

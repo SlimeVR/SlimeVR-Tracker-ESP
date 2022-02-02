@@ -66,7 +66,8 @@ void MPU6050::initialize(uint8_t address) {
  * @return True if connection is valid, false otherwise
  */
 bool MPU6050::testConnection() {
-    return getDeviceID() > 0;
+    uint8_t deviceId = getDeviceID();
+    return deviceId == 0x68 || deviceId == 0x70 || deviceId == 0x71 || deviceId == 0x73; // Allow any MPUs
 }
 
 // AUX_VDDIO register (InvenSense demo code calls this RA_*G_OFFS_TC)
@@ -2801,7 +2802,7 @@ void MPU6050::setFIFOByte(uint8_t data) {
  * @see MPU6050_WHO_AM_I_LENGTH
  */
 uint8_t MPU6050::getDeviceID() {
-    I2Cdev::readBits(devAddr, MPU6050_RA_WHO_AM_I, MPU6050_WHO_AM_I_BIT, MPU6050_WHO_AM_I_LENGTH, buffer);
+    I2Cdev::readByte(devAddr, MPU6050_RA_WHO_AM_I, buffer);
     return buffer[0];
 }
 /** Set Device ID.
