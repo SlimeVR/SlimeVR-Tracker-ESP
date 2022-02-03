@@ -29,6 +29,8 @@
 #define Kp 10.0f
 #define Ki 0.0f
 
+static float ix = 0.0f, iy = 0.0f, iz = 0.0f;  //integral feedback terms
+
 // Mahony orientation filter, assumed World Frame NWU (xNorth, yWest, zUp)
 // Modified from Madgwick version to remove Z component of magnetometer:
 // reference vectors are Up (Acc) and West (Acc cross Mag)
@@ -36,9 +38,6 @@
 // gx, gy, gz must be in units of radians/second
 void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat)
 {
-    // Vector to hold integral error for Mahony method
-    static float eInt[3] = {0.0f, 0.0f, 0.0f};
-
     // short name local variable for readability
     float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];
     float norm;
@@ -107,28 +106,28 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
         ey = (az * ux - ax * uz) + (hz * wx - hx * wz);
         ez = (ax * uy - ay * ux) + (hx * wy - hy * wx);
 
-        if (Ki > 0.0f)
-        {
-            eInt[0] += ex; // accumulate integral error
-            eInt[1] += ey;
-            eInt[2] += ez;
-            // Apply I feedback
-            gx += Ki * eInt[0];
-            gy += Ki * eInt[1];
-            gz += Ki * eInt[2];
+        // Compute and apply to gyro term the integral feedback, if enabled
+        if (Ki > 0.0f) {
+            ix += Ki * ex * deltat;  // integral error scaled by Ki
+            iy += Ki * ey * deltat;
+            iz += Ki * ez * deltat;
+            gx += ix;  // apply integral feedback
+            gy += iy;
+            gz += iz;
         }
 
-        // Apply P feedback
-        gx = gx + Kp * ex;
-        gy = gy + Kp * ey;
-        gz = gz + Kp * ez;
+        // Apply proportional feedback to gyro term
+        gx += Kp * ex;
+        gy += Kp * ey;
+        gz += Kp * ez;
     }
 
     // Integrate rate of change of quaternion
     // small correction 1/11/2022, see https://github.com/kriswiner/MPU9250/issues/447
-    gx = gx * (0.5*deltat); // pre-multiply common factors
-    gy = gy * (0.5*deltat);
-    gz = gz * (0.5*deltat);
+    deltat *= 0.5f;
+    gx *= deltat;   // pre-multiply common factors
+    gy *= deltat;
+    gz *= deltat;
     qa = q1;
     qb = q2;
     qc = q3;
@@ -145,16 +144,17 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     q[3] = q4 * norm;
 }
 
-void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float deltat) {
+void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float deltat)
+{
+    // short name local variable for readability
+    float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];
     float norm;
     float vx, vy, vz;
     float ex, ey, ez;  //error terms
     float qa, qb, qc;
-    static float ix = 0.0f, iy = 0.0f, iz = 0.0f;  //integral feedback terms
-    float tmp;
 
     // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-    tmp = ax * ax + ay * ay + az * az;
+    float tmp = ax * ax + ay * ay + az * az;
     if (tmp > 0.0f)
     {
         // Normalise accelerometer (assumed to measure the direction of gravity in body frame)
@@ -164,9 +164,9 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
         az *= norm;
 
         // Estimated direction of gravity in the body frame (factor of two divided out)
-        vx = q[1] * q[3] - q[0] * q[2];
-        vy = q[0] * q[1] + q[2] * q[3];
-        vz = q[0] * q[0] - 0.5f + q[3] * q[3];
+        vx = q2 * q4 - q1 * q3;
+        vy = q1 * q2 + q3 * q4;
+        vz = q1 * q1 - 0.5f + q4 * q4;
 
         // Error is cross product between estimated and measured direction of gravity in body frame
         // (half the actual magnitude)
@@ -191,22 +191,22 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     }
 
     // Integrate rate of change of quaternion, q cross gyro term
-    deltat = 0.5f * deltat;
+    deltat *= 0.5f;
     gx *= deltat;   // pre-multiply common factors
     gy *= deltat;
     gz *= deltat;
-    qa = q[0];
-    qb = q[1];
-    qc = q[2];
-    q[0] += (-qb * gx - qc * gy - q[3] * gz);
-    q[1] += (qa * gx + qc * gz - q[3] * gy);
-    q[2] += (qa * gy - qb * gz + q[3] * gx);
-    q[3] += (qa * gz + qb * gy - qc * gx);
+    qa = q1;
+    qb = q2;
+    qc = q3;
+    q1 += (-qb * gx - qc * gy - q4 * gz);
+    q2 += (qa * gx + qc * gz - q4 * gy);
+    q3 += (qa * gy - qb * gz + q4 * gx);
+    q4 += (qa * gz + qb * gy - qc * gx);
 
     // normalise quaternion
-    norm = invSqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-    q[0] = q[0] * norm;
-    q[1] = q[1] * norm;
-    q[2] = q[2] * norm;
-    q[3] = q[3] * norm;
+    norm = invSqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);
+    q[0] = q1 * norm;
+    q[1] = q2 * norm;
+    q[2] = q3 * norm;
+    q[3] = q4 * norm;
 }
