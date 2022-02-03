@@ -86,21 +86,19 @@ void BMI160Sensor::motionSetup() {
 void BMI160Sensor::motionLoop() {
     now = micros();
     deltat = now - last; //seconds since last update
-    if ((deltat * 1.0e-3f) >= samplingRateInMillis) {
-        last = now;
+    last = now;
 
-        float Gxyz[3] = {0};
-        float Axyz[3] = {0};
-        getScaledValues(Gxyz, Axyz);
+    float Gxyz[3] = {0};
+    float Axyz[3] = {0};
+    getScaledValues(Gxyz, Axyz);
 
-        mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
-        quaternion.set(-q[2], q[1], q[3], q[0]);
-        quaternion *= sensorOffset;
-        if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
-        {
-            newData = true;
-            lastQuatSent = quaternion;
-        }
+    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
+    quaternion.set(-q[2], q[1], q[3], q[0]);
+    quaternion *= sensorOffset;
+    if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
+    {
+        newData = true;
+        lastQuatSent = quaternion;
     }
 }
 
