@@ -69,13 +69,13 @@ void BMI160Sensor::motionSetup() {
     int16_t ax, ay, az;
     imu.getAcceleration(&ax, &ay, &az);
     if(az < 0 && 10 * (ax * ax + ay * ay) < az * az) {
-        digitalWrite(CALIBRATING_LED, HIGH);
+        LEDManager::off(CALIBRATING_LED);
         Serial.println("Calling Calibration... Flip front to confirm start calibration.");
         delay(5000);
         imu.getAcceleration(&ax, &ay, &az);
         if(az > 0 && 10 * (ax * ax + ay * ay) < az * az)
             startCalibration(0);
-        digitalWrite(CALIBRATING_LED, LOW);
+        LEDManager::on(CALIBRATING_LED);
     }
 
     DeviceConfig * const config = getConfigPtr();
@@ -146,7 +146,7 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 }
 
 void BMI160Sensor::startCalibration(int calibrationType) {
-    digitalWrite(CALIBRATING_LED, LOW);
+    LEDManager::on(CALIBRATING_LED);
     Serial.println("[NOTICE] Gathering raw data for device calibration...");
     DeviceConfig * const config = getConfigPtr();
 
@@ -160,13 +160,13 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     Serial.printf("[NOTICE] Calibration temperature: %f\n", temperature);
     for (int i = 0; i < gyroCalibrationSamples; i++)
     {
-        digitalWrite(CALIBRATING_LED, LOW);
+        LEDManager::on(CALIBRATING_LED);
         int16_t gx, gy, gz;
         imu.getRotation(&gx, &gy, &gz);
         rawGxyz[0] += float(gx);
         rawGxyz[1] += float(gy);
         rawGxyz[2] += float(gz);
-        digitalWrite(CALIBRATING_LED, HIGH);
+        LEDManager::off(CALIBRATING_LED);
     }
     config->calibration[sensorId].G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
     config->calibration[sensorId].G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
@@ -175,9 +175,9 @@ void BMI160Sensor::startCalibration(int calibrationType) {
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("[NOTICE] After 3seconds, Gently rotate the device while it's gathering accelerometer data");
-    digitalWrite(CALIBRATING_LED, LOW);
+    LEDManager::on(CALIBRATING_LED);
     delay(1500);
-    digitalWrite(CALIBRATING_LED, HIGH);
+    LEDManager::off(CALIBRATING_LED);
     delay(1500);
     Serial.println("[NOTICE] Gathering accelerometer data start!");
 
@@ -185,17 +185,17 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     float *calibrationDataAcc = (float*)malloc(accelCalibrationSamples * 3 * sizeof(float));
     for (int i = 0; i < accelCalibrationSamples; i++)
     {
-        digitalWrite(CALIBRATING_LED, LOW);
+        LEDManager::on(CALIBRATING_LED);
         int16_t ax, ay, az;
         imu.getAcceleration(&ax, &ay, &az);
         calibrationDataAcc[i * 3 + 0] = ax;
         calibrationDataAcc[i * 3 + 1] = ay;
         calibrationDataAcc[i * 3 + 2] = az;
-        digitalWrite(CALIBRATING_LED, HIGH);
+        LEDManager::off(CALIBRATING_LED);
         delay(100);
     }
     Serial.println("[NOTICE] Calibration data gathered");
-    digitalWrite(CALIBRATING_LED, HIGH);
+    LEDManager::off(CALIBRATING_LED);
     Serial.println("[NOTICE] Now Calculate Calibration data");
 
     float A_BAinv[4][3];
