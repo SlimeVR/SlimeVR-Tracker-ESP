@@ -25,10 +25,11 @@
 
 // Fast inverse square root function (https://en.wikipedia.org/wiki/Fast_inverse_square_root).
 // Source: https://pizer.wordpress.com/2008/10/12/fast-inverse-square-root/
-float invSqrt(float x) {
-   uint32_t i = 0x5F1F1412 - (*(uint32_t*)&x >> 1);
-   float tmp = *(float*)&i;
-   return tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
+float invSqrt(float x)
+{
+    union { float f; uint32_t u; } y = {x};
+    y.u = 0x5F1FFF77ul - (y.u >> 1);
+    return 0.703974056f * y.f * (2.38919526f - x * y.f * y.f);
 }
 
 float vector_dot(float a[3], float b[3])
