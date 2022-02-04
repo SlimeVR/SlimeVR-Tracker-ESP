@@ -48,6 +48,9 @@ void MPU6050Sensor::motionSetup()
         return;
     }
 
+    Serial.print("[OK] MPU6050: Connected to MPU, ID 0x");
+    Serial.println(imu.getDeviceID(), HEX);
+
     devStatus = imu.dmpInitialize();
 
     if (devStatus == 0)

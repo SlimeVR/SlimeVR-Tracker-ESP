@@ -1,0 +1,70 @@
+/*
+    SlimeVR Code is placed under the MIT license
+    Copyright (c) 2021 Eiren Rain, SlimeVR contributors
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+*/
+#ifndef SLIMEVR_ICM20948SENSOR_H_
+#define SLIMEVR_ICM20948SENSOR_H_
+
+#include <ICM_20948.h>
+#include "sensor.h"
+#include <arduino-timer.h> // Used for periodically saving bias
+#ifdef ESP32
+    #include <Preferences.h> // ICM bias saving. ESP8266 use eprom
+#endif
+
+#define ICM_ADDR_1 0x68
+#define ICM_ADDR_2 0x69
+
+class ICM20948Sensor : public Sensor {
+public:
+    ICM20948Sensor() = default;
+    ~ICM20948Sensor() override = default;
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void sendData() override final;
+    void startCalibration(int calibrationType) override final;
+    void save_bias(bool repeat);
+    void setupICM20948(bool auxiliary = false, uint8_t addr = 0x69);
+
+private:
+    unsigned long lastData = 0;
+    uint8_t addr = ICM_ADDR_2;
+    int bias_save_counter = 0;
+    bool newData = false;
+    bool newTap;
+    
+    uint8_t lastReset = 0;
+    ICM_20948_I2C imu;
+    ICM_20948_Device_t pdev;
+    icm_20948_DMP_data_t dmpData {};
+
+    #define OVERRIDEDMPSETUP true
+#ifdef ESP32
+    Preferences prefs;
+    Timer<> timer = timer_create_default();
+#endif
+#ifdef ESP8266
+    Timer<> timer = timer_create_default();
+#endif
+    //TapDetector tapDetector;
+};
+
+#endif // SLIMEVR_ICM20948SENSOR_H_

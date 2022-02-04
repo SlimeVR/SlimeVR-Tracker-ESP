@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain, S.J. Remington
+    Copyright (c) 2021 S.J. Remington, SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -66,6 +66,18 @@ void BMI160Sensor::motionSetup() {
     Serial.print("[OK] Connected to BMI160, ID 0x");
     Serial.println(imu.getDeviceID(), HEX);
 
+    int16_t ax, ay, az;
+    imu.getAcceleration(&ax, &ay, &az);
+    if(az < 0 && 10 * (ax * ax + ay * ay) < az * az) {
+        LEDManager::off(CALIBRATING_LED);
+        Serial.println("Calling Calibration... Flip front to confirm start calibration.");
+        delay(5000);
+        imu.getAcceleration(&ax, &ay, &az);
+        if(az > 0 && 10 * (ax * ax + ay * ay) < az * az)
+            startCalibration(0);
+        LEDManager::on(CALIBRATING_LED);
+    }
+
     DeviceConfig * const config = getConfigPtr();
     calibration = &config->calibration[sensorId];
     working = true;
@@ -74,21 +86,19 @@ void BMI160Sensor::motionSetup() {
 void BMI160Sensor::motionLoop() {
     now = micros();
     deltat = now - last; //seconds since last update
-    if ((deltat * 1.0e-3f) >= samplingRateInMillis) {
-        last = now;
+    last = now;
 
-        float Gxyz[3] = {0};
-        float Axyz[3] = {0};
-        getScaledValues(Gxyz, Axyz);
+    float Gxyz[3] = {0};
+    float Axyz[3] = {0};
+    getScaledValues(Gxyz, Axyz);
 
-        mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
-        quaternion.set(-q[1], -q[2], -q[0], q[3]);
-        quaternion *= sensorOffset;
-        if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
-        {
-            newData = true;
-            lastQuatSent = quaternion;
-        }
+    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
+    quaternion.set(-q[2], q[1], q[3], q[0]);
+    quaternion *= sensorOffset;
+    if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
+    {
+        newData = true;
+        lastQuatSent = quaternion;
     }
 }
 
@@ -133,11 +143,10 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
         for (uint8_t i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
     #endif
-    vector_normalize(Axyz);
 }
 
 void BMI160Sensor::startCalibration(int calibrationType) {
-    digitalWrite(CALIBRATING_LED, LOW);
+    LEDManager::on(CALIBRATING_LED);
     Serial.println("[NOTICE] Gathering raw data for device calibration...");
     DeviceConfig * const config = getConfigPtr();
 
@@ -151,13 +160,13 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     Serial.printf("[NOTICE] Calibration temperature: %f\n", temperature);
     for (int i = 0; i < gyroCalibrationSamples; i++)
     {
-        digitalWrite(CALIBRATING_LED, LOW);
+        LEDManager::on(CALIBRATING_LED);
         int16_t gx, gy, gz;
         imu.getRotation(&gx, &gy, &gz);
         rawGxyz[0] += float(gx);
         rawGxyz[1] += float(gy);
         rawGxyz[2] += float(gz);
-        digitalWrite(CALIBRATING_LED, HIGH);
+        LEDManager::off(CALIBRATING_LED);
     }
     config->calibration[sensorId].G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
     config->calibration[sensorId].G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
@@ -166,9 +175,9 @@ void BMI160Sensor::startCalibration(int calibrationType) {
 
     // Blink calibrating led before user should rotate the sensor
     Serial.println("[NOTICE] After 3seconds, Gently rotate the device while it's gathering accelerometer data");
-    digitalWrite(CALIBRATING_LED, LOW);
+    LEDManager::on(CALIBRATING_LED);
     delay(1500);
-    digitalWrite(CALIBRATING_LED, HIGH);
+    LEDManager::off(CALIBRATING_LED);
     delay(1500);
     Serial.println("[NOTICE] Gathering accelerometer data start!");
 
@@ -176,17 +185,17 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     float *calibrationDataAcc = (float*)malloc(accelCalibrationSamples * 3 * sizeof(float));
     for (int i = 0; i < accelCalibrationSamples; i++)
     {
-        digitalWrite(CALIBRATING_LED, LOW);
+        LEDManager::on(CALIBRATING_LED);
         int16_t ax, ay, az;
         imu.getAcceleration(&ax, &ay, &az);
         calibrationDataAcc[i * 3 + 0] = ax;
         calibrationDataAcc[i * 3 + 1] = ay;
         calibrationDataAcc[i * 3 + 2] = az;
-        digitalWrite(CALIBRATING_LED, HIGH);
+        LEDManager::off(CALIBRATING_LED);
         delay(100);
     }
     Serial.println("[NOTICE] Calibration data gathered");
-    digitalWrite(CALIBRATING_LED, HIGH);
+    LEDManager::off(CALIBRATING_LED);
     Serial.println("[NOTICE] Now Calculate Calibration data");
 
     float A_BAinv[4][3];

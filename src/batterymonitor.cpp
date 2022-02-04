@@ -22,7 +22,7 @@
 */
 #include "batterymonitor.h"
 
-#if BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
+#if ESP8266 && (BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021)
 ADC_MODE(ADC_VCC);
 #endif
 
@@ -51,7 +51,7 @@ void BatteryMonitor::Loop()
         if (now_ms - last_battery_sample >= batterySampleRate)
         {
             voltage = -1;
-            #if BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
+            #if ESP8266 && (BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021)
                 last_battery_sample = now_ms;
                 auto level = ESP.getVcc();
                 if (level > voltage_3_3)
