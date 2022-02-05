@@ -32,6 +32,7 @@ unsigned long wifiConnectionTimeout = millis();
 bool isWifiConnected = false;
 uint8_t wifiState = 0;
 bool hadWifi = false;
+unsigned long last_rssi_sample = 0;
 
 void reportWifiError() {
     if(lastWifiReportTime + 1000 < millis()) {
@@ -147,6 +148,12 @@ void WiFiNetwork::upkeep() {
     if(!isWifiConnected) {
         onConnected();
         return;
+    } else {
+        if(millis() - last_rssi_sample >= 2000) {
+            last_rssi_sample = millis();
+            uint8_t signalStrength = WiFi.RSSI();
+            Network::sendSignalStrength(signalStrength);
+        }
     }
     return;
 }
