@@ -106,9 +106,6 @@ void MPU9250Sensor::motionSetup() {
 
 
 void MPU9250Sensor::motionLoop() {
-    unsigned long now = micros();
-    unsigned long deltat = now - last; //seconds since last update
-    last = now;
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
     // Update quaternion
     if(!dmpReady)
@@ -135,6 +132,9 @@ void MPU9250Sensor::motionLoop() {
     }else skipCalcMag--;
     quaternion=correction*quat;
 #else
+    unsigned long now = micros();
+    unsigned long deltat = now - last; //seconds since last update
+    last = now;
     getMPUScaled();
     mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
     // madgwickQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
