@@ -42,13 +42,10 @@ public:
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
     void save_bias(bool repeat);
-    void setupICM20948(bool auxiliary = false, uint8_t addr = 0x69);
 
 private:
     unsigned long lastData = 0;
-    uint8_t addr = ICM_ADDR_2;
     int bias_save_counter = 0;
-    bool newData = false;
     bool newTap;
     
     uint8_t lastReset = 0;
