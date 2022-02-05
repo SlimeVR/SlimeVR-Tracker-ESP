@@ -90,7 +90,7 @@ void loop()
     OTA::otaUpdate();
     Network::update(sensors.getFirst(), sensors.getSecond());
 #ifndef UPDATE_IMU_UNCONNECTED
-    if (isConnected())
+    if (ServerConnection::isConnected())
     {
 #endif
         sensors.motionLoop();
@@ -99,7 +99,7 @@ void loop()
 #endif
     // Send updates
 #ifndef SEND_UPDATES_UNCONNECTED
-    if (isConnected())
+    if (ServerConnection::isConnected())
     {
 #endif
         sensors.sendData();

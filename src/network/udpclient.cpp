@@ -344,6 +344,10 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     }
 }
 
+bool ServerConnection::isConnected() {
+    return connected;
+}
+
 void ServerConnection::connect()
 {
     unsigned long now = millis();
