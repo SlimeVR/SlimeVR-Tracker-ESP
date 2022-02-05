@@ -157,6 +157,9 @@ void Network::sendHeartbeat() {
 
 // PACKET_ACCEL 4
 void Network::sendAccel(float* vector, uint8_t sensorId) {
+    #ifndef SEND_UPDATES_UNCONNECTED
+    if(!connected) return;   // bno080sensor.cpp function call not in sendData() but in motionLoop()
+    #endif
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_ACCEL);
         DataTransfer::sendPacketNumber();
@@ -169,6 +172,9 @@ void Network::sendAccel(float* vector, uint8_t sensorId) {
 
 // PACKET_RAW_CALIBRATION_DATA 6
 void Network::sendRawCalibrationData(float* vector, uint8_t calibrationType, uint8_t sensorId) {
+    #ifndef SEND_UPDATES_UNCONNECTED
+    if(!connected) return;   // mpu9250sensor.cpp  startCalibration()
+    #endif
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_RAW_CALIBRATION_DATA);
         DataTransfer::sendPacketNumber();
@@ -182,6 +188,9 @@ void Network::sendRawCalibrationData(float* vector, uint8_t calibrationType, uin
 }
 
 void Network::sendRawCalibrationData(int* vector, uint8_t calibrationType, uint8_t sensorId) {
+    #ifndef SEND_UPDATES_UNCONNECTED
+    if(!connected) return;   // function not used?
+    #endif
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_RAW_CALIBRATION_DATA);
         DataTransfer::sendPacketNumber();
@@ -196,6 +205,9 @@ void Network::sendRawCalibrationData(int* vector, uint8_t calibrationType, uint8
 
 // PACKET_CALIBRATION_FINISHED 7
 void Network::sendCalibrationFinished(uint8_t calibrationType, uint8_t sensorId) {
+    #ifndef SEND_UPDATES_UNCONNECTED
+    if(!connected) return;   // mpu6050sensor.cpp mpu9250sensor.cpp  startCalibration()
+    #endif
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_CALIBRATION_FINISHED);
         DataTransfer::sendPacketNumber();
@@ -207,6 +219,9 @@ void Network::sendCalibrationFinished(uint8_t calibrationType, uint8_t sensorId)
 
 // PACKET_BATTERY_LEVEL 12
 void Network::sendBatteryLevel(float batteryVoltage, float batteryPercentage) {
+    #ifndef SEND_UPDATES_UNCONNECTED
+    if(!connected) return;
+    #endif
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_BATTERY_LEVEL);
         DataTransfer::sendPacketNumber();
@@ -229,6 +244,9 @@ void Network::sendTap(uint8_t value, uint8_t sensorId) {
 
 // PACKET_ERROR 14
 void Network::sendError(uint8_t reason, uint8_t sensorId) {
+    #ifndef SEND_UPDATES_UNCONNECTED
+    if(!connected) return;
+    #endif
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_ERROR);
         DataTransfer::sendPacketNumber();
@@ -317,7 +335,7 @@ void Network::sendHandshake() {
         uint8_t mac[6];
         WiFi.macAddress(mac);
         DataTransfer::sendBytes(mac, 6); // MAC address string
-        if(DataTransfer::endPacket()) {
+        if(!DataTransfer::endPacket()) {
             Serial.print("Handshake write error: ");
             Serial.println(Udp.getWriteError());
         }
