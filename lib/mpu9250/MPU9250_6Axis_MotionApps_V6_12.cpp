@@ -359,7 +359,7 @@ uint8_t MPU9250::dmpInitialize() { // Lets get it over with fast Write everythin
 	I2Cdev::writeBytes(devAddr,0x1C, 1, &(val = 0x00)); // 0000 0000 ACCEL_CONFIG: 0 =  Accel Full Scale Select: 2g
 	I2Cdev::writeBytes(devAddr,0x37, 1, &(val = 0x80)); // 1001 0000 INT_PIN_CFG: ACTL The logic level for int pin is active low. and interrupt status bits are cleared on any read
 	I2Cdev::writeBytes(devAddr,0x6B, 1, &(val = 0x01)); // 0000 0001 PWR_MGMT_1: Clock Source Select PLL_X_gyro
-	I2Cdev::writeBytes(devAddr,0x19, 1, &(val = 0x04)); // 0000 0100 SMPLRT_DIV: Divides the internal sample rate 400Hz ( Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV))
+	I2Cdev::writeBytes(devAddr,0x19, 1, &(val = 0x02)); // 0000 0100 SMPLRT_DIV: Divides the internal sample rate 400Hz ( Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV))
 	I2Cdev::writeBytes(devAddr,0x1A, 1, &(val = 0x01)); // 0000 0001 CONFIG: Digital Low Pass Filter (DLPF) Configuration 188HZ  //Im betting this will be the beat
 	if (!writeProgMemoryBlock(dmpMemory, MPU9250_DMP_CODE_SIZE)) return 1; // Loads the DMP image into the MPU9250 Memory // Should Never Fail
 	I2Cdev::writeWords(devAddr, 0x70, 1, &(ival = 0x0400)); // DMP Program Start Address
