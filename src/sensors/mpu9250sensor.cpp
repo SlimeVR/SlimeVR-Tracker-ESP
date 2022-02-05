@@ -65,7 +65,7 @@ void MPU9250Sensor::motionSetup() {
         if(az>0 && 10.0*(ax*ax+ay*ay)<az*az) 
             startCalibration(0);
     }
-#ifndef _MAHONY_H_
+#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
     devStatus = imu.dmpInitialize();
     if(devStatus == 0){
         for(int i = 0; i < 5; ++i) {
