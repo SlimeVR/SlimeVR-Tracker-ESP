@@ -113,7 +113,7 @@ void loop()
     {
         auto sleepus = TARGET_LOOPTIME_MICROS - elapsed - 100;//µs to sleep
         auto sleepms = sleepus / 1000;//ms to sleep
-        if (sleepms) // if >= 1 ms
+        if (sleepms > 0) // if >= 1 ms
         {
             delay(sleepms); // sleep ms = save power
             sleepus -= sleepms * 1000;
