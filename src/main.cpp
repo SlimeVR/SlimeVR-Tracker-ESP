@@ -108,12 +108,12 @@ void loop()
     battery.Loop();
 
 #ifdef TARGET_LOOPTIME_MICROS
-    auto elapsed = (micros() - loopTime);
+    long elapsed = (micros() - loopTime);
     if (elapsed < TARGET_LOOPTIME_MICROS)
     {
-        auto sleepus = TARGET_LOOPTIME_MICROS - elapsed - 100;//µs to sleep
-        auto sleepms = sleepus / 1000;//ms to sleep
-        if (sleepms > 0) // if >= 1 ms
+        long sleepus = TARGET_LOOPTIME_MICROS - elapsed - 100;//µs to sleep
+        long sleepms = sleepus / 1000;//ms to sleep
+        if(sleepms > 0) // if >= 1 ms
         {
             delay(sleepms); // sleep ms = save power
             sleepus -= sleepms * 1000;
