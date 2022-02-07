@@ -112,7 +112,7 @@ void MPU9250Sensor::motionLoop() {
         return;
     Quaternion rawQuat{};
     if(!imu.GetCurrentFIFOPacket(fifoBuffer,imu.dmpGetFIFOPacketSize())) return;
-    imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
+    if(imu.dmpGetQuaternion(&rawQuat, fifoBuffer)) return; // FIFO CORRUPTED
     Quat quat(-rawQuat.y,rawQuat.x,rawQuat.z,rawQuat.w);
     if(!skipCalcMag){
         getMPUScaled();
