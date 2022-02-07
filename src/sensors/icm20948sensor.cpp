@@ -151,7 +151,7 @@ void ICM20948Sensor::save_bias(bool repeat) {
             Serial.println(bias_m[2]);
             Serial.println("end mag"); 
             #endif
-            
+            bool auxiliary = sensorId == 1;
             if (accel_set) {
             // Save accel
             prefs.putInt(auxiliary ? "ba01" : "ba00", bias_a[0]);
