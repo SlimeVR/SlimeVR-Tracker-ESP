@@ -556,7 +556,7 @@ void ICM20948Sensor::startCalibration(int calibrationType) {
     #endif
 }
 
-//You need to override the libary's initializeDMP to change some settings 
+//You need to override the library's initializeDMP to change some settings 
 #if OVERRIDEDMPSETUP
 // initializeDMP is a weak function. Let's overwrite it so we can increase the sample rate
 ICM_20948_Status_e ICM_20948::initializeDMP(void)
