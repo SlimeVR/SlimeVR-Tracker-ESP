@@ -29,6 +29,7 @@
 #define USE_6_AXIS true // uses 9 (with mag) if false (only for ICM-20948 currently)
 #define LOAD_BIAS 1 // Loads the bias values from NVS on start (ESP32 Only)
 #define SAVE_BIAS 1 // Periodically saves bias calibration data to NVS (ESP32 Only)
+#define BIAS_DEBUG false // Printing BIAS Variables to serial (ICM20948 only)
 #define ENABLE_TAP false // monitor accel for (tripple) tap events and send them. Uses more cpu, disable if problems. Server does nothing with value so disabled atm
 
 //Debug information

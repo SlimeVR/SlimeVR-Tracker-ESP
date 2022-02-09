@@ -89,7 +89,7 @@ void SensorFactory::create()
         second_addr = I2CSCAN::pickDevice(0x69, 0x68, false);
     #elif SECOND_IMU == IMU_ICM20948
         this->sensor2 = new ICM20948Sensor();
-        second_addr = I2CSCAN::pickDevice(0x69, 0x68, true);
+        second_addr = I2CSCAN::pickDevice(0x69, 0x68, false);
     #else
     #error Unsupported secondary IMU
     #endif
