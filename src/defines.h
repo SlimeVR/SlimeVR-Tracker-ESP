@@ -56,6 +56,7 @@
   #define PIN_IMU_INT 255
   #define PIN_IMU_INT_2 255
   #define ENABLE_LEDS false
+  #define PIN_BATTERY_LEVEL 255
 #elif BOARD == BOARD_TTGO_TBASE
   #define PIN_IMU_SDA 5
   #define PIN_IMU_SCL 4
