@@ -224,7 +224,7 @@ void ICM20948Sensor::motionSetup() {
     }
     else
     {
-        Serial.printf("[INFO] SensorId: %i Addr: 0x%02X use 6-axis...\n", sensorId, addr);
+        Serial.printf("[INFO] SensorId: %i Addr: 0x%02X use 9-axis...\n", sensorId, addr);
         if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok)
         {
             Serial.printf("[INFO] SensorId: %i Addr: 0x%02X Enabled DMP Senor for Sensor Orientation\n", sensorId, addr);
