@@ -78,7 +78,7 @@ namespace SerialCommands {
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REP", &cmdReport);
-        cmdCallbacks.addCmd("REBOOT", &cmdReport);
+        cmdCallbacks.addCmd("REBOOT", &cmdReboot);
     }
 
     void update() {
