@@ -65,7 +65,7 @@ void WiFiNetwork::setUp() {
     WiFi.hostname("SlimeVR FBT Tracker");
     Serial.printf("[NOTICE] WiFi: Loaded credentials for SSID %s and pass length %d\n", WiFi.SSID().c_str(), WiFi.psk().length());
     wl_status_t status = WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
-    Serial.printf("[NOTICE] Status: %d", status);
+    Serial.printf("[NOTICE] Status: %d\n", status);
     wifiState = 1;
     wifiConnectionTimeout = millis();
     
