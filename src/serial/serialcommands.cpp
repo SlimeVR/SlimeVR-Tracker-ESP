@@ -66,6 +66,7 @@ namespace SerialCommands {
     }
 
     void cmdReboot(CmdParser * parser) {
+        Serial.println("[OK] REBOOT");
         ESP.restart();
     }
 

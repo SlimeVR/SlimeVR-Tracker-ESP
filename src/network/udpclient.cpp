@@ -409,7 +409,7 @@ void ServerConnection::connect()
     if(lastConnectionAttemptMs + 1000 < now)
     {
         lastConnectionAttemptMs = now;
-        Serial.println("Looking for the server...");
+        Serial.println("[Handshake] Looking for the server...");
         Network::sendHandshake();
 #ifndef SEND_UPDATES_UNCONNECTED
         LEDManager::on(LOADING_LED);
