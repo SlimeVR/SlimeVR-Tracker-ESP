@@ -24,6 +24,7 @@
 #include "serialcommands.h"
 #include "network/network.h"
 #include <CmdCallback.hpp>
+#include <EEPROM.h>
 
 namespace SerialCommands {
     CmdCallback<5> cmdCallbacks;
