@@ -70,7 +70,14 @@ namespace SerialCommands {
     }
 
     void cmdFactoryReset(CmdParser * parser) {
-        // TODO Factory reset
+        Serial.print("[OK] FACTORY RESET");
+        for (int i = 0; i <= 4096; i++) // Clear EEPROM
+            EEPROM.write(i, 0xFF);
+        EEPROM.commit();
+        WiFi.disconnect(true); // Clear WiFi credentials
+        ESP.eraseConfig(); // Clear ESP config
+        delay(3000);
+        ESP.restart();
     }
 
     void setUp() {
