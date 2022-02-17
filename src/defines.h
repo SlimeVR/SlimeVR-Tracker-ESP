@@ -22,7 +22,7 @@
 */
 // ================================================
 // See docs for configuration options and examples:
-// https://docs.slimevr.dev/configuring-project.html#configuring-definesh
+// https://docs.slimevr.dev/firmware/configuring-project.html#2-configuring-definesh
 // ================================================
 
 // Set parameters of IMU and board used
