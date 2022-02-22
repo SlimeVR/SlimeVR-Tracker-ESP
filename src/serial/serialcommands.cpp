@@ -77,7 +77,7 @@ namespace SerialCommands {
             EEPROM.write(i, 0xFF);
         EEPROM.commit();
         WiFi.disconnect(true); // Clear WiFi credentials
-        #if BOARD == BOARD_SLIMEVR || BOARD == BOARD_WEMOSD1MINI || BOARD == BOARD_NODEMCU || BOARD == BOARD_ESP01 || BOARD == BOARD_TTGO_TBASE
+        #if ESP8266
         ESP.eraseConfig(); // Clear ESP config
         #else
         // TODO: Implement eraseConfig for other boards
