@@ -77,7 +77,11 @@ namespace SerialCommands {
             EEPROM.write(i, 0xFF);
         EEPROM.commit();
         WiFi.disconnect(true); // Clear WiFi credentials
+        #if ESP8266
         ESP.eraseConfig(); // Clear ESP config
+        #else
+        // TODO: Implement eraseConfig for other boards
+        #endif
         delay(3000);
         ESP.restart();
     }
