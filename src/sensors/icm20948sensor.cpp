@@ -27,40 +27,13 @@
 #include "network/network.h"
 #include "ledmgr.h"
 
-#define BIAS_DEBUG false
-
 // seconds after previous save (from start) when calibration (DMP Bias) data will be saved to NVS. Increments through the list then stops; to prevent unwelcome eeprom wear.
 int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 10min + 10min (no more saves after 30min)
-const uint8_t number_i2c_addr = 1;
-uint8_t poss_addresses[number_i2c_addr] = {0X69}; // 0X68
-
-// #ifndef USE_6_AXIS
-//     #define USE_6_AXIS true
-// #endif
 
 // #ifndef ENABLE_TAP
 //     #define ENABLE_TAP false
 // #endif
-/* // you cant add more than 2 sensor on 1 i2c bus also upstream library does not allow it
-void ICM20948Sensor::i2c_scan() { // Basically obsolete but kept for when adding > 2 external 
-    uint8_t error;
 
-    for (uint8_t add_int = 0; add_int < number_i2c_addr; add_int++ )
-    {
-        Serial.printf("Scanning 0x%02X for slave... ", poss_addresses[add_int]);
-        Wire.beginTransmission(poss_addresses[add_int]);
-        error = Wire.endTransmission();
-        if (error == 0){          
-              Serial.print("Found at address. ");       
-            if (poss_addresses[add_int] == 0x69 || poss_addresses[add_int] == 0x68){
-                  Serial.println("\t Address is ICM.");
-                addr = poss_addresses[add_int];
-                ICM_found = true; 
-            }
-        }
-    }
-}
-*/
 void ICM20948Sensor::save_bias(bool repeat) { 
     #if defined(SAVE_BIAS) && SAVE_BIAS
         #if ESP8266
@@ -151,7 +124,7 @@ void ICM20948Sensor::save_bias(bool repeat) {
             Serial.println(bias_m[2]);
             Serial.println("end mag"); 
             #endif
-            
+            bool auxiliary = sensorId == 1;
             if (accel_set) {
             // Save accel
             prefs.putInt(auxiliary ? "ba01" : "ba00", bias_a[0]);
@@ -205,66 +178,60 @@ void ICM20948Sensor::motionSetup() {
         imu.enableDebugging(Serial);
     #endif
     // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
-    // boolean tracker = false;
+    boolean tracker = false;
     
-    // if (addr == 0x68) {
-    //      tracker = false;
-    // } else if (addr == 0x69)
-    // {
-    //     tracker = true;
-    // } else {
-    //     Serial.print("[ERR] IMU ICM20948: I2C Address not supportet by ICM20948 library: ");
-    //     Serial.println(addr, HEX);
-    //     return;
-    // }
-
-    ICM_20948_Status_e imu_err = imu.begin(Wire, (uint8_t) (addr % 2));
+    if (addr == 0x68) {
+        tracker = false;
+    } else if (addr == 0x69)
+    {
+        tracker = true;
+    } else {
+        Serial.print("[ERR] IMU ICM20948: I2C Address not supportet by ICM20948 library: ");
+        Serial.println(addr, HEX);
+        return;
+    }
+    //Serial.printf("[INFO] SensorId: %i Addr: 0x%02x IMU ICM20948: Start Init with addr = %s\n", sensorId, this->addr, tracker ? "true" : "false"); //only for debug
+    ICM_20948_Status_e imu_err = imu.begin(Wire, tracker);
     if (imu_err != ICM_20948_Stat_Ok) {
-        Serial.print("[ERR] IMU ICM20948: Can't connect to ");
-        Serial.print(addr, HEX);
-        Serial.print("  Error Code: ");
-        Serial.println(imu_err, HEX);
+        Serial.printf("[ERR] SensorId: %i Addr: 0x%02x IMU ICM20948: Can't connect to 0x%02x  Error Code: 0x%02x\n", sensorId, this->addr, this->addr, imu_err);
         LEDManager::signalAssert();
         return;
     }
 
     // Configure imu setup and load any stored bias values
-    // poss_addresses[0] = addr;
-    // i2c_scan();
-    // Serial.println("Scan completed");
     if(imu.initializeDMP() == ICM_20948_Stat_Ok)
     {
-        Serial.print("DMP initialized");
+        Serial.printf("[INFO] SensorId: %i Addr: 0x%02x DMP initialized\n", sensorId, addr);
     }
     else
     {
-        Serial.print("[ERR] DMP Failed to initialize");
+        Serial.printf("[ERR] SensorId: %i Addr: 0x%02x DMP Failed to initialize\n", sensorId, addr);
         return;
     }
 
     if (USE_6_AXIS)
     {
-        Serial.printf("[0x%02X] use 6-axis...\n", addr);
+        Serial.printf("[INFO] SensorId: %i Addr: 0x%02X use 6-axis...\n", sensorId, addr);
         if(imu.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
         {
-            Serial.print("Enabled DMP Senor for Game Rotation Vector");
+            Serial.printf("[INFO] SensorId: %i Addr: 0x%02X Enabled DMP Senor for Game Rotation Vector\n", sensorId, addr);
         }
         else
         {
-            Serial.println("[ERR] Enabling DMP Senor for Game Rotation Vector Failed");
+            Serial.printf("[ERR] SensorId: %i Addr: 0x%02X Enabling DMP Senor for Game Rotation Vector Failed\n", sensorId, addr);
             return; 
         }
     }
     else
     {
-        Serial.printf("[0x%02X] use 9-axis...\n", addr);
+        Serial.printf("[INFO] SensorId: %i Addr: 0x%02X use 9-axis...\n", sensorId, addr);
         if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok)
         {
-            Serial.print("Enabled DMP Senor for Sensor Orientation");
+            Serial.printf("[INFO] SensorId: %i Addr: 0x%02X Enabled DMP Senor for Sensor Orientation\n", sensorId, addr);
         }
         else
         {
-            Serial.print("[ERR] Enabling DMP Senor Orientation Failed");
+            Serial.printf("[ERR] SensorId: %i Addr: 0x%02X Enabling DMP Senor Orientation Failed\n", sensorId, addr);
             return; 
         }
     }
@@ -275,25 +242,25 @@ void ICM20948Sensor::motionSetup() {
 
     if (USE_6_AXIS)
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 0) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 1.25) == ICM_20948_Stat_Ok)
         {
-            Serial.print("Set Quat6 to Max frequency");
+            Serial.printf("[INFO] SensorId: %i Addr: 0x%02X Set Quat6 to 100Hz frequency\n", sensorId, addr);
         }
         else
         {
-            Serial.print("[ERR] Failed to Set Quat6 to Max frequency");
+            Serial.printf("[ERR] SensorId: %i Addr: 0x%02X Failed to Set Quat6 to 100Hz frequency\n", sensorId, addr);
             return;
         }
     }
     else
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 1.25) == ICM_20948_Stat_Ok)
         {
-            Serial.print("Set Quat9 to Max frequency");
+            Serial.printf("[INFO] SensorId: %i Addr: 0x%02X Set Quat9 to 100Hz frequency\n", sensorId, addr);
         }
         else
         {
-            Serial.print("[ERR] Failed to Set Quat9 to Max frequency");
+            Serial.printf("[ERR] SensorId: %i Addr: 0x%02X Failed to Set Quat9 to 100Hz frequency\n", sensorId, addr);
             return;
         }
     }
@@ -301,44 +268,44 @@ void ICM20948Sensor::motionSetup() {
     // Enable the FIFO
     if(imu.enableFIFO() == ICM_20948_Stat_Ok)
     {
-        Serial.print("FIFO Enabled");
+        Serial.printf("[INFO] SensorId: %i Addr: 0x%02X FIFO Enabled\n", sensorId, addr);
     }
     else
     {
-        Serial.print("[ERR] FIFO Enabling Failed");
+        Serial.printf("[ERR] SensorId: %i Addr: 0x%02X FIFO Enabling Failed\n", sensorId, addr);
         return;
     }
 
     // Enable the DMP
     if(imu.enableDMP() == ICM_20948_Stat_Ok)
     {
-        Serial.print("DMP Enabled");
+        Serial.printf("[INFO] SensorId: %i Addr: 0x%02X DMP Enabled\n", sensorId, addr);
     }
     else
     {
-        Serial.print("[ERR] DMP Enabling Failed");
+        Serial.printf("[ERR] SensorId: %i Addr: 0x%02X DMP Enabling Failed\n", sensorId, addr);
         return;
     }
 
     // Reset DMP
     if(imu.resetDMP() == ICM_20948_Stat_Ok)
     {
-        Serial.print("Reset DMP");
+        Serial.printf("[INFO] SensorId: %i Addr: 0x%02X Reset DMP\n", sensorId, addr);
     }
     else
     {
-        Serial.print("[ERR] Failed to reset DMP");
+        Serial.printf("[ERR] SensorId: %i Addr: 0x%02X Failed to reset DMP\n", sensorId, addr);
         return;
     }
 
     // Reset FIFO
     if(imu.resetFIFO() == ICM_20948_Stat_Ok)
     {
-        Serial.print("Reset FIFO");
+        Serial.printf("[INFO] SensorId: %i Addr: 0x%02X Reset FIFO\n", sensorId, addr);
     }
     else
     {
-        Serial.print("[ERR] Failed to reset FIFO");
+        Serial.printf("[ERR] SensorId: %i Addr: 0x%02X Failed to reset FIFO\n", sensorId, addr);
         return;
     }
 
@@ -491,53 +458,70 @@ void ICM20948Sensor::motionSetup() {
 void ICM20948Sensor::motionLoop() {
     timer.tick();
 
-    ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
-    if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail || readStatus == ICM_20948_Stat_Ok)
-    {
-        if(USE_6_AXIS)
+    bool dataavaliable = true;
+    while (dataavaliable) {
+        ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
+        if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail || readStatus == ICM_20948_Stat_Ok)
         {
-            if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
+            if(USE_6_AXIS)
             {
-                // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
-                // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
-                // The quaternion data is scaled by 2^30.
-                // Scale to +/- 1
-                double q1 = ((double)dmpData.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-                double q2 = ((double)dmpData.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-                double q3 = ((double)dmpData.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-                double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-                quaternion.w = q0;
-                quaternion.x = q1;
-                quaternion.y = q2;
-                quaternion.z = q3;
-                quaternion *= sensorOffset; //imu rotation
-                newData = true;
+                if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
+                {
+                    // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
+                    // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+                    // The quaternion data is scaled by 2^30.
+                    // Scale to +/- 1
+                    double q1 = ((double)dmpData.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+                    double q2 = ((double)dmpData.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+                    double q3 = ((double)dmpData.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+                    double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+                    quaternion.w = q0;
+                    quaternion.x = q1;
+                    quaternion.y = q2;
+                    quaternion.z = q3;
+                    quaternion *= sensorOffset; //imu rotation
+                    newData = true;
+                    lastData = millis();
+                }
+            }
+            else
+            {
+                if((dmpData.header & DMP_header_bitmap_Quat9) > 0)
+                {
+                    // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
+                    // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+                    // The quaternion data is scaled by 2^30.
+                    // Scale to +/- 1
+                    double q1 = ((double)dmpData.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+                    double q2 = ((double)dmpData.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+                    double q3 = ((double)dmpData.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+                    double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+                    quaternion.w = q0;
+                    quaternion.x = q1;
+                    quaternion.y = q2;
+                    quaternion.z = q3;
+                    quaternion *= sensorOffset; //imu rotation
+                    newData = true;
+                    lastData = millis();
+                }
             }
         }
-        else
+        else 
         {
-            if((dmpData.header & DMP_header_bitmap_Quat9) > 0)
+            if (readStatus == ICM_20948_Stat_FIFONoDataAvail) 
             {
-                // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
-                // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
-                // The quaternion data is scaled by 2^30.
-                // Scale to +/- 1
-                double q1 = ((double)dmpData.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-                double q2 = ((double)dmpData.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-                double q3 = ((double)dmpData.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-                double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-                quaternion.w = q0;
-                quaternion.x = q1;
-                quaternion.y = q2;
-                quaternion.z = q3;
-                quaternion *= sensorOffset; //imu rotation
-                newData = true;
+                dataavaliable = false;
             }
+#ifdef FULL_DEBUG
+            else 
+            {
+                Serial.print("e0x");
+                Serial.print(readStatus, HEX);
+                Serial.print(" ");
+            }
+#endif   
         }
-        lastReset = -1;
-        lastData = millis();
     }
-    
     if(lastData + 1000 < millis()) {
         working = false;
         lastData = millis();        
@@ -572,7 +556,7 @@ void ICM20948Sensor::startCalibration(int calibrationType) {
     #endif
 }
 
-//You need to override the libary's initializeDMP to change some settings 
+//You need to override the library's initializeDMP to change some settings 
 #if OVERRIDEDMPSETUP
 // initializeDMP is a weak function. Let's overwrite it so we can increase the sample rate
 ICM_20948_Status_e ICM_20948::initializeDMP(void)

@@ -58,7 +58,7 @@ void setup()
     Serial.println();
     Serial.println();
 #if IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_MPU9250
-    I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); // Make sure the bus isn't suck when reseting ESP without powering it down
+    I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); // Make sure the bus isn't stuck when resetting ESP without powering it down
     // Do it only for MPU, cause reaction of BNO to this is not investigated yet
 #endif
     // join I2C bus

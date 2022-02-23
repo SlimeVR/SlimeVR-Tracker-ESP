@@ -24,6 +24,7 @@
 #include "serialcommands.h"
 #include "network/network.h"
 #include <CmdCallback.hpp>
+#include <EEPROM.h>
 
 namespace SerialCommands {
     CmdCallback<5> cmdCallbacks;
@@ -66,11 +67,23 @@ namespace SerialCommands {
     }
 
     void cmdReboot(CmdParser * parser) {
+        Serial.println("[OK] REBOOT");
         ESP.restart();
     }
 
     void cmdFactoryReset(CmdParser * parser) {
-        // TODO Factory reset
+        Serial.print("[OK] FACTORY RESET");
+        for (int i = 0; i <= 4096; i++) // Clear EEPROM
+            EEPROM.write(i, 0xFF);
+        EEPROM.commit();
+        WiFi.disconnect(true); // Clear WiFi credentials
+        #if ESP8266
+        ESP.eraseConfig(); // Clear ESP config
+        #else
+        // TODO: Implement eraseConfig for other boards
+        #endif
+        delay(3000);
+        ESP.restart();
     }
 
     void setUp() {
@@ -78,7 +91,7 @@ namespace SerialCommands {
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REP", &cmdReport);
-        cmdCallbacks.addCmd("REBOOT", &cmdReport);
+        cmdCallbacks.addCmd("REBOOT", &cmdReboot);
     }
 
     void update() {

@@ -30,7 +30,7 @@ The following IMUs and their corresponding `IMU` values are supported by the fir
   * See *Sensor calibration* below for info on calibrating this sensor.
   * Experimental support!
 * ICM-20948 (IMU_ICM20948)
-  * Using fision in internal DMP for 6Dof or 9DoF, 9DoF mode requires good magentic environment.
+  * Using fision in internal DMP for 6Dof or 9DoF, 9DoF mode requires good magnetic environment.
   * Comment out `USE_6DOF` in `debug.h` for 9DoF mode.
   * Experimental support!
 

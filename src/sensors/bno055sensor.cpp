@@ -37,7 +37,6 @@ void BNO055Sensor::motionSetup() {
     }
 
     delay(1000);
-    imu.setExtCrystalUse(false);
     imu.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
     imu.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
     Serial.print("[NOTICE] Connected to");
