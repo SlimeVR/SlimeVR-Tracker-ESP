@@ -27,7 +27,7 @@
 class BNO055Sensor : public Sensor
 {
 public:
-    BNO055Sensor(){};
+    BNO055Sensor() : Sensor("BNO055Sensor"){};
     ~BNO055Sensor(){};
     void motionSetup() override final;
     void motionLoop() override final;

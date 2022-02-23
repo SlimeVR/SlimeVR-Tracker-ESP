@@ -30,8 +30,7 @@ void BNO055Sensor::motionSetup() {
     delay(3000);
     if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS))
     {
-        Serial.print("[ERR] IMU BNO055: Can't connect to ");
-        Serial.println(getIMUNameByType(sensorType));
+        m_Logger.fatal("Can't connect to BNO055 at address 0x%02x", addr);
         LEDManager::signalAssert();
         return;
     }
@@ -39,8 +38,7 @@ void BNO055Sensor::motionSetup() {
     delay(1000);
     imu.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
     imu.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
-    Serial.print("[NOTICE] Connected to");
-    Serial.println(getIMUNameByType(sensorType));
+    m_Logger.info("Connected to BNO055 at address 0x%02x", addr);
     working = true;
     configured = true;
 }
