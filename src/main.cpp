@@ -32,6 +32,9 @@
 #include "serial/serialcommands.h"
 #include "ledmgr.h"
 #include "batterymonitor.h"
+#include "logging/Logger.h"
+
+SlimeVR::Logging::Logger logger("SlimeVR");
 
 SensorFactory sensors {};
 int sensorToCalibrate = -1;
@@ -43,6 +46,13 @@ BatteryMonitor battery;
 
 void setup()
 {
+    Serial.begin(serialBaudRate);
+    Serial.println();
+    Serial.println();
+    Serial.println();
+
+    logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
+
     //wifi_set_sleep_type(NONE_SLEEP_T);
     // Glow diode while loading
 #if ENABLE_LEDS
@@ -52,11 +62,8 @@ void setup()
     LEDManager::on(LOADING_LED);
 #endif
 
-    Serial.begin(serialBaudRate);
     SerialCommands::setUp();
-    Serial.println();
-    Serial.println();
-    Serial.println();
+
 #if IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_MPU9250
     I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); // Make sure the bus isn't stuck when resetting ESP without powering it down
     // Do it only for MPU, cause reaction of BNO to this is not investigated yet
