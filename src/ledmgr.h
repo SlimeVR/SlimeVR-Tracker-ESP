@@ -25,6 +25,7 @@
 
 #include <Arduino.h>
 #include "globals.h"
+#include "logging/Logger.h"
 
 #define LED_STATUS_SERVER_CONNECTING 2
 #define LED_STATUS_WIFI_CONNECTING 4
