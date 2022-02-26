@@ -253,8 +253,8 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     float A_BAinv[4][3];
     float M_BAinv[4][3];
     CalculateCalibration(calibrationDataAcc, calibrationSamples, A_BAinv);
-    CalculateCalibration(calibrationDataMag, calibrationSamples, M_BAinv);
     free(calibrationDataAcc);
+    CalculateCalibration(calibrationDataMag, calibrationSamples, M_BAinv);
     free(calibrationDataMag);
     Serial.println("[NOTICE] Finished Calculate Calibration data");
     Serial.println("[NOTICE] Now Saving EEPROM");
