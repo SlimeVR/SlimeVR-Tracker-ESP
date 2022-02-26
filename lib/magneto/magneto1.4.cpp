@@ -1580,8 +1580,8 @@ void BackSubstitute_Real_Vector(double* H, double eigen_real[],
     double* pH;
     double* pV;
     double x;
-    double u[4];
-    double v[2];
+    double u[4] = {0};
+    double v[2] = {0};
     int i, j, k;
 
     k = row;
@@ -1645,9 +1645,9 @@ void BackSubstitute_Complex_Vector(double* H, double eigen_real[],
     double* pH;
     double* pV;
     double x, y;
-    double u[4];
-    double v[2];
-    double w[2];
+    double u[4] = {0};
+    double v[2] = {0};
+    double w[2] = {0};
     int i, j, k;
 
     k = row - 1;
@@ -2060,7 +2060,7 @@ int Upper_Triangular_Solve(double* U, double B[], double x[], int n)
 int Upper_Triangular_Inverse(double* U, int n)
 {
     int i, j, k;
-    double* p_i, * p_j, * p_k;
+    double* p_i, * p_k;
     double sum;
 
     //         Invert the diagonal elements of the upper triangular matrix U.
