@@ -202,15 +202,18 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     CalculateCalibration(calibrationDataAcc, accelCalibrationSamples, A_BAinv);
     free(calibrationDataAcc);
     Serial.println("[NOTICE] Finished Calculate Calibration data");
-    Serial.println("[NOTICE] Now Saving EEPROM");
+    Serial.println("[INFO] Accelerometer calibration matrix:");
+    Serial.println('{');
     for (int i = 0; i < 3; i++)
     {
         config->calibration[sensorId].A_B[i] = A_BAinv[0][i];
         config->calibration[sensorId].A_Ainv[0][i] = A_BAinv[1][i];
         config->calibration[sensorId].A_Ainv[1][i] = A_BAinv[2][i];
         config->calibration[sensorId].A_Ainv[2][i] = A_BAinv[3][i];
+        Serial.printf("  %f, %f, %f, %f\n", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
-
+    Serial.println('}');
+    Serial.println("[NOTICE] Now Saving EEPROM");
     setConfig(*config);
     Serial.println("[NOTICE] Finished Saving EEPROM");
     delay(5000);
