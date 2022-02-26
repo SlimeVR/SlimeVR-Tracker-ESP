@@ -68,12 +68,14 @@ void BMI160Sensor::motionSetup() {
 
     int16_t ax, ay, az;
     imu.getAcceleration(&ax, &ay, &az);
-    if(az < 0 && 10 * (ax * ax + ay * ay) < az * az) {
+    float g_az = (float)az / 8192; // For 4G sensitivity
+    if(g_az < -0.75f) {
         LEDManager::off(CALIBRATING_LED);
         Serial.println("Calling Calibration... Flip front to confirm start calibration.");
         delay(5000);
         imu.getAcceleration(&ax, &ay, &az);
-        if(az > 0 && 10 * (ax * ax + ay * ay) < az * az)
+        g_az = (float)az / 8192;
+        if(g_az > 0.75f)
             startCalibration(0);
         LEDManager::on(CALIBRATING_LED);
     }

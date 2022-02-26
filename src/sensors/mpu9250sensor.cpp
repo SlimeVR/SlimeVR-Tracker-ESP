@@ -56,13 +56,15 @@ void MPU9250Sensor::motionSetup() {
     // turn on while flip back to calibrate. then, flip again after 5 seconds.    
     // TODO: Move calibration invoke after calibrate button on slimeVR server available 
     imu.getAcceleration(&ax, &ay, &az);
-    if(az<0 && 10.0*(ax*ax+ay*ay)<az*az) {
+    float g_az = (float)az / 16384; // For 2G sensitivity
+    if(g_az < -0.75f) {
         digitalWrite(CALIBRATING_LED, HIGH);
         Serial.println("Calling Calibration... Flip front to confirm start calibration.");
         delay(5000);
         digitalWrite(CALIBRATING_LED, LOW);
         imu.getAcceleration(&ax, &ay, &az);
-        if(az>0 && 10.0*(ax*ax+ay*ay)<az*az) 
+        g_az = (float)az / 16384;
+        if(g_az > 0.75f)
             startCalibration(0);
     }
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
