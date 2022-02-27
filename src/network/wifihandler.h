@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 #ifndef SLIMEVR_WIFI_H_
 #define SLIMEVR_WIFI_H_
 
-#include "configuration.h"
+#include "configuration/Configuration.h"
 #ifdef ESP8266
     #include <ESP8266WiFi.h>
 #else

@@ -23,7 +23,6 @@
 #include "icm20948sensor.h"
 #include "calibration.h"
 #include <i2cscan.h>
-#include <EEPROM.h> // for 8266, save the current bias values to eeprom
 #include "network/network.h"
 #include "GlobalVars.h"
 
@@ -37,314 +36,134 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 void ICM20948Sensor::save_bias(bool repeat) { 
     #if defined(SAVE_BIAS) && SAVE_BIAS
 #ifdef FULL_DEBUG
-            m_Logger.trace("Saving Bias");
+        m_Logger.trace("Saving Bias");
 #endif
-        #if ESP8266
-            int8_t count;
-            int32_t bias_a[3], bias_g[3], bias_m[3];
 
-            imu.GetBiasGyroX(&bias_g[0]);
-            imu.GetBiasGyroY(&bias_g[1]);
-            imu.GetBiasGyroZ(&bias_g[2]);
+        imu.GetBiasGyroX(&m_Calibration.G[0]);
+        imu.GetBiasGyroY(&m_Calibration.G[1]);
+        imu.GetBiasGyroZ(&m_Calibration.G[2]);
 
-            imu.GetBiasAccelX(&bias_a[0]);
-            imu.GetBiasAccelY(&bias_a[1]);
-            imu.GetBiasAccelZ(&bias_a[2]);
+        imu.GetBiasAccelX(&m_Calibration.A[0]);
+        imu.GetBiasAccelY(&m_Calibration.A[1]);
+        imu.GetBiasAccelZ(&m_Calibration.A[2]);
 
-            imu.GetBiasCPassX(&bias_m[0]);
-            imu.GetBiasCPassY(&bias_m[1]);
-            imu.GetBiasCPassZ(&bias_m[2]);
-
-            bool gyro_set  = bias_g[0] && bias_g[1] && bias_g[2];
-            bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
-            bool CPass_set = bias_m[0] && bias_m[1] && bias_m[2];
-
-            EEPROM.begin(4096); // max memory usage = 4096
-            EEPROM.get(addr + 100, count); // 1st imu counter in EEPROM addr: 0x69+100=205, 2nd addr: 0x68+100=204
+        imu.GetBiasCPassX(&m_Calibration.C[0]);
+        imu.GetBiasCPassY(&m_Calibration.C[1]);
+        imu.GetBiasCPassZ(&m_Calibration.C[2]);
 
 #ifdef FULL_DEBUG
-            m_Logger.trace("[0x%02X] EEPROM position: %d, count: %d", addr, addr + 100, count);
+        m_Logger.trace("Gyrometer bias    : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
+        m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
+        m_Logger.trace("Compass bias      : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
 #endif
 
-            if(count < 0 || count > 42) {
-                count = sensorId; // 1st imu counter is even number, 2nd is odd
-            } else if(repeat) {
-                count++;
+        SlimeVR::Configuration::CalibrationConfig calibration;
+        calibration.type = SlimeVR::Configuration::CalibrationConfigType::ICM20948;
+        calibration.data.icm20948 = m_Calibration;
+        configuration.setCalibration(sensorId, calibration);
+        configuration.save();
+
+        if (repeat) {
+            bias_save_counter++;
+            // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
+            if (sizeof(bias_save_periods) != bias_save_counter) {
+                timer.in(bias_save_periods[bias_save_counter] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
             }
-            EEPROM.put(addr + 100, count);
-
-#ifdef FULL_DEBUG
-            m_Logger.trace("[0x%02X] bias gyro  save(%d): [%d, %d, %d]", addr, count * 12, bias_g[0], bias_g[1], bias_g[2]);
-            m_Logger.trace("[0x%02X] bias accel save(%d): [%d, %d, %d]", addr, count * 12, bias_a[0], bias_a[1], bias_a[2]);
-            m_Logger.trace("[0x%02X] bias CPass save(%d): [%d, %d, %d]", addr, count * 12, bias_m[0], bias_m[1], bias_m[2]);
-#endif
-
-            if (gyro_set) {
-                EEPROM.put(1024 + (count * 12), bias_g); // 1024 ~ 2008
-            }
-            if (accel_set) {
-                EEPROM.put(2046 + (count * 12), bias_a); // 2046 ~ 3030
-            }
-            if (CPass_set) {
-                EEPROM.put(3072 + (count * 12), bias_m); // 3072 ~ 4056
-            }
-            EEPROM.end(); // save and end
-            if (repeat) {
-                bias_save_counter++;
-                // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
-                if (sizeof(bias_save_periods) != bias_save_counter) {
-                    timer.in(bias_save_periods[bias_save_counter] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
-                }
-            }
-        #elif ESP32
-            int bias_a[3], bias_g[3], bias_m[3];
-        
-            imu.GetBiasGyroX(&bias_g[0]);
-            imu.GetBiasGyroY(&bias_g[1]);
-            imu.GetBiasGyroZ(&bias_g[2]);
-
-            imu.GetBiasAccelX(&bias_a[0]);
-            imu.GetBiasAccelY(&bias_a[1]);
-            imu.GetBiasAccelZ(&bias_a[2]);
-
-            imu.GetBiasCPassX(&bias_m[0]);
-            imu.GetBiasCPassY(&bias_m[1]);
-            imu.GetBiasCPassZ(&bias_m[2]);
-
-            bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
-            bool gyro_set = bias_g[0] && bias_g[1] && bias_g[2];
-            bool mag_set = bias_m[0] && bias_m[1] && bias_m[2];
-                
-#ifdef FULL_DEBUG
-            m_Logger.trace("bias gyro on IMU: %d, %d, %d", bias_g[0], bias_g[1], bias_g[2]);
-            m_Logger.trace("bias accel on IMU: %d, %d, %d", bias_a[0], bias_a[1], bias_a[2]);
-            m_Logger.trace("bias mag on IMU: %d, %d, %d", bias_m[0], bias_m[1], bias_m[2]);
-#endif
-
-            bool auxiliary = sensorId == 1;
-            if (accel_set) {
-                // Save accel
-                prefs.putInt(auxiliary ? "ba01" : "ba00", bias_a[0]);
-                prefs.putInt(auxiliary ? "ba11" : "ba10", bias_a[1]);
-                prefs.putInt(auxiliary ? "ba21" : "ba20", bias_a[2]);
-
-#ifdef FULL_DEBUG
-                m_Logger.trace("Wrote Accel Bias");
-#endif
-            }
-            
-            if (gyro_set) {
-                // Save gyro
-                prefs.putInt(auxiliary ? "bg01" : "bg00", bias_g[0]);
-                prefs.putInt(auxiliary ? "bg11" : "bg10", bias_g[1]);
-                prefs.putInt(auxiliary ? "bg21" : "bg20", bias_g[2]);
-
-#ifdef FULL_DEBUG
-                m_Logger.trace("Wrote Gyro Bias");
-#endif
-            }
-
-            if (mag_set) {
-                // Save mag
-                prefs.putInt(auxiliary ? "bm01" : "bm00", bias_m[0]);
-                prefs.putInt(auxiliary ? "bm11" : "bm10", bias_m[1]);
-                prefs.putInt(auxiliary ? "bm21" : "bm20", bias_m[2]);
-
-#ifdef FULL_DEBUG
-                m_Logger.trace("Wrote Mag Bias");
-#endif
-            }    
-        #endif  
-
-            if (repeat) {
-                bias_save_counter++;
-                // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
-                if (sizeof(bias_save_periods) != bias_save_counter)
-                {
-                    timer.in(bias_save_periods[bias_save_counter] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
-                }
-            }        
-
+        }
     #endif
 }
 
 void ICM20948Sensor::load_bias() {
-    #if defined(LOAD_BIAS) && LOAD_BIAS
-        #if ESP8266
-            int8_t count;
-            int32_t bias_g[3], bias_a[3], bias_m[3];
-            count = 0;
-            EEPROM.begin(4096); // max memory usage = 4096
-            EEPROM.get(addr + 100, count); // 1st imu counter in EEPROM addr: 0x69+100=205, 2nd addr: 0x68+100=204
-
+#if defined(LOAD_BIAS) && LOAD_BIAS
 #ifdef FULL_DEBUG
-            m_Logger.trace("[0x%02X] EEPROM position: %d, count: %d", addr, addr + 100, count);
+    m_Logger.trace("Gyrometer     bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
+    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
+    m_Logger.trace("Compass       bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
 #endif
 
-            if(count < 0 || count > 42) {
-                count = sensorId; // 1st imu counter is even number, 2nd is odd
-                EEPROM.put(addr + 100, count);
-            }
+    imu.SetBiasGyroX(m_Calibration.G[0]);
+    imu.SetBiasGyroY(m_Calibration.G[1]);
+    imu.SetBiasGyroZ(m_Calibration.G[2]);
 
-            EEPROM.get(1024 + (count * 12), bias_g); // 1024 ~ 2008
-            EEPROM.get(2046 + (count * 12), bias_a); // 2046 ~ 3030
-            EEPROM.get(3072 + (count * 12), bias_m); // 3072 ~ 4056
-            EEPROM.end();
+    imu.SetBiasAccelX(m_Calibration.A[0]);
+    imu.SetBiasAccelY(m_Calibration.A[1]);
+    imu.SetBiasAccelZ(m_Calibration.A[2]);
+
+    imu.SetBiasCPassX(m_Calibration.C[0]);
+    imu.SetBiasCPassY(m_Calibration.C[1]);
+    imu.SetBiasCPassZ(m_Calibration.C[2]);
+
+#else
+    if(BIAS_DEBUG)
+    {
+        int bias_a[3], bias_g[3], bias_m[3];
+
+        imu.GetBiasGyroX(&bias_g[0]);
+        imu.GetBiasGyroY(&bias_g[1]);
+        imu.GetBiasGyroZ(&bias_g[2]);
+
+        imu.GetBiasAccelX(&bias_a[0]);
+        imu.GetBiasAccelY(&bias_a[1]);
+        imu.GetBiasAccelZ(&bias_a[2]);
+
+        imu.GetBiasCPassX(&bias_m[0]);
+        imu.GetBiasCPassY(&bias_m[1]);
+        imu.GetBiasCPassZ(&bias_m[2]);
 
 #ifdef FULL_DEBUG
-            m_Logger.trace("[0x%02X] EEPROM gyro  get(%d): [%d, %d, %d]", addr, count * 12, bias_g[0], bias_g[1], bias_g[2]);
-            m_Logger.trace("[0x%02X] EEPROM accel get(%d): [%d, %d, %d]", addr, count * 12, bias_a[0], bias_a[1], bias_a[2]);
-            m_Logger.trace("[0x%02X] EEPROM CPass get(%d): [%d, %d, %d]", addr, count * 12, bias_m[0], bias_m[1], bias_m[2]);
+        m_Logger.trace("Gyrometer     bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_g));
+        m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_a));
+        m_Logger.trace("Compass       bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_m));
 #endif
 
-            imu.SetBiasGyroX(bias_g[0]);
-            imu.SetBiasGyroY(bias_g[1]);
-            imu.SetBiasGyroZ(bias_g[2]);
+        //Sets all bias to 90
+        bias_g = {90, 90, 90};
+        bias_a = {90, 90, 90};
+        bias_m = {90, 90, 90};
 
-            imu.SetBiasAccelX(bias_a[0]);
-            imu.SetBiasAccelY(bias_a[1]);
-            imu.SetBiasAccelZ(bias_a[2]);
+        //Sets all bias to 0 in memory
+        imu.SetBiasGyroX(bias_g[0]);
+        imu.SetBiasGyroY(bias_g[1]);
+        imu.SetBiasGyroZ(bias_g[2]);
 
-            imu.SetBiasCPassX(bias_m[0]);
-            imu.SetBiasCPassY(bias_m[1]);
-            imu.SetBiasCPassZ(bias_m[2]);
-			
-        #elif ESP32 
-            bool auxiliary = sensorId == 1;
+        imu.SetBiasAccelX(bias_a[0]);
+        imu.SetBiasAccelY(bias_a[1]);
+        imu.SetBiasAccelZ(bias_a[2]);
 
-            int32_t bias_a[3], bias_g[3], bias_m[3];
+        imu.SetBiasCPassX(bias_m[0]);
+        imu.SetBiasCPassY(bias_m[1]);
+        imu.SetBiasCPassZ(bias_m[2]);
 
-            bias_a[0] = prefs.getInt(auxiliary ? "ba01" : "ba00", 0);
-            bias_a[1] = prefs.getInt(auxiliary ? "ba11" : "ba10", 0);
-            bias_a[2] = prefs.getInt(auxiliary ? "ba21" : "ba20", 0);
-            
-            bias_g[0] = prefs.getInt(auxiliary ? "bg01" : "bg00", 0);
-            bias_g[1] = prefs.getInt(auxiliary ? "bg11" : "bg10", 0);
-            bias_g[2] = prefs.getInt(auxiliary ? "bg21" : "bg20", 0);
-            
-            bias_m[0] = prefs.getInt(auxiliary ? "bm01" : "bm00", 0);
-            bias_m[1] = prefs.getInt(auxiliary ? "bm11" : "bm10", 0);
-            bias_m[2] = prefs.getInt(auxiliary ? "bm21" : "bm20", 0);
-            
-            imu.SetBiasGyroX(bias_g[0]);
-            imu.SetBiasGyroY(bias_g[1]);
-            imu.SetBiasGyroZ(bias_g[2]);
+        //Sets all bias to 0
+        bias_g = {0, 0, 0};
+        bias_a = {0, 0, 0};
+        bias_m = {0, 0, 0};
 
-            imu.SetBiasAccelX(bias_a[0]);
-            imu.SetBiasAccelY(bias_a[1]);
-            imu.SetBiasAccelZ(bias_a[2]);
+        //Reloads all bias from memory
+        imu.GetBiasGyroX(&bias_g[0]);
+        imu.GetBiasGyroY(&bias_g[1]);
+        imu.GetBiasGyroZ(&bias_g[2]);
 
-            imu.SetBiasCPassX(bias_m[0]);
-            imu.SetBiasCPassY(bias_m[1]);
-            imu.SetBiasCPassZ(bias_m[2]);
+        imu.GetBiasAccelX(&bias_a[0]);
+        imu.GetBiasAccelY(&bias_a[1]);
+        imu.GetBiasAccelZ(&bias_a[2]);
 
-            // Display both values from ESP32 and read back from IMU
+        imu.GetBiasCPassX(&bias_m[0]);
+        imu.GetBiasCPassY(&bias_m[1]);
+        imu.GetBiasCPassZ(&bias_m[2]);
+
 #ifdef FULL_DEBUG
-            m_Logger.trace("On IMU and on ESP32 should match");
-            m_Logger.trace("bias gyro on ESP32 : [%d, %d, %d]", bias_g[0], bias_g[1], bias_g[2]);
-            m_Logger.trace("bias accel on ESP32: [%d, %d, %d]", bias_a[0], bias_a[1], bias_a[2]);
-            m_Logger.trace("bias mag on ESP32  : [%d, %d, %d]", bias_m[0], bias_m[1], bias_m[2]);
-            
-            imu.GetBiasGyroX(&bias_g[0]);
-            imu.GetBiasGyroY(&bias_g[1]);
-            imu.GetBiasGyroZ(&bias_g[2]);
+        m_Logger.trace("All set bias should be 90");
 
-            imu.GetBiasAccelX(&bias_a[0]);
-            imu.GetBiasAccelY(&bias_a[1]);
-            imu.GetBiasAccelZ(&bias_a[2]);
-
-            imu.GetBiasCPassX(&bias_m[0]);
-            imu.GetBiasCPassY(&bias_m[1]);
-            imu.GetBiasCPassZ(&bias_m[2]);
-            
-            m_Logger.trace("bias gyro on IMU : [%d, %d, %d]", bias_g[0], bias_g[1], bias_g[2]);
-            m_Logger.trace("bias accel on IMU: [%d, %d, %d]", bias_a[0], bias_a[1], bias_a[2]);
-            m_Logger.trace("bias mag on IMU  : [%d, %d, %d]", bias_m[0], bias_m[1], bias_m[2]);				
+        m_Logger.trace("Gyrometer bias    : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_g));
+        m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_a));
+        m_Logger.trace("Compass bias      : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_m));
 #endif
-			
-        #endif  // #if esp8266 / elif ESP32
-
-        #if BIAS_DEBUG
-            int bias_a[3], bias_g[3], bias_m[3];
-            
-            imu.GetBiasGyroX(&bias_g[0]);
-            imu.GetBiasGyroY(&bias_g[1]);
-            imu.GetBiasGyroZ(&bias_g[2]);
-
-            imu.GetBiasAccelX(&bias_a[0]);
-            imu.GetBiasAccelY(&bias_a[1]);
-            imu.GetBiasAccelZ(&bias_a[2]);
-
-            imu.GetBiasCPassX(&bias_m[0]);
-            imu.GetBiasCPassY(&bias_m[1]);
-            imu.GetBiasCPassZ(&bias_m[2]);
-
-            m_Logger.trace("Starting Gyro Bias is %d, %d, %d", bias_g[0], bias_g[1], bias_g[2]);
-            m_Logger.trace("Starting Accel Bias is %d, %d, %d", bias_a[0], bias_a[1], bias_a[2]);
-            m_Logger.trace("Starting CPass Bias is %d, %d, %d", bias_m[0], bias_m[1], bias_m[2]);
-
-            //Sets all bias to 90
-            bias_g[0] = 90;
-            bias_g[1] = 90;
-            bias_g[2] = 90;
-            bias_a[0] = 90;
-            bias_a[1] = 90;
-            bias_a[2] = 90;
-            bias_m[0] = 90;
-            bias_m[1] = 90;
-            bias_m[2] = 90;
-
-            //Sets all bias to 0 in memory
-            imu.SetBiasGyroX(bias_g[0]);
-            imu.SetBiasGyroY(bias_g[1]);
-            imu.SetBiasGyroZ(bias_g[2]);
-
-            imu.SetBiasAccelX(bias_a[0]);
-            imu.SetBiasAccelY(bias_a[1]);
-            imu.SetBiasAccelZ(bias_a[2]);
-
-            imu.SetBiasCPassX(bias_m[0]);
-            imu.SetBiasCPassY(bias_m[1]);
-            imu.SetBiasCPassZ(bias_m[2]);
-
-            //Sets all bias to 0
-            bias_g[0] = 0;
-            bias_g[1] = 0;
-            bias_g[2] = 0;
-            bias_a[0] = 0;
-            bias_a[1] = 0;
-            bias_a[2] = 0;
-            bias_m[0] = 0;
-            bias_m[1] = 0;
-            bias_m[2] = 0;
-
-            //Reloads all bias from memory
-            imu.GetBiasGyroX(&bias_g[0]);
-            imu.GetBiasGyroY(&bias_g[1]);
-            imu.GetBiasGyroZ(&bias_g[2]);
-
-            imu.GetBiasAccelX(&bias_a[0]);
-            imu.GetBiasAccelY(&bias_a[1]);
-            imu.GetBiasAccelZ(&bias_a[2]);
-
-            imu.GetBiasCPassX(&bias_m[0]);
-            imu.GetBiasCPassY(&bias_m[1]);
-            imu.GetBiasCPassZ(&bias_m[2]);
-
-            m_Logger.trace("All set bias should be 90");
-
-            m_Logger.trace("Set Gyro Bias is %d, %d, %d", bias_g[0], bias_g[1], bias_g[2]);
-            m_Logger.trace("Set Accel Bias is %d, %d, %d", bias_a[0], bias_a[1], bias_a[2]);
-            m_Logger.trace("Set CPass Bias is %d, %d, %d", bias_m[0], bias_m[1], bias_m[2]);
-        #endif // BIAS_DEBUG
-    #endif // LOAD_BIAS
+    }
+#endif
 }
 
 void ICM20948Sensor::motionSetup() {
-    #ifdef ESP32
-        prefs.begin("ICM20948", false);  
-    #endif
-	
     #ifdef FULL_DEBUG
         imu.enableDebugging(Serial);
     #endif
@@ -476,8 +295,29 @@ void ICM20948Sensor::motionSetup() {
        m_Logger.fatal("Failed to reset FIFO");
         return;
     }
-	
-	load_bias();
+
+    // Initialize the configuration
+    {
+        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        // If no compatible calibration data is found, the calibration data will just be zero-ed out
+        switch (sensorCalibration.type)
+        {
+            case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
+                m_Calibration = sensorCalibration.data.icm20948;
+                break;
+
+            case SlimeVR::Configuration::CalibrationConfigType::NONE:
+                m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+                m_Logger.info("Calibration is advised");
+                break;
+
+            default:
+                m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+                m_Logger.info("Calibration is advised");
+        }
+    }
+
+    load_bias();
 
     lastData = millis();
     working = true;
@@ -608,15 +448,7 @@ void ICM20948Sensor::sendData() {
 void ICM20948Sensor::startCalibration(int calibrationType) {
     // 20948 does continuous calibration
 
-    // If ESP32, manually force a new save
-    #ifdef ESP32
-        save_bias(false);
-    #endif
-    // If 8266, save the current bias values to eeprom
-    #ifdef ESP8266
-        // Types are int, device config saves float - need to save and load like mpu6050 does
-        save_bias(false);
-    #endif
+    save_bias(false);
 }
 
 //You need to override the library's initializeDMP to change some settings 

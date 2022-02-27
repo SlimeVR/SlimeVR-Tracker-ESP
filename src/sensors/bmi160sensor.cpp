@@ -85,8 +85,27 @@ void BMI160Sensor::motionSetup() {
         ledManager.off();
     }
 
-    DeviceConfig * const config = getConfigPtr();
-    calibration = &config->calibration[sensorId];
+    // Initialize the configuration
+    {
+        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        // If no compatible calibration data is found, the calibration data will just be zero-ed out
+        switch (sensorCalibration.type)
+        {
+            case SlimeVR::Configuration::CalibrationConfigType::BMI160:
+                m_Calibration = sensorCalibration.data.bmi160;
+                break;
+
+            case SlimeVR::Configuration::CalibrationConfigType::NONE:
+                m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+                m_Logger.info("Calibration is advised");
+                break;
+
+            default:
+                m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+                m_Logger.info("Calibration is advised");
+        }
+    }
+
     working = true;
 }
 
@@ -148,7 +167,7 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 #endif
 
     float temperature = getTemperature();
-    float tempDiff = temperature - calibration->temperature;
+    float tempDiff = temperature - m_Calibration.temperature;
     uint8_t quant = map(temperature, 15, 75, 0, 12);
 
     int16_t ax, ay, az;
@@ -158,9 +177,9 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 
     // TODO: Sensitivity over temp compensation?
     // TODO: Cross-axis sensitivity compensation?
-    Gxyz[0] = ((float)gx - (calibration->G_off[0] + (tempDiff * LSB_COMP_PER_TEMP_X_MAP[quant]))) * GSCALE;
-    Gxyz[1] = ((float)gy - (calibration->G_off[1] + (tempDiff * LSB_COMP_PER_TEMP_Y_MAP[quant]))) * GSCALE;
-    Gxyz[2] = ((float)gz - (calibration->G_off[2] + (tempDiff * LSB_COMP_PER_TEMP_Z_MAP[quant]))) * GSCALE;
+    Gxyz[0] = ((float)gx - (m_Calibration.G_off[0] + (tempDiff * LSB_COMP_PER_TEMP_X_MAP[quant]))) * GSCALE;
+    Gxyz[1] = ((float)gy - (m_Calibration.G_off[1] + (tempDiff * LSB_COMP_PER_TEMP_Y_MAP[quant]))) * GSCALE;
+    Gxyz[2] = ((float)gz - (m_Calibration.G_off[2] + (tempDiff * LSB_COMP_PER_TEMP_Z_MAP[quant]))) * GSCALE;
 
     Axyz[0] = (float)ax;
     Axyz[1] = (float)ay;
@@ -169,10 +188,10 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
     #if useFullCalibrationMatrix == true
         float temp[3];
         for (uint8_t i = 0; i < 3; i++)
-            temp[i] = (Axyz[i] - calibration->A_B[i]);
-        Axyz[0] = calibration->A_Ainv[0][0] * temp[0] + calibration->A_Ainv[0][1] * temp[1] + calibration->A_Ainv[0][2] * temp[2];
-        Axyz[1] = calibration->A_Ainv[1][0] * temp[0] + calibration->A_Ainv[1][1] * temp[1] + calibration->A_Ainv[1][2] * temp[2];
-        Axyz[2] = calibration->A_Ainv[2][0] * temp[0] + calibration->A_Ainv[2][1] * temp[1] + calibration->A_Ainv[2][2] * temp[2];
+            temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
+        Axyz[0] = m_Calibration.A_Ainv[0][0] * temp[0] + m_Calibration.A_Ainv[0][1] * temp[1] + m_Calibration.A_Ainv[0][2] * temp[2];
+        Axyz[1] = m_Calibration.A_Ainv[1][0] * temp[0] + m_Calibration.A_Ainv[1][1] * temp[1] + m_Calibration.A_Ainv[1][2] * temp[2];
+        Axyz[2] = m_Calibration.A_Ainv[2][0] * temp[0] + m_Calibration.A_Ainv[2][1] * temp[1] + m_Calibration.A_Ainv[2][2] * temp[2];
     #else
         for (uint8_t i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
@@ -183,13 +202,12 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     ledManager.on();
 
     m_Logger.debug("Gathering raw data for device calibration...");
-    DeviceConfig * const config = getConfigPtr();
 
     // Wait for sensor to calm down before calibration
     m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
     delay(2000);
     float temperature = getTemperature();
-    config->calibration[sensorId].temperature = temperature;
+    m_Calibration.temperature = temperature;
     uint16_t gyroCalibrationSamples = 2500;
     float rawGxyz[3] = {0};
 
@@ -209,12 +227,12 @@ void BMI160Sensor::startCalibration(int calibrationType) {
 
         ledManager.off();
     }
-    config->calibration[sensorId].G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
-    config->calibration[sensorId].G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
-    config->calibration[sensorId].G_off[2] = rawGxyz[2] / gyroCalibrationSamples;
-
+    m_Calibration.G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
+    m_Calibration.G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
+    m_Calibration.G_off[2] = rawGxyz[2] / gyroCalibrationSamples;
+    
 #ifdef FULL_DEBUG
-    m_Logger.trace("Gyro calibration results: %f %f %f", config->calibration[sensorId].G_off[0], config->calibration[sensorId].G_off[1], config->calibration[sensorId].G_off[2]);
+    m_Logger.trace("Gyro calibration results: %f %f %f", UNPACK_VECTOR_ARRAY(m_Calibration.G_off));
 #endif
 
     // Blink calibrating led before user should rotate the sensor
@@ -251,16 +269,24 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     m_Logger.debug("{");
     for (int i = 0; i < 3; i++)
     {
-        config->calibration[sensorId].A_B[i] = A_BAinv[0][i];
-        config->calibration[sensorId].A_Ainv[0][i] = A_BAinv[1][i];
-        config->calibration[sensorId].A_Ainv[1][i] = A_BAinv[2][i];
-        config->calibration[sensorId].A_Ainv[2][i] = A_BAinv[3][i];
+        m_Calibration.A_B[i] = A_BAinv[0][i];
+        m_Calibration.A_Ainv[0][i] = A_BAinv[1][i];
+        m_Calibration.A_Ainv[1][i] = A_BAinv[2][i];
+        m_Calibration.A_Ainv[2][i] = A_BAinv[3][i];
         m_Logger.debug("  %f, %f, %f, %f", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
     m_Logger.debug("}");
-    m_Logger.debug("Now Saving EEPROM");
-    setConfig(*config);
-    m_Logger.debug("Finished Saving EEPROM");
+
+    m_Logger.debug("Saving the calibration data");
+
+    SlimeVR::Configuration::CalibrationConfig calibration;
+    calibration.type = SlimeVR::Configuration::CalibrationConfigType::BMI160;
+    calibration.data.bmi160 = m_Calibration;
+    configuration.setCalibration(sensorId, calibration);
+    configuration.save();
+
+    m_Logger.debug("Saved the calibration data");
+
     m_Logger.info("Calibration data gathered");
     delay(5000);
 }

@@ -25,6 +25,7 @@
 #define SENSORS_EMPTYSENSOR_H
 
 #include "sensor.h"
+#include "configuration/Configuration.h"
 
 namespace SlimeVR
 {

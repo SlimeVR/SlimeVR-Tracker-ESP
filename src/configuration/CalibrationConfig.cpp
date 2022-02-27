@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,40 +20,30 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_ICM20948SENSOR_H_
-#define SLIMEVR_ICM20948SENSOR_H_
 
-#include <ICM_20948.h>
-#include "sensor.h"
-#include <arduino-timer.h> // Used for periodically saving bias
+#include "CalibrationConfig.h"
 
-class ICM20948Sensor : public Sensor
+namespace SlimeVR
 {
-public:
-    ICM20948Sensor(uint8_t id, uint8_t address, float rotation) : Sensor("ICM20948Sensor", IMU_ICM20948, id, address, rotation) {}
-    ~ICM20948Sensor() override = default;
-    void motionSetup() override final;
-    void motionLoop() override final;
-    void sendData() override final;
-    void startCalibration(int calibrationType) override final;
-    void save_bias(bool repeat);
-    void load_bias();
-
-private:
-    unsigned long lastData = 0;
-    int bias_save_counter = 0;
-    bool newTap;
-
-    ICM_20948_I2C imu;
-    ICM_20948_Device_t pdev;
-    icm_20948_DMP_data_t dmpData{};
-
-    SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration;
-
-#define OVERRIDEDMPSETUP true
-
-    Timer<> timer = timer_create_default();
-    // TapDetector tapDetector;
-};
-
-#endif // SLIMEVR_ICM20948SENSOR_H_
+    namespace Configuration
+    {
+        const char *calibrationConfigTypeToString(CalibrationConfigType type)
+        {
+            switch (type)
+            {
+            case NONE:
+                return "NONE";
+            case BMI160:
+                return "BMI160";
+            case MPU6050:
+                return "MPU6050";
+            case MPU9250:
+                return "MPU9250";
+            case ICM20948:
+                return "ICM20948";
+            default:
+                return "UNKNOWN";
+            }
+        }
+    }
+}

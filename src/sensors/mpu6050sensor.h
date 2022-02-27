@@ -46,6 +46,8 @@ private:
     uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
     uint16_t fifoCount;       // count of all bytes currently in FIFO
     uint8_t fifoBuffer[64]{}; // FIFO storage buffer
+
+    SlimeVR::Configuration::MPU6050CalibrationConfig m_Calibration;
 };
 
 #endif

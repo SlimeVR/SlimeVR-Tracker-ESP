@@ -41,11 +41,12 @@ class BMI160Sensor : public Sensor {
         float getTemperature();
     private:
         BMI160 imu {};
-        CalibrationConfig * calibration;
         float q[4] {1.0f, 0.0f, 0.0f, 0.0f};
         // Loop timing globals
         uint32_t now = 0, last = 0;   //micros() timers
         float deltat = 0;                  //loop time in seconds
+
+        SlimeVR::Configuration::BMI160CalibrationConfig m_Calibration;
 };
 
 #endif
