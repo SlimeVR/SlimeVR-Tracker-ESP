@@ -258,23 +258,32 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     float A_BAinv[4][3];
     float M_BAinv[4][3];
     CalculateCalibration(calibrationDataAcc, calibrationSamples, A_BAinv);
-    CalculateCalibration(calibrationDataMag, calibrationSamples, M_BAinv);
     free(calibrationDataAcc);
+    CalculateCalibration(calibrationDataMag, calibrationSamples, M_BAinv);
     free(calibrationDataMag);
-    m_Logger.debug("Finished calculating calibration data");
-    m_Logger.debug("Now saving to EEPROM");
+    m_Logger.debug("Finished Calculate Calibration data");
+    m_Logger.debug("Accelerometer calibration matrix:");
+    m_Logger.debug('{');
     for (int i = 0; i < 3; i++)
     {
         config->calibration[sensorId].A_B[i] = A_BAinv[0][i];
         config->calibration[sensorId].A_Ainv[0][i] = A_BAinv[1][i];
         config->calibration[sensorId].A_Ainv[1][i] = A_BAinv[2][i];
         config->calibration[sensorId].A_Ainv[2][i] = A_BAinv[3][i];
-
+        m_Logger.debug("  %f, %f, %f, %f\n", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
+    }
+    m_Logger.debug('}');
+    m_Logger.debug("[INFO] Magnetometer calibration matrix:");
+    m_Logger.debug('{');
+    for (int i = 0; i < 3; i++) {
         config->calibration[sensorId].M_B[i] = M_BAinv[0][i];
         config->calibration[sensorId].M_Ainv[0][i] = M_BAinv[1][i];
         config->calibration[sensorId].M_Ainv[1][i] = M_BAinv[2][i];
         config->calibration[sensorId].M_Ainv[2][i] = M_BAinv[3][i];
+        m_Logger.debug("  %f, %f, %f, %f\n", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
     }
+    m_Logger.debug('}');
+    m_Logger.debug("Now Saving EEPROM");
     setConfig(*config);
     LEDManager::off(CALIBRATING_LED);
     Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0);
