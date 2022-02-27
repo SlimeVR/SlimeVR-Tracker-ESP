@@ -213,7 +213,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     free(calibrationDataAcc);
     m_Logger.debug("Finished Calculate Calibration data");
     m_Logger.debug("Accelerometer calibration matrix:");
-    m_Logger.debug('{');
+    m_Logger.debug("{");
     for (int i = 0; i < 3; i++)
     {
         config->calibration[sensorId].A_B[i] = A_BAinv[0][i];
@@ -222,8 +222,8 @@ void BMI160Sensor::startCalibration(int calibrationType) {
         config->calibration[sensorId].A_Ainv[2][i] = A_BAinv[3][i];
         m_Logger.debug("  %f, %f, %f, %f\n", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
-    m_Logger.debug('}');
-    Serial.printlnm_Logger.debug("Now Saving EEPROM");
+    m_Logger.debug("}");
+    m_Logger.debug("Now Saving EEPROM");
     setConfig(*config);
     m_Logger.debug("Finished Saving EEPROM");
     m_Logger.info("Calibration data gathered");
