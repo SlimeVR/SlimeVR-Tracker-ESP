@@ -24,6 +24,7 @@
 #include "sensors/bno080sensor.h"
 #include "network/network.h"
 #include "ledmgr.h"
+#include "utils.h"
 
 void BNO080Sensor::motionSetup()
 {
@@ -31,25 +32,26 @@ void BNO080Sensor::motionSetup()
     imu.enableDebugging(Serial);
 #endif
     if(!imu.begin(addr, Wire, intPin)) {
-        Serial.print("[ERR] IMU BNO08X: Can't connect to ");
-        Serial.println(getIMUNameByType(sensorType));
+        m_Logger.fatal("Can't connect to %s at address 0x%02x", getIMUNameByType(sensorType), addr);
         LEDManager::signalAssert();
         return;
     }
-    Serial.print("[NOTICE] IMU BNO08X: Connected to ");
-    Serial.print(getIMUNameByType(sensorType));
-    Serial.print(" on 0x");
-    Serial.print(addr, HEX);
-    Serial.print(". Info: SW Version Major: 0x");
-    Serial.print(imu.swMajor, HEX);
-    Serial.print(" SW Version Minor: 0x");
-    Serial.print(imu.swMinor, HEX);
-    Serial.print(" SW Part Number: 0x");
-    Serial.print(imu.swPartNumber, HEX);
-    Serial.print(" SW Build Number: 0x");
-    Serial.print(imu.swBuildNumber, HEX);
-    Serial.print(" SW Version Patch: 0x");
-    Serial.println(imu.swVersionPatch, HEX);
+
+    m_Logger.info("Connected to %s on 0x%02x. "
+                  "Info: SW Version Major: 0x%02x "
+                  "SW Version Minor: 0x%02x "
+                  "SW Part Number: 0x%02x "
+                  "SW Build Number: 0x%02x "
+                  "SW Version Patch: 0x%02x", 
+                  getIMUNameByType(sensorType), 
+                  addr, 
+                  imu.swMajor, 
+                  imu.swMinor, 
+                  imu.swPartNumber, 
+                  imu.swBuildNumber, 
+                  imu.swVersionPatch
+                );
+
     bool useStabilization = false;
 #ifdef BNO_USE_ARVR_STABILIZATION
     useStabilization = true;
@@ -138,10 +140,7 @@ void BNO080Sensor::motionLoop()
             lastReset = rr;
             Network::sendError(rr, this->sensorId);
         }
-        Serial.print("[ERR] Sensor ");
-        Serial.print(sensorId);
-        Serial.print(" was reset: ");
-        Serial.println(rr);
+        m_Logger.error("Sensor %d was reset: %d", sensorId, rr);
     }
 }
 
@@ -157,15 +156,9 @@ void BNO080Sensor::sendData()
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
         if (useMagnetometerAllTheTime)
             Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
+
 #ifdef FULL_DEBUG
-        Serial.print("[DBG] Quaternion: ");
-        Serial.print(quaternion.x);
-        Serial.print(",");
-        Serial.print(quaternion.y);
-        Serial.print(",");
-        Serial.print(quaternion.z);
-        Serial.print(",");
-        Serial.println(quaternion.w);
+        m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
 #endif
     }
     if (newMagData)

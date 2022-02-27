@@ -32,7 +32,7 @@
 
 class ICM20948Sensor : public Sensor {
 public:
-    ICM20948Sensor() = default;
+    ICM20948Sensor() : Sensor("ICM20948Sensor"){}
     ~ICM20948Sensor() override = default;
     void motionSetup() override final;
     void motionLoop() override final;

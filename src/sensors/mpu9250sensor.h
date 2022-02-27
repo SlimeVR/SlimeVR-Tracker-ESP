@@ -21,13 +21,14 @@
     THE SOFTWARE.
 */
 #include "sensor.h"
+#include "logging/Logger.h"
 
 #include <MPU9250_6Axis_MotionApps_V6_12.h>
 
 class MPU9250Sensor : public Sensor
 {
 public:
-    MPU9250Sensor(){};
+    MPU9250Sensor() : Sensor("MPU9250Sensor"){};
     ~MPU9250Sensor(){};
     void motionSetup() override final;
     void motionLoop() override final;
