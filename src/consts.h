@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -71,5 +71,7 @@
 #else
   #define HARDWARE_MCU 0
 #endif
+
+#define CURRENT_CONFIGURATION_VERSION 1
 
 #endif // SLIMEVR_CONSTS_H_

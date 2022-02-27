@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -21,30 +21,45 @@
     THE SOFTWARE.
 */
 
-#ifndef SLIMEVR_CONFIG_H_
-#define SLIMEVR_CONFIG_H_
+#ifndef SLIMEVR_CONFIGURATION_CONFIGURATION_H
+#define SLIMEVR_CONFIGURATION_CONFIGURATION_H
 
-struct CalibrationConfig {
-    //accel offsets and correction matrix
-    float A_B[3];
-    float A_Ainv[3][3];
-    // mag offsets and correction matrix
-    float M_B[3];
-    float M_Ainv[3][3];
-    //raw offsets, determined for gyro at rest
-    float G_off[3];
-    // calibration temperature for dynamic compensation
-    float temperature;
-};
+#include <vector>
 
-struct DeviceConfig {
-    CalibrationConfig calibration[2];
-    int deviceId;
-    int deviceMode;
-};
+#include "DeviceConfig.h"
+#include "logging/Logger.h"
 
-DeviceConfig * const getConfigPtr();
-void setConfig(const DeviceConfig & config);
-void saveConfig();
+namespace SlimeVR {
+    namespace Configuration {
+        class Configuration {
+        public:
+            void setup();
 
-#endif // SLIMEVR_CONFIG_H_
+            void save();
+            void reset();
+
+            void print();
+
+            int32_t getVersion() const;
+
+            size_t getCalibrationCount() const;
+            CalibrationConfig getCalibration(size_t sensorID) const;
+            void setCalibration(size_t sensorID, const CalibrationConfig& config);
+
+        private:
+            void loadCalibrations();
+            bool runMigrations(int32_t version);
+
+            bool m_Loaded = false;
+
+            DeviceConfig m_Config{};
+            std::vector<CalibrationConfig> m_Calibrations;
+
+            Logging::Logger m_Logger = Logging::Logger("Configuration");
+
+            static CalibrationConfig m_EmptyCalibration;
+        };
+    }
+}
+
+#endif

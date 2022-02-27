@@ -24,7 +24,7 @@
 #include "Wire.h"
 #include "ota.h"
 #include "sensors/SensorManager.h"
-#include "configuration.h"
+#include "configuration/Configuration.h"
 #include "network/network.h"
 #include "globals.h"
 #include "credentials.h"
@@ -39,6 +39,7 @@ SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
 SlimeVR::LEDManager ledManager(LED_PIN);
 SlimeVR::Status::StatusManager statusManager;
+SlimeVR::Configuration::Configuration configuration;
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -61,6 +62,7 @@ void setup()
     statusManager.setStatus(SlimeVR::Status::LOADING, true);
 
     ledManager.setup();
+    configuration.setup();
 
     SerialCommands::setUp();
 
@@ -75,7 +77,6 @@ void setup()
 #endif
     Wire.setClock(I2C_SPEED);
 
-    getConfigPtr();
     // Wait for IMU to boot
     delay(500);
     
