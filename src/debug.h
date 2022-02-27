@@ -23,6 +23,7 @@
 #ifndef SLIMEVR_DEBUG_H_
 #define SLIMEVR_DEBUG_H_
 #include "consts.h"
+#include "logging/Level.h"
 
 #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
 #define BNO_USE_ARVR_STABILIZATION // Comment to not use stabilization for BNO085+ IMUs
@@ -33,7 +34,13 @@
 #define ENABLE_TAP false // monitor accel for (triple) tap events and send them. Uses more cpu, disable if problems. Server does nothing with value so disabled atm
 
 //Debug information
-//#define FULL_DEBUG
+
+#define LOG_LEVEL LOG_LEVEL_DEBUG
+
+#if LOG_LEVEL == LOG_LEVEL_TRACE
+#define FULL_DEBUG
+#endif
+
 #define serialDebug false // Set to true to get Serial output for debugging
 #define serialBaudRate 115200
 #define UPDATE_IMU_UNCONNECTED 1

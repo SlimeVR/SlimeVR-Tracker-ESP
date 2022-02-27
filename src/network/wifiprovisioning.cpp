@@ -21,11 +21,14 @@
     THE SOFTWARE.
 */
 #include "network.h"
+#include "logging/Logger.h"
 
 // TODO Currently provisioning implemented via SmartConfig
 // it sucks.
 // TODO: New implementation: https://github.com/SlimeVR/SlimeVR-Tracker-ESP/issues/71
 
+// TODO: Cleanup with proper classes
+SlimeVR::Logging::Logger wifiProvisioningLogger("WiFiProvisioning");
 bool provisioning = false;
 
 void WiFiNetwork::upkeepProvisioning() {
@@ -35,7 +38,7 @@ void WiFiNetwork::upkeepProvisioning() {
 void WiFiNetwork::startProvisioning() {
     if(WiFi.beginSmartConfig()) {
         provisioning = true;
-        Serial.println("[NOTICE] WiFi: SmartConfig started");
+        wifiProvisioningLogger.info("SmartConfig started");
     }
 }
 

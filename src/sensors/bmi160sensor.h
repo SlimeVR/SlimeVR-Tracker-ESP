@@ -29,7 +29,7 @@
 
 class BMI160Sensor : public Sensor {
     public:
-        BMI160Sensor(){};
+        BMI160Sensor() : Sensor("BMI160Sensor"){};
         ~BMI160Sensor(){};
         void motionSetup() override final;
         void motionLoop() override final;

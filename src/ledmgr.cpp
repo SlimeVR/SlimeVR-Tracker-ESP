@@ -24,6 +24,8 @@
 
 namespace LEDManager
 {
+    SlimeVR::Logging::Logger logger("LEDManager");
+
     /*!
     *  @brief  Turn a LED on
     *  @param  pin
@@ -138,7 +140,7 @@ namespace LEDManager
                     break;
                 }
             if(printStatus)
-                Serial.println("[STATUS] LOW BATTERY");
+                logger.debug("LOW BATTERY");
         } else if((currentStatus & LED_STATUS_IMU_ERROR) > 0) {
             count = IMU_ERROR_COUNT;
             switch(currentStage) {
@@ -154,7 +156,7 @@ namespace LEDManager
                     break;
                 }
             if(printStatus)
-                Serial.println("[STATUS] IMU ERROR");
+                logger.debug("IMU ERROR");
         } else if((currentStatus & LED_STATUS_WIFI_CONNECTING) > 0) {
             count = WIFI_CONNECTING_COUNT;
             switch(currentStage) {
@@ -170,7 +172,7 @@ namespace LEDManager
                     break;
                 }
             if(printStatus)
-                Serial.println("[STATUS] WIFI CONNECTING");
+                logger.debug("WIFI CONNECTING");
         } else if((currentStatus & LED_STATUS_SERVER_CONNECTING) > 0) {
             count = SERVER_CONNECTING_COUNT;
             switch(currentStage) {
@@ -186,10 +188,10 @@ namespace LEDManager
                     break;
                 }
             if(printStatus)
-                Serial.println("[STATUS] SERVER CONNECTING");
+                logger.debug("SERVER CONNECTING");
         } else {
             if(printStatus)
-                Serial.println("[STATUS] OK");
+                logger.debug("OK");
             #if defined(LED_INTERVAL_STANDBUY) && LED_INTERVAL_STANDBUY > 0
                 count = 1;
                 switch(currentStage) {
