@@ -220,7 +220,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
         config->calibration[sensorId].A_Ainv[0][i] = A_BAinv[1][i];
         config->calibration[sensorId].A_Ainv[1][i] = A_BAinv[2][i];
         config->calibration[sensorId].A_Ainv[2][i] = A_BAinv[3][i];
-        m_Logger.debug("  %f, %f, %f, %f\n", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
+        m_Logger.debug("  %f, %f, %f, %f", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
     m_Logger.debug("}");
     m_Logger.debug("Now Saving EEPROM");
