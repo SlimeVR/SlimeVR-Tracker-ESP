@@ -56,7 +56,7 @@ namespace SerialCommands {
                 HARDWARE_MCU,
                 FIRMWARE_BUILD_NUMBER,
                 FIRMWARE_VERSION,
-                WiFiNetwork::getAddress().toString()
+                WiFiNetwork::getAddress().toString().c_str()
             );
             // TODO Print sensors number and types
         }
