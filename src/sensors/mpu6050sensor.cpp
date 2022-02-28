@@ -43,11 +43,11 @@ void MPU6050Sensor::motionSetup()
     imu.initialize(addr);
     if (!imu.testConnection())
     {
-        m_Logger.fatal("Can't connect to MPU6500 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+        m_Logger.fatal("Can't connect to MPU6050 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
         return;
     }
 
-     m_Logger.info("Connected to MPU6500 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+    m_Logger.info("Connected to MPU6050 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
 
     devStatus = imu.dmpInitialize();
 
