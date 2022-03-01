@@ -17,45 +17,21 @@ class Board(Enum):
     WROOM32 = "BOARD_WROOM32"
 
 
-class IMU(Enum):
-    BNO085 = "IMU_BNO085"
-    BNO080 = "IMU_BNO080"
-    MPU6500 = "IMU_MPU6500"
-    MPU6050 = "IMU_MPU6050"
-    BNO055 = "IMU_BNO055"
-    MPU9250 = "IMU_MPU9250"
-    BMI160 = "IMU_BMI160"
-    ICM20948 = "IMU_ICM20948"
-
-    def get_filename(self) -> str:
-        if self == IMU.BNO085:
-            return "bno085"
-        elif self == IMU.BNO080:
-            return "bno080"
-        elif self == IMU.MPU6500:
-            return "mpu6500"
-        elif self == IMU.MPU6050:
-            return "mpu6050"
-        elif self == IMU.BNO055:
-            return "bno055"
-        elif self == IMU.MPU9250:
-            return "mpu9250"
-        elif self == IMU.BMI160:
-            return "bmi160"
-        elif self == IMU.ICM20948:
-            return "icm20948"
-        else:
-            raise Exception("Unknown IMU type")
-
-
-class MatrixEntry:
-    def __init__(self, board: Board, platformio_board: str, first_imu: IMU) -> None:
+class DeviceConfiguration:
+    def __init__(self,  platform: str, board: Board, platformio_board: str) -> None:
+        self.platform = platform
         self.board = board
         self.platformio_board = platformio_board
-        self.first_imu = first_imu
 
-    def get_firmware_filename(self) -> str:
-        return f"{self.platformio_board}_{self.first_imu.get_filename()}.bin"
+    def get_platformio_section(self) -> str:
+        return f"""
+[env:{self.platformio_board}]
+platform = {self.platform}
+board = {self.platformio_board}
+"""
+
+    def filename(self) -> str:
+        return f"{self.platformio_board}.bin"
 
     def build_header(self) -> str:
         sda = ""
@@ -81,7 +57,7 @@ class MatrixEntry:
             raise Exception(f"Unknown board: {self.board.value}")
 
         return f"""
-#define IMU {self.first_imu.value}
+#define IMU IMU_BNO085
 #define SECOND_IMU IMU
 #define BOARD {self.board.value}
 #define BATTERY_MONITOR BAT_EXTERNAL
@@ -96,31 +72,6 @@ class MatrixEntry:
 #define BATTERY_SHIELD_RESISTANCE 180
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_90
-"""
-
-    def __str__(self) -> str:
-        return f"{self.board.value} ({self.first_imu.value})"
-
-
-class DeviceConfiguration:
-    def __init__(self,  platform: str, board: Board, platformio_board: str) -> None:
-        self.platform = platform
-        self.board = board
-        self.platformio_board = platformio_board
-
-    def get_matrix(self) -> List[MatrixEntry]:
-        matrix: List[MatrixEntry] = []
-
-        for imu in IMU:
-            matrix.append(MatrixEntry(self.board, self.platformio_board, imu))
-
-        return matrix
-
-    def get_platformio_section(self) -> str:
-        return f"""
-[env:{self.platformio_board}]
-platform = {self.platform}
-board = {self.platformio_board}
 """
 
     def __str__(self) -> str:
@@ -195,7 +146,10 @@ def build() -> int:
     for device in matrix:
         print(f"  🡢 {COLOR_CYAN}Building for {device.platform}{COLOR_RESET}")
 
-        failed_builds += build_for_device(device)
+        status = build_for_device(device)
+
+        if status == False:
+            failed_builds.append(device.platformio_board)
 
     if len(failed_builds) > 0:
         print(f"  🡢 {COLOR_RED}Failed!{COLOR_RESET}")
@@ -210,31 +164,30 @@ def build() -> int:
     return code
 
 
-def build_for_device(device: DeviceConfiguration) -> List[str]:
-    failed_builds: List[str] = []
+def build_for_device(device: DeviceConfiguration) -> bool:
+    success = True
 
-    for entry in device.get_matrix():
-        print(f"::group::Build {entry}")
+    print(f"::group::Build {device}")
 
-        with open("src/defines.h", "wt") as f:
-            f.write(entry.build_header())
+    with open("src/defines.h", "wt") as f:
+        f.write(device.build_header())
 
-        code = os.system(
-            f"platformio run -e {device.platformio_board}")
+    code = os.system(
+        f"platformio run -e {device.platformio_board}")
 
-        if code == 0:
-            shutil.copy(f".pio/build/{device.platformio_board}/firmware.bin",
-                        f"build/{entry.get_firmware_filename()}")
+    if code == 0:
+        shutil.copy(f".pio/build/{device.platformio_board}/firmware.bin",
+                    f"build/{device.filename()}")
 
-            print(f"    🡢 {COLOR_GREEN}Success!{COLOR_RESET}")
-        else:
-            failed_builds.append(entry.__str__())
+        print(f"    🡢 {COLOR_GREEN}Success!{COLOR_RESET}")
+    else:
+        success = False
 
-            print(f"    🡢 {COLOR_RED}Failed!{COLOR_RESET}")
+        print(f"    🡢 {COLOR_RED}Failed!{COLOR_RESET}")
 
-        print(f"::endgroup::")
+    print(f"::endgroup::")
 
-    return failed_builds
+    return success
 
 
 def main() -> None:
