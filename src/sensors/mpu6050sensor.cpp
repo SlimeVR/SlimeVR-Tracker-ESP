@@ -125,7 +125,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
         Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);
         break;
     case CALIBRATION_TYPE_INTERNAL_GYRO:
-        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);
+        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_GYRO, 0);//was CALIBRATION_TYPE_INTERNAL_GYRO for some reason? there wasn't a point to this switch
         break;
     }
     LEDManager::off(CALIBRATING_LED);
@@ -147,7 +147,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     {
     case CALIBRATION_TYPE_INTERNAL_ACCEL:
         imu.CalibrateAccel(10);
-        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);//doesn't send calibration data anymore, has that been depricated in server?
         config->calibration.A_B[0] = imu.getXAccelOffset();
         config->calibration.A_B[1] = imu.getYAccelOffset();
         config->calibration.A_B[2] = imu.getZAccelOffset();
@@ -155,7 +155,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
         break;
     case CALIBRATION_TYPE_INTERNAL_GYRO:
         imu.CalibrateGyro(10);
-        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
+        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_GYRO, 0);//doesn't send calibration data anymore
         config->calibration.G_off[0] = imu.getXGyroOffset();
         config->calibration.G_off[1] = imu.getYGyroOffset();
         config->calibration.G_off[2] = imu.getZGyroOffset();
@@ -164,7 +164,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     }
 
     m_Logger.info("Calibration finished");
-    LEDMGR::off(CALIBRATING_LED);
+    LEDManager::off(CALIBRATING_LED);
 
 #endif // !IMU_MPU6050_RUNTIME_CALIBRATION
 }
