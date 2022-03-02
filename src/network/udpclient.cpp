@@ -347,6 +347,124 @@ void Network::sendHandshake() {
     }
 }
 
+#if ENABLE_INSPECTION
+void Network::sendRawIMUData(uint8_t sensorId, int16_t rX, int16_t rY, int16_t rZ, uint8_t rA, int16_t aX, int16_t aY, int16_t aZ, uint8_t aA, int16_t mX, int16_t mY, int16_t mZ, uint8_t mA)
+{
+    if (!connected)
+    {
+        return;
+    }
+
+    if(!DataTransfer::beginPacket()) 
+    {
+        udpClientLogger.error("RawIMUData write begin error: %d", Udp.getWriteError());
+        return;
+    }
+
+    DataTransfer::sendPacketType(PACKET_INSPECTION);
+    DataTransfer::sendLong(0);
+
+    DataTransfer::sendByte(PACKET_INSPECTION_PACKETTYPE_RAW_IMU_DATA);
+
+    DataTransfer::sendByte(sensorId);
+    DataTransfer::sendByte(PACKET_INSPECTION_DATATYPE_INT);
+
+    DataTransfer::sendInt(rX);
+    DataTransfer::sendInt(rY);
+    DataTransfer::sendInt(rZ);
+    DataTransfer::sendByte(rA);
+
+    DataTransfer::sendInt(aX);
+    DataTransfer::sendInt(aY);
+    DataTransfer::sendInt(aZ);
+    DataTransfer::sendByte(aA);
+
+    DataTransfer::sendInt(mX);
+    DataTransfer::sendInt(mY);
+    DataTransfer::sendInt(mZ);
+    DataTransfer::sendByte(mA);
+
+    if(!DataTransfer::endPacket())
+    {
+        udpClientLogger.error("RawIMUData write end error: %d", Udp.getWriteError());
+    }
+}
+
+void Network::sendRawIMUData(uint8_t sensorId, float rX, float rY, float rZ, uint8_t rA, float aX, float aY, float aZ, uint8_t aA, float mX, float mY, float mZ, uint8_t mA)
+{
+    if (!connected) 
+    {
+        return;
+    }
+
+    if (!DataTransfer::beginPacket())
+    {
+        udpClientLogger.error("RawIMUData write begin error: %d", Udp.getWriteError());
+        return;
+    }
+
+    DataTransfer::sendPacketType(PACKET_INSPECTION);
+    DataTransfer::sendLong(0);
+
+    DataTransfer::sendByte(PACKET_INSPECTION_PACKETTYPE_RAW_IMU_DATA);
+
+    DataTransfer::sendByte(sensorId);
+    DataTransfer::sendByte(PACKET_INSPECTION_DATATYPE_FLOAT);
+
+    DataTransfer::sendFloat(rX);
+    DataTransfer::sendFloat(rY);
+    DataTransfer::sendFloat(rZ);
+    DataTransfer::sendByte(rA);
+
+    DataTransfer::sendFloat(aX);
+    DataTransfer::sendFloat(aY);
+    DataTransfer::sendFloat(aZ);
+    DataTransfer::sendByte(aA);
+
+    DataTransfer::sendFloat(mX);
+    DataTransfer::sendFloat(mY);
+    DataTransfer::sendFloat(mZ);
+    DataTransfer::sendByte(mA);
+
+    if(!DataTransfer::endPacket())
+    {
+        udpClientLogger.error("RawIMUData write end error: %d", Udp.getWriteError());
+    }
+}
+
+void Network::sendFusedIMUData(uint8_t sensorId, Quat quaternion)
+{
+    if (!connected) 
+    {
+        return;
+    }
+
+    if (!DataTransfer::beginPacket())
+    {
+        udpClientLogger.error("FusedIMUData write begin error: %d", Udp.getWriteError());
+        return;
+    }
+
+    DataTransfer::sendPacketType(PACKET_INSPECTION);
+    DataTransfer::sendLong(0);
+
+    DataTransfer::sendByte(PACKET_INSPECTION_PACKETTYPE_FUSED_IMU_DATA);
+
+    DataTransfer::sendByte(sensorId);
+    DataTransfer::sendByte(PACKET_INSPECTION_DATATYPE_FLOAT);
+
+    DataTransfer::sendFloat(quaternion.x);
+    DataTransfer::sendFloat(quaternion.y);
+    DataTransfer::sendFloat(quaternion.z);
+    DataTransfer::sendFloat(quaternion.w);
+
+    if(!DataTransfer::endPacket())
+    {
+        udpClientLogger.error("FusedIMUData write end error: %d", Udp.getWriteError());
+    }
+}
+#endif
+
 void returnLastPacket(int len) {
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendBytes(incomingPacket, len);

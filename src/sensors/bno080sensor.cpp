@@ -82,6 +82,20 @@ void BNO080Sensor::motionSetup()
 
 void BNO080Sensor::motionLoop()
 {
+#if ENABLE_INSPECTION
+    {
+        (void)imu.getReadings();
+
+        float rX, rY, rZ, aX, aY, aZ, mX, mY, mZ;
+        uint8_t rA, aA, mA;
+        imu.getGyro(rX, rY, rZ, rA);
+        imu.getAccel(aX, aY, aZ, aA);
+        imu.getMag(mX, mY, mZ, mA);
+
+        Network::sendRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
+    }
+#endif
+
     //Look for reports from the IMU
     while (imu.dataAvailable())
     {
@@ -106,6 +120,13 @@ void BNO080Sensor::motionLoop()
             {
                 imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
                 quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+                {
+                    Network::sendFusedIMUData(sensorId, quaternion);
+                }
+#endif
+
                 newData = true;
             }
             if (imu.hasNewMagQuat())

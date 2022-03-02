@@ -51,8 +51,8 @@ void MPU9250Sensor::motionSetup() {
 
     int16_t ax,ay,az;
 
-    // turn on while flip back to calibrate. then, flip again after 5 seconds.    
-    // TODO: Move calibration invoke after calibrate button on slimeVR server available 
+    // turn on while flip back to calibrate. then, flip again after 5 seconds.
+    // TODO: Move calibration invoke after calibrate button on slimeVR server available
     imu.getAcceleration(&ax, &ay, &az);
     float g_az = (float)az / 16384; // For 2G sensitivity
     if(g_az < -0.75f) {
@@ -107,6 +107,17 @@ void MPU9250Sensor::motionSetup() {
 
 
 void MPU9250Sensor::motionLoop() {
+#if ENABLE_INSPECTION
+    {
+        int16_t rX, rY, rZ, aX, aY, aZ, mX, mY, mZ;
+        imu.getRotation(&rX, &rY, &rZ);
+        imu.getAcceleration(&aX, &aY, &aZ);
+        imu.getMagnetometer(&mX, &mY, &mZ);
+
+        Network::sendRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
+    }
+#endif
+
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
     // Update quaternion
     if(!dmpReady)
@@ -143,6 +154,13 @@ void MPU9250Sensor::motionLoop() {
 
 #endif
     quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+    {
+        Network::sendFusedIMUData(sensorId, quaternion);
+    }
+#endif
+
     if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;
         lastQuatSent = quaternion;
@@ -195,7 +213,7 @@ void MPU9250Sensor::getMPUScaled()
     #else
         for (i = 0; i < 3; i++)
             Mxyz[i] = (Mxyz[i] - calibration->M_B[i]);
-    #endif    
+    #endif
 }
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
