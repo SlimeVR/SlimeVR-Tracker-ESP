@@ -40,6 +40,7 @@ private:
     uint8_t tap;
     unsigned long lastData = 0;
     uint8_t lastReset = 0;
+    BNO080Error lastError{};
 
     // Magnetometer specific members
     Quat magQuaternion{};

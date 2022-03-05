@@ -131,6 +131,14 @@ void BNO080Sensor::motionLoop()
     }
     if (lastData + 1000 < millis() && configured)
     {
+        while(true) {
+            BNO080Error error = imu.readError();
+            if(error.error_source == 255)
+                break;
+            lastError = error;
+            m_Logger.error("BNO08X error. Severity: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
+                error.severity, error.error_sequence_number, error.error_source, error.error, error.error_module, error.error_code);
+        }
         LEDManager::setLedStatus(LED_STATUS_IMU_ERROR);
         working = false;
         lastData = millis();
@@ -140,7 +148,9 @@ void BNO080Sensor::motionLoop()
             lastReset = rr;
             Network::sendError(rr, this->sensorId);
         }
-        m_Logger.error("Sensor %d was reset: %d", sensorId, rr);
+        m_Logger.error("Sensor %d doesn't respond. Last reset reason:", sensorId, lastReset);
+        m_Logger.error("Last error: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
+                lastError.severity, lastError.error_sequence_number, lastError.error_source, lastError.error, lastError.error_module, lastError.error_code);
     }
 }
 
