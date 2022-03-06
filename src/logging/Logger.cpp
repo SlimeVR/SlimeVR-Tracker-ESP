@@ -4,6 +4,12 @@ namespace SlimeVR
 {
   namespace Logging
   {
+    void Logger::setTag(const char *tag)
+    {
+      m_Tag = (char *)malloc(strlen(tag) + 1);
+      strcpy(m_Tag, tag);
+    }
+
     void Logger::trace(const char *format, ...)
     {
       va_list args;
@@ -62,7 +68,15 @@ namespace SlimeVR
       char buffer[256];
       vsnprintf(buffer, 256, format, args);
 
-      Serial.printf("[%-5s] [%s] %s\n", levelToString(level), m_Prefix, buffer);
+      char buf[strlen(m_Prefix) + (m_Tag == nullptr ? 0 : strlen(m_Tag)) + 2];
+      strcpy(buf, m_Prefix);
+      if (m_Tag != nullptr)
+      {
+        strcat(buf, ":");
+        strcat(buf, m_Tag);
+      }
+
+      Serial.printf("[%-5s] [%s] %s\n", levelToString(level), buf, buffer);
     }
   }
 }

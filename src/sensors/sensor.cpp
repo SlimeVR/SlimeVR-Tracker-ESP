@@ -31,6 +31,10 @@ void Sensor::setupSensor(uint8_t expectedSensorType, uint8_t sensorId, uint8_t a
     this->intPin = intPin;
     this->sensorId = sensorId;
     this->sensorOffset = {Quat(Vector3(0, 0, 1), sensorId == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
+
+    char buf[4];
+    sprintf(buf, "%u", sensorId);
+    m_Logger.setTag(buf);
 }
 
 uint8_t Sensor::getSensorState() {
