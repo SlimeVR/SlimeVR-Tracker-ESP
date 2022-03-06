@@ -362,7 +362,7 @@ void Network::sendRawIMUData(uint8_t sensorId, int16_t rX, int16_t rY, int16_t r
     }
 
     DataTransfer::sendPacketType(PACKET_INSPECTION);
-    DataTransfer::sendLong(0);
+    DataTransfer::sendPacketNumber();
 
     DataTransfer::sendByte(PACKET_INSPECTION_PACKETTYPE_RAW_IMU_DATA);
 
@@ -404,7 +404,7 @@ void Network::sendRawIMUData(uint8_t sensorId, float rX, float rY, float rZ, uin
     }
 
     DataTransfer::sendPacketType(PACKET_INSPECTION);
-    DataTransfer::sendLong(0);
+    DataTransfer::sendPacketNumber();
 
     DataTransfer::sendByte(PACKET_INSPECTION_PACKETTYPE_RAW_IMU_DATA);
 
@@ -446,7 +446,7 @@ void Network::sendFusedIMUData(uint8_t sensorId, Quat quaternion)
     }
 
     DataTransfer::sendPacketType(PACKET_INSPECTION);
-    DataTransfer::sendLong(0);
+    DataTransfer::sendPacketNumber();
 
     DataTransfer::sendByte(PACKET_INSPECTION_PACKETTYPE_FUSED_IMU_DATA);
 
