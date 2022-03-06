@@ -463,6 +463,38 @@ void Network::sendFusedIMUData(uint8_t sensorId, Quat quaternion)
         udpClientLogger.error("FusedIMUData write end error: %d", Udp.getWriteError());
     }
 }
+
+void Network::sendInspectionCorrectionData(uint8_t sensorId, Quat quaternion)
+{
+    if (!connected) 
+    {
+        return;
+    }
+
+    if (!DataTransfer::beginPacket())
+    {
+        udpClientLogger.error("CorrectionData write begin error: %d", Udp.getWriteError());
+        return;
+    }
+
+    DataTransfer::sendPacketType(PACKET_INSPECTION);
+    DataTransfer::sendPacketNumber();
+
+    DataTransfer::sendByte(PACKET_INSPECTION_PACKETTYPE_CORRECTION_DATA);
+
+    DataTransfer::sendByte(sensorId);
+    DataTransfer::sendByte(PACKET_INSPECTION_DATATYPE_FLOAT);
+
+    DataTransfer::sendFloat(quaternion.x);
+    DataTransfer::sendFloat(quaternion.y);
+    DataTransfer::sendFloat(quaternion.z);
+    DataTransfer::sendFloat(quaternion.w);
+
+    if(!DataTransfer::endPacket())
+    {
+        udpClientLogger.error("CorrectionData write end error: %d", Udp.getWriteError());
+    }
+}
 #endif
 
 void returnLastPacket(int len) {

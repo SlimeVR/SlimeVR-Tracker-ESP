@@ -57,6 +57,7 @@
 
 #define PACKET_INSPECTION_PACKETTYPE_RAW_IMU_DATA 1
 #define PACKET_INSPECTION_PACKETTYPE_FUSED_IMU_DATA 2
+#define PACKET_INSPECTION_PACKETTYPE_CORRECTION_DATA 3
 #define PACKET_INSPECTION_DATATYPE_INT 1
 #define PACKET_INSPECTION_DATATYPE_FLOAT 2
 
@@ -106,6 +107,8 @@ namespace Network {
     void sendRawIMUData(uint8_t sensorId, float rX, float rY, float rZ, uint8_t rA, float aX, float aY, float aZ, uint8_t aA, float mX, float mY, float mZ, uint8_t mA);
 
     void sendFusedIMUData(uint8_t sensorId, Quat quaternion);
+
+    void sendInspectionCorrectionData(uint8_t sensorId, Quat quaternion);
 #endif
 }
 

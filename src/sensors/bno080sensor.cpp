@@ -147,6 +147,13 @@ void BNO080Sensor::motionLoop()
             {
                 imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
                 magQuaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+                {
+                    Network::sendInspectionCorrectionData(sensorId, quaternion);
+                }
+#endif
+
                 newMagData = true;
             }
         }
