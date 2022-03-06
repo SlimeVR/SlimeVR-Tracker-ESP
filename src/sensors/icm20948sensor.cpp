@@ -447,7 +447,7 @@ void ICM20948Sensor::motionLoop() {
         float mY = imu.magY();
         float mZ = imu.magZ();
 
-        Network::sendRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
     }
 #endif
 
@@ -478,7 +478,7 @@ void ICM20948Sensor::motionLoop() {
 
 #if ENABLE_INSPECTION
                     {
-                        Network::sendFusedIMUData(sensorId, quaternion);
+                        Network::sendInspectionFusedIMUData(sensorId, quaternion);
                     }
 #endif
 
@@ -506,7 +506,7 @@ void ICM20948Sensor::motionLoop() {
 
 #if ENABLE_INSPECTION
                     {
-                        Network::sendFusedIMUData(sensorId, quaternion);
+                        Network::sendInspectionFusedIMUData(sensorId, quaternion);
                     }
 #endif
 

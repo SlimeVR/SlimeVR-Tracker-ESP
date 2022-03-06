@@ -114,7 +114,7 @@ void MPU9250Sensor::motionLoop() {
         imu.getAcceleration(&aX, &aY, &aZ);
         imu.getMagnetometer(&mX, &mY, &mZ);
 
-        Network::sendRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
     }
 #endif
 
@@ -157,7 +157,7 @@ void MPU9250Sensor::motionLoop() {
 
 #if ENABLE_INSPECTION
     {
-        Network::sendFusedIMUData(sensorId, quaternion);
+        Network::sendInspectionFusedIMUData(sensorId, quaternion);
     }
 #endif
 

@@ -348,7 +348,7 @@ void Network::sendHandshake() {
 }
 
 #if ENABLE_INSPECTION
-void Network::sendRawIMUData(uint8_t sensorId, int16_t rX, int16_t rY, int16_t rZ, uint8_t rA, int16_t aX, int16_t aY, int16_t aZ, uint8_t aA, int16_t mX, int16_t mY, int16_t mZ, uint8_t mA)
+void Network::sendInspectionRawIMUData(uint8_t sensorId, int16_t rX, int16_t rY, int16_t rZ, uint8_t rA, int16_t aX, int16_t aY, int16_t aZ, uint8_t aA, int16_t mX, int16_t mY, int16_t mZ, uint8_t mA)
 {
     if (!connected)
     {
@@ -390,7 +390,7 @@ void Network::sendRawIMUData(uint8_t sensorId, int16_t rX, int16_t rY, int16_t r
     }
 }
 
-void Network::sendRawIMUData(uint8_t sensorId, float rX, float rY, float rZ, uint8_t rA, float aX, float aY, float aZ, uint8_t aA, float mX, float mY, float mZ, uint8_t mA)
+void Network::sendInspectionRawIMUData(uint8_t sensorId, float rX, float rY, float rZ, uint8_t rA, float aX, float aY, float aZ, uint8_t aA, float mX, float mY, float mZ, uint8_t mA)
 {
     if (!connected) 
     {
@@ -432,7 +432,7 @@ void Network::sendRawIMUData(uint8_t sensorId, float rX, float rY, float rZ, uin
     }
 }
 
-void Network::sendFusedIMUData(uint8_t sensorId, Quat quaternion)
+void Network::sendInspectionFusedIMUData(uint8_t sensorId, Quat quaternion)
 {
     if (!connected) 
     {

@@ -109,7 +109,7 @@ void BNO080Sensor::motionLoop()
             int16_t mZ = imu.getRawMagZ();
             uint8_t mA = imu.getMagAccuracy();
 
-            Network::sendRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
+            Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
         }
 #endif
 
@@ -124,7 +124,7 @@ void BNO080Sensor::motionLoop()
 
 #if ENABLE_INSPECTION
                 {
-                    Network::sendFusedIMUData(sensorId, quaternion);
+                    Network::sendInspectionFusedIMUData(sensorId, quaternion);
                 }
 #endif
 
@@ -144,7 +144,7 @@ void BNO080Sensor::motionLoop()
 
 #if ENABLE_INSPECTION
                 {
-                    Network::sendFusedIMUData(sensorId, quaternion);
+                    Network::sendInspectionFusedIMUData(sensorId, quaternion);
                 }
 #endif
 
