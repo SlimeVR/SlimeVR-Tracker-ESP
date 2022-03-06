@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,22 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_SENSORFACTORY_H_
-#define SLIMEVR_SENSORFACTORY_H_
 
-#include "globals.h"
-#include "sensor.h"
+#include "ErroneousSensor.h"
+#include "network/network.h"
 
-class SensorFactory
+namespace SlimeVR
 {
-public:
-    SensorFactory();
-    ~SensorFactory();
-    void create();
-    void motionSetup();
-    void motionLoop();
-    void sendData();
-    void startCalibration(int sensorId, int calibrationType);
-    Sensor *getFirst() { return sensor1; };
-    Sensor *getSecond() { return sensor2; };
+    namespace Sensors
+    {
+        void ErroneousSensor::motionSetup()
+        {
+            m_Logger.error("IMU of type %s failed to initialize", getIMUNameByType(m_ExpectedType));
+        }
 
-protected:
-    Sensor *sensor1;
-    Sensor *sensor2;
-};
-
-#endif // SLIMEVR_SENSORFACTORY_H_
+        uint8_t ErroneousSensor::getSensorState()
+        {
+            return SENSOR_ERROR;
+        };
+    }
+}

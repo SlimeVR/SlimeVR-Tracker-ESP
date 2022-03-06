@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,36 +20,43 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
+#ifndef SLIMEVR_SENSORMANAGER
+#define SLIMEVR_SENSORMANAGER
+
+#include "globals.h"
 #include "sensor.h"
-#include <BNO080.h>
+#include "EmptySensor.h"
+#include "logging/Logger.h"
 
-class BNO080Sensor : public Sensor
+namespace SlimeVR
 {
-public:
-    BNO080Sensor(uint8_t id, uint8_t type, uint8_t address, float rotation, uint8_t intPin)
-        : Sensor("BNO080Sensor", type, id, address, rotation), m_IntPin(intPin) {};
-    ~BNO080Sensor(){};
-    void motionSetup() override final;
-    void motionLoop() override final;
-    void sendData() override final;
-    void startCalibration(int calibrationType) override final;
-    uint8_t getSensorState() override final;
+    namespace Sensors
+    {
+        class SensorManager
+        {
+        public:
+            SensorManager()
+                : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensor1(new EmptySensor(0)), m_Sensor2(new EmptySensor(0)) {}
+            ~SensorManager()
+            {
+                delete m_Sensor1;
+                delete m_Sensor2;
+            }
 
-private:
-    BNO080 imu{};
+            void setup();
+            void update();
 
-    uint8_t m_IntPin;
+            Sensor *getFirst() { return m_Sensor1; };
+            Sensor *getSecond() { return m_Sensor2; };
 
-    uint8_t tap;
-    unsigned long lastData = 0;
-    uint8_t lastReset = 0;
-    BNO080Error lastError{};
+        private:
+            SlimeVR::Logging::Logger m_Logger;
 
-    // Magnetometer specific members
-    Quat magQuaternion{};
-    uint8_t magCalibrationAccuracy = 0;
-    float magneticAccuracyEstimate = 999;
-    bool useMagnetometerAllTheTime = false;
-    bool useMagnetometerCorrection = false;
-    bool newMagData = false;
-};
+            Sensor *m_Sensor1;
+            Sensor *m_Sensor2;
+        };
+    }
+}
+
+#endif // SLIMEVR_SENSORFACTORY_H_
