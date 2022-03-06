@@ -44,10 +44,27 @@ void BNO055Sensor::motionSetup() {
 }
 
 void BNO055Sensor::motionLoop() {
+#if ENABLE_INSPECTION
+    {
+        Vector3 gyro = imu.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+        Vector3 accel = imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+        Vector3 mag = imu.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
+
+        Network::sendRawIMUData(sensorId, UNPACK_VECTOR(gyro), 255, UNPACK_VECTOR(accel), 255, UNPACK_VECTOR(mag), 255);
+    }
+#endif
+
     // TODO Optimize a bit with setting rawQuat directly
     Quat quat = imu.getQuat();
     quaternion.set(quat.x, quat.y, quat.z, quat.w);
     quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+    {
+        Network::sendFusedIMUData(sensorId, quaternion);
+    }
+#endif
+
     if(!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;
         lastQuatSent = quaternion;

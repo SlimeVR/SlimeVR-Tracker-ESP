@@ -22,6 +22,7 @@
 */
 
 #include "bmi160sensor.h"
+#include "network/network.h"
 
 // Typical sensitivity at 25C
 // See p. 9 of https://www.mouser.com/datasheet/2/783/BST-BMI160-DS000-1509569.pdf
@@ -88,6 +89,16 @@ void BMI160Sensor::motionSetup() {
 }
 
 void BMI160Sensor::motionLoop() {
+#if ENABLE_INSPECTION
+    {
+        int16_t rX, rY, rZ, aX, aY, aZ;
+        imu.getRotation(&rX, &rY, &rZ);
+        imu.getAcceleration(&aX, &aY, &aZ);
+
+        Network::sendRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+    }
+#endif
+
     now = micros();
     deltat = now - last; //seconds since last update
     last = now;
@@ -99,6 +110,13 @@ void BMI160Sensor::motionLoop() {
     mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
     quaternion.set(-q[2], q[1], q[3], q[0]);
     quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+    {
+        Network::sendFusedIMUData(sensorId, quaternion);
+    }
+#endif
+
     if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
     {
         newData = true;
@@ -117,6 +135,16 @@ float BMI160Sensor::getTemperature()
 
 void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 {
+#if ENABLE_INSPECTION
+    {
+        int16_t rX, rY, rZ, aX, aY, aZ, mX, mY, mZ;
+        imu.getRotation(&rX, &rY, &rZ);
+        imu.getAcceleration(&aX, &aY, &aZ);
+
+        Network::sendRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+    }
+#endif
+
     float temperature = getTemperature();
     float tempDiff = temperature - calibration->temperature;
     uint8_t quant = map(temperature, 15, 75, 0, 12);
@@ -179,7 +207,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     config->calibration[sensorId].G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
     config->calibration[sensorId].G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
     config->calibration[sensorId].G_off[2] = rawGxyz[2] / gyroCalibrationSamples;
-    
+
 #ifdef FULL_DEBUG
     m_Logger.trace("Gyro calibration results: %f %f %f", config->calibration[sensorId].G_off[0], config->calibration[sensorId].G_off[1], config->calibration[sensorId].G_off[2]);
 #endif
