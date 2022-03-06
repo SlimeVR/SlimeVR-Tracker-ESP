@@ -103,7 +103,7 @@ void MPU6050Sensor::motionLoop()
         imu.getRotation(&rX, &rY, &rZ);
         imu.getAcceleration(&aX, &aY, &aZ);
 
-        Network::sendRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
     }
 #endif
 
@@ -117,9 +117,9 @@ void MPU6050Sensor::motionLoop()
         quaternion *= sensorOffset;
 
 #if ENABLE_INSPECTION
-    {
-        Network::sendFusedIMUData(sensorId, quaternion);
-    }
+        {
+            Network::sendInspectionFusedIMUData(sensorId, quaternion);
+        }
 #endif
 
         if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))

@@ -95,7 +95,7 @@ void BMI160Sensor::motionLoop() {
         imu.getRotation(&rX, &rY, &rZ);
         imu.getAcceleration(&aX, &aY, &aZ);
 
-        Network::sendRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
     }
 #endif
 
@@ -113,7 +113,7 @@ void BMI160Sensor::motionLoop() {
 
 #if ENABLE_INSPECTION
     {
-        Network::sendFusedIMUData(sensorId, quaternion);
+        Network::sendInspectionFusedIMUData(sensorId, quaternion);
     }
 #endif
 
@@ -141,7 +141,7 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
         imu.getRotation(&rX, &rY, &rZ);
         imu.getAcceleration(&aX, &aY, &aZ);
 
-        Network::sendRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
     }
 #endif
 

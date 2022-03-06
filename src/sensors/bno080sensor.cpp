@@ -109,7 +109,7 @@ void BNO080Sensor::motionLoop()
             int16_t mZ = imu.getRawMagZ();
             uint8_t mA = imu.getMagAccuracy();
 
-            Network::sendRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
+            Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
         }
 #endif
 
@@ -121,6 +121,13 @@ void BNO080Sensor::motionLoop()
             {
                 imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
                 quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+                {
+                    Network::sendInspectionFusedIMUData(sensorId, quaternion);
+                }
+#endif
+
                 if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
                 {
                     newData = true;
@@ -137,7 +144,7 @@ void BNO080Sensor::motionLoop()
 
 #if ENABLE_INSPECTION
                 {
-                    Network::sendFusedIMUData(sensorId, quaternion);
+                    Network::sendInspectionFusedIMUData(sensorId, quaternion);
                 }
 #endif
 
@@ -147,6 +154,13 @@ void BNO080Sensor::motionLoop()
             {
                 imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
                 magQuaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+                {
+                    Network::sendInspectionCorrectionData(sensorId, quaternion);
+                }
+#endif
+
                 newMagData = true;
             }
         }
