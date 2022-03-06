@@ -121,6 +121,13 @@ void BNO080Sensor::motionLoop()
             {
                 imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
                 quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+                {
+                    Network::sendFusedIMUData(sensorId, quaternion);
+                }
+#endif
+
                 if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
                 {
                     newData = true;
