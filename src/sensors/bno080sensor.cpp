@@ -74,6 +74,13 @@ void BNO080Sensor::motionSetup()
         }
     }
     imu.enableTapDetector(100);
+
+#ifdef ENABLE_INSPECTION
+    imu.enableRawGyro(10);
+    imu.enableRawAccelerometer(10);
+    imu.enableRawMagnetometer(10);
+#endif
+
     lastReset = 0;
     lastData = millis();
     working = true;
@@ -82,23 +89,30 @@ void BNO080Sensor::motionSetup()
 
 void BNO080Sensor::motionLoop()
 {
-#if ENABLE_INSPECTION
-    {
-        (void)imu.getReadings();
-
-        float rX, rY, rZ, aX, aY, aZ, mX, mY, mZ;
-        uint8_t rA, aA, mA;
-        imu.getGyro(rX, rY, rZ, rA);
-        imu.getAccel(aX, aY, aZ, aA);
-        imu.getMag(mX, mY, mZ, mA);
-
-        Network::sendRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
-    }
-#endif
-
     //Look for reports from the IMU
     while (imu.dataAvailable())
     {
+#if ENABLE_INSPECTION
+        {
+            int16_t rX = imu.getRawGyroX();
+            int16_t rY = imu.getRawGyroY();
+            int16_t rZ = imu.getRawGyroZ();
+            uint8_t rA = imu.getGyroAccuracy();
+
+            int16_t aX = imu.getRawAccelX();
+            int16_t aY = imu.getRawAccelY();
+            int16_t aZ = imu.getRawAccelZ();
+            uint8_t aA = imu.getAccelAccuracy();
+
+            int16_t mX = imu.getRawMagX();
+            int16_t mY = imu.getRawMagY();
+            int16_t mZ = imu.getRawMagZ();
+            uint8_t mA = imu.getMagAccuracy();
+
+            Network::sendRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
+        }
+#endif
+
         lastReset = 0;
         lastData = millis();
         if (useMagnetometerAllTheTime || !useMagnetometerCorrection)
