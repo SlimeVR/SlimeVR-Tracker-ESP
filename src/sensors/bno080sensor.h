@@ -20,6 +20,10 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
+#ifndef SENSORS_BNO080SENSOR_H
+#define SENSORS_BNO080SENSOR_H
+
 #include "sensor.h"
 #include <BNO080.h>
 
@@ -53,3 +57,5 @@ private:
     bool useMagnetometerCorrection = false;
     bool newMagData = false;
 };
+
+#endif

@@ -23,6 +23,7 @@
 
 #include "ErroneousSensor.h"
 #include "network/network.h"
+#include "GlobalVars.h"
 
 namespace SlimeVR
 {

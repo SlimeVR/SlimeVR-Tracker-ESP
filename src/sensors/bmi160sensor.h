@@ -20,10 +20,13 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
+#ifndef SENSORS_BMI160SENSOR_H
+#define SENSORS_BMI160SENSOR_H
+
 #include "sensor.h"
 #include "mahony.h"
 #include "magneto1.4.h"
-#include "ledmgr.h"
 
 #include <BMI160.h>
 
@@ -44,3 +47,5 @@ class BMI160Sensor : public Sensor {
         uint32_t now = 0, last = 0;   //micros() timers
         float deltat = 0;                  //loop time in seconds
 };
+
+#endif

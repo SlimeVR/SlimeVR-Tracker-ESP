@@ -47,9 +47,7 @@
 #define STATUS_PRINT_INTERVAL 15000
 #define ENABLE_LEDS true
 
-#define LOADING_LED LED_BUILTIN
-#define CALIBRATING_LED LED_BUILTIN
-#define STATUS_LED LED_BUILTIN
+#define LED_PIN LED_BUILTIN
 
 // Determines how often we sample and send data
 #define samplingRateInMillis 10
