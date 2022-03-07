@@ -21,7 +21,6 @@
     THE SOFTWARE.
 */
 #include "network.h"
-#include "ledmgr.h"
 
 bool lastWifiConnected = false;
 

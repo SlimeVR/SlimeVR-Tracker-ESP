@@ -22,9 +22,9 @@
 */
 
 #include "udpclient.h"
-#include "ledmgr.h"
 #include "packets.h"
 #include "logging/Logger.h"
+#include "GlobalVars.h"
 
 #define TIMEOUT 3000UL
 
@@ -591,8 +591,8 @@ void ServerConnection::connect()
                 port = Udp.remotePort();
                 lastPacketMs = now;
                 connected = true;
-                LEDManager::unsetLedStatus(LED_STATUS_SERVER_CONNECTING);
-                LEDManager::off(LOADING_LED);
+                statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, false);
+                ledManager.off();
                 udpClientLogger.debug("Handshake successful, server is %s:%d", Udp.remoteIP().toString().c_str(), + Udp.remotePort());
                 return;
             default:
@@ -609,18 +609,19 @@ void ServerConnection::connect()
         lastConnectionAttemptMs = now;
         udpClientLogger.info("Looking for the server...");
         Network::sendHandshake();
-        LEDManager::on(LOADING_LED);
+        ledManager.on();
     }
     else if(lastConnectionAttemptMs + 20 < now)
     {
-        LEDManager::off(LOADING_LED);
+        ledManager.off();
     }
 }
 
 void ServerConnection::resetConnection() {
     Udp.begin(port);
     connected = false;
-    LEDManager::setLedStatus(LED_STATUS_SERVER_CONNECTING);
+
+    statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 }
 
 void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
@@ -677,7 +678,8 @@ void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
         //}
         if(lastPacketMs + TIMEOUT < millis())
         {
-            LEDManager::setLedStatus(LED_STATUS_SERVER_CONNECTING);
+            statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
+
             connected = false;
             sensorStateNotified1 = false;
             sensorStateNotified2 = false;

@@ -21,22 +21,13 @@
     THE SOFTWARE.
 */
 
-#include "ErroneousSensor.h"
-#include "network/network.h"
-#include "GlobalVars.h"
+#ifndef GLOBALVARS_H
+#define GLOBALVARS_H
 
-namespace SlimeVR
-{
-    namespace Sensors
-    {
-        void ErroneousSensor::motionSetup()
-        {
-            m_Logger.error("IMU of type %s failed to initialize", getIMUNameByType(m_ExpectedType));
-        }
+#include "LEDManager.h"
+#include "status/StatusManager.h"
 
-        uint8_t ErroneousSensor::getSensorState()
-        {
-            return SENSOR_ERROR;
-        };
-    }
-}
+extern SlimeVR::LEDManager ledManager;
+extern SlimeVR::Status::StatusManager statusManager;
+
+#endif
