@@ -48,7 +48,6 @@ private:
     uint16_t fifoCount;       // count of all bytes currently in FIFO
     uint8_t fifoBuffer[64]{}; // FIFO storage buffer
     // raw data and scaled as vector
-    int skipCalcMag = 0;
     float q[4]{1.0f, 0.0f, 0.0f, 0.0f}; // for raw filter
     float Axyz[3]{};
     float Gxyz[3]{};

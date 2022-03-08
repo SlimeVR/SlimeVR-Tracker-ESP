@@ -35,7 +35,6 @@
 
 constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
 
-#define SKIP_CALC_MAG_INTERVAL 10
 #define MAG_CORR_RATIO 0.2
 
 void MPU9250Sensor::motionSetup() {
@@ -141,23 +140,29 @@ void MPU9250Sensor::motionLoop() {
     if(!imu.GetCurrentFIFOPacket(fifoBuffer,imu.dmpGetFIFOPacketSize())) return;
     if(imu.dmpGetQuaternion(&rawQuat, fifoBuffer)) return; // FIFO CORRUPTED
     Quat quat(-rawQuat.y,rawQuat.x,rawQuat.z,rawQuat.w);
-    if(!skipCalcMag){
-        getMPUScaled();
-        if(Mxyz[0]==0.0f && Mxyz[1]==0.0f && Mxyz[2]==0.0f) return;
-        VectorFloat grav;
-        imu.dmpGetGravity(&grav,&rawQuat);
-        float Grav[3]={grav.x,grav.y,grav.z};
-        skipCalcMag=SKIP_CALC_MAG_INTERVAL;
-        if(correction.length_squared()==0.0f) {
-            correction=getCorrection(Grav,Mxyz,quat);
-            if(sensorId) skipCalcMag=SKIP_CALC_MAG_INTERVAL/2;
+
+    getMPUScaled();
+
+    if (Mxyz[0] == 0.0f && Mxyz[1] == 0.0f && Mxyz[2] == 0.0f) {
+        return;
+    }
+
+    VectorFloat grav;
+    imu.dmpGetGravity(&grav, &rawQuat);
+
+    float Grav[] = {grav.x, grav.y, grav.z};
+
+    if (correction.length_squared() == 0.0f) {
+        correction = getCorrection(Grav, Mxyz, quat);
+    } else {
+        Quat newCorr = getCorrection(Grav, Mxyz, quat);
+
+        if(!__isnanf(newCorr.w)) {
+            correction = correction.slerp(newCorr, MAG_CORR_RATIO);
         }
-        else {
-            Quat newCorr = getCorrection(Grav,Mxyz,quat);
-            if(!__isnanf(newCorr.w)) correction = correction.slerp(newCorr,MAG_CORR_RATIO);
-        }
-    }else skipCalcMag--;
-    quaternion=correction*quat;
+    }
+
+    quaternion = correction * quat;
 #else
     unsigned long now = micros();
     unsigned long deltat = now - last; //seconds since last update
