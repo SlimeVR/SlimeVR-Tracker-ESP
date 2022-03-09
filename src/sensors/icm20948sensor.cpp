@@ -431,6 +431,26 @@ void ICM20948Sensor::motionSetup() {
 
 
 void ICM20948Sensor::motionLoop() {
+#if ENABLE_INSPECTION
+    {
+        (void)imu.getAGMT();
+
+        float rX = imu.gyrX();
+        float rY = imu.gyrY();
+        float rZ = imu.gyrZ();
+
+        float aX = imu.accX();
+        float aY = imu.accY();
+        float aZ = imu.accZ();
+
+        float mX = imu.magX();
+        float mY = imu.magY();
+        float mZ = imu.magZ();
+
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
+    }
+#endif
+
     timer.tick();
 
     bool dataavaliable = true;
@@ -455,6 +475,13 @@ void ICM20948Sensor::motionLoop() {
                     quaternion.y = q2;
                     quaternion.z = q3;
                     quaternion *= sensorOffset; //imu rotation
+
+#if ENABLE_INSPECTION
+                    {
+                        Network::sendInspectionFusedIMUData(sensorId, quaternion);
+                    }
+#endif
+
                     newData = true;
                     lastData = millis();
                 }
@@ -476,6 +503,13 @@ void ICM20948Sensor::motionLoop() {
                     quaternion.y = q2;
                     quaternion.z = q3;
                     quaternion *= sensorOffset; //imu rotation
+
+#if ENABLE_INSPECTION
+                    {
+                        Network::sendInspectionFusedIMUData(sensorId, quaternion);
+                    }
+#endif
+
                     newData = true;
                     lastData = millis();
                 }

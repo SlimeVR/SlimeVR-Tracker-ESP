@@ -12,7 +12,21 @@ namespace SlimeVR
     class Logger
     {
     public:
-      Logger(const char *prefix) : m_Prefix(prefix){};
+      Logger(const char *prefix) : m_Prefix(prefix), m_Tag(nullptr){};
+      Logger(const char *prefix, const char *tag) : m_Prefix(prefix), m_Tag(nullptr)
+      {
+        setTag(tag);
+      };
+
+      ~Logger()
+      {
+        if (m_Tag != nullptr)
+        {
+          free(m_Tag);
+        }
+      }
+
+      void setTag(const char *tag);
 
       void trace(const char *str, ...);
       void debug(const char *str, ...);
@@ -68,7 +82,15 @@ namespace SlimeVR
           return;
         }
 
-        Serial.printf("[%-5s] [%s] %s", levelToString(level), m_Prefix, str);
+        char buf[strlen(m_Prefix) + (m_Tag == nullptr ? 0 : strlen(m_Tag)) + 2];
+        strcpy(buf, m_Prefix);
+        if (m_Tag != nullptr)
+        {
+          strcat(buf, ":");
+          strcat(buf, m_Tag);
+        }
+
+        Serial.printf("[%-5s] [%s] %s", levelToString(level), buf, str);
 
         for (size_t i = 0; i < size; i++)
         {
@@ -78,7 +100,8 @@ namespace SlimeVR
         Serial.println();
       }
 
-      const char *m_Prefix;
+      const char *const m_Prefix;
+      char *m_Tag;
     };
   }
 }

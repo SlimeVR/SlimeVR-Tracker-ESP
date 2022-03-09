@@ -74,6 +74,13 @@ void BNO080Sensor::motionSetup()
         }
     }
     imu.enableTapDetector(100);
+
+#ifdef ENABLE_INSPECTION
+    imu.enableRawGyro(10);
+    imu.enableRawAccelerometer(10);
+    imu.enableRawMagnetometer(10);
+#endif
+
     lastReset = 0;
     lastData = millis();
     working = true;
@@ -85,6 +92,27 @@ void BNO080Sensor::motionLoop()
     //Look for reports from the IMU
     while (imu.dataAvailable())
     {
+#if ENABLE_INSPECTION
+        {
+            int16_t rX = imu.getRawGyroX();
+            int16_t rY = imu.getRawGyroY();
+            int16_t rZ = imu.getRawGyroZ();
+            uint8_t rA = imu.getGyroAccuracy();
+
+            int16_t aX = imu.getRawAccelX();
+            int16_t aY = imu.getRawAccelY();
+            int16_t aZ = imu.getRawAccelZ();
+            uint8_t aA = imu.getAccelAccuracy();
+
+            int16_t mX = imu.getRawMagX();
+            int16_t mY = imu.getRawMagY();
+            int16_t mZ = imu.getRawMagZ();
+            uint8_t mA = imu.getMagAccuracy();
+
+            Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
+        }
+#endif
+
         lastReset = 0;
         lastData = millis();
         if (useMagnetometerAllTheTime || !useMagnetometerCorrection)
@@ -93,6 +121,13 @@ void BNO080Sensor::motionLoop()
             {
                 imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
                 quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+                {
+                    Network::sendInspectionFusedIMUData(sensorId, quaternion);
+                }
+#endif
+
                 if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
                 {
                     newData = true;
@@ -106,12 +141,26 @@ void BNO080Sensor::motionLoop()
             {
                 imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
                 quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+                {
+                    Network::sendInspectionFusedIMUData(sensorId, quaternion);
+                }
+#endif
+
                 newData = true;
             }
             if (imu.hasNewMagQuat())
             {
                 imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
                 magQuaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+                {
+                    Network::sendInspectionCorrectionData(sensorId, quaternion);
+                }
+#endif
+
                 newMagData = true;
             }
         }
@@ -131,6 +180,14 @@ void BNO080Sensor::motionLoop()
     }
     if (lastData + 1000 < millis() && configured)
     {
+        while(true) {
+            BNO080Error error = imu.readError();
+            if(error.error_source == 255)
+                break;
+            lastError = error;
+            m_Logger.error("BNO08X error. Severity: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
+                error.severity, error.error_sequence_number, error.error_source, error.error, error.error_module, error.error_code);
+        }
         LEDManager::setLedStatus(LED_STATUS_IMU_ERROR);
         working = false;
         lastData = millis();
@@ -140,7 +197,9 @@ void BNO080Sensor::motionLoop()
             lastReset = rr;
             Network::sendError(rr, this->sensorId);
         }
-        m_Logger.error("Sensor %d was reset: %d", sensorId, rr);
+        m_Logger.error("Sensor %d doesn't respond. Last reset reason:", sensorId, lastReset);
+        m_Logger.error("Last error: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
+                lastError.severity, lastError.error_sequence_number, lastError.error_source, lastError.error, lastError.error_module, lastError.error_code);
     }
 }
 
