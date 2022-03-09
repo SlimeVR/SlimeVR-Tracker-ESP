@@ -1105,6 +1105,31 @@ uint8_t BNO080::resetReason()
 	return (0);
 }
 
+//Get the last error if it exists
+BNO080Error BNO080::readError()
+{
+	sendCommand(COMMAND_ERRORS);
+
+	BNO080Error err;
+	err.error_source = 255;
+
+	//Now we wait for response
+	if (receivePacket() == true)
+	{
+		if (shtpData[0] == SHTP_REPORT_COMMAND_RESPONSE && shtpData[2] == COMMAND_ERRORS)
+		{
+			err.severity = shtpData[5];
+			err.error_sequence_number = shtpData[6];
+			err.error_source = shtpData[7];
+			err.error = shtpData[8];
+			err.error_module = shtpData[9];
+			err.error_code = shtpData[10];
+		}
+	}
+
+	return err;
+}
+
 //Given a register value and a Q point, convert to float
 //See https://en.wikipedia.org/wiki/Q_(number_format)
 float BNO080::qToFloat(int16_t fixedPointValue, uint8_t qPoint)

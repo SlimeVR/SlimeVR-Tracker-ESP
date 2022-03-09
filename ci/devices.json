@@ -1,0 +1,12 @@
+[
+  {
+    "platform": "espressif8266",
+    "platformio_board": "esp12e",
+    "board": "SLIMEVR"
+  },
+  {
+    "platform": "espressif32",
+    "platformio_board": "esp32dev",
+    "board": "WROOM32"
+  }
+]

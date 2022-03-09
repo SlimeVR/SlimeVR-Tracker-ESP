@@ -78,7 +78,11 @@
 
 #define I2C_SPEED 400000
 
-#define FIRMWARE_BUILD_NUMBER 9
-#define FIRMWARE_VERSION "0.2.0"
+// Send inspection packets over the network to a profiler
+// Not recommended for production
+#define ENABLE_INSPECTION false
+
+#define FIRMWARE_BUILD_NUMBER 10
+#define FIRMWARE_VERSION "0.2.1"
 
 #endif // SLIMEVR_DEBUG_H_
