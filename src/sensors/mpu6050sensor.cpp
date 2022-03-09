@@ -148,17 +148,17 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     case CALIBRATION_TYPE_INTERNAL_ACCEL:
         imu.CalibrateAccel(10);
         Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);//doesn't send calibration data anymore, has that been depricated in server?
-        config->calibration.A_B[0] = imu.getXAccelOffset();
-        config->calibration.A_B[1] = imu.getYAccelOffset();
-        config->calibration.A_B[2] = imu.getZAccelOffset();
+        config->calibration->A_B[0] = imu.getXAccelOffset();
+        config->calibration->A_B[1] = imu.getYAccelOffset();
+        config->calibration->A_B[2] = imu.getZAccelOffset();
         saveConfig();
         break;
     case CALIBRATION_TYPE_INTERNAL_GYRO:
         imu.CalibrateGyro(10);
         Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_GYRO, 0);//doesn't send calibration data anymore
-        config->calibration.G_off[0] = imu.getXGyroOffset();
-        config->calibration.G_off[1] = imu.getYGyroOffset();
-        config->calibration.G_off[2] = imu.getZGyroOffset();
+        config->calibration->G_off[0] = imu.getXGyroOffset();
+        config->calibration->G_off[1] = imu.getYGyroOffset();
+        config->calibration->G_off[2] = imu.getZGyroOffset();
         saveConfig();
         break;
     }
