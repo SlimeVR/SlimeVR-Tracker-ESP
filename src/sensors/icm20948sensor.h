@@ -39,6 +39,7 @@ public:
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
     void save_bias(bool repeat);
+    void load_bias();
 
 private:
     unsigned long lastData = 0;
