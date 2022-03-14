@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 
 #include "Wire.h"
 #include "ota.h"
-#include "sensors/sensorfactory.h"
+#include "sensors/SensorManager.h"
 #include "configuration.h"
 #include "network/network.h"
 #include "globals.h"
@@ -35,8 +35,8 @@
 #include "logging/Logger.h"
 
 SlimeVR::Logging::Logger logger("SlimeVR");
+SlimeVR::Sensors::SensorManager sensorManager;
 
-SensorFactory sensors {};
 int sensorToCalibrate = -1;
 bool blinking = false;
 unsigned long blinkStart = 0;
@@ -79,8 +79,7 @@ void setup()
     // Wait for IMU to boot
     delay(500);
     
-    sensors.create();
-    sensors.motionSetup();
+    sensorManager.setup();
     
     Network::setUp();
     OTA::otaSetup(otaPassword);
@@ -94,24 +93,8 @@ void loop()
     LEDManager::ledStatusUpdate();
     SerialCommands::update();
     OTA::otaUpdate();
-    Network::update(sensors.getFirst(), sensors.getSecond());
-#ifndef UPDATE_IMU_UNCONNECTED
-    if (ServerConnection::isConnected())
-    {
-#endif
-        sensors.motionLoop();
-#ifndef UPDATE_IMU_UNCONNECTED
-    }
-#endif
-    // Send updates
-#ifndef SEND_UPDATES_UNCONNECTED
-    if (ServerConnection::isConnected())
-    {
-#endif
-        sensors.sendData();
-#ifndef SEND_UPDATES_UNCONNECTED
-    }
-#endif
+    Network::update(sensorManager.getFirst(), sensorManager.getSecond());
+    sensorManager.update();
     battery.Loop();
 
 #ifdef TARGET_LOOPTIME_MICROS

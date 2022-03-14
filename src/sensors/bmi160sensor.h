@@ -29,7 +29,7 @@
 
 class BMI160Sensor : public Sensor {
     public:
-        BMI160Sensor() : Sensor("BMI160Sensor"){};
+        BMI160Sensor(uint8_t id, uint8_t address, float rotation) : Sensor("BMI160Sensor", IMU_BMI160, id, address, rotation){};
         ~BMI160Sensor(){};
         void motionSetup() override final;
         void motionLoop() override final;

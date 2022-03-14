@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ void BNO080Sensor::motionSetup()
 #ifdef FULL_DEBUG
     imu.enableDebugging(Serial);
 #endif
-    if(!imu.begin(addr, Wire, intPin)) {
+    if(!imu.begin(addr, Wire, m_IntPin)) {
         m_Logger.fatal("Can't connect to %s at address 0x%02x", getIMUNameByType(sensorType), addr);
         LEDManager::signalAssert();
         return;
@@ -175,7 +175,7 @@ void BNO080Sensor::motionLoop()
             imu.getAccel(v[0], v[1], v[2], acc);
             Network::sendAccel(v, PACKET_ACCEL);
         }
-        if (intPin == 255 || imu.I2CTimedOut())
+        if (m_IntPin == 255 || imu.I2CTimedOut())
             break;
     }
     if (lastData + 1000 < millis() && configured)
