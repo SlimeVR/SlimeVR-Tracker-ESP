@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,8 @@
 #include <vector3.h>
 #include "configuration.h"
 #include "globals.h"
+#include "logging/Logger.h"
+#include "utils.h"
 
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
@@ -36,9 +38,15 @@
 class Sensor
 {
 public:
-    Sensor(){};
+    Sensor(const char *sensorName, uint8_t type, uint8_t id, uint8_t address, float rotation)
+        : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName))
+    {
+        char buf[4];
+        sprintf(buf, "%u", id);
+        m_Logger.setTag(buf);
+    }
+
     virtual ~Sensor(){};
-    void setupSensor(uint8_t expectedSensorType, uint8_t sensorId, uint8_t addr, uint8_t intPin);
     virtual void motionSetup(){};
     virtual void motionLoop(){};
     virtual void sendData();
@@ -57,28 +65,18 @@ public:
 
 protected:
     uint8_t addr = 0;
-    uint8_t intPin = 255;
     uint8_t sensorId = 0;
     uint8_t sensorType = 0;
     bool configured = false;
     bool newData = false;
     bool working = false;
     uint8_t calibrationAccuracy = 0;
-    Quat sensorOffset = Quat(Vector3(0, 0, 1), IMU_ROTATION);
+    Quat sensorOffset;
 
     Quat quaternion{};
     Quat lastQuatSent{};
-};
 
-class EmptySensor : public Sensor
-{
-public:
-    EmptySensor(){};
-    ~EmptySensor(){};
-    void motionSetup() override final{};
-    void motionLoop() override final{};
-    void sendData() override final{};
-    void startCalibration(int calibrationType) override final{};
+    SlimeVR::Logging::Logger m_Logger;
 };
 
 const char * getIMUNameByType(int imuType);

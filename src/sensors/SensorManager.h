@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,37 +20,43 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#include "network.h"
+
+#ifndef SLIMEVR_SENSORMANAGER
+#define SLIMEVR_SENSORMANAGER
+
+#include "globals.h"
+#include "sensor.h"
+#include "EmptySensor.h"
 #include "logging/Logger.h"
 
-// TODO Currently provisioning implemented via SmartConfig
-// it sucks.
-// TODO: New implementation: https://github.com/SlimeVR/SlimeVR-Tracker-ESP/issues/71
+namespace SlimeVR
+{
+    namespace Sensors
+    {
+        class SensorManager
+        {
+        public:
+            SensorManager()
+                : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensor1(new EmptySensor(0)), m_Sensor2(new EmptySensor(0)) {}
+            ~SensorManager()
+            {
+                delete m_Sensor1;
+                delete m_Sensor2;
+            }
 
-// TODO: Cleanup with proper classes
-SlimeVR::Logging::Logger wifiProvisioningLogger("WiFiProvisioning");
-bool provisioning = false;
+            void setup();
+            void update();
 
-void WiFiNetwork::upkeepProvisioning() {
-    // Called even when not provisioning to do things like provide neighbours or other upkeep
-}
+            Sensor *getFirst() { return m_Sensor1; };
+            Sensor *getSecond() { return m_Sensor2; };
 
-void WiFiNetwork::startProvisioning() {
-    if(WiFi.beginSmartConfig()) {
-        provisioning = true;
-        wifiProvisioningLogger.info("SmartConfig started");
+        private:
+            SlimeVR::Logging::Logger m_Logger;
+
+            Sensor *m_Sensor1;
+            Sensor *m_Sensor2;
+        };
     }
 }
 
-void WiFiNetwork::stopProvisioning() {
-    WiFi.stopSmartConfig();
-    provisioning = false;
-}
-
-void WiFiNetwork::provideNeighbours() {
-    // TODO: SmartConfig can't do this, created for future
-}
-
-bool WiFiNetwork::isProvisioning() {
-    return provisioning && !WiFi.smartConfigDone();
-}
+#endif // SLIMEVR_SENSORFACTORY_H_

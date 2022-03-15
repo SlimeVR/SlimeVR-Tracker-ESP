@@ -43,13 +43,11 @@ void MPU6050Sensor::motionSetup()
     imu.initialize(addr);
     if (!imu.testConnection())
     {
-        Serial.print("[ERR] MPU6050: Can't communicate with MPU, response ");
-        Serial.println(imu.getDeviceID(), HEX);
+        m_Logger.fatal("Can't connect to MPU6050 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
         return;
     }
 
-    Serial.print("[OK] MPU6050: Connected to MPU, ID 0x");
-    Serial.println(imu.getDeviceID(), HEX);
+    m_Logger.info("Connected to MPU6050 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
 
     devStatus = imu.dmpInitialize();
 
@@ -59,7 +57,7 @@ void MPU6050Sensor::motionSetup()
         // We don't have to manually calibrate if we are using the dmp's automatic calibration
 #else  // IMU_MPU6050_RUNTIME_CALIBRATION
 
-        Serial.println(F("[NOTICE] Performing startup calibration of accel and gyro..."));
+        m_Logger.debug("Performing startup calibration of accel and gyro...");
         // Do a quick and dirty calibration. As the imu warms up the offsets will change a bit, but this will be good-enough
         delay(1000); // A small sleep to give the users a chance to stop it from moving
 
@@ -71,14 +69,14 @@ void MPU6050Sensor::motionSetup()
         LEDManager::pattern(LOADING_LED, 50, 50, 5);
 
         // turn on the DMP, now that it's ready
-        Serial.println(F("[NOTICE] Enabling DMP..."));
+        m_Logger.debug("Enabling DMP...");
         imu.setDMPEnabled(true);
 
         // TODO: Add interrupt support
         // mpuIntStatus = imu.getIntStatus();
 
         // set our DMP Ready flag so the main loop() function knows it's okay to use it
-        Serial.println(F("[NOTICE] DMP ready! Waiting for first interrupt..."));
+        m_Logger.debug("DMP ready! Waiting for first interrupt...");
         dmpReady = true;
 
         // get expected DMP packet size for later comparison
@@ -93,14 +91,22 @@ void MPU6050Sensor::motionSetup()
         // 1 = initial memory load failed
         // 2 = DMP configuration updates failed
         // (if it's going to break, usually the code will be 1)
-        Serial.print(F("[ERR] DMP Initialization failed (code "));
-        Serial.print(devStatus);
-        Serial.println(F(")"));
+        m_Logger.error("DMP Initialization failed (code %d)", devStatus);
     }
 }
 
 void MPU6050Sensor::motionLoop()
 {
+#if ENABLE_INSPECTION
+    {
+        int16_t rX, rY, rZ, aX, aY, aZ;
+        imu.getRotation(&rX, &rY, &rZ);
+        imu.getAcceleration(&aX, &aY, &aZ);
+
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+    }
+#endif
+
     if (!dmpReady)
         return;
 
@@ -109,6 +115,13 @@ void MPU6050Sensor::motionLoop()
         imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
         quaternion.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
         quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+        {
+            Network::sendInspectionFusedIMUData(sensorId, quaternion);
+        }
+#endif
+
         if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
         {
             newData = true;
@@ -120,7 +133,7 @@ void MPU6050Sensor::motionLoop()
 void MPU6050Sensor::startCalibration(int calibrationType) {
     LEDManager::on(CALIBRATING_LED);
 #ifdef IMU_MPU6050_RUNTIME_CALIBRATION
-    Serial.println("MPU is using automatic runtime calibration. Place down the device and it should automatically calibrate after a few seconds");
+    m_Logger.info("MPU is using automatic runtime calibration. Place down the device and it should automatically calibrate after a few seconds");
 
     // Lie to the server and say we've calibrated
     switch (calibrationType)
@@ -135,7 +148,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     LEDManager::off(CALIBRATING_LED);
 
 #else //!IMU_MPU6050_RUNTIME_CALIBRATION
-    Serial.println("Put down the device and wait for baseline gyro reading calibration");
+    m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
     delay(2000);
 
     imu.setDMPEnabled(false);
@@ -143,8 +156,8 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     imu.CalibrateAccel(6);
     imu.setDMPEnabled(true);
 
-    Serial.println("Calibrated!");
-    Serial.println("[NOTICE] Starting offset finder");
+    m_Logger.debug("Gathered baseline gyro reading");
+    m_Logger.debug("Starting offset finder");
     DeviceConfig *const config = getConfigPtr();
 
     switch (calibrationType)
@@ -167,7 +180,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
         break;
     }
 
-    Serial.println("[NOTICE] Process is over");
+    m_Logger.info("Calibration finished");
     LEDMGR::off(CALIBRATING_LED);
 
 #endif // !IMU_MPU6050_RUNTIME_CALIBRATION

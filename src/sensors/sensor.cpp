@@ -25,14 +25,6 @@
 #include <i2cscan.h>
 #include "calibration.h"
 
-void Sensor::setupSensor(uint8_t expectedSensorType, uint8_t sensorId, uint8_t addr, uint8_t intPin) {
-    this->sensorType = expectedSensorType;
-    this->addr = addr;
-    this->intPin = intPin;
-    this->sensorId = sensorId;
-    this->sensorOffset = {Quat(Vector3(0, 0, 1), sensorId == 0 ? IMU_ROTATION : SECOND_IMU_ROTATION)};
-}
-
 uint8_t Sensor::getSensorState() {
     return isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
@@ -41,17 +33,10 @@ void Sensor::sendData() {
     if(newData) {
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
-        #ifdef FULL_DEBUG
-            Serial.print("[DBG] Quaternion: ");
-            Serial.print(quaternion.x);
-            Serial.print(",");
-            Serial.print(quaternion.y);
-            Serial.print(",");
-            Serial.print(quaternion.z);
-            Serial.print(",");
-            Serial.print(quaternion.w);
-            Serial.print("\n");
-        #endif
+
+#ifdef FULL_DEBUG
+        m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
+#endif
     }
 }
 

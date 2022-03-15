@@ -30,8 +30,7 @@ void BNO055Sensor::motionSetup() {
     delay(3000);
     if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS))
     {
-        Serial.print("[ERR] IMU BNO055: Can't connect to ");
-        Serial.println(getIMUNameByType(sensorType));
+        m_Logger.fatal("Can't connect to BNO055 at address 0x%02x", addr);
         LEDManager::signalAssert();
         return;
     }
@@ -39,17 +38,33 @@ void BNO055Sensor::motionSetup() {
     delay(1000);
     imu.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
     imu.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
-    Serial.print("[NOTICE] Connected to");
-    Serial.println(getIMUNameByType(sensorType));
+    m_Logger.info("Connected to BNO055 at address 0x%02x", addr);
     working = true;
     configured = true;
 }
 
 void BNO055Sensor::motionLoop() {
+#if ENABLE_INSPECTION
+    {
+        Vector3 gyro = imu.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+        Vector3 accel = imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+        Vector3 mag = imu.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
+
+        Network::sendInspectionRawIMUData(sensorId, UNPACK_VECTOR(gyro), 255, UNPACK_VECTOR(accel), 255, UNPACK_VECTOR(mag), 255);
+    }
+#endif
+
     // TODO Optimize a bit with setting rawQuat directly
     Quat quat = imu.getQuat();
     quaternion.set(quat.x, quat.y, quat.z, quat.w);
     quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+    {
+        Network::sendInspectionFusedIMUData(sensorId, quaternion);
+    }
+#endif
+
     if(!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion)) {
         newData = true;
         lastQuatSent = quaternion;

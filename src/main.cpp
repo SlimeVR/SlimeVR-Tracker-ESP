@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 
 #include "Wire.h"
 #include "ota.h"
-#include "sensors/sensorfactory.h"
+#include "sensors/SensorManager.h"
 #include "configuration.h"
 #include "network/network.h"
 #include "globals.h"
@@ -32,8 +32,11 @@
 #include "serial/serialcommands.h"
 #include "ledmgr.h"
 #include "batterymonitor.h"
+#include "logging/Logger.h"
 
-SensorFactory sensors {};
+SlimeVR::Logging::Logger logger("SlimeVR");
+SlimeVR::Sensors::SensorManager sensorManager;
+
 int sensorToCalibrate = -1;
 bool blinking = false;
 unsigned long blinkStart = 0;
@@ -43,6 +46,13 @@ BatteryMonitor battery;
 
 void setup()
 {
+    Serial.begin(serialBaudRate);
+    Serial.println();
+    Serial.println();
+    Serial.println();
+
+    logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
+
     //wifi_set_sleep_type(NONE_SLEEP_T);
     // Glow diode while loading
 #if ENABLE_LEDS
@@ -52,11 +62,8 @@ void setup()
     LEDManager::on(LOADING_LED);
 #endif
 
-    Serial.begin(serialBaudRate);
     SerialCommands::setUp();
-    Serial.println();
-    Serial.println();
-    Serial.println();
+
 #if IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_MPU9250
     I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); // Make sure the bus isn't stuck when resetting ESP without powering it down
     // Do it only for MPU, cause reaction of BNO to this is not investigated yet
@@ -72,8 +79,7 @@ void setup()
     // Wait for IMU to boot
     delay(500);
     
-    sensors.create();
-    sensors.motionSetup();
+    sensorManager.setup();
     
     Network::setUp();
     OTA::otaSetup(otaPassword);
@@ -87,24 +93,8 @@ void loop()
     LEDManager::ledStatusUpdate();
     SerialCommands::update();
     OTA::otaUpdate();
-    Network::update(sensors.getFirst(), sensors.getSecond());
-#ifndef UPDATE_IMU_UNCONNECTED
-    if (ServerConnection::isConnected())
-    {
-#endif
-        sensors.motionLoop();
-#ifndef UPDATE_IMU_UNCONNECTED
-    }
-#endif
-    // Send updates
-#ifndef SEND_UPDATES_UNCONNECTED
-    if (ServerConnection::isConnected())
-    {
-#endif
-        sensors.sendData();
-#ifndef SEND_UPDATES_UNCONNECTED
-    }
-#endif
+    Network::update(sensorManager.getFirst(), sensorManager.getSecond());
+    sensorManager.update();
     battery.Loop();
 
 #ifdef TARGET_LOOPTIME_MICROS

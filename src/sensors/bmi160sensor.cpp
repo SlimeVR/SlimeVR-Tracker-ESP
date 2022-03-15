@@ -22,6 +22,7 @@
 */
 
 #include "bmi160sensor.h"
+#include "network/network.h"
 
 // Typical sensitivity at 25C
 // See p. 9 of https://www.mouser.com/datasheet/2/783/BST-BMI160-DS000-1509569.pdf
@@ -57,24 +58,28 @@ void BMI160Sensor::motionSetup() {
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
-        Serial.print("[ERR] Can't communicate with BMI160, response 0x");
-        Serial.println(imu.getDeviceID(), HEX);
+        m_Logger.fatal("Can't connect to BMI160 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
         LEDManager::signalAssert();
         return;
     }
 
-    Serial.print("[OK] Connected to BMI160, ID 0x");
-    Serial.println(imu.getDeviceID(), HEX);
+    m_Logger.info("Connected to BMI160 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
 
     int16_t ax, ay, az;
     imu.getAcceleration(&ax, &ay, &az);
-    if(az < 0 && 10 * (ax * ax + ay * ay) < az * az) {
+    float g_az = (float)az / 8192; // For 4G sensitivity
+    if(g_az < -0.75f) {
         LEDManager::off(CALIBRATING_LED);
-        Serial.println("Calling Calibration... Flip front to confirm start calibration.");
+        m_Logger.info("Flip front to confirm start calibration");
         delay(5000);
         imu.getAcceleration(&ax, &ay, &az);
-        if(az > 0 && 10 * (ax * ax + ay * ay) < az * az)
+        g_az = (float)az / 8192;
+        if(g_az > 0.75f)
+        {
+            m_Logger.debug("Starting calibration...");
             startCalibration(0);
+        }
+
         LEDManager::on(CALIBRATING_LED);
     }
 
@@ -84,6 +89,16 @@ void BMI160Sensor::motionSetup() {
 }
 
 void BMI160Sensor::motionLoop() {
+#if ENABLE_INSPECTION
+    {
+        int16_t rX, rY, rZ, aX, aY, aZ;
+        imu.getRotation(&rX, &rY, &rZ);
+        imu.getAcceleration(&aX, &aY, &aZ);
+
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+    }
+#endif
+
     now = micros();
     deltat = now - last; //seconds since last update
     last = now;
@@ -95,6 +110,13 @@ void BMI160Sensor::motionLoop() {
     mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
     quaternion.set(-q[2], q[1], q[3], q[0]);
     quaternion *= sensorOffset;
+
+#if ENABLE_INSPECTION
+    {
+        Network::sendInspectionFusedIMUData(sensorId, quaternion);
+    }
+#endif
+
     if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
     {
         newData = true;
@@ -113,6 +135,16 @@ float BMI160Sensor::getTemperature()
 
 void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 {
+#if ENABLE_INSPECTION
+    {
+        int16_t rX, rY, rZ, aX, aY, aZ, mX, mY, mZ;
+        imu.getRotation(&rX, &rY, &rZ);
+        imu.getAcceleration(&aX, &aY, &aZ);
+
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+    }
+#endif
+
     float temperature = getTemperature();
     float tempDiff = temperature - calibration->temperature;
     uint8_t quant = map(temperature, 15, 75, 0, 12);
@@ -147,17 +179,21 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 
 void BMI160Sensor::startCalibration(int calibrationType) {
     LEDManager::on(CALIBRATING_LED);
-    Serial.println("[NOTICE] Gathering raw data for device calibration...");
+    m_Logger.debug("Gathering raw data for device calibration...");
     DeviceConfig * const config = getConfigPtr();
 
     // Wait for sensor to calm down before calibration
-    Serial.println("[NOTICE] Put down the device and wait for baseline gyro reading calibration");
+    m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
     delay(2000);
     float temperature = getTemperature();
     config->calibration[sensorId].temperature = temperature;
     uint16_t gyroCalibrationSamples = 2500;
     float rawGxyz[3] = {0};
-    Serial.printf("[NOTICE] Calibration temperature: %f\n", temperature);
+
+#ifdef FULL_DEBUG
+    m_Logger.trace("Calibration temperature: %f", temperature);
+#endif
+
     for (int i = 0; i < gyroCalibrationSamples; i++)
     {
         LEDManager::on(CALIBRATING_LED);
@@ -171,15 +207,18 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     config->calibration[sensorId].G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
     config->calibration[sensorId].G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
     config->calibration[sensorId].G_off[2] = rawGxyz[2] / gyroCalibrationSamples;
-    Serial.printf("[NOTICE] Gyro calibration results: %f %f %f\n", config->calibration[sensorId].G_off[0], config->calibration[sensorId].G_off[1], config->calibration[sensorId].G_off[2]);
+
+#ifdef FULL_DEBUG
+    m_Logger.trace("Gyro calibration results: %f %f %f", config->calibration[sensorId].G_off[0], config->calibration[sensorId].G_off[1], config->calibration[sensorId].G_off[2]);
+#endif
 
     // Blink calibrating led before user should rotate the sensor
-    Serial.println("[NOTICE] After 3seconds, Gently rotate the device while it's gathering accelerometer data");
+    m_Logger.info("After 3 seconds, Gently rotate the device while it's gathering accelerometer data");
     LEDManager::on(CALIBRATING_LED);
     delay(1500);
     LEDManager::off(CALIBRATING_LED);
     delay(1500);
-    Serial.println("[NOTICE] Gathering accelerometer data start!");
+    m_Logger.debug("Gathering accelerometer data...");
 
     uint16_t accelCalibrationSamples = 300;
     float *calibrationDataAcc = (float*)malloc(accelCalibrationSamples * 3 * sizeof(float));
@@ -194,24 +233,27 @@ void BMI160Sensor::startCalibration(int calibrationType) {
         LEDManager::off(CALIBRATING_LED);
         delay(100);
     }
-    Serial.println("[NOTICE] Calibration data gathered");
     LEDManager::off(CALIBRATING_LED);
-    Serial.println("[NOTICE] Now Calculate Calibration data");
+    m_Logger.debug("Calculating calibration data...");
 
     float A_BAinv[4][3];
     CalculateCalibration(calibrationDataAcc, accelCalibrationSamples, A_BAinv);
     free(calibrationDataAcc);
-    Serial.println("[NOTICE] Finished Calculate Calibration data");
-    Serial.println("[NOTICE] Now Saving EEPROM");
+    m_Logger.debug("Finished Calculate Calibration data");
+    m_Logger.debug("Accelerometer calibration matrix:");
+    m_Logger.debug("{");
     for (int i = 0; i < 3; i++)
     {
         config->calibration[sensorId].A_B[i] = A_BAinv[0][i];
         config->calibration[sensorId].A_Ainv[0][i] = A_BAinv[1][i];
         config->calibration[sensorId].A_Ainv[1][i] = A_BAinv[2][i];
         config->calibration[sensorId].A_Ainv[2][i] = A_BAinv[3][i];
+        m_Logger.debug("  %f, %f, %f, %f", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
-
+    m_Logger.debug("}");
+    m_Logger.debug("Now Saving EEPROM");
     setConfig(*config);
-    Serial.println("[NOTICE] Finished Saving EEPROM");
+    m_Logger.debug("Finished Saving EEPROM");
+    m_Logger.info("Calibration data gathered");
     delay(5000);
 }

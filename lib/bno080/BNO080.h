@@ -139,6 +139,15 @@ const byte CHANNEL_GYRO = 5;
 #define MAX_PACKET_SIZE 128 //Packets can be up to 32k but we don't have that much RAM.
 #define MAX_METADATA_SIZE 9 //This is in words. There can be many but we mostly only care about the first 9 (Qs, range, etc)
 
+struct BNO080Error {
+	uint8_t severity;
+	uint8_t error_sequence_number;
+	uint8_t error_source;
+	uint8_t error;
+	uint8_t error_module;
+	uint8_t error_code;
+};
+
 class BNO080
 {
 public:
@@ -276,6 +285,8 @@ public:
 	uint32_t readFRSword(uint16_t recordID, uint8_t wordNumber);
 	void frsReadRequest(uint16_t recordID, uint16_t readOffset, uint16_t blockSize);
 	bool readFRSdata(uint16_t recordID, uint8_t startLocation, uint8_t wordsToRead);
+
+	BNO080Error readError();
 
 	//Global Variables
 	uint8_t shtpHeader[4]; //Each packet has a header of 4 bytes

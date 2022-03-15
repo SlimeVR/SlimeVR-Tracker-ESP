@@ -21,13 +21,14 @@
     THE SOFTWARE.
 */
 #include "sensor.h"
+#include "logging/Logger.h"
 
 #include <MPU9250_6Axis_MotionApps_V6_12.h>
 
 class MPU9250Sensor : public Sensor
 {
 public:
-    MPU9250Sensor(){};
+    MPU9250Sensor(uint8_t id, uint8_t address, float rotation) : Sensor("MPU9250Sensor", IMU_MPU9250, id, address, rotation){};
     ~MPU9250Sensor(){};
     void motionSetup() override final;
     void motionLoop() override final;
@@ -43,15 +44,15 @@ private:
     uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
     uint16_t fifoCount;       // count of all bytes currently in FIFO
     uint8_t fifoBuffer[64]{}; // FIFO storage buffer
-    //raw data and scaled as vector
+    // raw data and scaled as vector
     int skipCalcMag = 0;
     float q[4]{1.0f, 0.0f, 0.0f, 0.0f}; // for raw filter
     float Axyz[3]{};
     float Gxyz[3]{};
     float Mxyz[3]{};
     float rawMag[3]{};
-    Quat correction{0,0,0,0};
+    Quat correction{0, 0, 0, 0};
     // Loop timing globals
-    unsigned long now = 0, last = 0; //micros() timers
-    float deltat = 0;                //loop time in seconds
+    unsigned long now = 0, last = 0; // micros() timers
+    float deltat = 0;                // loop time in seconds
 };

@@ -1,118 +1,201 @@
+import json
 import os
-import re
 import shutil
-import subprocess
-from textwrap import dedent
+from enum import Enum
+from typing import List
+
+COLOR_ESC = '\033['
+COLOR_RESET = f'{COLOR_ESC}0m'
+COLOR_GREEN = f'{COLOR_ESC}32m'
+COLOR_RED = f'{COLOR_ESC}31m'
+COLOR_CYAN = f'{COLOR_ESC}36m'
+COLOR_GRAY = f'{COLOR_ESC}30;1m'
 
 
-def build_for_platform(platform: str) -> int:
+class Board(Enum):
+    SLIMEVR = "BOARD_SLIMEVR"
+    WROOM32 = "BOARD_WROOM32"
+
+
+class DeviceConfiguration:
+    def __init__(self,  platform: str, board: Board, platformio_board: str) -> None:
+        self.platform = platform
+        self.board = board
+        self.platformio_board = platformio_board
+
+    def get_platformio_section(self) -> str:
+        return f"""
+[env:{self.platformio_board}]
+platform = {self.platform}
+board = {self.platformio_board}
+"""
+
+    def filename(self) -> str:
+        return f"{self.platformio_board}.bin"
+
+    def build_header(self) -> str:
+        sda = ""
+        scl = ""
+        imu_int = ""
+        imu_int2 = ""
+        battery_level = ""
+        leds = True
+
+        if self.board == Board.SLIMEVR:
+            sda = "4"
+            scl = "5"
+            imu_int = "10"
+            imu_int2 = "13"
+            battery_level = "17"
+        elif self.board == Board.WROOM32:
+            sda = "21"
+            scl = "22"
+            imu_int = "23"
+            imu_int2 = "25"
+            battery_level = "36"
+        else:
+            raise Exception(f"Unknown board: {self.board.value}")
+
+        return f"""
+#define IMU IMU_BNO085
+#define SECOND_IMU IMU
+#define BOARD {self.board.value}
+#define BATTERY_MONITOR BAT_EXTERNAL
+
+#define PIN_IMU_SDA {sda}
+#define PIN_IMU_SCL {scl}
+#define PIN_IMU_INT {imu_int}
+#define PIN_IMU_INT_2 {imu_int2}
+#define PIN_BATTERY_LEVEL {battery_level}
+#define ENABLE_LEDS {leds.__str__().lower()}
+
+#define BATTERY_SHIELD_RESISTANCE 180
+#define IMU_ROTATION DEG_90
+#define SECOND_IMU_ROTATION DEG_90
+"""
+
+    def __str__(self) -> str:
+        return f"{self.platform}@{self.board.value}"
+
+
+def get_matrix() -> List[DeviceConfiguration]:
+    matrix: List[DeviceConfiguration] = []
+
+    configFile = open("./ci/devices.json", "r")
+    config = json.load(configFile)
+
+    for deviceConfig in config:
+        matrix.append(DeviceConfiguration(
+            deviceConfig["platform"], Board[deviceConfig["board"]], deviceConfig["platformio_board"]))
+
+    return matrix
+
+
+def prepare() -> None:
+    print(f"🡢 {COLOR_CYAN}Preparation{COLOR_RESET}")
+
+    print(f"  🡢 {COLOR_GRAY}Backing up src/defines.h{COLOR_RESET}")
     shutil.copy("src/defines.h", "src/defines.h.bak")
-    board = "BOARD_"
 
-    if platform == "esp12e":
-        board += "SLIMEVR"
-    elif platform == "d1_mini_lite":
-        board += "WEMOSD1MINI"
-    elif platform == "esp01":
-        board += "ESP01"
-    elif platform == "esp32dev":
-        board += "WROOM32"
-    else:
-        raise Exception("Unknown platform")
+    print(f"  🡢 {COLOR_GRAY}Backing up platformio.ini{COLOR_RESET}")
+    shutil.copy("./platformio.ini", "platformio.ini.bak")
 
-    with open("src/defines.h", "r") as f:
-        lines = f.read().rstrip().lstrip()
-        lines = re.sub("#define BOARD .*", f"#define BOARD {board}", lines)
+    print(f"  🡢 {COLOR_GRAY}Copying over build/platformio.ini{COLOR_RESET}")
+    shutil.copy("./ci/platformio.ini", "platformio.ini")
 
-        with open("src/defines.h", "wt") as f:
-            f.write(lines)
+    if os.path.exists("./build"):
+        print(f"  🡢 {COLOR_GRAY}Removing existing build folder...{COLOR_RESET}")
+        shutil.rmtree("./build")
 
-    print("Building for platform: " + platform)
-    ret_code = os.system(f"platformio run -e {platform}")
+    print(f"  🡢 {COLOR_GRAY}Creating build folder...{COLOR_RESET}")
+    os.mkdir("./build")
 
-    if ret_code == 0:
-        print("Build succeeded")
+    print(f"  🡢 {COLOR_GREEN}Success!{COLOR_RESET}")
 
-        shutil.copy(f".pio/build/{platform}/firmware.bin",
-                    f"build/{platform}.bin")
-    else:
-        print("Build failed")
 
+def cleanup() -> None:
+    print(f"🡢 {COLOR_CYAN}Cleanup{COLOR_RESET}")
+
+    print(f"  🡢 {COLOR_GRAY}Restoring src/defines.h...{COLOR_RESET}")
     shutil.copy("src/defines.h.bak", "src/defines.h")
+
+    print(f"  🡢 {COLOR_GRAY}Removing src/defines.h.bak...{COLOR_RESET}")
     os.remove("src/defines.h.bak")
 
-    return ret_code
+    print(f"  🡢 {COLOR_GRAY}Restoring platformio.ini...{COLOR_RESET}")
+    shutil.copy("platformio.ini.bak", "platformio.ini")
+
+    print(f"  🡢 {COLOR_GRAY}Removing platformio.ini.bak...{COLOR_RESET}")
+    os.remove("platformio.ini.bak")
+
+    print(f"  🡢 {COLOR_GREEN}Success!{COLOR_RESET}")
+
+
+def build() -> int:
+    print(f"🡢 {COLOR_CYAN}Build{COLOR_RESET}")
+
+    failed_builds: List[str] = []
+    code = 0
+
+    matrix = get_matrix()
+
+    with open("./platformio.ini", "a") as f1:
+        for device in matrix:
+            f1.write(device.get_platformio_section())
+
+    for device in matrix:
+        print(f"  🡢 {COLOR_CYAN}Building for {device.platform}{COLOR_RESET}")
+
+        status = build_for_device(device)
+
+        if status == False:
+            failed_builds.append(device.platformio_board)
+
+    if len(failed_builds) > 0:
+        print(f"  🡢 {COLOR_RED}Failed!{COLOR_RESET}")
+
+        for failed_build in failed_builds:
+            print(f"    🡢 {COLOR_RED}{failed_build}{COLOR_RESET}")
+
+        code = 1
+    else:
+        print(f"  🡢 {COLOR_GREEN}Success!{COLOR_RESET}")
+
+    return code
+
+
+def build_for_device(device: DeviceConfiguration) -> bool:
+    success = True
+
+    print(f"::group::Build {device}")
+
+    with open("src/defines.h", "wt") as f:
+        f.write(device.build_header())
+
+    code = os.system(
+        f"platformio run -e {device.platformio_board}")
+
+    if code == 0:
+        shutil.copy(f".pio/build/{device.platformio_board}/firmware.bin",
+                    f"build/{device.filename()}")
+
+        print(f"    🡢 {COLOR_GREEN}Success!{COLOR_RESET}")
+    else:
+        success = False
+
+        print(f"    🡢 {COLOR_RED}Failed!{COLOR_RESET}")
+
+    print(f"::endgroup::")
+
+    return success
 
 
 def main() -> None:
-    shutil.copy("platformio.ini", "platformio.ini.bak")
+    prepare()
+    code = build()
+    cleanup()
 
-    if os.path.exists("./build"):
-        shutil.rmtree("./build")
-
-    os.mkdir("./build")
-
-    with open("platformio.ini", "r") as f:
-        lines = f.read().rstrip().lstrip()
-        matches = re.search(
-            "\[env:.*\]\nplatform = .*\nboard = .*", lines)
-
-        if matches:
-            # remove lines
-            lines = lines.replace(matches.group(0), "")
-
-        # add new lines
-        lines += dedent("""
-        ; ESP32 Dev Board
-        [env:esp32dev]
-        platform = espressif32
-        board = esp32dev
-
-        ; SlimeVR PCB
-        [env:esp12e]
-        platform = espressif8266
-        board = esp12e
-
-        ; ESP01 (512kB flash)
-        [env:esp01]
-        platform = espressif8266
-        board = esp01
-
-        ; WEMOS D1 mini lite (1MB flash)
-        [env:d1_mini_lite]
-        platform = espressif8266
-        board = d1_mini_lite
-        """)
-
-        with open("platformio.ini", "wt") as f:
-            f.write(lines)
-
-    # TODO: Build a matrix of all platforms and all IMUs
-    esp32_ret_code = build_for_platform("esp32dev")
-    esp12e_ret_code = build_for_platform("esp12e")
-    esp01_ret_code = build_for_platform("esp01")
-    d1_mini_lite_ret_code = build_for_platform("d1_mini_lite")
-
-    shutil.copy("platformio.ini.bak", "platformio.ini")
-    os.remove("platformio.ini.bak")
-
-    print("\n\n\n\n")
-
-    if esp32_ret_code != 0:
-        print("Error occurred while building for ESP32 Dev Board")
-
-    if esp12e_ret_code != 0:
-        print("Error occurred while building for SlimeVR PCB")
-
-    if esp01_ret_code != 0:
-        print("Error occurred while building for ESP01")
-
-    if d1_mini_lite_ret_code != 0:
-        print("Error occurred while building for WEMOS D1 mini lite")
-
-    if esp32_ret_code != 0 or esp12e_ret_code != 0 or esp01_ret_code != 0 or d1_mini_lite_ret_code != 0:
-        print("One or more builds failed")
-        os._exit(1)
+    os._exit(code)
 
 
 if __name__ == "__main__":
