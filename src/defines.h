@@ -51,7 +51,7 @@
   #define PIN_IMU_INT_2 D6
   #define PIN_BATTERY_LEVEL A0
 #elif BOARD == BOARD_ESP01
-// ESP01 Module doesnt works with DMP MPU9250 in 9250 mode. While board uses Pin 0 and 2 for i2c cant connects 9250's MAG with DMP
+// ESP01 Module does not works with MPU9250 in 9250 DMP mod (works in 6500 mod). While board uses gpio pin 0 and 2 for i2c, it cant connects 9250's MAG with DMP
 // example forum thread: https://www.esp8266.com/viewtopic.php?f=13&t=23465 (March 2022)
   #define PIN_IMU_SDA 2
   #define PIN_IMU_SCL 0
