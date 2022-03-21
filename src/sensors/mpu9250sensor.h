@@ -20,6 +20,10 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
+#ifndef SENSORS_MPU9250SENSOR_H
+#define SENSORS_MPU9250SENSOR_H
+
 #include "sensor.h"
 #include "logging/Logger.h"
 
@@ -56,3 +60,5 @@ private:
     unsigned long now = 0, last = 0; // micros() timers
     float deltat = 0;                // loop time in seconds
 };
+
+#endif

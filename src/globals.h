@@ -40,4 +40,12 @@
 #define BATTERY_MONITOR BAT_INTERNAL
 #endif
 
+#if defined(LED_INVERTED) && LED_INVERTED
+#define LED_ON LOW
+#define LED_OFF HIGH
+#else
+#define LED_ON HIGH
+#define LED_OFF LOW
+#endif
+
 #endif // SLIMEVR_GLOBALS_H_

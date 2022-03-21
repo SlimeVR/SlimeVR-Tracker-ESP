@@ -23,6 +23,7 @@
 
 #include "bmi160sensor.h"
 #include "network/network.h"
+#include "GlobalVars.h"
 
 // Typical sensitivity at 25C
 // See p. 9 of https://www.mouser.com/datasheet/2/783/BST-BMI160-DS000-1509569.pdf
@@ -59,7 +60,7 @@ void BMI160Sensor::motionSetup() {
     imu.initialize(addr);
     if(!imu.testConnection()) {
         m_Logger.fatal("Can't connect to BMI160 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
-        LEDManager::signalAssert();
+        ledManager.pattern(50, 50, 200);
         return;
     }
 
@@ -69,7 +70,8 @@ void BMI160Sensor::motionSetup() {
     imu.getAcceleration(&ax, &ay, &az);
     float g_az = (float)az / 8192; // For 4G sensitivity
     if(g_az < -0.75f) {
-        LEDManager::off(CALIBRATING_LED);
+        ledManager.on();
+
         m_Logger.info("Flip front to confirm start calibration");
         delay(5000);
         imu.getAcceleration(&ax, &ay, &az);
@@ -80,7 +82,7 @@ void BMI160Sensor::motionSetup() {
             startCalibration(0);
         }
 
-        LEDManager::on(CALIBRATING_LED);
+        ledManager.off();
     }
 
     DeviceConfig * const config = getConfigPtr();
@@ -178,7 +180,8 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 }
 
 void BMI160Sensor::startCalibration(int calibrationType) {
-    LEDManager::on(CALIBRATING_LED);
+    ledManager.on();
+
     m_Logger.debug("Gathering raw data for device calibration...");
     DeviceConfig * const config = getConfigPtr();
 
@@ -196,13 +199,15 @@ void BMI160Sensor::startCalibration(int calibrationType) {
 
     for (int i = 0; i < gyroCalibrationSamples; i++)
     {
-        LEDManager::on(CALIBRATING_LED);
+        ledManager.on();
+
         int16_t gx, gy, gz;
         imu.getRotation(&gx, &gy, &gz);
         rawGxyz[0] += float(gx);
         rawGxyz[1] += float(gy);
         rawGxyz[2] += float(gz);
-        LEDManager::off(CALIBRATING_LED);
+
+        ledManager.off();
     }
     config->calibration[sensorId].G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
     config->calibration[sensorId].G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
@@ -214,9 +219,9 @@ void BMI160Sensor::startCalibration(int calibrationType) {
 
     // Blink calibrating led before user should rotate the sensor
     m_Logger.info("After 3 seconds, Gently rotate the device while it's gathering accelerometer data");
-    LEDManager::on(CALIBRATING_LED);
+    ledManager.on();
     delay(1500);
-    LEDManager::off(CALIBRATING_LED);
+    ledManager.off();
     delay(1500);
     m_Logger.debug("Gathering accelerometer data...");
 
@@ -224,16 +229,18 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     float *calibrationDataAcc = (float*)malloc(accelCalibrationSamples * 3 * sizeof(float));
     for (int i = 0; i < accelCalibrationSamples; i++)
     {
-        LEDManager::on(CALIBRATING_LED);
+        ledManager.on();
+
         int16_t ax, ay, az;
         imu.getAcceleration(&ax, &ay, &az);
         calibrationDataAcc[i * 3 + 0] = ax;
         calibrationDataAcc[i * 3 + 1] = ay;
         calibrationDataAcc[i * 3 + 2] = az;
-        LEDManager::off(CALIBRATING_LED);
+
+        ledManager.off();
         delay(100);
     }
-    LEDManager::off(CALIBRATING_LED);
+    ledManager.off();
     m_Logger.debug("Calculating calibration data...");
 
     float A_BAinv[4][3];

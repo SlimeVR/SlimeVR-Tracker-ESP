@@ -25,12 +25,12 @@
 #include <i2cscan.h>
 #include "calibration.h"
 #include "magneto1.4.h"
+#include "GlobalVars.h"
 // #include "mahony.h"
 // #include "madgwick.h"
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
 #include "dmpmag.h"
 #endif
-#include "ledmgr.h"
 
 constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
 
@@ -56,10 +56,11 @@ void MPU9250Sensor::motionSetup() {
     imu.getAcceleration(&ax, &ay, &az);
     float g_az = (float)az / 16384; // For 2G sensitivity
     if(g_az < -0.75f) {
-        digitalWrite(CALIBRATING_LED, HIGH);
+        ledManager.on();
         m_Logger.info("Flip front to confirm start calibration");
         delay(5000);
-        digitalWrite(CALIBRATING_LED, LOW);
+        ledManager.off();
+
         imu.getAcceleration(&ax, &ay, &az);
         g_az = (float)az / 16384;
         if(g_az > 0.75f)
@@ -71,12 +72,7 @@ void MPU9250Sensor::motionSetup() {
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
     devStatus = imu.dmpInitialize();
     if(devStatus == 0){
-        for(int i = 0; i < 5; ++i) {
-            delay(50);
-            digitalWrite(LOADING_LED, LOW);
-            delay(50);
-            digitalWrite(LOADING_LED, HIGH);
-        }
+        ledManager.pattern(50, 50, 5);
 
         // turn on the DMP, now that it's ready
         m_Logger.debug("Enabling DMP...");
@@ -217,7 +213,8 @@ void MPU9250Sensor::getMPUScaled()
 }
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
-    LEDManager::on(CALIBRATING_LED);
+    ledManager.on();
+
     m_Logger.debug("Gathering raw data for device calibration...");
     constexpr int calibrationSamples = 300;
     DeviceConfig *config = getConfigPtr();
@@ -252,12 +249,12 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 
     // Blink calibrating led before user should rotate the sensor
     m_Logger.info("Gently rotate the device while it's gathering accelerometer and magnetometer data");
-    LEDManager::pattern(CALIBRATING_LED, 15, 300, 3000/310);
+    ledManager.pattern(15, 300, 3000/310);
     float *calibrationDataAcc = (float*)malloc(calibrationSamples * 3 * sizeof(float));
     float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
     for (int i = 0; i < calibrationSamples; i++)
     {
-        LEDManager::on(CALIBRATING_LED);
+        ledManager.on();
         int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
         calibrationDataAcc[i * 3 + 0] = ax;
@@ -268,7 +265,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         calibrationDataMag[i * 3 + 2] = -mz;
         Network::sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
         Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
-        LEDManager::off(CALIBRATING_LED);
+        ledManager.off();
         delay(250);
     }
     m_Logger.debug("Calculating calibration data...");
@@ -303,7 +300,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     m_Logger.debug("}");
     m_Logger.debug("Now Saving EEPROM");
     setConfig(*config);
-    LEDManager::off(CALIBRATING_LED);
+    ledManager.off();
     Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0);
     m_Logger.debug("Finished Saving EEPROM");
     m_Logger.info("Calibration data gathered");

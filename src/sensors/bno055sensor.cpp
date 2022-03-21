@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 #include "bno055sensor.h"
 #include "network/network.h"
 #include "globals.h"
-#include "ledmgr.h"
+#include "GlobalVars.h"
 
 void BNO055Sensor::motionSetup() {
     imu = Adafruit_BNO055(sensorId, addr);
@@ -31,7 +31,7 @@ void BNO055Sensor::motionSetup() {
     if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS))
     {
         m_Logger.fatal("Can't connect to BNO055 at address 0x%02x", addr);
-        LEDManager::signalAssert();
+        ledManager.pattern(50, 50, 200);
         return;
     }
 

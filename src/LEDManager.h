@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,17 +20,12 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_LEDMGR_H_
-#define SLIMEVR_LEDMGR_H_
+#ifndef SLIMEVR_LEDMANAGER_H
+#define SLIMEVR_LEDMANAGER_H
 
 #include <Arduino.h>
 #include "globals.h"
 #include "logging/Logger.h"
-
-#define LED_STATUS_SERVER_CONNECTING 2
-#define LED_STATUS_WIFI_CONNECTING 4
-#define LED_STATUS_LOW_BATTERY 128
-#define LED_STATUS_IMU_ERROR 256
 
 #define DEFAULT_LENGTH 300
 #define DEFAULT_GAP 500
@@ -50,19 +45,59 @@
 #define SERVER_CONNECTING_INTERVAL 3000
 #define SERVER_CONNECTING_COUNT 2
 
-namespace LEDManager {
-    
-    enum Stage {
-        OFF, ON, GAP, INTERVAL
+namespace SlimeVR
+{
+    enum LEDStage
+    {
+        OFF,
+        ON,
+        GAP,
+        INTERVAL
     };
-    void on(uint8_t pin);
-    void off(uint8_t pin);
-    void blink(uint8_t pin, unsigned long time, uint8_t direction = LOW);
-    void pattern(uint8_t pin, unsigned long timeon, unsigned long timeoff, int times, uint8_t direction = LOW);
-    void signalAssert();
-    void setLedStatus(uint32_t status);
-    void unsetLedStatus(uint32_t status);
-    void ledStatusUpdate();
+
+    class LEDManager
+    {
+    public:
+        LEDManager(uint8_t pin) : m_Pin(pin) {}
+
+        void setup();
+
+        /*!
+         *  @brief Turns the LED on
+         */
+        void on();
+
+        /*!
+         *  @brief Turns the LED off
+         */
+        void off();
+
+        /*!
+         *  @brief Blink the LED for [time]ms. *Can* cause lag
+         *  @param time Amount of ms to turn the LED on
+         */
+        void blink(unsigned long time);
+
+        /*!
+         *  @brief Show a pattern on the LED. *Can* cause lag
+         *  @param timeon Amount of ms to turn the LED on
+         *  @param timeoff Amount of ms to turn the LED off
+         *  @param times Amount of times to display the pattern
+         */
+        void pattern(unsigned long timeon, unsigned long timeoff, int times);
+
+        void update();
+
+    private:
+        uint8_t m_CurrentCount = 0;
+        unsigned long m_Timer = 0;
+        LEDStage m_CurrentStage = OFF;
+        unsigned long m_LastUpdate = millis();
+
+        uint8_t m_Pin;
+
+        Logging::Logger m_Logger = Logging::Logger("LEDManager");
+    };
 }
 
-#endif // SLIMEVR_LEDMGR_H_
+#endif

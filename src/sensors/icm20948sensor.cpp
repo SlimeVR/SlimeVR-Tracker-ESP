@@ -25,7 +25,7 @@
 #include <i2cscan.h>
 #include <EEPROM.h> // for 8266, save the current bias values to eeprom
 #include "network/network.h"
-#include "ledmgr.h"
+#include "GlobalVars.h"
 
 // seconds after previous save (from start) when calibration (DMP Bias) data will be saved to NVS. Increments through the list then stops; to prevent unwelcome eeprom wear.
 int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 10min + 10min (no more saves after 30min)
@@ -364,7 +364,7 @@ void ICM20948Sensor::motionSetup() {
     ICM_20948_Status_e imu_err = imu.begin(Wire, tracker);
     if (imu_err != ICM_20948_Stat_Ok) {
         m_Logger.fatal("Can't connect to ICM20948 at address 0x%02x, error code: 0x%02x", addr, imu_err);
-        LEDManager::signalAssert();
+        ledManager.pattern(50, 50, 200);
         return;
     }
 
