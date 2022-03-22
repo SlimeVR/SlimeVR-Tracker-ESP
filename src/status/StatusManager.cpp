@@ -8,12 +8,22 @@ namespace SlimeVR
         {
             if (value)
             {
+                if (m_Status & status)
+                {
+                    return;
+                }
+
                 m_Logger.trace("Removed status %s", statusToString(status));
 
                 m_Status |= status;
             }
             else
             {
+                if (!(m_Status & status))
+                {
+                    return;
+                }
+
                 m_Logger.trace("Added status %s", statusToString(status));
 
                 m_Status &= ~status;
