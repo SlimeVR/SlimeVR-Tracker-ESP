@@ -13,7 +13,7 @@ namespace SlimeVR
                     return;
                 }
 
-                m_Logger.trace("Removed status %s", statusToString(status));
+                m_Logger.trace("Added status %s", statusToString(status));
 
                 m_Status |= status;
             }
@@ -24,7 +24,7 @@ namespace SlimeVR
                     return;
                 }
 
-                m_Logger.trace("Added status %s", statusToString(status));
+                m_Logger.trace("Removed status %s", statusToString(status));
 
                 m_Status &= ~status;
             }
