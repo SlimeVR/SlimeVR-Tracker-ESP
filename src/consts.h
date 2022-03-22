@@ -28,10 +28,11 @@
 #define IMU_MPU6500 2
 #define IMU_BNO080 3
 #define IMU_BNO085 4
-#define IMU_BNO086 4
 #define IMU_BNO055 5
 #define IMU_MPU6050 6
-#define IMU_ICM20948 7
+#define IMU_BNO086 7
+#define IMU_BMI160 8
+#define IMU_ICM20948 9
 
 #define BOARD_SLIMEVR 1
 #define BOARD_SLIMEVR_DEV 2
@@ -40,6 +41,18 @@
 #define BOARD_WROOM32 5
 #define BOARD_WEMOSD1MINI 6
 #define BOARD_TTGO_TBASE 7
+#define BOARD_ESP01 8
+
+#define BAT_EXTERNAL 1
+#define BAT_INTERNAL 2
+#define BAT_MCP3021 3
+#define BAT_INTERNAL_MCP3021 4
+
+#define POWER_SAVING_LEGACY 0 // No sleeping, but PS enabled
+#define POWER_SAVING_NONE 1 // No sleeping, no PS => for connection issues
+#define POWER_SAVING_MINIMUM 2 // Sleeping and PS => default
+#define POWER_SAVING_MODERATE 3 // Sleeping and better PS => might miss broadcasts, use at own risk
+#define POWER_SAVING_MAXIMUM 4 // Actual CPU sleeping, currently has issues with disconnecting
 
 #define DEG_0 0.f
 #define DEG_90 -PI / 2
