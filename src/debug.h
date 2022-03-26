@@ -44,7 +44,7 @@
 #define serialDebug false // Set to true to get Serial output for debugging
 #define serialBaudRate 115200
 #define LED_INTERVAL_STANDBY 10000
-#define LED_INVERTED false
+#define LED_INVERTED true
 #define ENABLE_LEDS true
 
 #define LED_PIN LED_BUILTIN
