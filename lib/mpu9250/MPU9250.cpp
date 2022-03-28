@@ -3397,7 +3397,7 @@ bool MPU9250_Base::testConnectionMagnetometer() {
  * @see MPU9250_RA_MAG_ADDRESS
  * @see MPU9250_RA_MAG_WHOAMI
  */
-int8_t MPU9250_Base::getMagnetometerDeviceID() {
+uint8_t MPU9250_Base::getMagnetometerDeviceID() {
     // Set up magnetometer as slave 0 for reading
     I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_ADDR, MPU9250_RA_MAG_ADDRESS|0x80);
     // Start reading from WHO_AM_I register

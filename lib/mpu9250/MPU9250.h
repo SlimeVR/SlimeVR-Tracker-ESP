@@ -851,7 +851,7 @@ class MPU9250_Base {
         // AK8963 Magnetomter Functions
         void initilaizeMagnetometer();
         bool testConnectionMagnetometer();
-        int8_t getMagnetometerDeviceID();
+        uint8_t getMagnetometerDeviceID();
         void getMagnetometerAdjustments(float *adjustments);
         void getMagnetometer(int16_t* x, int16_t* y, int16_t* z);
         int16_t getMagnetometerX();
