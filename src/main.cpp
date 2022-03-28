@@ -30,12 +30,15 @@
 #include "credentials.h"
 #include <i2cscan.h>
 #include "serial/serialcommands.h"
-#include "ledmgr.h"
+#include "LEDManager.h"
+#include "status/StatusManager.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
 
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
+SlimeVR::LEDManager ledManager(LED_PIN);
+SlimeVR::Status::StatusManager statusManager;
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -54,13 +57,10 @@ void setup()
     logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
 
     //wifi_set_sleep_type(NONE_SLEEP_T);
-    // Glow diode while loading
-#if ENABLE_LEDS
-    pinMode(LOADING_LED, OUTPUT);
-    pinMode(CALIBRATING_LED, OUTPUT);
-    LEDManager::off(CALIBRATING_LED);
-    LEDManager::on(LOADING_LED);
-#endif
+
+    statusManager.setStatus(SlimeVR::Status::LOADING, true);
+
+    ledManager.setup();
 
     SerialCommands::setUp();
 
@@ -84,18 +84,20 @@ void setup()
     Network::setUp();
     OTA::otaSetup(otaPassword);
     battery.Setup();
-    LEDManager::off(LOADING_LED);
+
+    statusManager.setStatus(SlimeVR::Status::LOADING, false);
+
     loopTime = micros();
 }
 
 void loop()
 {
-    LEDManager::ledStatusUpdate();
     SerialCommands::update();
     OTA::otaUpdate();
     Network::update(sensorManager.getFirst(), sensorManager.getSecond());
     sensorManager.update();
     battery.Loop();
+    ledManager.update();
 
 #ifdef TARGET_LOOPTIME_MICROS
     long elapsed = (micros() - loopTime);

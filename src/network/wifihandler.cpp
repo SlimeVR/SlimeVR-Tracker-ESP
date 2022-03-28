@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,8 @@
 */
 #include "globals.h"
 #include "network.h"
-#include "ledmgr.h"
 #include "logging/Logger.h"
+#include "GlobalVars.h"
 #if !ESP8266
 #include "esp_wifi.h"
 #endif
@@ -107,7 +107,7 @@ void WiFiNetwork::setUp() {
 
 void onConnected() {
     WiFiNetwork::stopProvisioning();
-    LEDManager::unsetLedStatus(LED_STATUS_WIFI_CONNECTING);
+    statusManager.setStatus(SlimeVR::Status::WIFI_CONNECTING, false);
     isWifiConnected = true;
     hadWifi = true;
     wifiHandlerLogger.info("Connected successfully to SSID '%s', ip address %s", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
@@ -120,7 +120,7 @@ void WiFiNetwork::upkeep() {
             wifiHandlerLogger.warn("Connection to WiFi lost, reconnecting...");
             isWifiConnected = false;
         }
-        LEDManager::setLedStatus(LED_STATUS_WIFI_CONNECTING);
+        statusManager.setStatus(SlimeVR::Status::WIFI_CONNECTING, true);
         reportWifiError();
         if(wifiConnectionTimeout + 11000 < millis()) {
             switch(wifiState) {

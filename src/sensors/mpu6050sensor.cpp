@@ -34,7 +34,7 @@
 #include <i2cscan.h>
 #include "calibration.h"
 #include "configuration.h"
-#include "ledmgr.h"
+#include "GlobalVars.h"
 
 void MPU6050Sensor::motionSetup()
 {
@@ -66,7 +66,7 @@ void MPU6050Sensor::motionSetup()
         imu.PrintActiveOffsets();
 #endif // IMU_MPU6050_RUNTIME_CALIBRATION
 
-        LEDManager::pattern(LOADING_LED, 50, 50, 5);
+        ledManager.pattern(50, 50, 5);
 
         // turn on the DMP, now that it's ready
         m_Logger.debug("Enabling DMP...");
@@ -131,7 +131,8 @@ void MPU6050Sensor::motionLoop()
 }
 
 void MPU6050Sensor::startCalibration(int calibrationType) {
-    LEDManager::on(CALIBRATING_LED);
+    ledManager.on();
+
 #ifdef IMU_MPU6050_RUNTIME_CALIBRATION
     m_Logger.info("MPU is using automatic runtime calibration. Place down the device and it should automatically calibrate after a few seconds");
 
@@ -142,11 +143,9 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
         Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);
         break;
     case CALIBRATION_TYPE_INTERNAL_GYRO:
-        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);
+        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_GYRO, 0);//was CALIBRATION_TYPE_INTERNAL_GYRO for some reason? there wasn't a point to this switch
         break;
     }
-    LEDManager::off(CALIBRATING_LED);
-
 #else //!IMU_MPU6050_RUNTIME_CALIBRATION
     m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
     delay(2000);
@@ -164,24 +163,24 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     {
     case CALIBRATION_TYPE_INTERNAL_ACCEL:
         imu.CalibrateAccel(10);
-        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
-        config->calibration.A_B[0] = imu.getXAccelOffset();
-        config->calibration.A_B[1] = imu.getYAccelOffset();
-        config->calibration.A_B[2] = imu.getZAccelOffset();
+        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);//doesn't send calibration data anymore, has that been depricated in server?
+        config->calibration->A_B[0] = imu.getXAccelOffset();
+        config->calibration->A_B[1] = imu.getYAccelOffset();
+        config->calibration->A_B[2] = imu.getZAccelOffset();
         saveConfig();
         break;
     case CALIBRATION_TYPE_INTERNAL_GYRO:
         imu.CalibrateGyro(10);
-        sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0, PACKET_RAW_CALIBRATION_DATA);
-        config->calibration.G_off[0] = imu.getXGyroOffset();
-        config->calibration.G_off[1] = imu.getYGyroOffset();
-        config->calibration.G_off[2] = imu.getZGyroOffset();
+        Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_GYRO, 0);//doesn't send calibration data anymore
+        config->calibration->G_off[0] = imu.getXGyroOffset();
+        config->calibration->G_off[1] = imu.getYGyroOffset();
+        config->calibration->G_off[2] = imu.getZGyroOffset();
         saveConfig();
         break;
     }
 
     m_Logger.info("Calibration finished");
-    LEDMGR::off(CALIBRATING_LED);
-
 #endif // !IMU_MPU6050_RUNTIME_CALIBRATION
+
+    ledManager.off();
 }

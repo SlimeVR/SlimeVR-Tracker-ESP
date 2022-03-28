@@ -21,6 +21,7 @@
     THE SOFTWARE.
 */
 #include "batterymonitor.h"
+#include "GlobalVars.h"
 
 #if ESP8266 && (BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021)
 ADC_MODE(ADC_VCC);
@@ -119,10 +120,10 @@ void BatteryMonitor::Loop()
                         #if defined(BATTERY_LOW_VOLTAGE_DEEP_SLEEP) && BATTERY_LOW_VOLTAGE_DEEP_SLEEP
                             ESP.deepSleep(0);
                         #else
-                            LEDManager::setLedStatus(LED_STATUS_LOW_BATTERY);
+                            statusManager.setStatus(SlimeVR::Status::LOW_BATTERY, true);
                         #endif
                     } else {
-                        LEDManager::unsetLedStatus(LED_STATUS_LOW_BATTERY);
+                        statusManager.setStatus(SlimeVR::Status::LOW_BATTERY, false);
                     }
                 #endif
             }

@@ -20,6 +20,10 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
+#ifndef SENSORS_MPU6050SENSOR_H
+#define SENSORS_MPU6050SENSOR_H
+
 #include "sensor.h"
 #include <MPU6050.h>
 
@@ -43,3 +47,5 @@ private:
     uint16_t fifoCount;       // count of all bytes currently in FIFO
     uint8_t fifoBuffer[64]{}; // FIFO storage buffer
 };
+
+#endif

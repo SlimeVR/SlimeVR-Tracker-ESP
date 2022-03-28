@@ -28,7 +28,6 @@
 #include "network/network.h"
 #include <i2cscan.h>
 #include <I2Cdev.h>
-#include "ledmgr.h"
 #include "logging/Logger.h"
 
 #if BATTERY_MONITOR == BAT_EXTERNAL

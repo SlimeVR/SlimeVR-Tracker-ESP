@@ -23,8 +23,8 @@
 
 #include "sensors/bno080sensor.h"
 #include "network/network.h"
-#include "ledmgr.h"
 #include "utils.h"
+#include "GlobalVars.h"
 
 void BNO080Sensor::motionSetup()
 {
@@ -33,7 +33,7 @@ void BNO080Sensor::motionSetup()
 #endif
     if(!imu.begin(addr, Wire, m_IntPin)) {
         m_Logger.fatal("Can't connect to %s at address 0x%02x", getIMUNameByType(sensorType), addr);
-        LEDManager::signalAssert();
+        ledManager.pattern(50, 50, 200);
         return;
     }
 
@@ -188,7 +188,7 @@ void BNO080Sensor::motionLoop()
             m_Logger.error("BNO08X error. Severity: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
                 error.severity, error.error_sequence_number, error.error_source, error.error, error.error_module, error.error_code);
         }
-        LEDManager::setLedStatus(LED_STATUS_IMU_ERROR);
+        statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
         working = false;
         lastData = millis();
         uint8_t rr = imu.resetReason();
@@ -236,16 +236,16 @@ void BNO080Sensor::sendData()
 void BNO080Sensor::startCalibration(int calibrationType)
 {
     // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
-    LEDManager::pattern(CALIBRATING_LED, 20, 20, 10);
-    LEDManager::blink(CALIBRATING_LED, 2000);
+    ledManager.pattern(20, 20, 10);
+    ledManager.blink(2000);
     imu.calibrateGyro();
     do
     {
-        LEDManager::on(CALIBRATING_LED);
+        ledManager.on();
         imu.requestCalibrationStatus();
         delay(20);
         imu.getReadings();
-        LEDManager::off(CALIBRATING_LED);
+        ledManager.off();
         delay(20);
     } while (!imu.calibrationComplete());
     imu.saveCalibration();
