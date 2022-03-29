@@ -63,8 +63,7 @@ void MPU9250Sensor::motionSetup() {
 
         imu.getAcceleration(&ax, &ay, &az);
         g_az = (float)az / 16384;
-        if(g_az > 0.75f)
-        {
+        if(g_az > 0.75f) {
             m_Logger.debug("Starting calibration...");
             startCalibration(0);
         }
@@ -167,9 +166,9 @@ void MPU9250Sensor::getMPUScaled()
 {
     float temp[3];
     int i;
-    int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
 
 #if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
+    int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
     imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
     Gxyz[0] = ((float)gx - calibration->G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
     Gxyz[1] = ((float)gy - calibration->G_off[1]) * gscale;
@@ -192,6 +191,7 @@ void MPU9250Sensor::getMPUScaled()
     #endif
 
 #else
+    int16_t mx, my, mz;
     // with DMP, we just need mag data
     imu.getMagnetometer(&mx, &my, &mz);
 #endif
@@ -225,10 +225,9 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     m_Logger.info("Gently rotate the device while it's gathering magnetometer data");
     ledManager.pattern(15, 300, 3000/310);
     float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
-    for (int i = 0; i < calibrationSamples; i++)
-    {
+    for (int i = 0; i < calibrationSamples; i++) {
         ledManager.on();
-        int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
+        int16_t mx,my,mz;
         imu.getMagnetometer(&mx, &my, &mz);
         calibrationDataMag[i * 3 + 0] = my;
         calibrationDataMag[i * 3 + 1] = mx;
@@ -293,8 +292,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     ledManager.pattern(15, 300, 3000/310);
     float *calibrationDataAcc = (float*)malloc(calibrationSamples * 3 * sizeof(float));
     float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
-    for (int i = 0; i < calibrationSamples; i++)
-    {
+    for (int i = 0; i < calibrationSamples; i++) {
         ledManager.on();
         int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
