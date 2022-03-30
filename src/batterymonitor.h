@@ -30,14 +30,39 @@
 #include <I2Cdev.h>
 #include "logging/Logger.h"
 
+#if ESP8266
+    #define ADCResulution 1023.0  // ESP8266 has 12bit ADC
+    #define ADCVoltageMax 1.0     // ESP8266 input is 1.0 V = 1023.0
+#endif
+#if ESP32
+    #define ADCResulution 4095.0  // ESP32 has 12bit ADC
+    #define ADCVoltageMax 3.3     // ESP32 input is 3.3 V = 4095.0
+#endif
+#ifndef ADCResulution
+    #define ADCResulution 1023.0
+#endif
+#ifndef ADCVoltageMax
+    #define ADCVoltageMax 1.0
+#endif
+
+#ifndef BATTERY_SHIELD_R1
+    #define BATTERY_SHIELD_R1 220.0
+#endif
+#ifndef BATTERY_SHIELD_R2
+    #define BATTERY_SHIELD_R2 100.0
+#endif
+
 #if BATTERY_MONITOR == BAT_EXTERNAL
     #ifndef PIN_BATTERY_LEVEL
         #error Internal ADC enabled without pin! Please select a pin.
     #endif
     // Wemos D1 Mini has an internal Voltage Divider with R1=220K and R2=100K > this means, 3.3V analogRead input voltage results in 1023.0
     // Wemos D1 Mini with Wemos Battery Shield v1.2.0 or higher: Battery Shield with J2 closed, has an additional 130K resistor. So the resulting Voltage Divider is R1=220K+100K=320K and R2=100K > this means, 4.5V analogRead input voltage results in 1023.0
+    // ESP32 Boards may have not the internal Voltage Divider. Also ESP32 has a 12bit ADC (0..4095). So R1 and R2 can be changed.
+    // Diagramm: 
+    //   (Battery)--- [BATTERY_SHIELD_RESISTANCE] ---(INPUT_BOARD)---  [BATTERY_SHIELD_R2] ---(ESP_INPUT)--- [BATTERY_SHIELD_R1] --- (GND)
     // SlimeVR Board can handle max 5V > so analogRead of 5.0V input will result in 1023.0
-    #define batteryADCMultiplier 1.0 / 1023.0 * (320 + BATTERY_SHIELD_RESISTANCE) / 100
+  #define batteryADCMultiplier ADCVoltageMax / ADCResulution * (BATTERY_SHIELD_R1 + BATTERY_SHIELD_R2 + BATTERY_SHIELD_RESISTANCE) / BATTERY_SHIELD_R1
 #elif BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
   // Default recommended resistors are 9.1k and 5.1k
   #define batteryADCMultiplier 3.3 / 1023.0 * 14.2 / 9.1
