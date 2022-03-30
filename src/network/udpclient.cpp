@@ -575,7 +575,7 @@ void ServerConnection::connect()
             // receive incoming UDP packets
             int len = Udp.read(incomingPacket, sizeof(incomingPacket));
             
-#ifdef FULL_DEBUG
+#ifdef DEBUG_NETWORK
             udpClientLogger.trace("Received %d bytes from %s, port %d", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
             udpClientLogger.traceArray("UDP packet contents: ", incomingPacket, len);
 #endif
@@ -633,7 +633,7 @@ void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
             int len = Udp.read(incomingPacket, sizeof(incomingPacket));
             // receive incoming UDP packets
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_NETWORK
             udpClientLogger.trace("Received %d bytes from %s, port %d", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
             udpClientLogger.traceArray("UDP packet contents: ", incomingPacket, len);
 #endif

@@ -38,7 +38,8 @@
 #define LOG_LEVEL LOG_LEVEL_DEBUG
 
 #if LOG_LEVEL == LOG_LEVEL_TRACE
-#define FULL_DEBUG
+#define DEBUG_SENSOR
+#define DEBUG_NETWORK
 #endif
 
 #define serialDebug false // Set to true to get Serial output for debugging

@@ -238,7 +238,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     Gxyz[1] /= calibrationSamples;
     Gxyz[2] /= calibrationSamples;
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
     m_Logger.trace("Gyro calibration results: %f %f %f", Gxyz[0], Gxyz[1], Gxyz[2]);
 #endif
 

@@ -36,7 +36,7 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 
 void ICM20948Sensor::save_bias(bool repeat) { 
     #if defined(SAVE_BIAS) && SAVE_BIAS
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
             m_Logger.trace("Saving Bias");
 #endif
         #if ESP8266
@@ -62,7 +62,7 @@ void ICM20948Sensor::save_bias(bool repeat) {
             EEPROM.begin(4096); // max memory usage = 4096
             EEPROM.get(addr + 100, count); // 1st imu counter in EEPROM addr: 0x69+100=205, 2nd addr: 0x68+100=204
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
             m_Logger.trace("[0x%02X] EEPROM position: %d, count: %d", addr, addr + 100, count);
 #endif
 
@@ -73,7 +73,7 @@ void ICM20948Sensor::save_bias(bool repeat) {
             }
             EEPROM.put(addr + 100, count);
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
             m_Logger.trace("[0x%02X] bias gyro  save(%d): [%d, %d, %d]", addr, count * 12, bias_g[0], bias_g[1], bias_g[2]);
             m_Logger.trace("[0x%02X] bias accel save(%d): [%d, %d, %d]", addr, count * 12, bias_a[0], bias_a[1], bias_a[2]);
             m_Logger.trace("[0x%02X] bias CPass save(%d): [%d, %d, %d]", addr, count * 12, bias_m[0], bias_m[1], bias_m[2]);
@@ -115,7 +115,7 @@ void ICM20948Sensor::save_bias(bool repeat) {
             bool gyro_set = bias_g[0] && bias_g[1] && bias_g[2];
             bool mag_set = bias_m[0] && bias_m[1] && bias_m[2];
                 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
             m_Logger.trace("bias gyro on IMU: %d, %d, %d", bias_g[0], bias_g[1], bias_g[2]);
             m_Logger.trace("bias accel on IMU: %d, %d, %d", bias_a[0], bias_a[1], bias_a[2]);
             m_Logger.trace("bias mag on IMU: %d, %d, %d", bias_m[0], bias_m[1], bias_m[2]);
@@ -128,7 +128,7 @@ void ICM20948Sensor::save_bias(bool repeat) {
                 prefs.putInt(auxiliary ? "ba11" : "ba10", bias_a[1]);
                 prefs.putInt(auxiliary ? "ba21" : "ba20", bias_a[2]);
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
                 m_Logger.trace("Wrote Accel Bias");
 #endif
             }
@@ -139,7 +139,7 @@ void ICM20948Sensor::save_bias(bool repeat) {
                 prefs.putInt(auxiliary ? "bg11" : "bg10", bias_g[1]);
                 prefs.putInt(auxiliary ? "bg21" : "bg20", bias_g[2]);
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
                 m_Logger.trace("Wrote Gyro Bias");
 #endif
             }
@@ -150,7 +150,7 @@ void ICM20948Sensor::save_bias(bool repeat) {
                 prefs.putInt(auxiliary ? "bm11" : "bm10", bias_m[1]);
                 prefs.putInt(auxiliary ? "bm21" : "bm20", bias_m[2]);
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
                 m_Logger.trace("Wrote Mag Bias");
 #endif
             }    
@@ -177,7 +177,7 @@ void ICM20948Sensor::load_bias() {
             EEPROM.begin(4096); // max memory usage = 4096
             EEPROM.get(addr + 100, count); // 1st imu counter in EEPROM addr: 0x69+100=205, 2nd addr: 0x68+100=204
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
             m_Logger.trace("[0x%02X] EEPROM position: %d, count: %d", addr, addr + 100, count);
 #endif
 
@@ -191,7 +191,7 @@ void ICM20948Sensor::load_bias() {
             EEPROM.get(3072 + (count * 12), bias_m); // 3072 ~ 4056
             EEPROM.end();
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
             m_Logger.trace("[0x%02X] EEPROM gyro  get(%d): [%d, %d, %d]", addr, count * 12, bias_g[0], bias_g[1], bias_g[2]);
             m_Logger.trace("[0x%02X] EEPROM accel get(%d): [%d, %d, %d]", addr, count * 12, bias_a[0], bias_a[1], bias_a[2]);
             m_Logger.trace("[0x%02X] EEPROM CPass get(%d): [%d, %d, %d]", addr, count * 12, bias_m[0], bias_m[1], bias_m[2]);
@@ -239,7 +239,7 @@ void ICM20948Sensor::load_bias() {
             imu.SetBiasCPassZ(bias_m[2]);
 
             // Display both values from ESP32 and read back from IMU
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
             m_Logger.trace("On IMU and on ESP32 should match");
             m_Logger.trace("bias gyro on ESP32 : [%d, %d, %d]", bias_g[0], bias_g[1], bias_g[2]);
             m_Logger.trace("bias accel on ESP32: [%d, %d, %d]", bias_a[0], bias_a[1], bias_a[2]);
@@ -345,7 +345,7 @@ void ICM20948Sensor::motionSetup() {
         prefs.begin("ICM20948", false);  
     #endif
 	
-    #ifdef FULL_DEBUG
+    #ifdef DEBUG_SENSOR
         imu.enableDebugging(Serial);
     #endif
     // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
@@ -578,7 +578,7 @@ void ICM20948Sensor::motionLoop() {
             {
                 dataavaliable = false;
             }
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
             else 
             {
                 m_Logger.trace("e0x%02x", readStatus);
