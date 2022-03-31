@@ -40,7 +40,7 @@ THE SOFTWARE.
 #include "I2Cdev.h"
 #include "helper_3dmath.h"
 
-#ifdef __AVR__
+#if (defined(__AVR__) || defined(ESP8266))
     #include <avr/pgmspace.h>
 #elif defined(ESP32)
     #include <pgmspace.h>
