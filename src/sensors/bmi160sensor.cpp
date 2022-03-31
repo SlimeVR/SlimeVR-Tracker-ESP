@@ -193,7 +193,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     uint16_t gyroCalibrationSamples = 2500;
     float rawGxyz[3] = {0};
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
     m_Logger.trace("Calibration temperature: %f", temperature);
 #endif
 
@@ -213,7 +213,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     config->calibration[sensorId].G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
     config->calibration[sensorId].G_off[2] = rawGxyz[2] / gyroCalibrationSamples;
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
     m_Logger.trace("Gyro calibration results: %f %f %f", config->calibration[sensorId].G_off[0], config->calibration[sensorId].G_off[1], config->calibration[sensorId].G_off[2]);
 #endif
 

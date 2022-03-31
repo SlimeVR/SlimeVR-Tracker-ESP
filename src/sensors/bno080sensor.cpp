@@ -28,7 +28,7 @@
 
 void BNO080Sensor::motionSetup()
 {
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
     imu.enableDebugging(Serial);
 #endif
     if(!imu.begin(addr, Wire, m_IntPin)) {
@@ -216,7 +216,7 @@ void BNO080Sensor::sendData()
         if (useMagnetometerAllTheTime)
             Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
 #endif
     }
