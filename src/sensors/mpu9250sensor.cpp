@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain, S.J. Remington
+    Copyright (c) 2021 Eiren Rain, S.J. Remington, SlimeVR contributors
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
     in the Software without restriction, including without limitation the rights
@@ -63,8 +63,7 @@ void MPU9250Sensor::motionSetup() {
 
         imu.getAcceleration(&ax, &ay, &az);
         g_az = (float)az / 16384;
-        if(g_az > 0.75f)
-        {
+        if(g_az > 0.75f) {
             m_Logger.debug("Starting calibration...");
             startCalibration(0);
         }
@@ -167,15 +166,13 @@ void MPU9250Sensor::getMPUScaled()
 {
     float temp[3];
     int i;
-    int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
-    imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
 
-    // Gxyz[0] = ((float)gx - calibration->G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
-    // Gxyz[1] = ((float)gy - calibration->G_off[1]) * gscale;
-    // Gxyz[2] = ((float)gz - calibration->G_off[2]) * gscale;
-    Gxyz[0] = (float)gx * gscale; //250 LSB(d/s) default to radians/s
-    Gxyz[1] = (float)gy * gscale;
-    Gxyz[2] = (float)gz * gscale;
+#if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
+    int16_t ax, ay, az, gx, gy, gz, mx, my, mz;
+    imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+    Gxyz[0] = ((float)gx - calibration->G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
+    Gxyz[1] = ((float)gy - calibration->G_off[1]) * gscale;
+    Gxyz[2] = ((float)gz - calibration->G_off[2]) * gscale;
 
     Axyz[0] = (float)ax;
     Axyz[1] = (float)ay;
@@ -192,6 +189,12 @@ void MPU9250Sensor::getMPUScaled()
         for (i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
     #endif
+
+#else
+    int16_t mx, my, mz;
+    // with DMP, we just need mag data
+    imu.getMagnetometer(&mx, &my, &mz);
+#endif
 
     // Orientations of axes are set in accordance with the datasheet
     // See Section 9.1 Orientation of Axes
@@ -214,6 +217,43 @@ void MPU9250Sensor::getMPUScaled()
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
     ledManager.on();
+#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
+    // with DMP, we just need mag data
+    constexpr int calibrationSamples = 300;
+    DeviceConfig *config = getConfigPtr();
+    // Blink calibrating led before user should rotate the sensor
+    m_Logger.info("Gently rotate the device while it's gathering magnetometer data");
+    ledManager.pattern(15, 300, 3000/310);
+    float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
+    for (int i = 0; i < calibrationSamples; i++) {
+        ledManager.on();
+        int16_t mx,my,mz;
+        imu.getMagnetometer(&mx, &my, &mz);
+        calibrationDataMag[i * 3 + 0] = my;
+        calibrationDataMag[i * 3 + 1] = mx;
+        calibrationDataMag[i * 3 + 2] = -mz;
+        Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
+        ledManager.off();
+        delay(250);
+    }
+    m_Logger.debug("Calculating calibration data...");
+
+    float M_BAinv[4][3];
+    CalculateCalibration(calibrationDataMag, calibrationSamples, M_BAinv);
+    free(calibrationDataMag);
+
+    m_Logger.debug("[INFO] Magnetometer calibration matrix:");
+    m_Logger.debug("{");
+    for (int i = 0; i < 3; i++) {
+        config->calibration[sensorId].M_B[i] = M_BAinv[0][i];
+        config->calibration[sensorId].M_Ainv[0][i] = M_BAinv[1][i];
+        config->calibration[sensorId].M_Ainv[1][i] = M_BAinv[2][i];
+        config->calibration[sensorId].M_Ainv[2][i] = M_BAinv[3][i];
+        m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
+    }
+    m_Logger.debug("}");
+
+#elif
 
     m_Logger.debug("Gathering raw data for device calibration...");
     constexpr int calibrationSamples = 300;
@@ -252,8 +292,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     ledManager.pattern(15, 300, 3000/310);
     float *calibrationDataAcc = (float*)malloc(calibrationSamples * 3 * sizeof(float));
     float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
-    for (int i = 0; i < calibrationSamples; i++)
-    {
+    for (int i = 0; i < calibrationSamples; i++) {
         ledManager.on();
         int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
@@ -298,6 +337,8 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
     }
     m_Logger.debug("}");
+#endif
+
     m_Logger.debug("Now Saving EEPROM");
     setConfig(*config);
     ledManager.off();
