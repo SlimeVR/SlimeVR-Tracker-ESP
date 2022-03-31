@@ -33,9 +33,19 @@
 #define SECOND_IMU_ROTATION DEG_270
 
 // Battery monitoring options (comment to disable):
-// BAT_EXTERNAL for ADC pin, BAT_INTERNAL for internal - can detect only low battery, BAT_MCP3021 for external ADC
+//   BAT_EXTERNAL for ADC pin, 
+//   BAT_INTERNAL for internal - can detect only low battery, 
+//   BAT_MCP3021 for external ADC connected over I2C
 #define BATTERY_MONITOR BAT_EXTERNAL
+
+// BAT_EXTERNAL definition
+// D1 Mini boards with ESP8266 have internal resistors. For these boards you only have to adjust BATTERY_SHIELD_RESISTANCE.
+// For other boards you can now adjust the other resistor values.
+// The diagram looks like this:
+//   (Battery)--- [BATTERY_SHIELD_RESISTANCE] ---(INPUT_BOARD)---  [BATTERY_SHIELD_R2] ---(ESP32_INPUT)--- [BATTERY_SHIELD_R1] --- (GND)
 #define BATTERY_SHIELD_RESISTANCE 180 //130k BatteryShield, 180k SlimeVR or fill in external resistor value in kOhm
+// #define BATTERY_SHIELD_R1 100 // Board voltage divider resistor Ain to GND in kOhm
+// #define BATTERY_SHIELD_R2 220 // Board voltage divider resistor Ain to INPUT_BOARD in kOhm
 
 // Board-specific configurations
 #if BOARD == BOARD_SLIMEVR

@@ -51,30 +51,33 @@ void BatteryMonitor::Loop()
         auto now_ms = millis();
         if (now_ms - last_battery_sample >= batterySampleRate)
         {
+            last_battery_sample = now_ms;
             voltage = -1;
             #if ESP8266 && (BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021)
-                last_battery_sample = now_ms;
-                auto level = ESP.getVcc();
-                if (level > voltage_3_3)
+                // Find out what your max measurement is (voltage_3_3).
+                // Take the max measurement and check if it was less than 50mV 
+                // if yes output 5.0V
+                // if no output 3.3V - dropvoltage + 0.1V 
+                auto ESPmV = ESP.getVcc();
+                if (ESPmV > voltage_3_3)
                 {
-                    voltage_3_3 = level;
+                    voltage_3_3 = ESPmV;
                 }
                 else
                 {
                     //Calculate drop in mV
-                    level = voltage_3_3 - level;
-                    if (level < 50)
+                    ESPmV = voltage_3_3 - ESPmV;
+                    if (ESPmV < 50)
                     {
                         voltage = 5.0F;
                     }
                     else
                     {
-                        voltage = 3.3F - ((float)level / 1000.0F) + 0.1F; //we assume 100mV drop on the linear converter
+                        voltage = 3.3F - ((float)ESPmV / 1000.0F) + 0.1F; //we assume 100mV drop on the linear converter
                     }
                 }
             #endif
             #if BATTERY_MONITOR == BAT_EXTERNAL
-                last_battery_sample = now_ms;
                 voltage = ((float)analogRead(PIN_BATTERY_LEVEL)) * batteryADCMultiplier;
             #endif
             #if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
