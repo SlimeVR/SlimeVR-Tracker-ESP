@@ -46,10 +46,10 @@
 #endif
 
 #ifndef BATTERY_SHIELD_R1
-    #define BATTERY_SHIELD_R1 220.0
+    #define BATTERY_SHIELD_R1 100.0
 #endif
 #ifndef BATTERY_SHIELD_R2
-    #define BATTERY_SHIELD_R2 100.0
+    #define BATTERY_SHIELD_R2 220.0
 #endif
 
 #if BATTERY_MONITOR == BAT_EXTERNAL
