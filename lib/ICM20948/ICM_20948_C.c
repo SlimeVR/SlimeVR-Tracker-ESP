@@ -10,7 +10,7 @@
 
 #if defined(ARDUINO_ARCH_MBED) // ARDUINO_ARCH_MBED (APOLLO3 v2) does not support or require pgmspace.h / PROGMEM
 const uint8_t dmp3_image[] = {
-#elif (defined(__AVR__) || defined(__arm__) || defined(__ARDUINO_ARC__)) && !defined(__linux__) // Store the DMP firmware in PROGMEM on older AVR (ATmega) platforms
+#elif (defined(__AVR__) || defined(__arm__) || defined(__ARDUINO_ARC__) || defined(ESP8266)) && !defined(__linux__) // Store the DMP firmware in PROGMEM on older AVR (ATmega) platforms
 #define ICM_20948_USE_PROGMEM_FOR_DMP
 #include <avr/pgmspace.h>
 const uint8_t dmp3_image[] PROGMEM = {
