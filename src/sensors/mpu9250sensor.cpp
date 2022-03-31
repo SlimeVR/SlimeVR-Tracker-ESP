@@ -168,7 +168,7 @@ void MPU9250Sensor::getMPUScaled()
     int i;
 
 #if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
-    int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
+    int16_t ax, ay, az, gx, gy, gz, mx, my, mz;
     imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
     Gxyz[0] = ((float)gx - calibration->G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
     Gxyz[1] = ((float)gy - calibration->G_off[1]) * gscale;
