@@ -37,7 +37,7 @@ THE SOFTWARE.
 
 // Tom Carpenter's conditional PROGMEM code
 // http://forum.arduino.cc/index.php?topic=129407.0
-#ifdef __AVR__
+#if (defined(__AVR__) || defined(ESP8266))
     #include <avr/pgmspace.h>
 #elif defined(ESP32)
     #include <pgmspace.h>

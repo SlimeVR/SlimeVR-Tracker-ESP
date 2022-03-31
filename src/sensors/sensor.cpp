@@ -34,7 +34,7 @@ void Sensor::sendData() {
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
 #endif
     }

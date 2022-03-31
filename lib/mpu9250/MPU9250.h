@@ -40,7 +40,7 @@ THE SOFTWARE.
 #include "I2Cdev.h"
 #include "helper_3dmath.h"
 
-#ifdef __AVR__
+#if (defined(__AVR__) || defined(ESP8266))
     #include <avr/pgmspace.h>
 #elif defined(ESP32)
     #include <pgmspace.h>
@@ -48,7 +48,8 @@ THE SOFTWARE.
 
 //Magnetometer Registers, AK8963
 #define MPU9250_RA_MAG_ADDRESS      0x0C
-#define MPU9250_RA_MAG_WHOAMI       0x01
+#define MPU9250_RA_MAG_WHOAMI       0x00
+#define MPU9250_RA_MAG_INFO         0x01
 #define MPU9250_RA_MAG_ST1          0x02
 #define MPU9250_RA_MAG_XOUT_L       0x03
 #define MPU9250_RA_MAG_XOUT_H       0x04
@@ -95,7 +96,7 @@ THE SOFTWARE.
 
 #define MPU9250_MAG_CNTL2_SRST_BIT           0
 
-
+//MPU6500
 #define MPU9250_ADDRESS_AD0_LOW     0x68 // address pin low (GND), default for InvenSense evaluation board
 #define MPU9250_ADDRESS_AD0_HIGH    0x69 // address pin high (VCC)
 #define MPU9250_DEFAULT_ADDRESS     MPU9250_ADDRESS_AD0_LOW
@@ -106,28 +107,15 @@ THE SOFTWARE.
 #define MPU9250_RA_X_FINE_GAIN      0x03 //[7:0] X_FINE_GAIN
 #define MPU9250_RA_Y_FINE_GAIN      0x04 //[7:0] Y_FINE_GAIN
 #define MPU9250_RA_Z_FINE_GAIN      0x05 //[7:0] Z_FINE_GAIN
-
-#define MPU9250_RA_XA_OFFS_H        0x77 //[15:0] XA_OFFS
-#define MPU9250_RA_XA_OFFS_L_TC     0x78
-#define MPU9250_RA_YA_OFFS_H        0x7A //[15:0] YA_OFFS
-#define MPU9250_RA_YA_OFFS_L_TC     0x7B
-#define MPU9250_RA_ZA_OFFS_H        0x7D //[15:0] ZA_OFFS
-#define MPU9250_RA_ZA_OFFS_L_TC     0x7E
-
-// #define MPU9250_RA_XA_OFFS_H        0x06 //[15:0] XA_OFFS
-// #define MPU9250_RA_XA_OFFS_L_TC     0x07
-// #define MPU9250_RA_YA_OFFS_H        0x08 //[15:0] YA_OFFS
-// #define MPU9250_RA_YA_OFFS_L_TC     0x09
-// #define MPU9250_RA_ZA_OFFS_H        0x0A //[15:0] ZA_OFFS
-// #define MPU9250_RA_ZA_OFFS_L_TC     0x0B
-
+#define MPU9250_RA_XA_OFFS_TC       0x0D
+#define MPU9250_RA_YA_OFFS_TC       0x0E
+#define MPU9250_RA_ZA_OFFS_TC       0x0F
 #define MPU9250_RA_XG_OFFS_USRH     0x13 //[15:0] XG_OFFS_USR
 #define MPU9250_RA_XG_OFFS_USRL     0x14
 #define MPU9250_RA_YG_OFFS_USRH     0x15 //[15:0] YG_OFFS_USR
 #define MPU9250_RA_YG_OFFS_USRL     0x16
 #define MPU9250_RA_ZG_OFFS_USRH     0x17 //[15:0] ZG_OFFS_USR
 #define MPU9250_RA_ZG_OFFS_USRL     0x18
-
 #define MPU9250_RA_SMPLRT_DIV       0x19
 #define MPU9250_RA_CONFIG           0x1A
 #define MPU9250_RA_GYRO_CONFIG      0x1B
@@ -220,6 +208,12 @@ THE SOFTWARE.
 #define MPU9250_RA_FIFO_COUNTL      0x73
 #define MPU9250_RA_FIFO_R_W         0x74
 #define MPU9250_RA_WHO_AM_I         0x75
+#define MPU9250_RA_XA_OFFS_H        0x77 //[14:7] XA_OFFS
+#define MPU9250_RA_XA_OFFS_L        0x78 //[7:1]
+#define MPU9250_RA_YA_OFFS_H        0x7A //[14:7] YA_OFFS
+#define MPU9250_RA_YA_OFFS_L        0x7B //[7:1]
+#define MPU9250_RA_ZA_OFFS_H        0x7D //[14:7] ZA_OFFS
+#define MPU9250_RA_ZA_OFFS_L        0x7E //[7:1]
 
 #define MPU9250_TC_PWR_MODE_BIT     7
 #define MPU9250_TC_OFFSET_BIT       6
@@ -456,7 +450,7 @@ THE SOFTWARE.
 #define MPU9250_WHO_AM_I_BIT        8
 #define MPU9250_WHO_AM_I_LENGTH     8
 
-#define MPU9250_DMP_MEMORY_BANKS        8
+// #define MPU9250_DMP_MEMORY_BANKS        8
 #define MPU9250_DMP_MEMORY_BANK_SIZE    256
 #define MPU9250_DMP_MEMORY_CHUNK_SIZE   16
 
@@ -783,6 +777,18 @@ class MPU9250_Base {
         int16_t getZAccelOffset();
         void setZAccelOffset(int16_t offset);
 
+        // XA_OFFS_* registers
+        int16_t getXAccelOffsetUser();
+        void setXAccelOffsetUser(int16_t offset);
+
+        // YA_OFFS_* register
+        int16_t getYAccelOffsetUser();
+        void setYAccelOffsetUser(int16_t offset);
+
+        // ZA_OFFS_* register
+        int16_t getZAccelOffsetUser();
+        void setZAccelOffsetUser(int16_t offset);
+
         // XG_OFFS_USR* registers
         int16_t getXGyroOffsetUser();
         void setXGyroOffsetUser(int16_t offset);
@@ -851,7 +857,7 @@ class MPU9250_Base {
         // AK8963 Magnetomter Functions
         void initilaizeMagnetometer();
         bool testConnectionMagnetometer();
-        int8_t getMagnetometerDeviceID();
+        uint8_t getMagnetometerDeviceID();
         void getMagnetometerAdjustments(float *adjustments);
         void getMagnetometer(int16_t* x, int16_t* y, int16_t* z);
         int16_t getMagnetometerX();

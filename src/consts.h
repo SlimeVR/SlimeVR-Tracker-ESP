@@ -34,7 +34,7 @@
 #define IMU_BMI160 8
 #define IMU_ICM20948 9
 
-#define BOARD_SLIMEVR 1
+#define BOARD_SLIMEVR_LEGACY 1
 #define BOARD_SLIMEVR_DEV 2
 #define BOARD_NODEMCU 3
 #define BOARD_CUSTOM 4
@@ -42,6 +42,7 @@
 #define BOARD_WEMOSD1MINI 6
 #define BOARD_TTGO_TBASE 7
 #define BOARD_ESP01 8
+#define BOARD_SLIMEVR 9
 
 #define BAT_EXTERNAL 1
 #define BAT_INTERNAL 2

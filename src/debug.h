@@ -38,13 +38,14 @@
 #define LOG_LEVEL LOG_LEVEL_DEBUG
 
 #if LOG_LEVEL == LOG_LEVEL_TRACE
-#define FULL_DEBUG
+#define DEBUG_SENSOR
+#define DEBUG_NETWORK
 #endif
 
 #define serialDebug false // Set to true to get Serial output for debugging
 #define serialBaudRate 115200
 #define LED_INTERVAL_STANDBY 10000
-#define LED_INVERTED false
+#define LED_INVERTED true
 #define ENABLE_LEDS true
 
 #define LED_PIN LED_BUILTIN
