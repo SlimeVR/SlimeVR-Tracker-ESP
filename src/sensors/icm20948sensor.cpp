@@ -519,7 +519,7 @@ void ICM20948Sensor::motionLoop() {
     bool dataavaliable = true;
     while (dataavaliable) {
         ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
-        if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail || readStatus == ICM_20948_Stat_Ok)
+        if(readStatus == ICM_20948_Stat_Ok)
         {
             if(USE_6_AXIS)
             {
