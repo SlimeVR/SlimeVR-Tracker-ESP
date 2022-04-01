@@ -51,13 +51,17 @@ void ICM20948Sensor::save_bias(bool repeat) {
             imu.GetBiasAccelY(&bias_a[1]);
             imu.GetBiasAccelZ(&bias_a[2]);
 
-            imu.GetBiasCPassX(&bias_m[0]);
-            imu.GetBiasCPassY(&bias_m[1]);
-            imu.GetBiasCPassZ(&bias_m[2]);
+            #if !USE_6_AXIS
+                imu.GetBiasCPassX(&bias_m[0]);
+                imu.GetBiasCPassY(&bias_m[1]);
+                imu.GetBiasCPassZ(&bias_m[2]);
+            #endif
 
             bool gyro_set  = bias_g[0] && bias_g[1] && bias_g[2];
             bool accel_set = bias_a[0] && bias_a[1] && bias_a[2];
-            bool CPass_set = bias_m[0] && bias_m[1] && bias_m[2];
+            #if !USE_6_AXIS
+                bool CPass_set = bias_m[0] && bias_m[1] && bias_m[2];
+            #endif
 
             EEPROM.begin(4096); // max memory usage = 4096
             EEPROM.get(addr + 100, count); // 1st imu counter in EEPROM addr: 0x69+100=205, 2nd addr: 0x68+100=204
@@ -85,9 +89,11 @@ void ICM20948Sensor::save_bias(bool repeat) {
             if (accel_set) {
                 EEPROM.put(2046 + (count * 12), bias_a); // 2046 ~ 3030
             }
+            #if !USE_6_AXIS
             if (CPass_set) {
                 EEPROM.put(3072 + (count * 12), bias_m); // 3072 ~ 4056
             }
+            #endif
             EEPROM.end(); // save and end
             if (repeat) {
                 bias_save_counter++;
@@ -513,7 +519,7 @@ void ICM20948Sensor::motionLoop() {
     bool dataavaliable = true;
     while (dataavaliable) {
         ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
-        if(readStatus == ICM_20948_Stat_FIFOMoreDataAvail || readStatus == ICM_20948_Stat_Ok)
+        if(readStatus == ICM_20948_Stat_Ok)
         {
             if(USE_6_AXIS)
             {
