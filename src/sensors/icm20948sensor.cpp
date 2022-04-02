@@ -213,7 +213,7 @@ void ICM20948Sensor::motionSetup() {
     #if MAX_ODR
     if (USE_6_AXIS)
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 0) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 0.5) == ICM_20948_Stat_Ok)
         {
             m_Logger.debug("Set Quat6 to Max frequency");
         }
@@ -225,7 +225,7 @@ void ICM20948Sensor::motionSetup() {
     }
     else
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0.5) == ICM_20948_Stat_Ok)
         {
             m_Logger.debug("Set Quat9 to Max frequency");
         }
