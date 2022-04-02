@@ -41,7 +41,6 @@ public:
 
 private:
     MPU9250 imu{};
-    CalibrationConfig *calibration;
     bool dmpReady = false;    // set true if DMP init was successful
     uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
     uint8_t devStatus;        // return status after each device operation (0 = success, !0 = error)
@@ -59,6 +58,8 @@ private:
     // Loop timing globals
     unsigned long now = 0, last = 0; // micros() timers
     float deltat = 0;                // loop time in seconds
+
+    SlimeVR::Configuration::MPU9250CalibrationConfig m_Calibration;
 };
 
 #endif

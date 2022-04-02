@@ -9,12 +9,12 @@
 #include <Wire.h>
 
 #include "ota.h"
-#include "configuration.h"
+#include "configuration/Configuration.h"
 #include "helper_3dmath.h"
 #include "udpclient.h"
 #include "credentials.h"
 
-DeviceConfig config;
+SlimeVR::Configuration::DeviceConfig config;
 
 uint8_t portArray[] = {16, 5, 4, 0, 2, 14, 12, 13};
 //String portMap[] = {"D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7"}; //for Wemos

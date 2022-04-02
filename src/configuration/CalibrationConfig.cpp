@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -21,43 +21,25 @@
     THE SOFTWARE.
 */
 
-#include <EEPROM.h>
-#include "configuration.h"
+#include "CalibrationConfig.h"
 
-DeviceConfig config{};
-bool configLoaded;
-
-void initializeConfig() {
-    EEPROM.begin(sizeof(DeviceConfig) + 1);
-}
-
-bool hasConfigStored() {
-    bool hasConfigStored = false;
-    EEPROM.get(0, hasConfigStored);
-    return hasConfigStored;
-}
-
-DeviceConfig *const getConfigPtr()
-{
-    if (!configLoaded)
-    {
-        initializeConfig();
-        if (hasConfigStored())
-        {
-            EEPROM.get(1, config);
+namespace SlimeVR {
+    namespace Configuration {
+        const char* calibrationConfigTypeToString(CalibrationConfigType type) {
+            switch (type) {
+            case NONE:
+                return "NONE";
+            case BMI160:
+                return "BMI160";
+            case MPU6050:
+                return "MPU6050";
+            case MPU9250:
+                return "MPU9250";
+            case ICM20948:
+                return "ICM20948";
+            default:
+                return "UNKNOWN";
+            }
         }
-        configLoaded = true;
     }
-    return &config;
-}
-
-void setConfig(const DeviceConfig & newConfig) {
-    config = newConfig;
-    saveConfig();
-}
-
-void saveConfig() {
-    EEPROM.put(0, true);
-    EEPROM.put(1, config);
-    EEPROM.commit();
 }

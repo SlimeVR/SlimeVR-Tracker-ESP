@@ -27,7 +27,7 @@
 #include <Arduino.h>
 #include <quat.h>
 #include <vector3.h>
-#include "configuration.h"
+#include "configuration/Configuration.h"
 #include "globals.h"
 #include "logging/Logger.h"
 #include "utils.h"

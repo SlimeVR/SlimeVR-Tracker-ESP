@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 from enum import Enum
+from textwrap import dedent
 from typing import List
 
 COLOR_ESC = '\033['
@@ -24,11 +25,19 @@ class DeviceConfiguration:
         self.platformio_board = platformio_board
 
     def get_platformio_section(self) -> str:
-        return f"""
-[env:{self.platformio_board}]
-platform = {self.platform}
-board = {self.platformio_board}
-"""
+        section = dedent(f"""
+        [env:{self.platformio_board}]
+        platform = {self.platform}
+        board = {self.platformio_board}""")
+
+        if self.platform == "espressif32":
+            section += dedent("""
+            lib_deps =
+                ${env.lib_deps}
+                lorol/LittleFS_esp32 @ 1.0.6
+            """)
+
+        return section
 
     def filename(self) -> str:
         return f"{self.platformio_board}.bin"

@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -33,13 +33,10 @@
 #include "network/network.h"
 #include <i2cscan.h>
 #include "calibration.h"
-#include "configuration.h"
 #include "GlobalVars.h"
 
 void MPU6050Sensor::motionSetup()
 {
-    //DeviceConfig * const config = getConfigPtr();
-
     imu.initialize(addr);
     if (!imu.testConnection())
     {
@@ -48,6 +45,28 @@ void MPU6050Sensor::motionSetup()
     }
 
     m_Logger.info("Connected to MPU6050 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+
+#ifndef IMU_MPU6050_RUNTIME_CALIBRATION
+    // Initialize the configuration
+    {
+        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        // If no compatible calibration data is found, the calibration data will just be zero-ed out
+        switch (sensorCalibration.type) {
+        case SlimeVR::Configuration::CalibrationConfigType::MPU6050:
+            m_Calibration = sensorCalibration.data.mpu6050;
+            break;
+
+        case SlimeVR::Configuration::CalibrationConfigType::NONE:
+            m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Calibration is advised");
+            break;
+
+        default:
+            m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Calibration is advised");
+        }
+    }
+#endif
 
     devStatus = imu.dmpInitialize();
 
@@ -157,27 +176,29 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
 
     m_Logger.debug("Gathered baseline gyro reading");
     m_Logger.debug("Starting offset finder");
-    DeviceConfig *const config = getConfigPtr();
-
     switch (calibrationType)
     {
     case CALIBRATION_TYPE_INTERNAL_ACCEL:
         imu.CalibrateAccel(10);
         Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_ACCEL, 0);//doesn't send calibration data anymore, has that been depricated in server?
-        config->calibration->A_B[0] = imu.getXAccelOffset();
-        config->calibration->A_B[1] = imu.getYAccelOffset();
-        config->calibration->A_B[2] = imu.getZAccelOffset();
-        saveConfig();
+        m_Calibration.A_B[0] = imu.getXAccelOffset();
+        m_Calibration.A_B[1] = imu.getYAccelOffset();
+        m_Calibration.A_B[2] = imu.getZAccelOffset();
         break;
     case CALIBRATION_TYPE_INTERNAL_GYRO:
         imu.CalibrateGyro(10);
         Network::sendCalibrationFinished(CALIBRATION_TYPE_INTERNAL_GYRO, 0);//doesn't send calibration data anymore
-        config->calibration->G_off[0] = imu.getXGyroOffset();
-        config->calibration->G_off[1] = imu.getYGyroOffset();
-        config->calibration->G_off[2] = imu.getZGyroOffset();
-        saveConfig();
+        m_Calibration.G_off[0] = imu.getXGyroOffset();
+        m_Calibration.G_off[1] = imu.getYGyroOffset();
+        m_Calibration.G_off[2] = imu.getZGyroOffset();
         break;
     }
+
+    SlimeVR::Configuration::CalibrationConfig calibration;
+    calibration.type = SlimeVR::Configuration::CalibrationConfigType::MPU6050;
+    calibration.data.mpu6050 = m_Calibration;
+    configuration.setCalibration(sensorId, calibration);
+    configuration.save();
 
     m_Logger.info("Calibration finished");
 #endif // !IMU_MPU6050_RUNTIME_CALIBRATION
