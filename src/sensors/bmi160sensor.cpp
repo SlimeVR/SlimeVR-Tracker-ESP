@@ -231,7 +231,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     m_Calibration.G_off[2] = rawGxyz[2] / gyroCalibrationSamples;
 
 #ifdef DEBUG_SENSOR
-    m_Logger.trace("Gyro calibration results: %f %f %f", UNPACK_VECTOR_ARRAY(m_Calibration[sensorId].G_off));
+    m_Logger.trace("Gyro calibration results: %f %f %f", UNPACK_VECTOR_ARRAY(m_Calibration.G_off));
 #endif
 
     // Blink calibrating led before user should rotate the sensor
