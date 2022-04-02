@@ -399,13 +399,14 @@ void ICM20948Sensor::motionLoop() {
         }
         else 
         {
-            if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) 
-            {
+            if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) {
                 dataavaliable = false;
+            } else if (readStatus == ICM_20948_Stat_FIFOMoreDataAvail) {
+                dataavaliable = true;
             }
+            // Sorry for this horrible formatting
 #ifdef DEBUG_SENSOR
-            else 
-            {
+            else {
                 m_Logger.trace("e0x%02x", readStatus);
             }
 #endif
