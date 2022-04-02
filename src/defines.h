@@ -26,13 +26,13 @@
 // ================================================
 
 // Set parameters of IMU and board used
-#define IMU IMU_ICM20948
+#define IMU IMU_BNO085
 #define SECOND_IMU IMU
-#define BOARD BOARD_WEMOSD1MINI
-#define IMU_ROTATION DEG_270
+#define BOARD BOARD_SLIMEVR
+#define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
 
-#define USE_6_AXIS false // uses 9 (with mag) if false (only for ICM-20948 currently)
+#define USE_6_AXIS true // uses 9 (with mag) if false (only for ICM-20948 currently)
 
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin, 
