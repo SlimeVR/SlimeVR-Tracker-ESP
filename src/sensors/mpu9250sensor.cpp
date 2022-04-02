@@ -27,8 +27,8 @@
 #include "calibration.h"
 #include "magneto1.4.h"
 #include "GlobalVars.h"
-#include "mahony.h"
-#include "madgwick.h"
+//#include "mahony.h"
+//#include "madgwick.h"
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
 #include "dmpmag.h"
 #endif
