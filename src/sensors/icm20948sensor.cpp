@@ -210,7 +210,32 @@ void ICM20948Sensor::motionSetup() {
     }
 
     // Might need to set up other DMP functions later, just Quad6/Quad9 for now
-
+    #if MAX_ODR
+    if (USE_6_AXIS)
+    {
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 0) == ICM_20948_Stat_Ok)
+        {
+            m_Logger.debug("Set Quat6 to Max frequency");
+        }
+        else
+        {
+           m_Logger.fatal("Failed to set Quat6 to Max frequency");
+            return;
+        }
+    }
+    else
+    {
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok)
+        {
+            m_Logger.debug("Set Quat9 to Max frequency");
+        }
+        else
+        {
+           m_Logger.fatal("Failed to set Quat9 to Max frequency");
+            return;
+        }
+    }
+    #else
     if (USE_6_AXIS)
     {
         if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 1.25) == ICM_20948_Stat_Ok)
@@ -235,6 +260,7 @@ void ICM20948Sensor::motionSetup() {
             return;
         }
     }
+    #endif
 
     // Enable the FIFO
     if(imu.enableFIFO() == ICM_20948_Stat_Ok)
