@@ -32,7 +32,6 @@
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
 
-#define USE_6_AXIS true // uses 9 (with mag) if false (only for ICM-20948 currently)
 
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin, 
