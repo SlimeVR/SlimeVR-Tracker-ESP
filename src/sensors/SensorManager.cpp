@@ -120,6 +120,12 @@ namespace SlimeVR
             }
         }
 
+        void SensorManager::postSetup()
+        {
+            m_Sensor1->postSetup();
+            m_Sensor2->postSetup();
+        }
+
         void SensorManager::update()
         {
             // Gather IMU data

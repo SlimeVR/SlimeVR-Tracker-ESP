@@ -136,7 +136,7 @@ void ICM20948Sensor::load_bias() {
     imu.GetBiasCPassY(&bias_compass[1]);
     imu.GetBiasCPassZ(&bias_compass[2]);
 
-        #ifdef FULL_DEBUG
+        #ifdef DEBUG_SENSOR
     m_Logger.trace("All set bias should be 90");
 
     m_Logger.trace("Gyrometer bias    : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_gyro));
@@ -148,7 +148,7 @@ void ICM20948Sensor::load_bias() {
 }
 
 void ICM20948Sensor::motionSetup() {
-    #ifdef FULL_DEBUG
+    #ifdef DEBUG_SENSOR
         imu.enableDebugging(Serial);
     #endif
     // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
@@ -399,13 +399,14 @@ void ICM20948Sensor::motionLoop() {
         }
         else 
         {
-            if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) 
-            {
+            if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) {
                 dataavaliable = false;
+            } else if (readStatus == ICM_20948_Stat_FIFOMoreDataAvail) {
+                dataavaliable = true;
             }
+            // Sorry for this horrible formatting
 #ifdef DEBUG_SENSOR
-            else 
-            {
+            else {
                 m_Logger.trace("e0x%02x", readStatus);
             }
 #endif

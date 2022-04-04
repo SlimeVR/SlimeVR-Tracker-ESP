@@ -83,7 +83,7 @@ namespace SlimeVR {
 
             m_Logger.info("Loaded configuration");
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_CONFIGURATION
             print();
 #endif
         }

@@ -88,6 +88,8 @@ void setup()
 
     statusManager.setStatus(SlimeVR::Status::LOADING, false);
 
+    sensorManager.postSetup();
+
     loopTime = micros();
 }
 

@@ -34,6 +34,10 @@ public:
         : Sensor("BNO080Sensor", type, id, address, rotation), m_IntPin(intPin) {};
     ~BNO080Sensor(){};
     void motionSetup() override final;
+    void postSetup() override {
+        lastData = millis();
+    }
+
     void motionLoop() override final;
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
