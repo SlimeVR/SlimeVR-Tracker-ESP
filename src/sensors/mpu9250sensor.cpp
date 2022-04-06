@@ -27,13 +27,15 @@
 #include "calibration.h"
 #include "magneto1.4.h"
 #include "GlobalVars.h"
-//#include "mahony.h"
-//#include "madgwick.h"
+// #include "mahony.h"
+// #include "madgwick.h"
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
 #include "dmpmag.h"
 #endif
 
+#if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
 constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
+#endif
 
 #define SKIP_CALC_MAG_INTERVAL 10
 #define MAG_CORR_RATIO 0.2
@@ -164,11 +166,11 @@ void MPU9250Sensor::motionLoop() {
     last = now;
     getMPUScaled();
     
-#if defined(_MAHONY_H_))
+    #if defined(_MAHONY_H_))
     mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
-#elif defined(_MADGWICK_H_))
+    #elif defined(_MADGWICK_H_))
     madgwickQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
-#endif
+    #endif
     quaternion.set(-q[2], q[1], q[3], q[0]);
 
 #endif
