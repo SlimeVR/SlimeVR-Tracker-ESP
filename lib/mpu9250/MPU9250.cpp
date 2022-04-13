@@ -3310,8 +3310,8 @@ int8_t MPU9250_Base::GetCurrentFIFOPacket(uint8_t *data, uint8_t length) { // ov
         // Count only full packets and read them into buffer
         fifoCounter = length * (fifoCounter / length);
         do {
-            uint8_t i2cBuf[BUFFER_LENGTH] = {0};
-            uint8_t readBytes = min(fifoCounter, (uint16_t)BUFFER_LENGTH);
+            uint8_t i2cBuf[I2CDEVLIB_WIRE_BUFFER_LENGTH] = {0};
+            uint8_t readBytes = min(fifoCounter, (uint16_t)I2CDEVLIB_WIRE_BUFFER_LENGTH);
             getFIFOBytes(i2cBuf, readBytes);
             for (uint8_t i = 0; i < readBytes; i++) {
                 fifoBuf[i + bytesCounter] = i2cBuf[i];
