@@ -40,14 +40,14 @@ namespace SlimeVR
     void LEDManager::on()
     {
 #if ENABLE_LEDS
-        digitalWrite(m_Pin, LED_ON);
+        digitalWrite(m_Pin, LED__ON);
 #endif
     }
 
     void LEDManager::off()
     {
 #if ENABLE_LEDS
-        digitalWrite(m_Pin, LED_OFF);
+        digitalWrite(m_Pin, LED__OFF);
 #endif
     }
 
