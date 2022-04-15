@@ -66,11 +66,11 @@
 #endif
 
 #if LED_INVERTED
-#define LED_ON LOW
-#define LED_OFF HIGH
+#define LED__ON LOW
+#define LED__OFF HIGH
 #else
-#define LED_ON HIGH
-#define LED_OFF LOW
+#define LED__ON HIGH
+#define LED__OFF LOW
 #endif
 
 #endif // SLIMEVR_GLOBALS_H_
