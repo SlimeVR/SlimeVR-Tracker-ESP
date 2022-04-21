@@ -5,7 +5,7 @@
     "board": "SLIMEVR"
   },
   {
-    "platform": "espressif32",
+    "platform": "espressif32 @ 3.5.0",
     "platformio_board": "esp32dev",
     "board": "WROOM32"
   }

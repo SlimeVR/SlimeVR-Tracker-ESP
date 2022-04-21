@@ -51,7 +51,7 @@
     #endif
 #else
     // LED_PIN is not defined
-    #if defined(LED_BUILTIN)
+    #if defined(LED_BUILTIN) && (LED_BUILTIN < LED_OFF) && (LED_BUILTIN >= 0)
         #define LED_PIN LED_BUILTIN
         #define ENABLE_LEDS true
     #else
