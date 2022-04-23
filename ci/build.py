@@ -30,7 +30,7 @@ class DeviceConfiguration:
         platform = {self.platform}
         board = {self.platformio_board}""")
 
-        if self.platform == "espressif32":
+        if self.platform == "espressif32 @ 3.5.0":
             section += dedent("""
             lib_deps =
                 ${env.lib_deps}
@@ -48,7 +48,8 @@ class DeviceConfiguration:
         imu_int = ""
         imu_int2 = ""
         battery_level = ""
-        leds = True
+        led_pin = 2
+        led_invert = False
 
         if self.board == Board.SLIMEVR:
             sda = "4"
@@ -56,6 +57,7 @@ class DeviceConfiguration:
             imu_int = "10"
             imu_int2 = "13"
             battery_level = "17"
+            led_invert = True
         elif self.board == Board.WROOM32:
             sda = "21"
             scl = "22"
@@ -69,18 +71,19 @@ class DeviceConfiguration:
 #define IMU IMU_BNO085
 #define SECOND_IMU IMU
 #define BOARD {self.board.value}
+#define IMU_ROTATION DEG_90
+#define SECOND_IMU_ROTATION DEG_90
+
 #define BATTERY_MONITOR BAT_EXTERNAL
+#define BATTERY_SHIELD_RESISTANCE 180
 
 #define PIN_IMU_SDA {sda}
 #define PIN_IMU_SCL {scl}
 #define PIN_IMU_INT {imu_int}
 #define PIN_IMU_INT_2 {imu_int2}
 #define PIN_BATTERY_LEVEL {battery_level}
-#define ENABLE_LEDS {leds.__str__().lower()}
-
-#define BATTERY_SHIELD_RESISTANCE 180
-#define IMU_ROTATION DEG_90
-#define SECOND_IMU_ROTATION DEG_90
+#define LED_PIN {led_pin}
+#define LED_INVERTED {led_invert.__str__().lower()}
 """
 
     def __str__(self) -> str:
