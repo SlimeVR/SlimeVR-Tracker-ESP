@@ -44,11 +44,22 @@ namespace SlimeVR {
                 return;
             }
 
-#if ESP32
-            LittleFS.begin(true);
-#else
-            LittleFS.begin();
-#endif
+            bool status = LittleFS.begin();
+            if (!status) {
+                this->m_Logger.warn("Could not mount LittleFS, formatting");
+
+                status = LittleFS.format();
+                if (!status) {
+                    this->m_Logger.warn("Could not format LittleFS, aborting");
+                    return;
+                }
+
+                status = LittleFS.begin();
+                if (!status) {
+                    this->m_Logger.error("Could not mount LittleFS, aborting");
+                    return;
+                }
+            }
 
             if (LittleFS.exists("/config.bin")) {
                 m_Logger.trace("Found configuration file");
