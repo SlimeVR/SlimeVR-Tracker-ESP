@@ -45,6 +45,9 @@
     #define ADCVoltageMax 1.0
 #endif
 
+#ifndef BATTERY_SHIELD_RESISTANCE
+    #define BATTERY_SHIELD_RESISTANCE 0.0
+#endif
 #ifndef BATTERY_SHIELD_R1
     #define BATTERY_SHIELD_R1 100.0
 #endif

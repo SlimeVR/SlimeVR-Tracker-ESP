@@ -42,10 +42,10 @@ constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB
 void MPU9250Sensor::motionSetup() {
     // initialize device
     imu.initialize(addr);
-    if(!imu.testConnection()) {
-        m_Logger.fatal("Can't connect to MPU9250 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
-        return;
-    }
+    //if(!imu.testConnection()) {
+    //    m_Logger.fatal("Can't connect to MPU9250 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+    //    return;
+    //}
 
     m_Logger.info("Connected to MPU9250 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
 

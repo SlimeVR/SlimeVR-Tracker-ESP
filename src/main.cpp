@@ -54,7 +54,13 @@ void setup()
     Serial.println();
     Serial.println();
     Serial.println();
-
+    
+    pinMode(33, OUTPUT);
+    digitalWrite(33, LOW);
+    pinMode(32, OUTPUT);
+    digitalWrite(32, HIGH);
+    // add pin power for ext imus too
+    
     logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
 
     //wifi_set_sleep_type(NONE_SLEEP_T);
@@ -65,17 +71,6 @@ void setup()
     configuration.setup();
 
     SerialCommands::setUp();
-
-#if IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_MPU9250
-    I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); // Make sure the bus isn't stuck when resetting ESP without powering it down
-    // Do it only for MPU, cause reaction of BNO to this is not investigated yet
-#endif
-    // join I2C bus
-    Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
-#ifdef ESP8266
-    Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
-#endif
-    Wire.setClock(I2C_SPEED);
 
     // Wait for IMU to boot
     delay(500);
@@ -97,8 +92,15 @@ void loop()
 {
     SerialCommands::update();
     OTA::otaUpdate();
-    Network::update(sensorManager.getFirst(), sensorManager.getSecond());
+//#ifdef ESP32
+//    for (uint8_t i=0; i<12; i+=2) {
+//#else
+//    for (uint8_t i=0; i<6; i==i+2) {
+//#endif
+//        Network::update(sensorManager.get(i), sensorManager.get(i+1));
+//    }
     sensorManager.update();
+    Network::update(sensorManager.get());
     battery.Loop();
     ledManager.update();
 

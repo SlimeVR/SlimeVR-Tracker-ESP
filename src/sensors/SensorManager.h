@@ -37,11 +37,11 @@ namespace SlimeVR
         {
         public:
             SensorManager()
-                : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensor1(new EmptySensor(0)), m_Sensor2(new EmptySensor(0)) {}
+                : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensor{new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0)} {}
             ~SensorManager()
             {
-                delete m_Sensor1;
-                delete m_Sensor2;
+                for (int i=0; i<12; i++)
+                    delete m_Sensor[i];
             }
 
             void setup();
@@ -49,14 +49,13 @@ namespace SlimeVR
 
             void update();
 
-            Sensor *getFirst() { return m_Sensor1; };
-            Sensor *getSecond() { return m_Sensor2; };
+            Sensor *get(int id) { return m_Sensor[id]; };
+            Sensor **get() { return m_Sensor; };
 
         private:
             SlimeVR::Logging::Logger m_Logger;
 
-            Sensor *m_Sensor1;
-            Sensor *m_Sensor2;
+            Sensor *m_Sensor[12];
         };
     }
 }

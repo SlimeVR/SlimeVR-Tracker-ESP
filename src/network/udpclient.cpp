@@ -42,6 +42,7 @@ bool connected = false;
 
 uint8_t sensorStateNotified1 = 0;
 uint8_t sensorStateNotified2 = 0;
+uint8_t sensorStateNotified[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned long lastSensorInfoPacket = 0;
 
 uint8_t serialBuffer[128];
@@ -376,7 +377,7 @@ void Network::sendHandshake() {
         // This is kept for backwards compatibility,
         // but the latest SlimeVR server will not initialize trackers
         // with firmware build > 8 until it recieves sensor info packet
-        DataTransfer::sendInt(IMU);
+        DataTransfer::sendInt(IMU_A1);
         DataTransfer::sendInt(HARDWARE_MCU);
         DataTransfer::sendInt(0); 
         DataTransfer::sendInt(0);
@@ -561,6 +562,18 @@ void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
     }
 }
 
+void updateSensorState(Sensor *sensors[]) {
+    if(millis() - lastSensorInfoPacket > 1000) 
+    {
+        lastSensorInfoPacket = millis();
+        for (int i=0; i<12; i++) {
+            if(sensors[i]->isWorking())
+                if(sensorStateNotified[i] != sensors[i]->getSensorState())
+                     Network::sendSensorInfo(sensors[i]);
+        }
+    }
+}
+
 bool ServerConnection::isConnected() {
     return connected;
 }
@@ -691,5 +704,73 @@ void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
         connect();
     } else if(sensorStateNotified1 != sensor->isWorking() || sensorStateNotified2 != sensor2->isWorking()) {
         updateSensorState(sensor, sensor2);
+    }
+}
+
+void ServerConnection::update(Sensor *sensors[]) {
+    if(connected) {
+        int packetSize = Udp.parsePacket();
+        if (packetSize)
+        {
+            lastPacketMs = millis();
+            int len = Udp.read(incomingPacket, sizeof(incomingPacket));
+            // receive incoming UDP packets
+
+#ifdef DEBUG_NETWORK
+            udpClientLogger.trace("Received %d bytes from %s, port %d", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+            udpClientLogger.traceArray("UDP packet contents: ", incomingPacket, len);
+#endif
+
+            switch (convert_chars<int>(incomingPacket))
+            {
+            case PACKET_RECEIVE_HEARTBEAT:
+                Network::sendHeartbeat();
+                break;
+            case PACKET_RECEIVE_VIBRATE:
+                
+                break;
+            case PACKET_RECEIVE_HANDSHAKE:
+                // Assume handshake successful
+                udpClientLogger.warn("Handshake received again, ignoring");
+                break;
+            case PACKET_RECEIVE_COMMAND:
+                
+                break;
+            case PACKET_CONFIG:
+                
+                break;
+            case PACKET_PING_PONG:
+                returnLastPacket(len);
+                break;
+            case PACKET_SENSOR_INFO:
+                if(len < 6) {
+                    udpClientLogger.warn("Wrong sensor info packet");
+                    break;
+                }
+                sensorStateNotified[incomingPacket[4]] = incomingPacket[5];
+                break;
+            }
+        }
+        //while(Serial.available()) {
+        //    size_t bytesRead = Serial.readBytes(serialBuffer, min(Serial.available(), sizeof(serialBuffer)));
+        //    sendSerial(serialBuffer, bytesRead, PACKET_SERIAL);
+        //}
+        if(lastPacketMs + TIMEOUT < millis())
+        {
+            statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
+
+            connected = false;
+            for (int i=0; i<12; i++)
+            {
+                sensorStateNotified[i] = false;
+            }
+            udpClientLogger.warn("Connection to server timed out");
+        }
+    }
+        
+    if(!connected) {
+        connect();
+    } else {
+        updateSensorState(sensors);
     }
 }

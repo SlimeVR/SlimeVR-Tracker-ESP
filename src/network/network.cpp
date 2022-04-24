@@ -40,3 +40,16 @@ void Network::update(Sensor * const sensor, Sensor * const sensor2) {
         lastWifiConnected = false;
     }
 }
+
+void Network::update(Sensor *sensors[]) {
+    WiFiNetwork::upkeep();
+    if(WiFiNetwork::isConnected()) {
+        if(lastWifiConnected == false) {
+            lastWifiConnected = true;
+            ServerConnection::resetConnection(); // WiFi was reconnected, reconnect to the server
+        }
+        ServerConnection::update(sensors);
+    } else {
+        lastWifiConnected = false;
+    }
+}

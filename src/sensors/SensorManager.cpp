@@ -36,101 +36,135 @@ namespace SlimeVR
 {
     namespace Sensors
     {
+        uint8_t imu[12] = {IMU_A1, IMU_A2, IMU_B1, IMU_B2, IMU_C1, IMU_C2, IMU_1A1, IMU_1A2, IMU_1B1, IMU_1B2, IMU_1C1, IMU_1C2};
+        double imuRotation[12] = {IMU_ROTATION_A1, IMU_ROTATION_A2, IMU_ROTATION_B1, IMU_ROTATION_B2, IMU_ROTATION_C1, IMU_ROTATION_C2, IMU_ROTATION_1A1, IMU_ROTATION_1A2, IMU_ROTATION_1B1, IMU_ROTATION_1B2, IMU_ROTATION_1C1, IMU_ROTATION_1C2};
+        uint8_t imuIntPin[12] = {PIN_IMU_INT_A1, PIN_IMU_INT_A2, PIN_IMU_INT_B1, PIN_IMU_INT_B2, PIN_IMU_INT_C1, PIN_IMU_INT_C2, PIN_IMU_INT_1A1, PIN_IMU_INT_1A2, PIN_IMU_INT_1B1, PIN_IMU_INT_1B2, PIN_IMU_INT_1C1, PIN_IMU_INT_1C2};
+        uint8_t imuSDAPin[2] = {PIN_IMU_SDA, PIN_IMU_SDA_1};
+        uint8_t imuSCLPin[6] = {PIN_IMU_SCL_A, PIN_IMU_SCL_B, PIN_IMU_SCL_C, PIN_IMU_SCL_1A, PIN_IMU_SCL_1B, PIN_IMU_SCL_1C};
+
         void SensorManager::setup()
         {
-            uint8_t firstIMUAddress = 0;
-            uint8_t secondIMUAddress = 0;
-
-            {
-#if IMU == IMU_BNO080 || IMU == IMU_BNO085 || IMU == IMU_BNO086
-                firstIMUAddress = I2CSCAN::pickDevice(0x4A, 0x4B, true);
-#elif IMU == IMU_BNO055
-                firstIMUAddress = I2CSCAN::pickDevice(0x29, 0x28, true);
-#elif IMU == IMU_MPU9250 || IMU == IMU_BMI160 || IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_ICM20948
-                firstIMUAddress = I2CSCAN::pickDevice(0x68, 0x69, true);
+            bool foundIMU = false;
+#ifdef ESP32
+            for (uint8_t i=0; i<12; i+=2) {
 #else
-#error Unsupported primary IMU
+            for (uint8_t i=0; i<6; i==i+2) {
 #endif
-
-                if (firstIMUAddress == 0)
-                {
-                    m_Sensor1 = new ErroneousSensor(0, IMU);
-                }
-                else
-                {
-                    m_Logger.trace("Primary IMU found at address 0x%02X", firstIMUAddress);
-
-#if IMU == IMU_BNO080 || IMU == IMU_BNO085 || IMU == IMU_BNO086
-                    m_Sensor1 = new BNO080Sensor(0, IMU, firstIMUAddress, IMU_ROTATION, PIN_IMU_INT);
-#elif IMU == IMU_BNO055
-                    m_Sensor1 = new BNO055Sensor(0, firstIMUAddress, IMU_ROTATION);
-#elif IMU == IMU_MPU9250
-                    m_Sensor1 = new MPU9250Sensor(0, firstIMUAddress, IMU_ROTATION);
-#elif IMU == IMU_BMI160
-                    m_Sensor1 = new BMI160Sensor(0, firstIMUAddress, IMU_ROTATION);
-#elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
-                    m_Sensor1 = new MPU6050Sensor(0, IMU, firstIMUAddress, IMU_ROTATION);
-#elif IMU == IMU_ICM20948
-                    m_Sensor1 = new ICM20948Sensor(0, firstIMUAddress, IMU_ROTATION);
+                uint8_t firstIMUAddress = 0;
+                uint8_t secondIMUAddress = 0;
+                Wire.begin(imuSDAPin[i/6], imuSCLPin[i/2]);
+#ifdef ESP8266
+                Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif
-                }
+                Wire.setClock(I2C_SPEED);
 
-                m_Sensor1->motionSetup();
+                {
+                    if (imu[i] == IMU_BNO080 || imu[i] == IMU_BNO085 || imu[i] == IMU_BNO086)
+                        firstIMUAddress = I2CSCAN::pickDevice(0x4A, 0x4B, true);
+                    else if (imu[i] == IMU_BNO055)
+                        firstIMUAddress = I2CSCAN::pickDevice(0x29, 0x28, true);
+                    else if (imu[i] == IMU_MPU9250 || imu[i] == IMU_BMI160 || imu[i] == IMU_MPU6500 || imu[i] == IMU_MPU6050 || imu[i] == IMU_ICM20948)
+                        firstIMUAddress = I2CSCAN::pickDevice(0x68, 0x69, true);
+
+                    if (firstIMUAddress == 0)
+                    {
+                        m_Sensor[i] = new ErroneousSensor(i, imu[i]);
+                    }
+                    else
+                    {
+                        foundIMU = true;
+                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i, imuSDAPin[i/6], imuSCLPin[i/2], firstIMUAddress);
+
+                        if (imu[i] == IMU_BNO080 || imu[i] == IMU_BNO085 || imu[i] == IMU_BNO086)
+                            m_Sensor[i] = new BNO080Sensor(i, imu[i], firstIMUAddress, imuRotation[i], imuIntPin[i]);
+                        else if (imu[i] == IMU_BNO055)
+                            m_Sensor[i] = new BNO055Sensor(i, firstIMUAddress, imuRotation[i]);
+                        else if (imu[i] == IMU_MPU9250)
+                            m_Sensor[i] = new MPU9250Sensor(i, firstIMUAddress, imuRotation[i]);
+                        else if (imu[i] == IMU_BMI160)
+                            m_Sensor[i] = new BMI160Sensor(i, firstIMUAddress, imuRotation[i]);
+                        else if (imu[i] == IMU_MPU6500 || imu[i] == IMU_MPU6050)
+                            m_Sensor[i] = new MPU6050Sensor(i, imu[i], firstIMUAddress, imuRotation[i]);
+                        else if (imu[i] == IMU_ICM20948)
+                            m_Sensor[i] = new ICM20948Sensor(i, firstIMUAddress, imuRotation[i]);
+                    }
+
+                    m_Sensor[i]->motionSetup();
+
+                    if (imu[i+1] == IMU_BNO080 || imu[i+1] == IMU_BNO085 || imu[i+1] == IMU_BNO086)
+                        secondIMUAddress = I2CSCAN::pickDevice(0x4B, 0x4A, true);
+                    else if (imu[i+1] == IMU_BNO055)
+                        secondIMUAddress = I2CSCAN::pickDevice(0x28, 0x29, true);
+                    else if (imu[i+1] == IMU_MPU9250 || imu[i+1] == IMU_BMI160 || imu[i+1] == IMU_MPU6500 || imu[i+1] == IMU_MPU6050 || imu[i+1] == IMU_ICM20948)
+                        secondIMUAddress = I2CSCAN::pickDevice(0x69, 0x68, true);
+
+                    if (firstIMUAddress != 0 && secondIMUAddress == firstIMUAddress)
+                    {
+                        m_Logger.debug("No secondary IMU on this group connected");
+                    }
+                    else if (secondIMUAddress == 0)
+                    {
+                        m_Sensor[i+1] = new ErroneousSensor(i+1, imu[i+1]);
+                    }
+                    else
+                    {
+                        foundIMU = true;
+                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i, imuSDAPin[i/6], imuSCLPin[i/2], secondIMUAddress);
+
+                        if (imu[i+1] == IMU_BNO080 || imu[i+1] == IMU_BNO085 || imu[i+1] == IMU_BNO086)
+                            m_Sensor[i+1] = new BNO080Sensor(i+1, imu[i+1], secondIMUAddress, imuRotation[i+1], imuIntPin[i+1]);
+                        else if (imu[i+1] == IMU_BNO055)
+                            m_Sensor[i+1] = new BNO055Sensor(i+1, secondIMUAddress, imuRotation[i+1]);
+                        else if (imu[i+1] == IMU_MPU9250)
+                            m_Sensor[i+1] = new MPU9250Sensor(i+1, secondIMUAddress, imuRotation[i+1]);
+                        else if (imu[i+1] == IMU_BMI160)
+                            m_Sensor[i+1] = new BMI160Sensor(i+1, secondIMUAddress, imuRotation[i+1]);
+                        else if (imu[i+1] == IMU_MPU6500 || imu[i+1] == IMU_MPU6050)
+                            m_Sensor[i+1] = new MPU6050Sensor(i+1, imu[i+1], secondIMUAddress, imuRotation[i+1]);
+                        else if (imu[i+1] == IMU_ICM20948)
+                            m_Sensor[i+1] = new ICM20948Sensor(i+1, secondIMUAddress, imuRotation[i+1]);
+                    }
+
+                    m_Sensor[i+1]->motionSetup();
+                }
             }
-
-            {
-#if SECOND_IMU == IMU_BNO080 || SECOND_IMU == IMU_BNO085 || SECOND_IMU == IMU_BNO086
-                secondIMUAddress = I2CSCAN::pickDevice(0x4B, 0x4A, false);
-#elif SECOND_IMU == IMU_BNO055
-                secondIMUAddress = I2CSCAN::pickDevice(0x28, 0x29, false);
-#elif SECOND_IMU == IMU_MPU9250 || SECOND_IMU == IMU_BMI160 || SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050 || SECOND_IMU == IMU_ICM20948
-                secondIMUAddress = I2CSCAN::pickDevice(0x69, 0x68, false);
-#else
-#error Unsupported secondary IMU
-#endif
-
-                if (secondIMUAddress == firstIMUAddress)
-                {
-                    m_Logger.debug("No secondary IMU connected");
-                }
-                else if (secondIMUAddress == 0)
-                {
-                    m_Sensor2 = new ErroneousSensor(1, SECOND_IMU);
-                }
-                else
-                {
-                    m_Logger.trace("Secondary IMU found at address 0x%02X", secondIMUAddress);
-
-#if SECOND_IMU == IMU_BNO080 || SECOND_IMU == IMU_BNO085 || SECOND_IMU == IMU_BNO086
-                    m_Sensor2 = new BNO080Sensor(1, IMU, secondIMUAddress, SECOND_IMU_ROTATION, PIN_IMU_INT_2);
-#elif SECOND_IMU == IMU_BNO055
-                    m_Sensor2 = new BNO055Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
-#elif SECOND_IMU == IMU_MPU9250
-                    m_Sensor2 = new MPU9250Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
-#elif SECOND_IMU == IMU_BMI160
-                    m_Sensor2 = new BMI160Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
-#elif SECOND_IMU == IMU_MPU6500 || IMU == IMU_MPU6050
-                    m_Sensor2 = new MPU6050Sensor(1, IMU, secondIMUAddress, SECOND_IMU_ROTATION);
-#elif SECOND_IMU == IMU_ICM20948
-                    m_Sensor2 = new ICM20948Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
-#endif
-                }
-
-                m_Sensor2->motionSetup();
+            if (!foundIMU) {
+                Serial.println("[ERR] I2C: Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
+                I2CSCAN::scani2cports();
             }
         }
 
         void SensorManager::postSetup()
         {
-            m_Sensor1->postSetup();
-            m_Sensor2->postSetup();
+#ifdef ESP32
+            for (uint8_t i=0; i<12; i++) {
+#else
+            for (uint8_t i=0; i<6; i++) {
+#endif
+                Wire.begin(imuSDAPin[i/6], imuSCLPin[i/2]);
+#ifdef ESP8266
+                Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
+#endif
+                Wire.setClock(I2C_SPEED);
+                m_Sensor[i]->postSetup();
+            }
         }
 
         void SensorManager::update()
         {
             // Gather IMU data
-            m_Sensor1->motionLoop();
-            m_Sensor2->motionLoop();
+#ifdef ESP32
+            for (uint8_t i=0; i<12; i++) {
+#else
+            for (uint8_t i=0; i<6; i++) {
+#endif
+                Wire.begin(imuSDAPin[i/6], imuSCLPin[i/2]);
+#ifdef ESP8266
+                Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
+#endif
+                Wire.setClock(I2C_SPEED);
+                m_Sensor[i]->motionLoop();
+            }
 
             if (!ServerConnection::isConnected())
             {
@@ -138,8 +172,18 @@ namespace SlimeVR
             }
 
             // Send updates
-            m_Sensor1->sendData();
-            m_Sensor2->sendData();
+#ifdef ESP32
+            for (uint8_t i=0; i<12; i++) {
+#else
+            for (uint8_t i=0; i<6; i++) {
+#endif
+                Wire.begin(imuSDAPin[i/6], imuSCLPin[i/2]);
+#ifdef ESP8266
+                Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
+#endif
+                Wire.setClock(I2C_SPEED);
+                m_Sensor[i]->sendData();
+            }
         }
     }
 }
