@@ -42,7 +42,7 @@ bool connected = false;
 
 uint8_t sensorStateNotified1 = 0;
 uint8_t sensorStateNotified2 = 0;
-uint8_t sensorStateNotified[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t sensorStateNotified[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned long lastSensorInfoPacket = 0;
 
 uint8_t serialBuffer[128];
@@ -566,7 +566,7 @@ void updateSensorState(Sensor *sensors[]) {
     if(millis() - lastSensorInfoPacket > 1000) 
     {
         lastSensorInfoPacket = millis();
-        for (int i=0; i<12; i++) {
+        for (int i=0; i<16; i++) {
             if(sensors[i]->isWorking())
                 if(sensorStateNotified[i] != sensors[i]->getSensorState())
                      Network::sendSensorInfo(sensors[i]);
@@ -760,7 +760,7 @@ void ServerConnection::update(Sensor *sensors[]) {
             statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 
             connected = false;
-            for (int i=0; i<12; i++)
+            for (int i=0; i<16; i++)
             {
                 sensorStateNotified[i] = false;
             }

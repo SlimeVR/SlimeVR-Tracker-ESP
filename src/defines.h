@@ -34,46 +34,60 @@
 #define IMU_B2 IMU_MPU9250
 #define IMU_C1 IMU_MPU9250
 #define IMU_C2 IMU_MPU9250
+#define IMU_D1 IMU_MPU9250
+#define IMU_D2 IMU_MPU9250
 #define IMU_ROTATION_A1 DEG_90
 #define IMU_ROTATION_A2 DEG_90
 #define IMU_ROTATION_B1 DEG_90
 #define IMU_ROTATION_B2 DEG_90
 #define IMU_ROTATION_C1 DEG_90
 #define IMU_ROTATION_C2 DEG_90
+#define IMU_ROTATION_D1 DEG_90
+#define IMU_ROTATION_D2 DEG_90
 //#define PIN_IMU_SDA 26
 //#define PIN_IMU_SCL_A 25
 #define PIN_IMU_SCL_B 15
 #define PIN_IMU_SCL_C 2
+#define PIN_IMU_SCL_D 0
 //#define PIN_IMU_INT_A1 255
 //#define PIN_IMU_INT_A2 255
 #define PIN_IMU_INT_B1 255
 #define PIN_IMU_INT_B2 255
 #define PIN_IMU_INT_C1 255
 #define PIN_IMU_INT_C2 255
+#define PIN_IMU_INT_D1 255
+#define PIN_IMU_INT_D2 255
 
-// Usable with ESP32 (Wire1) only
+// Usable with ESP32 (Wire1) only?
 #define IMU_1A1 IMU_MPU9250
 #define IMU_1A2 IMU_MPU9250
 #define IMU_1B1 IMU_MPU9250
 #define IMU_1B2 IMU_MPU9250
 #define IMU_1C1 IMU_MPU9250
 #define IMU_1C2 IMU_MPU9250
+#define IMU_1D1 IMU_MPU9250
+#define IMU_1D2 IMU_MPU9250
 #define IMU_ROTATION_1A1 DEG_90
 #define IMU_ROTATION_1A2 DEG_90
 #define IMU_ROTATION_1B1 DEG_90
 #define IMU_ROTATION_1B2 DEG_90
 #define IMU_ROTATION_1C1 DEG_90
 #define IMU_ROTATION_1C2 DEG_90
+#define IMU_ROTATION_1D1 DEG_90
+#define IMU_ROTATION_1D2 DEG_90
 #define PIN_IMU_SDA_1 23
-#define PIN_IMU_SCL_1A 0
-#define PIN_IMU_SCL_1B 4
-#define PIN_IMU_SCL_1C 16
+#define PIN_IMU_SCL_1A 4
+#define PIN_IMU_SCL_1B 16
+#define PIN_IMU_SCL_1C 17
+#define PIN_IMU_SCL_1D 5
 #define PIN_IMU_INT_1A1 255
 #define PIN_IMU_INT_1A2 255
 #define PIN_IMU_INT_1B1 255
 #define PIN_IMU_INT_1B2 255
 #define PIN_IMU_INT_1C1 255
 #define PIN_IMU_INT_1C2 255
+#define PIN_IMU_INT_1D1 255
+#define PIN_IMU_INT_1D2 255
 
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin, 

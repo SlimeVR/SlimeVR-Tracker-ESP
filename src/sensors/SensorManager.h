@@ -37,10 +37,10 @@ namespace SlimeVR
         {
         public:
             SensorManager()
-                : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensor{new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0)} {}
+                : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensor{new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0), new EmptySensor(0)} {}
             ~SensorManager()
             {
-                for (int i=0; i<12; i++)
+                for (int i=0; i<16; i++)
                     delete m_Sensor[i];
             }
 
@@ -55,7 +55,7 @@ namespace SlimeVR
         private:
             SlimeVR::Logging::Logger m_Logger;
 
-            Sensor *m_Sensor[12];
+            Sensor *m_Sensor[16];
         };
     }
 }

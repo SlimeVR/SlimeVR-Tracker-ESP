@@ -36,23 +36,23 @@ namespace SlimeVR
 {
     namespace Sensors
     {
-        uint8_t imu[12] = {IMU_A1, IMU_A2, IMU_B1, IMU_B2, IMU_C1, IMU_C2, IMU_1A1, IMU_1A2, IMU_1B1, IMU_1B2, IMU_1C1, IMU_1C2};
-        double imuRotation[12] = {IMU_ROTATION_A1, IMU_ROTATION_A2, IMU_ROTATION_B1, IMU_ROTATION_B2, IMU_ROTATION_C1, IMU_ROTATION_C2, IMU_ROTATION_1A1, IMU_ROTATION_1A2, IMU_ROTATION_1B1, IMU_ROTATION_1B2, IMU_ROTATION_1C1, IMU_ROTATION_1C2};
-        uint8_t imuIntPin[12] = {PIN_IMU_INT_A1, PIN_IMU_INT_A2, PIN_IMU_INT_B1, PIN_IMU_INT_B2, PIN_IMU_INT_C1, PIN_IMU_INT_C2, PIN_IMU_INT_1A1, PIN_IMU_INT_1A2, PIN_IMU_INT_1B1, PIN_IMU_INT_1B2, PIN_IMU_INT_1C1, PIN_IMU_INT_1C2};
+        uint8_t imu[16] = {IMU_A1, IMU_A2, IMU_B1, IMU_B2, IMU_C1, IMU_C2, IMU_D1, IMU_D2, IMU_1A1, IMU_1A2, IMU_1B1, IMU_1B2, IMU_1C1, IMU_1C2, IMU_1D1, IMU_1D2};
+        double imuRotation[16] = {IMU_ROTATION_A1, IMU_ROTATION_A2, IMU_ROTATION_B1, IMU_ROTATION_B2, IMU_ROTATION_C1, IMU_ROTATION_C2, IMU_ROTATION_D1, IMU_ROTATION_D2, IMU_ROTATION_1A1, IMU_ROTATION_1A2, IMU_ROTATION_1B1, IMU_ROTATION_1B2, IMU_ROTATION_1C1, IMU_ROTATION_1C2, IMU_ROTATION_1D1, IMU_ROTATION_1D2};
+        uint8_t imuIntPin[16] = {PIN_IMU_INT_A1, PIN_IMU_INT_A2, PIN_IMU_INT_B1, PIN_IMU_INT_B2, PIN_IMU_INT_C1, PIN_IMU_INT_C2, PIN_IMU_INT_D1, PIN_IMU_INT_D2, PIN_IMU_INT_1A1, PIN_IMU_INT_1A2, PIN_IMU_INT_1B1, PIN_IMU_INT_1B2, PIN_IMU_INT_1C1, PIN_IMU_INT_1C2, PIN_IMU_INT_1D1, PIN_IMU_INT_1D2};
         uint8_t imuSDAPin[2] = {PIN_IMU_SDA, PIN_IMU_SDA_1};
-        uint8_t imuSCLPin[6] = {PIN_IMU_SCL_A, PIN_IMU_SCL_B, PIN_IMU_SCL_C, PIN_IMU_SCL_1A, PIN_IMU_SCL_1B, PIN_IMU_SCL_1C};
+        uint8_t imuSCLPin[8] = {PIN_IMU_SCL_A, PIN_IMU_SCL_B, PIN_IMU_SCL_C, PIN_IMU_SCL_D, PIN_IMU_SCL_1A, PIN_IMU_SCL_1B, PIN_IMU_SCL_1C, PIN_IMU_SCL_1D};
 
         void SensorManager::setup()
         {
             bool foundIMU = false;
 #ifdef ESP32
-            for (uint8_t i=0; i<12; i+=2) {
+            for (uint8_t i=0; i<16; i+=2) {
 #else
-            for (uint8_t i=0; i<6; i==i+2) {
+            for (uint8_t i=0; i<8; i==i+2) {
 #endif
                 uint8_t firstIMUAddress = 0;
                 uint8_t secondIMUAddress = 0;
-                Wire.begin(imuSDAPin[i/6], imuSCLPin[i/2]);
+                Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
 #ifdef ESP8266
                 Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif
@@ -73,7 +73,7 @@ namespace SlimeVR
                     else
                     {
                         foundIMU = true;
-                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i, imuSDAPin[i/6], imuSCLPin[i/2], firstIMUAddress);
+                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i, imuSDAPin[i/8], imuSCLPin[i/2], firstIMUAddress);
 
                         if (imu[i] == IMU_BNO080 || imu[i] == IMU_BNO085 || imu[i] == IMU_BNO086)
                             m_Sensor[i] = new BNO080Sensor(i, imu[i], firstIMUAddress, imuRotation[i], imuIntPin[i]);
@@ -109,7 +109,7 @@ namespace SlimeVR
                     else
                     {
                         foundIMU = true;
-                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i, imuSDAPin[i/6], imuSCLPin[i/2], secondIMUAddress);
+                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i, imuSDAPin[i/8], imuSCLPin[i/2], secondIMUAddress);
 
                         if (imu[i+1] == IMU_BNO080 || imu[i+1] == IMU_BNO085 || imu[i+1] == IMU_BNO086)
                             m_Sensor[i+1] = new BNO080Sensor(i+1, imu[i+1], secondIMUAddress, imuRotation[i+1], imuIntPin[i+1]);
@@ -137,11 +137,11 @@ namespace SlimeVR
         void SensorManager::postSetup()
         {
 #ifdef ESP32
-            for (uint8_t i=0; i<12; i++) {
+            for (uint8_t i=0; i<16; i++) {
 #else
-            for (uint8_t i=0; i<6; i++) {
+            for (uint8_t i=0; i<8; i++) {
 #endif
-                Wire.begin(imuSDAPin[i/6], imuSCLPin[i/2]);
+                Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
 #ifdef ESP8266
                 Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif
@@ -154,11 +154,11 @@ namespace SlimeVR
         {
             // Gather IMU data
 #ifdef ESP32
-            for (uint8_t i=0; i<12; i++) {
+            for (uint8_t i=0; i<16; i++) {
 #else
-            for (uint8_t i=0; i<6; i++) {
+            for (uint8_t i=0; i<8; i++) {
 #endif
-                Wire.begin(imuSDAPin[i/6], imuSCLPin[i/2]);
+                Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
 #ifdef ESP8266
                 Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif
@@ -173,11 +173,11 @@ namespace SlimeVR
 
             // Send updates
 #ifdef ESP32
-            for (uint8_t i=0; i<12; i++) {
+            for (uint8_t i=0; i<16; i++) {
 #else
-            for (uint8_t i=0; i<6; i++) {
+            for (uint8_t i=0; i<8; i++) {
 #endif
-                Wire.begin(imuSDAPin[i/6], imuSCLPin[i/2]);
+                Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
 #ifdef ESP8266
                 Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif

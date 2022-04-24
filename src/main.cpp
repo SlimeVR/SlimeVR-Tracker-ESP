@@ -60,6 +60,7 @@ void setup()
     pinMode(32, OUTPUT);
     digitalWrite(32, HIGH);
     // add pin power for ext imus too
+    // need power management
     
     logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
 
@@ -92,13 +93,6 @@ void loop()
 {
     SerialCommands::update();
     OTA::otaUpdate();
-//#ifdef ESP32
-//    for (uint8_t i=0; i<12; i+=2) {
-//#else
-//    for (uint8_t i=0; i<6; i==i+2) {
-//#endif
-//        Network::update(sensorManager.get(i), sensorManager.get(i+1));
-//    }
     sensorManager.update();
     Network::update(sensorManager.get());
     battery.Loop();
