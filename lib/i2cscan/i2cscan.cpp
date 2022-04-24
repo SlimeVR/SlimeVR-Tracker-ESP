@@ -81,7 +81,9 @@ namespace I2CSCAN
                 Serial.println(address, HEX);
             }
         }
-        Wire.end();
+        #ifdef ESP32
+            Wire.end();
+        #endif
         return found;
     }
 
