@@ -109,7 +109,7 @@ namespace SlimeVR
                     else
                     {
                         foundIMU = true;
-                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i, imuSDAPin[i/8], imuSCLPin[i/2], secondIMUAddress);
+                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i+1, imuSDAPin[i/8], imuSCLPin[i/2], secondIMUAddress);
 
                         if (imu[i+1] == IMU_BNO080 || imu[i+1] == IMU_BNO085 || imu[i+1] == IMU_BNO086)
                             m_Sensor[i+1] = new BNO080Sensor(i+1, imu[i+1], secondIMUAddress, imuRotation[i+1], imuIntPin[i+1]);
