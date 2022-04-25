@@ -263,7 +263,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         calibrationDataMag[i * 3 + 0] = my;
         calibrationDataMag[i * 3 + 1] = mx;
         calibrationDataMag[i * 3 + 2] = -mz;
-        Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
+        Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, sensorId);
         ledManager.off();
         delay(250);
     }
@@ -312,7 +312,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     m_Logger.trace("Gyro calibration results: %f %f %f", Gxyz[0], Gxyz[1], Gxyz[2]);
 #endif
 
-    Network::sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0);
+    Network::sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, sensorId);
     m_Calibration.G_off[0] = Gxyz[0];
     m_Calibration.G_off[1] = Gxyz[1];
     m_Calibration.G_off[2] = Gxyz[2];
@@ -378,7 +378,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     configuration.save();
 
     ledManager.off();
-    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0);
+    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, sensorId);
     m_Logger.debug("Saved the calibration data");
 
     m_Logger.info("Calibration data gathered");
