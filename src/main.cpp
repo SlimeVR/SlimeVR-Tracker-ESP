@@ -34,7 +34,6 @@
 #include "status/StatusManager.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
-#include "esp32-hal-cpu.h"
 
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
@@ -64,8 +63,6 @@ void setup()
     // need power management
     
     logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
-    setCpuFrequencyMhz(240);
-    logger.info("CPU freq %luMhz", getCpuFrequencyMhz());
 
 
     //wifi_set_sleep_type(NONE_SLEEP_T);
