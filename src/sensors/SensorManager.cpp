@@ -45,18 +45,15 @@ namespace SlimeVR
         void SensorManager::setup()
         {
             bool foundIMU = false;
+            
 #ifdef ESP32
             for (uint8_t i=0; i<16; i+=2) {
 #else
-            for (uint8_t i=0; i<8; i==i+2) {
+            for (uint8_t i=0; i<8; i+=2) {
 #endif
                 uint8_t firstIMUAddress = 0;
                 uint8_t secondIMUAddress = 0;
                 Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
-#ifdef ESP8266
-                Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
-#endif
-                Wire.setClock(I2C_SPEED);
 
                 {
                     if (imu[i] == IMU_BNO080 || imu[i] == IMU_BNO085 || imu[i] == IMU_BNO086)
@@ -68,7 +65,7 @@ namespace SlimeVR
 
                     if (firstIMUAddress == 0)
                     {
-                        m_Sensor[i] = new ErroneousSensor(i, imu[i]);
+                        m_Logger.debug("IMU %d not found", i);
                     }
                     else
                     {
@@ -89,8 +86,6 @@ namespace SlimeVR
                             m_Sensor[i] = new ICM20948Sensor(i, firstIMUAddress, imuRotation[i]);
                     }
 
-                    m_Sensor[i]->motionSetup();
-
                     if (imu[i+1] == IMU_BNO080 || imu[i+1] == IMU_BNO085 || imu[i+1] == IMU_BNO086)
                         secondIMUAddress = I2CSCAN::pickDevice(0x4B, 0x4A, true);
                     else if (imu[i+1] == IMU_BNO055)
@@ -98,13 +93,9 @@ namespace SlimeVR
                     else if (imu[i+1] == IMU_MPU9250 || imu[i+1] == IMU_BMI160 || imu[i+1] == IMU_MPU6500 || imu[i+1] == IMU_MPU6050 || imu[i+1] == IMU_ICM20948)
                         secondIMUAddress = I2CSCAN::pickDevice(0x69, 0x68, true);
 
-                    if (firstIMUAddress != 0 && secondIMUAddress == firstIMUAddress)
+                    if (secondIMUAddress == 0 || secondIMUAddress == firstIMUAddress)
                     {
-                        m_Logger.debug("No secondary IMU on this group connected");
-                    }
-                    else if (secondIMUAddress == 0)
-                    {
-                        m_Sensor[i+1] = new ErroneousSensor(i+1, imu[i+1]);
+                        m_Logger.debug("IMU %d not found", i+1);
                     }
                     else
                     {
@@ -124,11 +115,18 @@ namespace SlimeVR
                         else if (imu[i+1] == IMU_ICM20948)
                             m_Sensor[i+1] = new ICM20948Sensor(i+1, secondIMUAddress, imuRotation[i+1]);
                     }
-
-                    m_Sensor[i+1]->motionSetup();
                 }
             }
-            if (!foundIMU) {
+            if (foundIMU) {
+#ifdef ESP32
+                for (uint8_t i=0; i<16; i++) {
+#else
+                for (uint8_t i=0; i<8; i++) {
+#endif
+                    Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
+                    m_Sensor[i]->motionSetup();
+                }
+            } else {
                 Serial.println("[ERR] I2C: Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
                 I2CSCAN::scani2cports();
             }
@@ -142,10 +140,6 @@ namespace SlimeVR
             for (uint8_t i=0; i<8; i++) {
 #endif
                 Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
-#ifdef ESP8266
-                Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
-#endif
-                Wire.setClock(I2C_SPEED);
                 m_Sensor[i]->postSetup();
             }
         }
@@ -159,30 +153,18 @@ namespace SlimeVR
             for (uint8_t i=0; i<8; i++) {
 #endif
                 Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
-#ifdef ESP8266
-                Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
-#endif
-                Wire.setClock(I2C_SPEED);
                 m_Sensor[i]->motionLoop();
             }
 
-            if (!ServerConnection::isConnected())
-            {
-                return;
-            }
-
-            // Send updates
+            if (ServerConnection::isConnected()) {
+                // Send updates
 #ifdef ESP32
-            for (uint8_t i=0; i<16; i++) {
+                for (uint8_t i=0; i<16; i++) {
 #else
-            for (uint8_t i=0; i<8; i++) {
+                for (uint8_t i=0; i<8; i++) {
 #endif
-                Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
-#ifdef ESP8266
-                Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
-#endif
-                Wire.setClock(I2C_SPEED);
-                m_Sensor[i]->sendData();
+                    m_Sensor[i]->sendData();
+                }
             }
         }
     }

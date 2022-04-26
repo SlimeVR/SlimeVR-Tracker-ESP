@@ -76,7 +76,14 @@ void setup()
 
     // Wait for IMU to boot
     delay(500);
-    
+
+    // Setup i2c
+    Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL_A);
+#ifdef ESP8266
+    Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
+#endif
+    Wire.setClock(I2C_SPEED);
+
     sensorManager.setup();
     
     Network::setUp();
