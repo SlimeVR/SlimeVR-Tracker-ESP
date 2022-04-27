@@ -54,14 +54,9 @@ void setup()
     Serial.println();
     Serial.println();
     Serial.println();
-    
-    pinMode(33, OUTPUT);
-    digitalWrite(33, LOW);
-    pinMode(32, OUTPUT);
-    digitalWrite(32, HIGH);
-    // add pin power for ext imus too
+
     // need power management
-    
+
     logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
 
 
@@ -74,9 +69,6 @@ void setup()
 
     SerialCommands::setUp();
 
-    // Wait for IMU to boot
-    delay(500);
-
     // Setup i2c
     Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL_A);
 #ifdef ESP8266
@@ -85,7 +77,7 @@ void setup()
     Wire.setClock(I2C_SPEED);
 
     sensorManager.setup();
-    
+
     Network::setUp();
     OTA::otaSetup(otaPassword);
     battery.Setup();
