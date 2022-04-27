@@ -25,7 +25,7 @@
 #include "consts.h"
 #include "logging/Level.h"
 
-#define IMU_MPU_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
+#define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
 #define BNO_USE_ARVR_STABILIZATION // Comment to not use stabilization for BNO085+ IMUs
 #define USE_6_AXIS true // uses 9 (with mag) if false (only for ICM-20948 currently)
 #define LOAD_BIAS 1 // Loads the bias values from NVS on start (ESP32 Only)
