@@ -23,12 +23,6 @@
 
 #include "globals.h"
 
-#ifdef IMU_MPU6050_RUNTIME_CALIBRATION
-#include "MPU6050_6Axis_MotionApps_V6_12.h"
-#else
-#include "MPU6050_6Axis_MotionApps20.h"
-#endif
-
 #include "mpu6050sensor.h"
 #include "network/network.h"
 #include <i2cscan.h>
@@ -68,7 +62,7 @@ void MPU6050Sensor::motionSetup()
     }
 #endif
 
-    devStatus = imu.dmpInitialize();
+    devStatus = imu.dmpInitialize(addr);
 
     if (devStatus == 0)
     {
@@ -98,9 +92,6 @@ void MPU6050Sensor::motionSetup()
         m_Logger.debug("DMP ready! Waiting for first interrupt...");
         dmpReady = true;
 
-        // get expected DMP packet size for later comparison
-        packetSize = imu.dmpGetFIFOPacketSize();
-
         working = true;
         configured = true;
     }
@@ -129,7 +120,7 @@ void MPU6050Sensor::motionLoop()
     if (!dmpReady)
         return;
 
-    if (imu.dmpGetCurrentFIFOPacket(fifoBuffer))
+    if (imu.GetCurrentFIFOPacket(fifoBuffer, imu.dmpGetFIFOPacketSize()))
     {
         imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
         quaternion.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);

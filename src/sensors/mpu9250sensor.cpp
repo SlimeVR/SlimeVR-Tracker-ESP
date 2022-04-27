@@ -34,7 +34,7 @@
 #endif
 
 #if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
-constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
+constexpr float gscale = (2000. / 32768.0) * (PI / 180.0); //gyro default 2000 LSB per d/s -> rad/s
 #endif
 
 #define MAG_CORR_RATIO 0.02
@@ -54,7 +54,7 @@ void MPU9250Sensor::motionSetup() {
     // turn on while flip back to calibrate. then, flip again after 5 seconds.
     // TODO: Move calibration invoke after calibrate button on slimeVR server available
     imu.getAcceleration(&ax, &ay, &az);
-    float g_az = (float)az / 16384; // For 2G sensitivity
+    float g_az = (float)az / 4096; // For 8G sensitivity
     if(g_az < -0.75f) {
         ledManager.on();
         m_Logger.info("Flip front to confirm start calibration");
@@ -62,7 +62,7 @@ void MPU9250Sensor::motionSetup() {
         ledManager.off();
 
         imu.getAcceleration(&ax, &ay, &az);
-        g_az = (float)az / 16384;
+        g_az = (float)az / 4096;
         if(g_az > 0.75f) {
             m_Logger.debug("Starting calibration...");
             startCalibration(0);
@@ -90,7 +90,7 @@ void MPU9250Sensor::motionSetup() {
     }
 
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
-    devStatus = imu.dmpInitialize();
+    devStatus = imu.dmpInitialize(addr);
     if(devStatus == 0){
         ledManager.pattern(50, 50, 5);
 
@@ -104,10 +104,6 @@ void MPU9250Sensor::motionSetup() {
         // set our DMP Ready flag so the main loop() function knows it's okay to use it
         m_Logger.debug("DMP ready! Waiting for first interrupt...");
         dmpReady = true;
-
-        // get expected DMP packet size for later comparison
-        packetSize = imu.dmpGetFIFOPacketSize();
-        working = true;
     } else {
         // ERROR!
         // 1 = initial memory load failed
@@ -115,10 +111,15 @@ void MPU9250Sensor::motionSetup() {
         // (if it's going to break, usually the code will be 1)
         m_Logger.error("DMP Initialization failed (code %d)", devStatus);
     }
-#else
+#endif
+
+    imu.initializeMagnetometer();
+    if (imu.testConnectionMagnetometer()) {
+        m_Logger.fatal("Can't connect to AK8963 (0x%02x)", imu.getMagnetometerDeviceID());
+        return;
+    }
     working = true;
     configured = true;
-#endif
 }
 
 
