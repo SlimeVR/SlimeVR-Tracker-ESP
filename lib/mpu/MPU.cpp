@@ -3441,10 +3441,8 @@ uint8_t MPU::dmpInitialize(uint8_t address) { // Lets get it over with fast Writ
     setDMPEnabled(false); // disable DMP for compatibility with the MPU library
 /*
     dmpPacketSize += 16;//DMP_FEATURE_6X_LP_QUAT
-    dmpPacketSize += 6;//DMP_FEATURE_SEND_RAW_ACCEL
-    dmpPacketSize += 6;//DMP_FEATURE_SEND_RAW_GYRO
 */
-	dmpPacketSize = 28;
+	dmpPacketSize = 16;
 
 	return 0;
 }
