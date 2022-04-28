@@ -90,7 +90,7 @@ void MPU9250Sensor::motionSetup() {
     }
 
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
-    devStatus = imu.dmpInitialize(addr);
+    devStatus = imu.dmpInitialize();
     if(devStatus == 0){
         ledManager.pattern(50, 50, 5);
 

@@ -52,6 +52,13 @@ MPU::MPU() {
  */
 void MPU::initialize(uint8_t address) {
     devAddr = address;
+    
+    // Reset procedure per instructions in the "MPU-6000/MPU-6050 Register Map and Descriptions" page 41
+    reset();
+    delay(50);
+    resetSensors();
+    delay(50);
+
     setClockSource(MPU_CLOCK_PLL_XGYRO);
     setFullScaleGyroRange(MPU_GYRO_FS_2000);
     setFullScaleAccelRange(MPU_ACCEL_FS_8);
@@ -1716,10 +1723,10 @@ bool MPU::getIntDataReadyStatus() {
  */
 void MPU::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* mx, int16_t* my, int16_t* mz) {
 
-	//get accel and gyro
-	getMotion6(ax, ay, az, gx, gy, gz);
+    //get accel and gyro
+    getMotion6(ax, ay, az, gx, gy, gz);
 
-	//read mag
+    //read mag
     getMagnetometer(mx, my, mz);
 }
 /** Get raw 6-axis motion sensor readings (accel/gyro).
@@ -3116,99 +3123,99 @@ void MPU::CalibrateGyro(uint8_t Loops ) {
 */
 void MPU::CalibrateAccel(uint8_t Loops ) {
 
-	float kP = 0.3;
-	float kI = 20;
-	float x;
-	x = (100 - map(Loops, 1, 5, 20, 0)) * .01;
-	kP *= x;
-	kI *= x;
-	PID( 0x3B, kP, kI,  Loops);
+    float kP = 0.3;
+    float kI = 20;
+    float x;
+    x = (100 - map(Loops, 1, 5, 20, 0)) * .01;
+    kP *= x;
+    kI *= x;
+    PID( 0x3B, kP, kI,  Loops);
 }
 
 void MPU::PID(uint8_t ReadAddress, float kP,float kI, uint8_t Loops){
-	uint8_t SaveAddress = (ReadAddress == 0x3B)?((getDeviceID() < 0x38 )? 0x06:0x77):0x13;
+    uint8_t SaveAddress = (ReadAddress == 0x3B)?((getDeviceID() < 0x38 )? 0x06:0x77):0x13;
 
-	int16_t  Data;
-	float Reading;
-	int16_t BitZero[3];
-	uint8_t shift =(SaveAddress == 0x77)?3:2;
-	float Error, PTerm, ITerm[3];
-	int16_t eSample;
-	uint32_t eSum ;
-	Serial.write('>');
-	for (int i = 0; i < 3; i++) {
-		I2Cdev::readWords(devAddr, SaveAddress + (i * shift), 1, (uint16_t *)&Data); // reads 1 or more 16 bit integers (Word)
-		Reading = Data;
-		if(SaveAddress != 0x13){
-			BitZero[i] = Data & 1;										 // Capture Bit Zero to properly handle Accelerometer calibration
-			ITerm[i] = ((float)Reading) * 8;
-			} else {
-			ITerm[i] = Reading * 4;
-		}
-	}
-	for (int L = 0; L < Loops; L++) {
-		eSample = 0;
-		for (int c = 0; c < 100; c++) {// 100 PI Calculations
-			eSum = 0;
-			for (int i = 0; i < 3; i++) {
-				I2Cdev::readWords(devAddr, ReadAddress + (i * 2), 1, (uint16_t *)&Data); // reads 1 or more 16 bit integers (Word)
-				Reading = Data;
-				if ((ReadAddress == 0x3B)&&(i == 2)) Reading -= 16384;	//remove Gravity
-				Error = -Reading;
-				eSum += abs(Reading);
-				PTerm = kP * Error;
-				ITerm[i] += (Error * 0.001) * kI;				// Integral term 1000 Calculations a second = 0.001
-				if(SaveAddress != 0x13){
-					Data = round((PTerm + ITerm[i] ) / 8);		//Compute PID Output
-					Data = ((Data)&0xFFFE) |BitZero[i];			// Insert Bit0 Saved at beginning
-				} else Data = round((PTerm + ITerm[i] ) / 4);	//Compute PID Output
-				I2Cdev::writeWords(devAddr, SaveAddress + (i * shift), 1, (uint16_t *)&Data);
-			}
-			if((c == 99) && eSum > 1000){						// Error is still to great to continue 
-				c = 0;
-				Serial.write('*');
-			}
-			if((eSum * ((ReadAddress == 0x3B)?.05: 1)) < 5) eSample++;	// Successfully found offsets prepare to  advance
-			if((eSum < 100) && (c > 10) && (eSample >= 10)) break;		// Advance to next Loop
-			delay(1);
-		}
-		Serial.write('.');
-		kP *= .75;
-		kI *= .75;
-		for (int i = 0; i < 3; i++){
-			if(SaveAddress != 0x13) {
-				Data = round((ITerm[i] ) / 8);		//Compute PID Output
-				Data = ((Data)&0xFFFE) |BitZero[i];	// Insert Bit0 Saved at beginning
-			} else Data = round((ITerm[i]) / 4);
-			I2Cdev::writeWords(devAddr, SaveAddress + (i * shift), 1, (uint16_t *)&Data);
-		}
-	}
-	resetFIFO();
-	resetDMP();
+    int16_t  Data;
+    float Reading;
+    int16_t BitZero[3];
+    uint8_t shift =(SaveAddress == 0x77)?3:2;
+    float Error, PTerm, ITerm[3];
+    int16_t eSample;
+    uint32_t eSum ;
+    Serial.write('>');
+    for (int i = 0; i < 3; i++) {
+        I2Cdev::readWords(devAddr, SaveAddress + (i * shift), 1, (uint16_t *)&Data); // reads 1 or more 16 bit integers (Word)
+        Reading = Data;
+        if(SaveAddress != 0x13){
+            BitZero[i] = Data & 1;										 // Capture Bit Zero to properly handle Accelerometer calibration
+            ITerm[i] = ((float)Reading) * 8;
+            } else {
+            ITerm[i] = Reading * 4;
+        }
+    }
+    for (int L = 0; L < Loops; L++) {
+        eSample = 0;
+        for (int c = 0; c < 100; c++) {// 100 PI Calculations
+            eSum = 0;
+            for (int i = 0; i < 3; i++) {
+                I2Cdev::readWords(devAddr, ReadAddress + (i * 2), 1, (uint16_t *)&Data); // reads 1 or more 16 bit integers (Word)
+                Reading = Data;
+                if ((ReadAddress == 0x3B)&&(i == 2)) Reading -= 16384;	//remove Gravity
+                Error = -Reading;
+                eSum += abs(Reading);
+                PTerm = kP * Error;
+                ITerm[i] += (Error * 0.001) * kI;				// Integral term 1000 Calculations a second = 0.001
+                if(SaveAddress != 0x13){
+                    Data = round((PTerm + ITerm[i] ) / 8);		//Compute PID Output
+                    Data = ((Data)&0xFFFE) |BitZero[i];			// Insert Bit0 Saved at beginning
+                } else Data = round((PTerm + ITerm[i] ) / 4);	//Compute PID Output
+                I2Cdev::writeWords(devAddr, SaveAddress + (i * shift), 1, (uint16_t *)&Data);
+            }
+            if((c == 99) && eSum > 1000){						// Error is still to great to continue 
+                c = 0;
+                Serial.write('*');
+            }
+            if((eSum * ((ReadAddress == 0x3B)?.05: 1)) < 5) eSample++;	// Successfully found offsets prepare to  advance
+            if((eSum < 100) && (c > 10) && (eSample >= 10)) break;		// Advance to next Loop
+            delay(1);
+        }
+        Serial.write('.');
+        kP *= .75;
+        kI *= .75;
+        for (int i = 0; i < 3; i++){
+            if(SaveAddress != 0x13) {
+                Data = round((ITerm[i] ) / 8);		//Compute PID Output
+                Data = ((Data)&0xFFFE) |BitZero[i];	// Insert Bit0 Saved at beginning
+            } else Data = round((ITerm[i]) / 4);
+            I2Cdev::writeWords(devAddr, SaveAddress + (i * shift), 1, (uint16_t *)&Data);
+        }
+    }
+    resetFIFO();
+    resetDMP();
 }
 
 #define printfloatx(Name,Variable,Spaces,Precision,EndTxt) { Serial.print(F(Name)); {char S[(Spaces + Precision + 3)];Serial.print(F(" ")); Serial.print(dtostrf((float)Variable,Spaces,Precision ,S));}Serial.print(F(EndTxt)); }//Name,Variable,Spaces,Precision,EndTxt
 void MPU::PrintActiveOffsets() {
-	uint8_t AOffsetRegister = (getDeviceID() < 0x38 )? MPU_RA_XA_OFFS_H:0x77;
-	int16_t Data[3];
-	//Serial.print(F("Offset Register 0x"));
-	//Serial.print(AOffsetRegister>>4,HEX);Serial.print(AOffsetRegister&0x0F,HEX);
-	Serial.print(F("\n//           X Accel  Y Accel  Z Accel   X Gyro   Y Gyro   Z Gyro\n//OFFSETS   "));
-	if(AOffsetRegister == 0x06)	I2Cdev::readWords(devAddr, AOffsetRegister, 3, (uint16_t *)Data);
-	else {
-		I2Cdev::readWords(devAddr, AOffsetRegister, 1, (uint16_t *)Data);
-		I2Cdev::readWords(devAddr, AOffsetRegister+3, 1, (uint16_t *)Data+1);
-		I2Cdev::readWords(devAddr, AOffsetRegister+6, 1, (uint16_t *)Data+2);
-	}
-	//	A_OFFSET_H_READ_A_OFFS(Data);
-	printfloatx("", Data[0], 5, 0, ",  ");
-	printfloatx("", Data[1], 5, 0, ",  ");
-	printfloatx("", Data[2], 5, 0, ",  ");
-	I2Cdev::readWords(devAddr, 0x13, 3, (uint16_t *)Data);
-	//	XG_OFFSET_H_READ_OFFS_USR(Data);
-	printfloatx("", Data[0], 5, 0, ",  ");
-	printfloatx("", Data[1], 5, 0, ",  ");
-	printfloatx("", Data[2], 5, 0, "\n");
+    uint8_t AOffsetRegister = (getDeviceID() < 0x38 )? MPU_RA_XA_OFFS_H:0x77;
+    int16_t Data[3];
+    //Serial.print(F("Offset Register 0x"));
+    //Serial.print(AOffsetRegister>>4,HEX);Serial.print(AOffsetRegister&0x0F,HEX);
+    Serial.print(F("\n//           X Accel  Y Accel  Z Accel   X Gyro   Y Gyro   Z Gyro\n//OFFSETS   "));
+    if(AOffsetRegister == 0x06)	I2Cdev::readWords(devAddr, AOffsetRegister, 3, (uint16_t *)Data);
+    else {
+        I2Cdev::readWords(devAddr, AOffsetRegister, 1, (uint16_t *)Data);
+        I2Cdev::readWords(devAddr, AOffsetRegister+3, 1, (uint16_t *)Data+1);
+        I2Cdev::readWords(devAddr, AOffsetRegister+6, 1, (uint16_t *)Data+2);
+    }
+    //	A_OFFSET_H_READ_A_OFFS(Data);
+    printfloatx("", Data[0], 5, 0, ",  ");
+    printfloatx("", Data[1], 5, 0, ",  ");
+    printfloatx("", Data[2], 5, 0, ",  ");
+    I2Cdev::readWords(devAddr, 0x13, 3, (uint16_t *)Data);
+    //	XG_OFFSET_H_READ_OFFS_USR(Data);
+    printfloatx("", Data[0], 5, 0, ",  ");
+    printfloatx("", Data[1], 5, 0, ",  ");
+    printfloatx("", Data[2], 5, 0, "\n");
 }
 
 /** Get latest byte from FIFO buffer no matter how much time has passed.
@@ -3415,36 +3422,30 @@ float MPU::getTiltHeading(float ax, float ay, float az, float mx, float my, floa
 
 // this is the most basic initialization I can create. with the intent that we access the register bytes as few times as needed to get the job done.
 // for detailed descriptins of all registers and there purpose google "MPU-6000/MPU-6050 Register Map and Descriptions"
-uint8_t MPU::dmpInitialize(uint8_t address) { // Lets get it over with fast Write everything once and set it up necely
-	devAddr = address;
+uint8_t MPU::dmpInitialize() { // Lets get it over with fast Write everything once and set it up necely
     uint8_t val;
-	uint16_t ival;
-  // Reset procedure per instructions in the "MPU-6000/MPU-6050 Register Map and Descriptions" page 41
-	I2Cdev::writeBit(devAddr,0x6B, 7, (val = 1)); //PWR_MGMT_1: reset with 100ms delay
-	delay(100);
-	I2Cdev::writeBits(devAddr,0x6A, 2, 3, (val = 0b111)); // full SIGNAL_PATH_RESET: with another 100ms delay
-	delay(100);
-	I2Cdev::writeBytes(devAddr,0x38, 1, &(val = 0x00)); // 0000 0000 INT_ENABLE: no Interrupt
-	I2Cdev::writeBytes(devAddr,0x23, 1, &(val = 0x00)); // 0000 0000 MPU FIFO_EN: (all off) Using DMP's FIFO instead
-	I2Cdev::writeBytes(devAddr,0x1C, 1, &(val = 0x02)); // 0000 0000 ACCEL_CONFIG: 2 =  Accel Full Scale Select: 8g
-	I2Cdev::writeBytes(devAddr,0x37, 1, &(val = 0x80)); // 1001 0000 INT_PIN_CFG: ACTL The logic level for int pin is active low. and interrupt status bits are cleared on any read
-	I2Cdev::writeBytes(devAddr,0x6B, 1, &(val = 0x01)); // 0000 0001 PWR_MGMT_1: Clock Source Select PLL_X_gyro
-	I2Cdev::writeBytes(devAddr,0x19, 1, &(val = 0x04)); // 0000 0100 SMPLRT_DIV: Divides the internal sample rate 400Hz ( Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV))
-	I2Cdev::writeBytes(devAddr,0x1A, 1, &(val = 0x01)); // 0000 0001 CONFIG: Digital Low Pass Filter (DLPF) Configuration 188HZ  //Im betting this will be the beat
-	if (!writeProgMemoryBlock(dmpMemory, MPU_DMP_CODE_SIZE)) return 1; // Loads the DMP image into the MPU Memory // Should Never Fail
-	I2Cdev::writeWords(devAddr, 0x70, 1, &(ival = 0x0400)); // DMP Program Start Address
-	I2Cdev::writeBytes(devAddr,0x1B, 1, &(val = 0x18)); // 0001 1000 GYRO_CONFIG: 3 = +2000 Deg/sec
-	I2Cdev::writeBytes(devAddr,0x6A, 1, &(val = 0xC0)); // 1100 1100 USER_CTRL: Enable Fifo and Reset Fifo
-	I2Cdev::writeBytes(devAddr,0x38, 1, &(val = 0x02)); // 0000 0010 INT_ENABLE: RAW_DMP_INT_EN on
-	I2Cdev::writeBit(devAddr,0x6A, 2, 1);      // Reset FIFO one last time just for kicks. (MPUi2cWrite reads 0x6A first and only alters 1 bit and then saves the byte)
+    uint16_t ival;
+    I2Cdev::writeBytes(devAddr,MPU_RA_INT_ENABLE, 1, &(val = 0x00)); // 0000 0000 INT_ENABLE: no Interrupt
+    I2Cdev::writeBytes(devAddr,MPU_RA_FIFO_EN, 1, &(val = 0x00)); // 0000 0000 MPU FIFO_EN: (all off) Using DMP's FIFO instead
+    I2Cdev::writeBytes(devAddr,MPU_RA_ACCEL_CONFIG, 1, &(val = 0x02)); // 0000 0010 ACCEL_CONFIG: 2 =  Accel Full Scale Select: 8g
+    I2Cdev::writeBytes(devAddr,MPU_RA_INT_PIN_CFG, 1, &(val = 0x80)); // 1001 0000 INT_PIN_CFG: ACTL The logic level for int pin is active low. and interrupt status bits are cleared on any read
+    I2Cdev::writeBytes(devAddr,MPU_RA_PWR_MGMT_1, 1, &(val = 0x01)); // 0000 0001 PWR_MGMT_1: Clock Source Select PLL_X_gyro
+    I2Cdev::writeBytes(devAddr,MPU_RA_SMPLRT_DIV, 1, &(val = 0x04)); // 0000 0100 SMPLRT_DIV: Divides the internal sample rate 400Hz ( Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV))
+    I2Cdev::writeBytes(devAddr,MPU_RA_CONFIG, 1, &(val = 0x01)); // 0100 0001 CONFIG: Digital Low Pass Filter (DLPF) Configuration 188HZ  //Im betting this will be the beat
+    if (!writeProgMemoryBlock(dmpMemory, MPU_DMP_CODE_SIZE)) return 1; // Loads the DMP image into the MPU Memory // Should Never Fail
+    I2Cdev::writeWords(devAddr, MPU_RA_DMP_CFG_1, 1, &(ival = 0x0400)); // DMP Program Start Address
+    I2Cdev::writeBytes(devAddr,MPU_RA_GYRO_CONFIG, 1, &(val = 0x18)); // 0001 1000 GYRO_CONFIG: 3 = +2000 Deg/sec
+    I2Cdev::writeBytes(devAddr,MPU_RA_USER_CTRL, 1, &(val = 0xC0)); // 1100 1100 USER_CTRL: Enable Fifo and Reset Fifo
+    I2Cdev::writeBytes(devAddr,MPU_RA_INT_ENABLE, 1, &(val = 0x02)); // 0000 0010 INT_ENABLE: RAW_DMP_INT_EN on
+    I2Cdev::writeBit(devAddr,MPU_RA_USER_CTRL, 2, 1);      // Reset FIFO one last time just for kicks. (MPUi2cWrite reads 0x6A first and only alters 1 bit and then saves the byte)
 
     setDMPEnabled(false); // disable DMP for compatibility with the MPU library
 /*
     dmpPacketSize += 16;//DMP_FEATURE_6X_LP_QUAT
 */
-	dmpPacketSize = 16;
+    dmpPacketSize = 16;
 
-	return 0;
+    return 0;
 }
 
 // uint8_t MPU::dmpSetFIFORate(uint8_t fifoRate);
@@ -3580,7 +3581,7 @@ uint8_t MPU::dmpGetGravity(int16_t *data, const uint8_t* packet) {
     data[0] = ((int32_t)qI[1] * qI[3] - (int32_t)qI[0] * qI[2]) / 16384;
     data[1] = ((int32_t)qI[0] * qI[1] + (int32_t)qI[2] * qI[3]) / 16384;
     data[2] = ((int32_t)qI[0] * qI[0] - (int32_t)qI[1] * qI[1]
-	       - (int32_t)qI[2] * qI[2] + (int32_t)qI[3] * qI[3]) / (2 * 16384);
+           - (int32_t)qI[2] * qI[2] + (int32_t)qI[3] * qI[3]) / (2 * 16384);
     return status;
 }
 

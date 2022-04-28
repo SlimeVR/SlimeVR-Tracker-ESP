@@ -764,7 +764,7 @@ class MPU {
 
         // ======== UNDOCUMENTED/DMP REGISTERS/METHODS ========
 
-        uint8_t dmpInitialize(uint8_t address);
+        uint8_t dmpInitialize();
 
         uint8_t dmpSetFIFORate(uint8_t fifoRate);
         uint8_t dmpGetFIFORate();

@@ -62,7 +62,7 @@ void MPU6050Sensor::motionSetup()
     }
 #endif
 
-    devStatus = imu.dmpInitialize(addr);
+    devStatus = imu.dmpInitialize();
 
     if (devStatus == 0)
     {
