@@ -45,6 +45,8 @@ namespace SlimeVR
             }
 
             void setup();
+            void postSetup();
+
             void update();
 
             Sensor *getFirst() { return m_Sensor1; };

@@ -40,12 +40,37 @@
 #define BATTERY_MONITOR BAT_INTERNAL
 #endif
 
-#if defined(LED_INVERTED) && LED_INVERTED
-#define LED_ON LOW
-#define LED_OFF HIGH
+// If LED_PIN is not defined in "defines.h" take the default pin from "pins_arduino.h" framework.
+// If there is no pin defined for the board, use LED_PIN 255 and disable LED
+#if defined(LED_PIN)
+    // LED_PIN is defined
+    #if (LED_PIN < 0) || (LED_PIN >= LED_OFF)
+        #define ENABLE_LEDS false    
+    #else
+        #define ENABLE_LEDS true
+    #endif
 #else
-#define LED_ON HIGH
-#define LED_OFF LOW
+    // LED_PIN is not defined
+    #if defined(LED_BUILTIN) && (LED_BUILTIN < LED_OFF) && (LED_BUILTIN >= 0)
+        #define LED_PIN LED_BUILTIN
+        #define ENABLE_LEDS true
+    #else
+        #define LED_PIN LED_OFF
+        #define ENABLE_LEDS false
+    #endif
+#endif
+
+#if !defined(LED_INVERTED)
+    // default is inverted for SlimeVR / ESP-12E
+    #define LED_INVERTED true
+#endif
+
+#if LED_INVERTED
+#define LED__ON LOW
+#define LED__OFF HIGH
+#else
+#define LED__ON HIGH
+#define LED__OFF LOW
 #endif
 
 #endif // SLIMEVR_GLOBALS_H_

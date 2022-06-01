@@ -54,6 +54,17 @@
 #else
 #define MAX_ODR false // Unsupported Board, leave as false
 #endif
+// LED configuration:
+// Configuration Priority 1 = Highest:
+// 1. LED_PIN
+// 2. LED_BUILTIN
+//
+//   LED_PIN
+//     - Number or Symbol (D1,..) of the Output
+//     - To turn off the LED, set LED_PIN to LED_OFF
+//   LED_INVERTED 
+//     - false for output 3.3V on high
+//     - true for pull down to GND on high
 
 // Board-specific configurations
 #if BOARD == BOARD_SLIMEVR
@@ -62,31 +73,40 @@
   #define PIN_IMU_INT 16
   #define PIN_IMU_INT_2 13
   #define PIN_BATTERY_LEVEL 17
+  #define LED_PIN 2
+  #define LED_INVERTED true
 #elif BOARD == BOARD_SLIMEVR_LEGACY || BOARD == BOARD_SLIMEVR_DEV
   #define PIN_IMU_SDA 4
   #define PIN_IMU_SCL 5
   #define PIN_IMU_INT 10
   #define PIN_IMU_INT_2 13
   #define PIN_BATTERY_LEVEL 17
+  #define LED_PIN 2
+  #define LED_INVERTED true
 #elif BOARD == BOARD_NODEMCU || BOARD == BOARD_WEMOSD1MINI
   #define PIN_IMU_SDA D2
   #define PIN_IMU_SCL D1
   #define PIN_IMU_INT D5
   #define PIN_IMU_INT_2 D6
   #define PIN_BATTERY_LEVEL A0
+//  #define LED_PIN 2
+//  #define LED_INVERTED true
 #elif BOARD == BOARD_ESP01
   #define PIN_IMU_SDA 2
   #define PIN_IMU_SCL 0
   #define PIN_IMU_INT 255
   #define PIN_IMU_INT_2 255
-  #define ENABLE_LEDS false
   #define PIN_BATTERY_LEVEL 255
+  #define LED_PIN LED_OFF
+  #define LED_INVERTED false
 #elif BOARD == BOARD_TTGO_TBASE
   #define PIN_IMU_SDA 5
   #define PIN_IMU_SCL 4
   #define PIN_IMU_INT 14
   #define PIN_IMU_INT_2 13
   #define PIN_BATTERY_LEVEL A0
+//  #define LED_PIN 2
+//  #define LED_INVERTED false
 #elif BOARD == BOARD_CUSTOM
   // Define pins by the examples above
 #elif BOARD == BOARD_WROOM32
@@ -95,4 +115,6 @@
   #define PIN_IMU_INT 23
   #define PIN_IMU_INT_2 25
   #define PIN_BATTERY_LEVEL 36
+//  #define LED_PIN 2
+//  #define LED_INVERTED false
 #endif

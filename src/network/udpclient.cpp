@@ -61,7 +61,7 @@ unsigned char * convert_to_chars(T src, unsigned char * target)
         T v;
     } un;
     un.v = src;
-    for (int i = 0; i < sizeof(T); i++)
+    for (size_t i = 0; i < sizeof(T); i++)
     {
         target[i] = un.c[sizeof(T) - i - 1];
     }
@@ -76,7 +76,7 @@ T convert_chars(unsigned char * const src)
         unsigned char c[sizeof(T)];
         T v;
     } un;
-    for (int i = 0; i < sizeof(T); i++)
+    for (size_t i = 0; i < sizeof(T); i++)
     {
         un.c[i] = src[sizeof(T) - i - 1];
     }
