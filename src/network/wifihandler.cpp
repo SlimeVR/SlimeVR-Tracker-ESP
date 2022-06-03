@@ -136,7 +136,27 @@ void WiFiNetwork::upkeep() {
                     #endif
                     wifiState = 2;
                 return;
-                case 2: // Couldn't connect with second set of credentials
+                case 2: // Couldn't connect with first set of credentials
+                    #if defined(WIFI_CREDS_SSID2) && defined(WIFI_CREDS_PASSWD2)
+                        // Try hardcoded credentials now
+                        WiFi.begin(WIFI_CREDS_SSID2, WIFI_CREDS_PASSWD2);
+                        wifiConnectionTimeout = millis();
+                        wifiHandlerLogger.error("Can't connect from saved credentials, status: %d.", WiFi.status());
+                        wifiHandlerLogger.debug("Trying hardcoded credentials...");
+                    #endif 
+                    wifiState = 3;
+                return;
+                case 3: // Couldn't connect with first set of credentials
+                    #if defined(WIFI_CREDS_SSID3) && defined(WIFI_CREDS_PASSWD3)
+                        // Try hardcoded credentials now
+                        WiFi.begin(WIFI_CREDS_SSID3, WIFI_CREDS_PASSWD3);
+                        wifiConnectionTimeout = millis();
+                        wifiHandlerLogger.error("Can't connect from saved credentials, status: %d.", WiFi.status());
+                        wifiHandlerLogger.debug("Trying hardcoded credentials...");
+                    #endif 
+                    wifiState = 4;
+                return;
+                case 4: // Couldn't connect with second set of credentials
                     // Start smart config
                     if(!hadWifi && !WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
                         if(WiFi.status() != WL_IDLE_STATUS) {
