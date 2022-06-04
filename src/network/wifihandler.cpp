@@ -126,7 +126,7 @@ void WiFiNetwork::upkeep() {
             switch(wifiState) {
                 case 0: // Wasn't set up
                 return;
-                case 1: // Couldn't connect with first set of credentials
+                case 1: // Couldn't connect with dynamic set of credentials
                     #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
                         // Try hardcoded credentials now
                         WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
@@ -146,7 +146,7 @@ void WiFiNetwork::upkeep() {
                     #endif 
                     wifiState = 3;
                 return;
-                case 3: // Couldn't connect with first set of credentials
+                case 3: // Couldn't connect with second set of credentials
                     #if defined(WIFI_CREDS_SSID3) && defined(WIFI_CREDS_PASSWD3)
                         // Try hardcoded credentials now
                         WiFi.begin(WIFI_CREDS_SSID3, WIFI_CREDS_PASSWD3);
@@ -156,7 +156,7 @@ void WiFiNetwork::upkeep() {
                     #endif 
                     wifiState = 4;
                 return;
-                case 4: // Couldn't connect with second set of credentials
+                case 4: // Couldn't connect with third set of credentials
                     // Start smart config
                     if(!hadWifi && !WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
                         if(WiFi.status() != WL_IDLE_STATUS) {
