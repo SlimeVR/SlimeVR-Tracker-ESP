@@ -131,8 +131,8 @@ void WiFiNetwork::upkeep() {
                         // Try hardcoded credentials now
                         WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
                         wifiConnectionTimeout = millis();
-                        wifiHandlerLogger.error("Can't connect from saved credentials, status: %d.", WiFi.status());
-                        wifiHandlerLogger.debug("Trying hardcoded credentials...");
+                        wifiHandlerLogger.error("Can't connect from first saved credentials, status: %d.", WiFi.status());
+                        wifiHandlerLogger.debug("Trying first hardcoded credentials...");
                     #endif
                     wifiState = 2;
                 return;
@@ -141,8 +141,8 @@ void WiFiNetwork::upkeep() {
                         // Try hardcoded credentials now
                         WiFi.begin(WIFI_CREDS_SSID2, WIFI_CREDS_PASSWD2);
                         wifiConnectionTimeout = millis();
-                        wifiHandlerLogger.error("Can't connect from saved credentials, status: %d.", WiFi.status());
-                        wifiHandlerLogger.debug("Trying hardcoded credentials...");
+                        wifiHandlerLogger.error("Can't connect from second saved credentials, status: %d.", WiFi.status());
+                        wifiHandlerLogger.debug("Trying second hardcoded credentials...");
                     #endif 
                     wifiState = 3;
                 return;
@@ -151,8 +151,8 @@ void WiFiNetwork::upkeep() {
                         // Try hardcoded credentials now
                         WiFi.begin(WIFI_CREDS_SSID3, WIFI_CREDS_PASSWD3);
                         wifiConnectionTimeout = millis();
-                        wifiHandlerLogger.error("Can't connect from saved credentials, status: %d.", WiFi.status());
-                        wifiHandlerLogger.debug("Trying hardcoded credentials...");
+                        wifiHandlerLogger.error("Can't connect from third saved credentials, status: %d.", WiFi.status());
+                        wifiHandlerLogger.debug("Trying third hardcoded credentials...");
                     #endif 
                     wifiState = 4;
                 return;
