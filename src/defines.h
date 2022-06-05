@@ -110,4 +110,12 @@
   #define PIN_BATTERY_LEVEL 36
 //  #define LED_PIN 2
 //  #define LED_INVERTED false
+#elif BOARD == BOARD_LOLIN_C3_MINI
+  #define PIN_IMU_SDA 10
+  #define PIN_IMU_SCL 8
+  #define PIN_IMU_INT 6
+  #define PIN_IMU_INT_2 7
+  #define PIN_BATTERY_LEVEL 3
+//  #define LED_PIN 2
+//  #define LED_INVERTED false
 #endif

@@ -121,7 +121,7 @@ void ICM20948Sensor::load_bias() {
     imu.SetBiasCPassY(90);
     imu.SetBiasCPassZ(90);
 
-    int bias_gyro[3], bias_accel[3], bias_compass[3];
+    int32_t bias_gyro[3], bias_accel[3], bias_compass[3];
 
     // Reloads all bias from memory
     imu.GetBiasGyroX(&bias_gyro[0]);

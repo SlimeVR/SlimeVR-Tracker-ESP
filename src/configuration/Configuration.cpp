@@ -21,15 +21,7 @@
     THE SOFTWARE.
 */
 
-#ifdef ESP32
-    // #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
-    // #define CONFIG_LITTLEFS_LFS_YES_TRACE
-    // #define LFS_YES_TRACE
-    #include <LITTLEFS.h>
-    #define LittleFS LITTLEFS
-#else
-    #include <LittleFS.h>
-#endif
+#include <LittleFS.h>
 
 #include "Configuration.h"
 #include "consts.h"
