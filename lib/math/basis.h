@@ -109,7 +109,6 @@ public:
 	void set_euler_zyx(const Vector3& p_euler);
 
 	Quat get_quat() const;
-	void set_quat(const Quat& p_quat);
 
 	Vector3 get_euler() const { return get_euler_yxz(); }
 	void set_euler(const Vector3& p_euler) { set_euler_yxz(p_euler); }
@@ -240,7 +239,6 @@ public:
 
 	operator Quat() const { return get_quat(); }
 
-	Basis(const Quat& p_quat) { set_quat(p_quat); };
 	Basis(const Quat& p_quat, const Vector3& p_scale) { set_quat_scale(p_quat, p_scale); }
 
 	Basis(const Vector3& p_euler) { set_euler(p_euler); }

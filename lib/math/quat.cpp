@@ -57,14 +57,6 @@ void Quat::set_euler_xyz(const Vector3& p_euler) {
 		-sin_a1 * sin_a2 * sin_a3 + cos_a1 * cos_a2 * cos_a3);
 }
 
-// get_euler_xyz returns a vector containing the Euler angles in the format
-// (ax,ay,az), where ax is the angle of rotation around x axis,
-// and similar for other axes.
-// This implementation uses XYZ convention (Z is the first rotation).
-Vector3 Quat::get_euler_xyz() const {
-	Basis m(*this);
-	return m.get_euler_xyz();
-}
 
 // set_euler_yxz expects a vector containing the Euler angles in the format
 // (ax,ay,az), where ax is the angle of rotation around x axis,
@@ -90,18 +82,6 @@ void Quat::set_euler_yxz(const Vector3& p_euler) {
 		sin_a1 * cos_a2 * cos_a3 - cos_a1 * sin_a2 * sin_a3,
 		-sin_a1 * sin_a2 * cos_a3 + cos_a1 * cos_a2 * sin_a3,
 		sin_a1 * sin_a2 * sin_a3 + cos_a1 * cos_a2 * cos_a3);
-}
-
-// get_euler_yxz returns a vector containing the Euler angles in the format
-// (ax,ay,az), where ax is the angle of rotation around x axis,
-// and similar for other axes.
-// This implementation uses YXZ convention (Z is the first rotation).
-Vector3 Quat::get_euler_yxz() const {
-#ifdef MATH_CHECKS
-	ERR_FAIL_COND_V_MSG(!is_normalized(), Vector3(0, 0, 0), "The quaternion must be normalized.");
-#endif
-	Basis m(*this);
-	return m.get_euler_yxz();
 }
 
 void Quat::operator*=(const Quat& q) {
