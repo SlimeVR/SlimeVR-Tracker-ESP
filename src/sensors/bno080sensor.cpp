@@ -75,7 +75,7 @@ void BNO080Sensor::motionSetup()
     }
     imu.enableTapDetector(100);
 
-#ifdef ENABLE_INSPECTION
+#if ENABLE_INSPECTION
     imu.enableRawGyro(10);
     imu.enableRawAccelerometer(10);
     imu.enableRawMagnetometer(10);
