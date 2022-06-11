@@ -50,10 +50,19 @@
 
 //Only works in esp8266
 #if BOARD == BOARD_WEMOSD1MINI
+#define MAX_ODR true // (True) enables Fastest Output Rate (False) caps it to 100Hz (ICM20948 only)
+#else
+#define MAX_ODR false // Unsupported Board, leave as false
+#endif
+
+//Only works in esp8266
+#if BOARD == BOARD_WEMOSD1MINI
 #define MAX_ODR false // (True) enables Fastest Output Rate (False) caps it to 100Hz (ICM20948 only)
 #else
 #define MAX_ODR false // Unsupported Board, leave as false
 #endif
+
+
 // LED configuration:
 // Configuration Priority 1 = Highest:
 // 1. LED_PIN
