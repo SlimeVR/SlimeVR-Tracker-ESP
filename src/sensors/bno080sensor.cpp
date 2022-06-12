@@ -58,7 +58,7 @@ void BNO080Sensor::motionSetup()
 #else
     imu.enableGameRotationVector(10);
 #endif
-#if BNO_USE_MAGNETOMETER_CORRECTION == true
+#if BNO_USE_MAGNETOMETER_CORRECTION
     imu.enableRotationVector(1000);
 #endif
 #else
