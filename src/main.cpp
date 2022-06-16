@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,20 +23,24 @@
 
 #include "Wire.h"
 #include "ota.h"
-#include "sensors/sensorfactory.h"
-#include "configuration.h"
+#include "sensors/SensorManager.h"
+#include "configuration/Configuration.h"
 #include "network/network.h"
 #include "globals.h"
 #include "credentials.h"
 #include <i2cscan.h>
 #include "serial/serialcommands.h"
-#include "ledmgr.h"
+#include "LEDManager.h"
+#include "status/StatusManager.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
 
 SlimeVR::Logging::Logger logger("SlimeVR");
+SlimeVR::Sensors::SensorManager sensorManager;
+SlimeVR::LEDManager ledManager(LED_PIN);
+SlimeVR::Status::StatusManager statusManager;
+SlimeVR::Configuration::Configuration configuration;
 
-SensorFactory sensors {};
 int sensorToCalibrate = -1;
 bool blinking = false;
 unsigned long blinkStart = 0;
@@ -54,13 +58,11 @@ void setup()
     logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
 
     //wifi_set_sleep_type(NONE_SLEEP_T);
-    // Glow diode while loading
-#if ENABLE_LEDS
-    pinMode(LOADING_LED, OUTPUT);
-    pinMode(CALIBRATING_LED, OUTPUT);
-    LEDManager::off(CALIBRATING_LED);
-    LEDManager::on(LOADING_LED);
-#endif
+
+    statusManager.setStatus(SlimeVR::Status::LOADING, true);
+
+    ledManager.setup();
+    configuration.setup();
 
     SerialCommands::setUp();
 
@@ -75,44 +77,30 @@ void setup()
 #endif
     Wire.setClock(I2C_SPEED);
 
-    getConfigPtr();
     // Wait for IMU to boot
     delay(500);
     
-    sensors.create();
-    sensors.motionSetup();
+    sensorManager.setup();
     
     Network::setUp();
     OTA::otaSetup(otaPassword);
     battery.Setup();
-    LEDManager::off(LOADING_LED);
+
+    statusManager.setStatus(SlimeVR::Status::LOADING, false);
+
+    sensorManager.postSetup();
+
     loopTime = micros();
 }
 
 void loop()
 {
-    LEDManager::ledStatusUpdate();
     SerialCommands::update();
     OTA::otaUpdate();
-    Network::update(sensors.getFirst(), sensors.getSecond());
-#ifndef UPDATE_IMU_UNCONNECTED
-    if (ServerConnection::isConnected())
-    {
-#endif
-        sensors.motionLoop();
-#ifndef UPDATE_IMU_UNCONNECTED
-    }
-#endif
-    // Send updates
-#ifndef SEND_UPDATES_UNCONNECTED
-    if (ServerConnection::isConnected())
-    {
-#endif
-        sensors.sendData();
-#ifndef SEND_UPDATES_UNCONNECTED
-    }
-#endif
+    Network::update(sensorManager.getFirst(), sensorManager.getSecond());
+    sensorManager.update();
     battery.Loop();
+    ledManager.update();
 
 #ifdef TARGET_LOOPTIME_MICROS
     long elapsed = (micros() - loopTime);

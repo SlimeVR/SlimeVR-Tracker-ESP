@@ -82,19 +82,19 @@ bool MPU9250_Base::testConnection() {
  * the MPU-6000, which does not have a VLOGIC pin.
  * @return I2C supply voltage level (0=VLOGIC, 1=VDD)
  */
-uint8_t MPU9250_Base::getAuxVDDIOLevel() {
-    I2Cdev::readBit(devAddr, MPU9250_RA_YG_OFFS_TC, MPU9250_TC_PWR_MODE_BIT, buffer);
-    return buffer[0];
-}
+// uint8_t MPU9250_Base::getAuxVDDIOLevel() {
+//     I2Cdev::readBit(devAddr, MPU9250_RA_YG_OFFS_TC, MPU9250_TC_PWR_MODE_BIT, buffer);
+//     return buffer[0];
+// }
 /** Set the auxiliary I2C supply voltage level.
  * When set to 1, the auxiliary I2C bus high logic level is VDD. When cleared to
  * 0, the auxiliary I2C bus high logic level is VLOGIC. This does not apply to
  * the MPU-6000, which does not have a VLOGIC pin.
  * @param level I2C supply voltage level (0=VLOGIC, 1=VDD)
  */
-void MPU9250_Base::setAuxVDDIOLevel(uint8_t level) {
-    I2Cdev::writeBit(devAddr, MPU9250_RA_YG_OFFS_TC, MPU9250_TC_PWR_MODE_BIT, level);
-}
+// void MPU9250_Base::setAuxVDDIOLevel(uint8_t level) {
+//     I2Cdev::writeBit(devAddr, MPU9250_RA_YG_OFFS_TC, MPU9250_TC_PWR_MODE_BIT, level);
+// }
 
 // SMPLRT_DIV register
 
@@ -2786,30 +2786,58 @@ void MPU9250_Base::setZFineGain(int8_t gain) {
 // XA_OFFS_* registers
 
 int16_t MPU9250_Base::getXAccelOffset() {
-    I2Cdev::readBytes(devAddr, MPU9250_RA_XA_OFFS_H, 2, buffer);
-    return (((int16_t)buffer[0]) << 8) | buffer[1];
+    I2Cdev::readByte(devAddr, MPU9250_RA_XA_OFFS_TC, buffer);
+    return buffer[0];
 }
 void MPU9250_Base::setXAccelOffset(int16_t offset) {
-    I2Cdev::writeWord(devAddr, MPU9250_RA_XA_OFFS_H, offset);
+    I2Cdev::writeByte(devAddr, MPU9250_RA_XA_OFFS_TC, offset);
 }
 
 // YA_OFFS_* register
 
 int16_t MPU9250_Base::getYAccelOffset() {
-    I2Cdev::readBytes(devAddr, MPU9250_RA_YA_OFFS_H, 2, buffer);
-    return (((int16_t)buffer[0]) << 8) | buffer[1];
+    I2Cdev::readByte(devAddr, MPU9250_RA_YA_OFFS_TC, buffer);
+    return buffer[0];
 }
 void MPU9250_Base::setYAccelOffset(int16_t offset) {
-    I2Cdev::writeWord(devAddr, MPU9250_RA_YA_OFFS_H, offset);
+    I2Cdev::writeByte(devAddr, MPU9250_RA_YA_OFFS_TC, offset);
 }
 
 // ZA_OFFS_* register
 
 int16_t MPU9250_Base::getZAccelOffset() {
-    I2Cdev::readBytes(devAddr, MPU9250_RA_ZA_OFFS_H, 2, buffer);
-    return (((int16_t)buffer[0]) << 8) | buffer[1];
+    I2Cdev::readByte(devAddr, MPU9250_RA_ZA_OFFS_TC, buffer);
+    return buffer[0];
 }
 void MPU9250_Base::setZAccelOffset(int16_t offset) {
+    I2Cdev::writeByte(devAddr, MPU9250_RA_ZA_OFFS_TC, offset);
+}
+
+int16_t MPU9250_Base::getXAccelOffsetUser() {
+    I2Cdev::readBytes(devAddr, MPU9250_RA_XA_OFFS_H, 2, buffer);
+    return (((int16_t)buffer[0]) << 7) | (buffer[1] >> 1);
+}
+void MPU9250_Base::setXAccelOffsetUser(int16_t offset) {
+    I2Cdev::writeWord(devAddr, MPU9250_RA_XA_OFFS_H, offset);
+}
+
+// YA_OFFS_* register
+
+int16_t MPU9250_Base::getYAccelOffsetUser() {
+    I2Cdev::readBytes(devAddr, MPU9250_RA_YA_OFFS_H, 2, buffer);
+    return (((int16_t)buffer[0]) << 7) | (buffer[1] >> 1);
+}
+void MPU9250_Base::setYAccelOffsetUser(int16_t offset) {
+    I2Cdev::writeWord(devAddr, MPU9250_RA_YA_OFFS_H, offset);
+}
+
+// ZA_OFFS_* register
+
+int16_t MPU9250_Base::getZAccelOffsetUser() {
+    I2Cdev::readBytes(devAddr, MPU9250_RA_ZA_OFFS_H, 2, buffer);
+    return (((int16_t)buffer[0]) << 7) | (buffer[1] >> 1);
+}
+void MPU9250_Base::setZAccelOffsetUser(int16_t offset) {
     I2Cdev::writeWord(devAddr, MPU9250_RA_ZA_OFFS_H, offset);
 }
 
@@ -3397,7 +3425,7 @@ bool MPU9250_Base::testConnectionMagnetometer() {
  * @see MPU9250_RA_MAG_ADDRESS
  * @see MPU9250_RA_MAG_WHOAMI
  */
-int8_t MPU9250_Base::getMagnetometerDeviceID() {
+uint8_t MPU9250_Base::getMagnetometerDeviceID() {
     // Set up magnetometer as slave 0 for reading
     I2Cdev::writeByte(devAddr, MPU9250_RA_I2C_SLV0_ADDR, MPU9250_RA_MAG_ADDRESS|0x80);
     // Start reading from WHO_AM_I register

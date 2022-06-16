@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,21 +20,26 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_WIFI_H_
-#define SLIMEVR_WIFI_H_
 
-#ifdef ESP8266
-    #include <ESP8266WiFi.h>
-#else
-    #include <WiFi.h>
-#endif
+#include "CalibrationConfig.h"
 
-namespace WiFiNetwork {
-    bool isConnected();
-    void setUp();
-    void upkeep();
-    void setWiFiCredentials(const char * SSID, const char * pass);
-    IPAddress getAddress();
+namespace SlimeVR {
+    namespace Configuration {
+        const char* calibrationConfigTypeToString(CalibrationConfigType type) {
+            switch (type) {
+            case NONE:
+                return "NONE";
+            case BMI160:
+                return "BMI160";
+            case MPU6050:
+                return "MPU6050";
+            case MPU9250:
+                return "MPU9250";
+            case ICM20948:
+                return "ICM20948";
+            default:
+                return "UNKNOWN";
+            }
+        }
+    }
 }
-
-#endif // SLIMEVR_WIFI_H_

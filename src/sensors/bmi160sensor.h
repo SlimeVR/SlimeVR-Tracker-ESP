@@ -20,16 +20,19 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
+#ifndef SENSORS_BMI160SENSOR_H
+#define SENSORS_BMI160SENSOR_H
+
 #include "sensor.h"
 #include "mahony.h"
 #include "magneto1.4.h"
-#include "ledmgr.h"
 
 #include <BMI160.h>
 
 class BMI160Sensor : public Sensor {
     public:
-        BMI160Sensor() : Sensor("BMI160Sensor"){};
+        BMI160Sensor(uint8_t id, uint8_t address, float rotation) : Sensor("BMI160Sensor", IMU_BMI160, id, address, rotation){};
         ~BMI160Sensor(){};
         void motionSetup() override final;
         void motionLoop() override final;
@@ -38,9 +41,12 @@ class BMI160Sensor : public Sensor {
         float getTemperature();
     private:
         BMI160 imu {};
-        CalibrationConfig * calibration;
         float q[4] {1.0f, 0.0f, 0.0f, 0.0f};
         // Loop timing globals
         uint32_t now = 0, last = 0;   //micros() timers
         float deltat = 0;                  //loop time in seconds
+
+        SlimeVR::Configuration::BMI160CalibrationConfig m_Calibration;
 };
+
+#endif

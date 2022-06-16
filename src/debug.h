@@ -38,26 +38,20 @@
 #define LOG_LEVEL LOG_LEVEL_DEBUG
 
 #if LOG_LEVEL == LOG_LEVEL_TRACE
-#define FULL_DEBUG
+    #define DEBUG_SENSOR
+    #define DEBUG_NETWORK
+    #define DEBUG_CONFIGURATION
 #endif
 
 #define serialDebug false // Set to true to get Serial output for debugging
 #define serialBaudRate 115200
-#define UPDATE_IMU_UNCONNECTED 1
-//#define SEND_UPDATES_UNCONNECTED 1
-#define LED_INTERVAL_STANDBUY 10000
-#define STATUS_PRINT_INTERVAL 15000
-#define ENABLE_LEDS true
-
-#define LOADING_LED LED_BUILTIN
-#define CALIBRATING_LED LED_BUILTIN
-#define STATUS_LED LED_BUILTIN
+#define LED_INTERVAL_STANDBY 10000
 
 // Determines how often we sample and send data
 #define samplingRateInMillis 10
 
 // Sleeping options
-#define POWERSAVING_MODE POWER_SAVING_MINIMUM
+#define POWERSAVING_MODE POWER_SAVING_LEGACY  // Minimum causes sporadic data pauses
 #if POWERSAVING_MODE >= POWER_SAVING_MINIMUM
     #define TARGET_LOOPTIME_MICROS (samplingRateInMillis * 1000)
 #endif

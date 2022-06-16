@@ -20,6 +20,10 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
+#ifndef SENSORS_BNO055SENSOR_H
+#define SENSORS_BNO055SENSOR_H
+
 #include "sensor.h"
 
 #include <Adafruit_BNO055.h>
@@ -27,7 +31,7 @@
 class BNO055Sensor : public Sensor
 {
 public:
-    BNO055Sensor() : Sensor("BNO055Sensor"){};
+    BNO055Sensor(uint8_t id, uint8_t address, float rotation) : Sensor("BNO055Sensor", IMU_BNO055, id, address, rotation){};
     ~BNO055Sensor(){};
     void motionSetup() override final;
     void motionLoop() override final;
@@ -36,3 +40,5 @@ public:
 private:
     Adafruit_BNO055 imu;
 };
+
+#endif

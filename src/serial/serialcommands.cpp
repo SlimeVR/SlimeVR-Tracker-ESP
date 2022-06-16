@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 #include "network/network.h"
 #include "logging/Logger.h"
 #include <CmdCallback.hpp>
-#include <EEPROM.h>
+#include "GlobalVars.h"
 
 namespace SerialCommands {
     SlimeVR::Logging::Logger logger("SerialCommands");
@@ -73,9 +73,9 @@ namespace SerialCommands {
 
     void cmdFactoryReset(CmdParser * parser) {
         logger.info("FACTORY RESET");
-        for (int i = 0; i <= 4096; i++) // Clear EEPROM
-            EEPROM.write(i, 0xFF);
-        EEPROM.commit();
+
+        configuration.reset();
+
         WiFi.disconnect(true); // Clear WiFi credentials
         #if ESP8266
         ESP.eraseConfig(); // Clear ESP config

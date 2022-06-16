@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 S.J. Remington, SlimeVR contributors
+    Copyright (c) 2021 S.J. Remington & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
 
 #include "bmi160sensor.h"
 #include "network/network.h"
+#include "GlobalVars.h"
 
 // Typical sensitivity at 25C
 // See p. 9 of https://www.mouser.com/datasheet/2/783/BST-BMI160-DS000-1509569.pdf
@@ -59,7 +60,7 @@ void BMI160Sensor::motionSetup() {
     imu.initialize(addr);
     if(!imu.testConnection()) {
         m_Logger.fatal("Can't connect to BMI160 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
-        LEDManager::signalAssert();
+        ledManager.pattern(50, 50, 200);
         return;
     }
 
@@ -69,7 +70,8 @@ void BMI160Sensor::motionSetup() {
     imu.getAcceleration(&ax, &ay, &az);
     float g_az = (float)az / 8192; // For 4G sensitivity
     if(g_az < -0.75f) {
-        LEDManager::off(CALIBRATING_LED);
+        ledManager.on();
+
         m_Logger.info("Flip front to confirm start calibration");
         delay(5000);
         imu.getAcceleration(&ax, &ay, &az);
@@ -80,11 +82,29 @@ void BMI160Sensor::motionSetup() {
             startCalibration(0);
         }
 
-        LEDManager::on(CALIBRATING_LED);
+        ledManager.off();
     }
 
-    DeviceConfig * const config = getConfigPtr();
-    calibration = &config->calibration[sensorId];
+    // Initialize the configuration
+    {
+        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        // If no compatible calibration data is found, the calibration data will just be zero-ed out
+        switch (sensorCalibration.type) {
+        case SlimeVR::Configuration::CalibrationConfigType::BMI160:
+            m_Calibration = sensorCalibration.data.bmi160;
+            break;
+
+        case SlimeVR::Configuration::CalibrationConfigType::NONE:
+            m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Calibration is advised");
+            break;
+
+        default:
+            m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Calibration is advised");
+        }
+    }
+
     working = true;
 }
 
@@ -146,7 +166,7 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 #endif
 
     float temperature = getTemperature();
-    float tempDiff = temperature - calibration->temperature;
+    float tempDiff = temperature - m_Calibration.temperature;
     uint8_t quant = map(temperature, 15, 75, 0, 12);
 
     int16_t ax, ay, az;
@@ -156,9 +176,9 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 
     // TODO: Sensitivity over temp compensation?
     // TODO: Cross-axis sensitivity compensation?
-    Gxyz[0] = ((float)gx - (calibration->G_off[0] + (tempDiff * LSB_COMP_PER_TEMP_X_MAP[quant]))) * GSCALE;
-    Gxyz[1] = ((float)gy - (calibration->G_off[1] + (tempDiff * LSB_COMP_PER_TEMP_Y_MAP[quant]))) * GSCALE;
-    Gxyz[2] = ((float)gz - (calibration->G_off[2] + (tempDiff * LSB_COMP_PER_TEMP_Z_MAP[quant]))) * GSCALE;
+    Gxyz[0] = ((float)gx - (m_Calibration.G_off[0] + (tempDiff * LSB_COMP_PER_TEMP_X_MAP[quant]))) * GSCALE;
+    Gxyz[1] = ((float)gy - (m_Calibration.G_off[1] + (tempDiff * LSB_COMP_PER_TEMP_Y_MAP[quant]))) * GSCALE;
+    Gxyz[2] = ((float)gz - (m_Calibration.G_off[2] + (tempDiff * LSB_COMP_PER_TEMP_Z_MAP[quant]))) * GSCALE;
 
     Axyz[0] = (float)ax;
     Axyz[1] = (float)ay;
@@ -167,10 +187,10 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
     #if useFullCalibrationMatrix == true
         float temp[3];
         for (uint8_t i = 0; i < 3; i++)
-            temp[i] = (Axyz[i] - calibration->A_B[i]);
-        Axyz[0] = calibration->A_Ainv[0][0] * temp[0] + calibration->A_Ainv[0][1] * temp[1] + calibration->A_Ainv[0][2] * temp[2];
-        Axyz[1] = calibration->A_Ainv[1][0] * temp[0] + calibration->A_Ainv[1][1] * temp[1] + calibration->A_Ainv[1][2] * temp[2];
-        Axyz[2] = calibration->A_Ainv[2][0] * temp[0] + calibration->A_Ainv[2][1] * temp[1] + calibration->A_Ainv[2][2] * temp[2];
+            temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
+        Axyz[0] = m_Calibration.A_Ainv[0][0] * temp[0] + m_Calibration.A_Ainv[0][1] * temp[1] + m_Calibration.A_Ainv[0][2] * temp[2];
+        Axyz[1] = m_Calibration.A_Ainv[1][0] * temp[0] + m_Calibration.A_Ainv[1][1] * temp[1] + m_Calibration.A_Ainv[1][2] * temp[2];
+        Axyz[2] = m_Calibration.A_Ainv[2][0] * temp[0] + m_Calibration.A_Ainv[2][1] * temp[1] + m_Calibration.A_Ainv[2][2] * temp[2];
     #else
         for (uint8_t i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
@@ -178,45 +198,47 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
 }
 
 void BMI160Sensor::startCalibration(int calibrationType) {
-    LEDManager::on(CALIBRATING_LED);
+    ledManager.on();
+
     m_Logger.debug("Gathering raw data for device calibration...");
-    DeviceConfig * const config = getConfigPtr();
 
     // Wait for sensor to calm down before calibration
     m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
     delay(2000);
     float temperature = getTemperature();
-    config->calibration[sensorId].temperature = temperature;
+    m_Calibration.temperature = temperature;
     uint16_t gyroCalibrationSamples = 2500;
     float rawGxyz[3] = {0};
 
-#ifdef FULL_DEBUG
+#ifdef DEBUG_SENSOR
     m_Logger.trace("Calibration temperature: %f", temperature);
 #endif
 
     for (int i = 0; i < gyroCalibrationSamples; i++)
     {
-        LEDManager::on(CALIBRATING_LED);
+        ledManager.on();
+
         int16_t gx, gy, gz;
         imu.getRotation(&gx, &gy, &gz);
         rawGxyz[0] += float(gx);
         rawGxyz[1] += float(gy);
         rawGxyz[2] += float(gz);
-        LEDManager::off(CALIBRATING_LED);
-    }
-    config->calibration[sensorId].G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
-    config->calibration[sensorId].G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
-    config->calibration[sensorId].G_off[2] = rawGxyz[2] / gyroCalibrationSamples;
 
-#ifdef FULL_DEBUG
-    m_Logger.trace("Gyro calibration results: %f %f %f", config->calibration[sensorId].G_off[0], config->calibration[sensorId].G_off[1], config->calibration[sensorId].G_off[2]);
+        ledManager.off();
+    }
+    m_Calibration.G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
+    m_Calibration.G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
+    m_Calibration.G_off[2] = rawGxyz[2] / gyroCalibrationSamples;
+
+#ifdef DEBUG_SENSOR
+    m_Logger.trace("Gyro calibration results: %f %f %f", UNPACK_VECTOR_ARRAY(m_Calibration.G_off));
 #endif
 
     // Blink calibrating led before user should rotate the sensor
     m_Logger.info("After 3 seconds, Gently rotate the device while it's gathering accelerometer data");
-    LEDManager::on(CALIBRATING_LED);
+    ledManager.on();
     delay(1500);
-    LEDManager::off(CALIBRATING_LED);
+    ledManager.off();
     delay(1500);
     m_Logger.debug("Gathering accelerometer data...");
 
@@ -224,16 +246,18 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     float *calibrationDataAcc = (float*)malloc(accelCalibrationSamples * 3 * sizeof(float));
     for (int i = 0; i < accelCalibrationSamples; i++)
     {
-        LEDManager::on(CALIBRATING_LED);
+        ledManager.on();
+
         int16_t ax, ay, az;
         imu.getAcceleration(&ax, &ay, &az);
         calibrationDataAcc[i * 3 + 0] = ax;
         calibrationDataAcc[i * 3 + 1] = ay;
         calibrationDataAcc[i * 3 + 2] = az;
-        LEDManager::off(CALIBRATING_LED);
+
+        ledManager.off();
         delay(100);
     }
-    LEDManager::off(CALIBRATING_LED);
+    ledManager.off();
     m_Logger.debug("Calculating calibration data...");
 
     float A_BAinv[4][3];
@@ -244,16 +268,24 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     m_Logger.debug("{");
     for (int i = 0; i < 3; i++)
     {
-        config->calibration[sensorId].A_B[i] = A_BAinv[0][i];
-        config->calibration[sensorId].A_Ainv[0][i] = A_BAinv[1][i];
-        config->calibration[sensorId].A_Ainv[1][i] = A_BAinv[2][i];
-        config->calibration[sensorId].A_Ainv[2][i] = A_BAinv[3][i];
+        m_Calibration.A_B[i] = A_BAinv[0][i];
+        m_Calibration.A_Ainv[0][i] = A_BAinv[1][i];
+        m_Calibration.A_Ainv[1][i] = A_BAinv[2][i];
+        m_Calibration.A_Ainv[2][i] = A_BAinv[3][i];
         m_Logger.debug("  %f, %f, %f, %f", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
     m_Logger.debug("}");
-    m_Logger.debug("Now Saving EEPROM");
-    setConfig(*config);
-    m_Logger.debug("Finished Saving EEPROM");
+
+    m_Logger.debug("Saving the calibration data");
+
+    SlimeVR::Configuration::CalibrationConfig calibration;
+    calibration.type = SlimeVR::Configuration::CalibrationConfigType::BMI160;
+    calibration.data.bmi160 = m_Calibration;
+    configuration.setCalibration(sensorId, calibration);
+    configuration.save();
+
+    m_Logger.debug("Saved the calibration data");
+
     m_Logger.info("Calibration data gathered");
     delay(5000);
 }

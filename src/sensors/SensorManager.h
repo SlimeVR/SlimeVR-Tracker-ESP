@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -21,30 +21,44 @@
     THE SOFTWARE.
 */
 
-#ifndef SLIMEVR_CONFIG_H_
-#define SLIMEVR_CONFIG_H_
+#ifndef SLIMEVR_SENSORMANAGER
+#define SLIMEVR_SENSORMANAGER
 
-struct CalibrationConfig {
-    //accel offsets and correction matrix
-    float A_B[3];
-    float A_Ainv[3][3];
-    // mag offsets and correction matrix
-    float M_B[3];
-    float M_Ainv[3][3];
-    //raw offsets, determined for gyro at rest
-    float G_off[3];
-    // calibration temperature for dynamic compensation
-    float temperature;
-};
+#include "globals.h"
+#include "sensor.h"
+#include "EmptySensor.h"
+#include "logging/Logger.h"
 
-struct DeviceConfig {
-    CalibrationConfig calibration[2];
-    int deviceId;
-    int deviceMode;
-};
+namespace SlimeVR
+{
+    namespace Sensors
+    {
+        class SensorManager
+        {
+        public:
+            SensorManager()
+                : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensor1(new EmptySensor(0)), m_Sensor2(new EmptySensor(0)) {}
+            ~SensorManager()
+            {
+                delete m_Sensor1;
+                delete m_Sensor2;
+            }
 
-DeviceConfig * const getConfigPtr();
-void setConfig(const DeviceConfig & config);
-void saveConfig();
+            void setup();
+            void postSetup();
 
-#endif // SLIMEVR_CONFIG_H_
+            void update();
+
+            Sensor *getFirst() { return m_Sensor1; };
+            Sensor *getSecond() { return m_Sensor2; };
+
+        private:
+            SlimeVR::Logging::Logger m_Logger;
+
+            Sensor *m_Sensor1;
+            Sensor *m_Sensor2;
+        };
+    }
+}
+
+#endif // SLIMEVR_SENSORFACTORY_H_

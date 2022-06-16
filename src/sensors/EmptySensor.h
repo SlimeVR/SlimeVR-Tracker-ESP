@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,21 +20,28 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_WIFI_H_
-#define SLIMEVR_WIFI_H_
 
-#ifdef ESP8266
-    #include <ESP8266WiFi.h>
-#else
-    #include <WiFi.h>
-#endif
+#ifndef SENSORS_EMPTYSENSOR_H
+#define SENSORS_EMPTYSENSOR_H
 
-namespace WiFiNetwork {
-    bool isConnected();
-    void setUp();
-    void upkeep();
-    void setWiFiCredentials(const char * SSID, const char * pass);
-    IPAddress getAddress();
+#include "sensor.h"
+
+namespace SlimeVR
+{
+    namespace Sensors
+    {
+        class EmptySensor : public Sensor
+        {
+        public:
+            EmptySensor(uint8_t id) : Sensor("EmptySensor", 255, id, 0, 0.0){};
+            ~EmptySensor(){};
+
+            void motionSetup() override final{};
+            void motionLoop() override final{};
+            void sendData() override final{};
+            void startCalibration(int calibrationType) override final{};
+        };
+    }
 }
 
-#endif // SLIMEVR_WIFI_H_
+#endif

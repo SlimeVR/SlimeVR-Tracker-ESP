@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@
 #define IMU_BMI160 8
 #define IMU_ICM20948 9
 
-#define BOARD_SLIMEVR 1
+#define BOARD_SLIMEVR_LEGACY 1
 #define BOARD_SLIMEVR_DEV 2
 #define BOARD_NODEMCU 3
 #define BOARD_CUSTOM 4
@@ -42,11 +42,14 @@
 #define BOARD_WEMOSD1MINI 6
 #define BOARD_TTGO_TBASE 7
 #define BOARD_ESP01 8
+#define BOARD_SLIMEVR 9
 
 #define BAT_EXTERNAL 1
 #define BAT_INTERNAL 2
 #define BAT_MCP3021 3
 #define BAT_INTERNAL_MCP3021 4
+
+#define LED_OFF 255
 
 #define POWER_SAVING_LEGACY 0 // No sleeping, but PS enabled
 #define POWER_SAVING_NONE 1 // No sleeping, no PS => for connection issues
@@ -59,10 +62,6 @@
 #define DEG_180 PI
 #define DEG_270 PI / 2
 
-#ifndef LED_BUILTIN
-#define LED_BUILTIN 2
-#endif
-
 #ifdef ESP8266
   #define HARDWARE_MCU 1
 #elif defined(ESP32)
@@ -70,5 +69,7 @@
 #else
   #define HARDWARE_MCU 0
 #endif
+
+#define CURRENT_CONFIGURATION_VERSION 1
 
 #endif // SLIMEVR_CONSTS_H_

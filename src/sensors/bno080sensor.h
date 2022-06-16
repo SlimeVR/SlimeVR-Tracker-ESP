@@ -20,15 +20,24 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
+#ifndef SENSORS_BNO080SENSOR_H
+#define SENSORS_BNO080SENSOR_H
+
 #include "sensor.h"
 #include <BNO080.h>
 
 class BNO080Sensor : public Sensor
 {
 public:
-    BNO080Sensor() : Sensor("BNO080Sensor"){};
+    BNO080Sensor(uint8_t id, uint8_t type, uint8_t address, float rotation, uint8_t intPin)
+        : Sensor("BNO080Sensor", type, id, address, rotation), m_IntPin(intPin) {};
     ~BNO080Sensor(){};
     void motionSetup() override final;
+    void postSetup() override {
+        lastData = millis();
+    }
+
     void motionLoop() override final;
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
@@ -36,6 +45,8 @@ public:
 
 private:
     BNO080 imu{};
+
+    uint8_t m_IntPin;
 
     uint8_t tap;
     unsigned long lastData = 0;
@@ -50,3 +61,5 @@ private:
     bool useMagnetometerCorrection = false;
     bool newMagData = false;
 };
+
+#endif

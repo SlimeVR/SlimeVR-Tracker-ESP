@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,16 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_SENSORFACTORY_H_
-#define SLIMEVR_SENSORFACTORY_H_
 
-#include "globals.h"
-#include "sensor.h"
+#ifndef GLOBALVARS_H
+#define GLOBALVARS_H
 
-class SensorFactory
-{
-public:
-    SensorFactory();
-    ~SensorFactory();
-    void create();
-    void motionSetup();
-    void motionLoop();
-    void sendData();
-    void startCalibration(int sensorId, int calibrationType);
-    Sensor *getFirst() { return sensor1; };
-    Sensor *getSecond() { return sensor2; };
+#include "LEDManager.h"
+#include "status/StatusManager.h"
+#include "configuration/Configuration.h"
 
-protected:
-    Sensor *sensor1;
-    Sensor *sensor2;
-};
+extern SlimeVR::LEDManager ledManager;
+extern SlimeVR::Status::StatusManager statusManager;
+extern SlimeVR::Configuration::Configuration configuration;
 
-#endif // SLIMEVR_SENSORFACTORY_H_
+#endif
