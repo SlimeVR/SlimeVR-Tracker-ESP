@@ -123,7 +123,11 @@ void BNO080Sensor::motionLoop()
             }
 #endif // ENABLE_INSPECTION
 
-            newData = true;
+            if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
+            {
+                newData = true;
+                lastQuatSent = quaternion;
+            }
         }
 #if BNO_USE_MAGNETOMETER_CORRECTION
         if (imu.hasNewMagQuat())
