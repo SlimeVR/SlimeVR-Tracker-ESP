@@ -92,7 +92,7 @@ void LSM303Sensor::motionLoop()
     getScaledValues(AGMxyz);
     mahonyQuaternionUpdate(q, AGMxyz[0], AGMxyz[1], AGMxyz[2], AGMxyz[3], AGMxyz[4], AGMxyz[5], AGMxyz[6], AGMxyz[7], AGMxyz[8], deltat * 1.0e-6f);
     quaternion.set(-q[2], q[1], q[3], q[0]);
-    quaternion *= sensorOffset; // Network::sendTemperature((int)imu.getTemperatureC()>>2, sensorId);
+    quaternion *= sensorOffset;
     Network::sendTemperature(imu.getTemperatureC(), sensorId);
 #if ENABLE_INSPECTION
     {

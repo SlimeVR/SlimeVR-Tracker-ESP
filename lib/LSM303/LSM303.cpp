@@ -33,7 +33,7 @@
 // | Address          | 68         | 68          | 3             | 28      | 28        | 8       | 3         | 3          | 3           | 3         | 3           |
 // | Order            | XYZ        | XYZ         | XZY           | XYZ     | XYZ       | XYZ     | XYZ       | XYZ        | XYZ         | XYZ       | XYZ         |
 // | Axis             | LH         | LH          | HL            | LH      | LH        | LH      | HL        | HL         | HL          | HL        | HL          |
-// | Supported		  | No         | No	         | No            | No      | No        | No      | Yes       | Yes        | No          | Yes       | Yes         |
+// | Supported		  | No         | No	         | No            | No      | No        | Yes     | Yes       | Yes        | No          | Yes       | No          |
 // +------------------+------------+-------------+---------------+---------+-----------+---------+-----------+------------+-------------+-----------+-------------+
 
 #include "LSM303.h"
@@ -203,13 +203,13 @@ void LSM303::getRotation(int16_t *output_buffer)
 void LSM303::getMagnetometer(int16_t *output_buffer)
 {
 	I2Cdev::readBytes(mag_address, mag_start_reg | 0x80, 6, buffer);
-	if ((mag_order >> 6) & 0b01) // Big Endian
+	if ((mag_order >> 6) & 0b01)
 	{
 		output_buffer[(mag_order & 0b11)] = (int16_t)(buffer[0] << 8 | buffer[1]);
 		output_buffer[(mag_order & 0b1100) >> 2] = (int16_t)(buffer[2] << 8 | buffer[3]);
 		output_buffer[(mag_order & 0b110000) >> 4] = (int16_t)(buffer[4] << 8 | buffer[5]);
 	}
-	else // little Endian
+	else
 	{
 		output_buffer[(mag_order & 0b11)] = (int16_t)(buffer[1] << 8 | buffer[0]);
 		output_buffer[(mag_order & 0b1100) >> 2] = (int16_t)(buffer[3] << 8 | buffer[2]);
@@ -247,7 +247,7 @@ bool LSM303::testConnection()
 	return gyro != gyro_none && accMag != accMag_none;
 }
 
-uint8_t LSM303::getAccMagID() // go back to
+uint8_t LSM303::getAccMagID()
 {
 	uint8_t id = 0;
 	I2Cdev::readByte(acc_address, LSM303_WHO_AM_I, &id);

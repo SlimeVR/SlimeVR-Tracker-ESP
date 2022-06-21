@@ -27,13 +27,13 @@
 #include "Arduino.h"
 #include "I2Cdev.h"
 
-/*************** Gyro  Addresses L3GD20H, L3GD20, L3G4200D *******************/
-#define L3GD20_SA0_HIGH_ADDRESS 0b1101011 // also applies to D20H
-#define L3GD20_SA0_LOW_ADDRESS 0b1101010  // also applies to D20H
+/*************** Gyro Addresses L3GD20H, L3GD20, L3G4200D *******************/
+#define L3GD20_SA0_HIGH_ADDRESS 0b1101011
+#define L3GD20_SA0_LOW_ADDRESS 0b1101010
 #define L3G4200D_SA0_HIGH_ADDRESS 0b1101001
 #define L3G4200D_SA0_LOW_ADDRESS 0b1101000
 
-/*************** Gyro  Who_am_i values *******************/
+/*************** Gyro Who_am_i values *******************/
 #define L3GD20H_WHO_ID 0xD7
 #define L3GD20_WHO_ID 0xD4
 #define L3G4200D_WHO_ID 0xD3
@@ -56,7 +56,7 @@
 #define L3G_OUT_Y_H 0x2B
 #define L3G_OUT_Z_L 0x2C
 #define L3G_OUT_Z_H 0x2D
-#define L3G_LOW_ODR 0x39 // LSM303 only
+#define L3G_LOW_ODR 0x39
 
 /*************** Device Registers LSM303 *******************/
 #define LSM303D_SA0_LOW_ADDRESS 0b0011110
@@ -65,7 +65,7 @@
 #define LSM303D_SA0_HIGH_ADDRESS 0b0011101
 #define LSM303DLM_DLH_ACC_SA0_LOW_ADDRESS 0b0011000
 
-#define LSM303_WHO_AM_I 0x0F // 00000111   rw
+#define LSM303_WHO_AM_I 0x0F
 #define LSM303D_WHO_ID 0x49
 #define LSM303DLM_WHO_ID 0x3C
 
