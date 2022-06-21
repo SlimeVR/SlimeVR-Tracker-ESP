@@ -48,7 +48,7 @@ namespace SlimeVR
                 firstIMUAddress = I2CSCAN::pickDevice(0x4A, 0x4B, true);
 #elif IMU == IMU_BNO055
                 firstIMUAddress = I2CSCAN::pickDevice(0x29, 0x28, true);
-#elif IMU == IMU_MPU9250 || IMU == IMU_BMI160 | IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_ICM20948
+#elif IMU == IMU_MPU9250 || IMU == IMU_BMI160 || IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_ICM20948
                 firstIMUAddress = I2CSCAN::pickDevice(0x68, 0x69, true);
 #elif IMU == IMU_LSM6DS3
                 firstIMUAddress = I2CSCAN::pickDevice(0x6B, 0x6A, true);
