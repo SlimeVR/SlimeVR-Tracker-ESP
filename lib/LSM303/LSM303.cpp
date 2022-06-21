@@ -33,7 +33,7 @@
 // | Address          | 68         | 68          | 3             | 28      | 28        | 8       | 3         | 3          | 3           | 3         | 3           |
 // | Order            | XYZ        | XYZ         | XZY           | XYZ     | XYZ       | XYZ     | XYZ       | XYZ        | XYZ         | XYZ       | XYZ         |
 // | Axis             | LH         | LH          | HL            | LH      | LH        | LH      | HL        | HL         | HL          | HL        | HL          |
-// | Supported		  | No         | Yes         | No            | No      | No        | No      | Yes       | Yes        | No          | Yes       | Yes         |
+// | Supported		  | No         | No	         | No            | No      | No        | No      | Yes       | Yes        | No          | Yes       | Yes         |
 // +------------------+------------+-------------+---------------+---------+-----------+---------+-----------+------------+-------------+-----------+-------------+
 
 #include "LSM303.h"
