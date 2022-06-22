@@ -111,6 +111,7 @@ void BNO080Sensor::motionLoop()
 
         lastReset = 0;
         lastData = millis();
+
 #if USE_6_AXIS
         if (imu.hasNewGameQuat())
         {
@@ -129,6 +130,7 @@ void BNO080Sensor::motionLoop()
                 lastQuatSent = quaternion;
             }
         }
+
 #if BNO_USE_MAGNETOMETER_CORRECTION
         if (imu.hasNewMagQuat())
         {
@@ -221,6 +223,7 @@ void BNO080Sensor::sendData()
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
 #endif
     }
+
 #if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
     if (newMagData)
     {
@@ -229,6 +232,7 @@ void BNO080Sensor::sendData()
         Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
     }
 #endif
+
     if (tap != 0)
     {
         Network::sendTap(tap, sensorId);
