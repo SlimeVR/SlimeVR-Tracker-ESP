@@ -29,14 +29,6 @@ class DeviceConfiguration:
         [env:{self.platformio_board}]
         platform = {self.platform}
         board = {self.platformio_board}""")
-
-        if self.platform == "espressif32 @ 3.5.0":
-            section += dedent("""
-            lib_deps =
-                ${env.lib_deps}
-                lorol/LittleFS_esp32 @ 1.0.6
-            """)
-
         return section
 
     def filename(self) -> str:
