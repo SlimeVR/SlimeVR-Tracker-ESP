@@ -7,15 +7,10 @@ We are most active on [discord](https://discord.gg/SlimeVR), come chat with us i
 have any questions or want to hang out! 😎
 
 
-## Setting up PlatformIO
+## Setting up the development environment
 
-We use platformio as our build tooling. To set this up, we recommend using the
-[VSCode](https://code.visualstudio.com/) editor, and installing the platformio
-extension:
-![](https://docs.platformio.org/en/latest//_images/platformio-ide-vscode-pkg-installer.png)
-
-There is also a [command line version](https://docs.platformio.org/en/latest//core/index.html#piocore)
-of platformio if you prefer that, that you can use instead.
+We use platformio as our build tooling and rely on git for version control. There are
+instructions to set all of this up [here](https://docs.slimevr.dev/firmware/setup-and-install.html).
 
 
 ## Using third-party code
