@@ -76,6 +76,12 @@ your PR is going to be merged.
 
 ### Adding the dependency
 
+PlatformIO provides us a helpful way to do dependency management. 
+Here we provide the basic workflow you can follow, but you can refer to the 
+[PlatformIO documentation on dependecies][dep docs] for more details.
+
+[dep docs]: https://docs.platformio.org/en/latest/librarymanager/dependencies.html
+
 PlatformIO gives us a helpful way to do dependency management, which you can read an
 overview of [here](https://docs.platformio.org/en/latest/librarymanager/dependencies.html).
 But to save you time, we have outlined the basic workflow for you.
