@@ -24,12 +24,39 @@ copy-paste code from random libraries! There are several reasons for this:
 - It makes it harder for us to maintain the code, because we don't what has changed
   from the original!
 
-To bring a new library into the firmware, we instead treat the modified library as a
-"fork" of the original. We then add the forked library as a dependency of the firmware,
-via platformio which is our build tool.
+Instead, we will want to do the following:
+1. Check that the dependency has a permissive license
+2. (Optional) Fork the dependency if it needs any modification
+1. Add the dependency via platformio
 
 
-### Forking
+### Check the License
+
+The SlimeVR firmware is under the MIT License and also is intended to be permissively
+licensed. This means that we will not accept contributions that include code from any
+viral software licenses. If you do not know what that means, here is a breakdown of some
+common software licenses:
+
+> Fine for use:
+> * MIT
+> * Apache 2.0
+> * BSD
+>
+> Will not be accepted:
+> * GPLv3 or v2
+> * LGPL
+> * No license
+
+This includes the license of any code that your dependency depends on! If you are ever
+unsure, feel free to ask us on discord.
+
+
+### (Optional) Fork the dependency
+
+When you want to use the depdendency, you should ask yoursef: "Can I simply call the
+functions/classes in the dependency in *my* code, or do I actually need to modify the
+source code of the original files"? If the answer is "I need to modify the origianl
+files", then you will need to fork the dependency so that your modifications are clear.
 
 > **Note**
 > If you have never forked in git before, a fork is basically a copy of a library that
@@ -41,9 +68,12 @@ To create a fork in github, simply go to the original library and click this but
 ![](https://docs.github.com/assets/cb-28613/images/help/repository/fork_button.png)
 Now clone your repo to your computer. From this point forward, any changes that you
 make while working on your fork will have their git history preserved and linked to the
-original.
+original when you commit those changes.
 
-### Adding the fork as a dependency
+We will likely ask you to transfer ownership of the fork to the SlimeVR organization if
+your PR is going to be merged.
+
+### Adding the dependency
 
 Platformio gives us a helpful way to do dependency management, which you can read an
 overview of [here](https://docs.platformio.org/en/latest/librarymanager/dependencies.html).
@@ -51,9 +81,11 @@ But to save you time, we have outlined the basic workflow for you.
 
 There is a field called `lib_deps` of the `platformio.ini` file that describes the list
 of dependencies in the code. These are third-party libraries not located in the main
-firmware git repo. You want to add your fork to this list. The full list of options for
-this field is outlined [here](https://docs.platformio.org/en/latest/core/userguide/pkg/cmd_install.html#cmd-pkg-install-specifications)
-but for simplicity, there are a few common ways of giving dependencies:
+firmware git repo. You want to add your dependency to this list. The full list of
+options for this field is outlined [here], but for simplicity, there are a few common
+ways of giving dependencies:
+
+[here]: https://docs.platformio.org/en/latest/core/userguide/pkg/cmd_install.html#cmd-pkg-install-specifications
 
 ```ini
 [env]
@@ -77,31 +109,17 @@ In order, these dependencies do the following:
   fork (which is checked out at that path), but you don't want to have to constantly
   commit and push to your fork just to get the changes usable by the firmware.
 
-We recommend using the `symlink://` approach while developing locally, and then using
-the git approach when submitting your code for a pull request. Dont forget that your
-fork will need to be pushed and publicly viewable on github for us to be able to use
-and review it!
-
-We will likely ask you to transfer ownership of the fork to the SlimeVR organization if
-your PR is going to be merged.
-
-
-### Licenses of third party code.
-
-The firmware is under the MIT License and also is intended to be permissively licensed.
-This means that we will not accept contributions that include code from any viral
-software licenses. If you do not know what that means, here is a breakdown of some
-common software licenses:
-
-> Fine for use:
-> * MIT
-> * Apache 2.0
-> * BSD
+> **NOTE:**
+> If you have forked the dependency instead of using it as-is, we recommend using the
+> `symlink://` approach while developing locally, and then using the git approach when
+> submitting your code for a pull request. This is because while developing locally,
+> you will want to test out frequent changes and won't want to have to push constantly
+> to git and have platformio constantly retrieve those changes. However, for anyone
+> else to be able to use your code, it needs to be on git rather than a symlink.
 >
-> Will not be accepted:
-> * GPLv3 or v2
-> * LGPL
-> * No license
-
-This includes the license of any code that your dependency depends on! If you are ever
-unsure, feel free to ask us on discord.
+> Once you are done doing local testing and are ready to submit a PR, you can push
+> whatever changes you made to the forked dependency to its repository, and switch the
+> firmware's `lib_deps` back to the git url.
+>
+> Dont forget that your fork will need to be pushed and publicly viewable on github for
+> us to be able to use and review it!
