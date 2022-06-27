@@ -3,7 +3,7 @@
 Thanks for helping with SlimeVR! This document explains what to know when
 contributing.
 
-We are most active on [discord](https://discord.gg/SlimeVR), come chat with us if you
+We are most active on [Discord](https://discord.gg/SlimeVR), come chat with us if you
 have any questions or want to hang out! 😎
 
 
