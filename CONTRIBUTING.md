@@ -37,7 +37,7 @@ licensed. This means that we will not accept contributions that include code fro
 viral software licenses. If you do not know what that means, here is a breakdown of some
 common software licenses:
 
-> Fine for use:
+> Fine to use:
 > * MIT
 > * Apache 2.0
 > * BSD
