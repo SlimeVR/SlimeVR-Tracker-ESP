@@ -101,7 +101,7 @@ In order, these dependencies do the following:
   library by `bblanchon`. This library was uploaded to the PlatformIO
   [package registry](https://registry.platformio.org/search) which contains many popular
   libraries intended for use with platformio.
-2. Adds a dependency to a git repo located at `https://github.com/Some/Dependency` and
+2. Adds a dependency to a Git repo located at `https://github.com/Some/Dependency` and
   uses the commit tagged as `v1.2.3`. This could also have been a branch name, or a
   commit hash.
 3. Links to a folder locally on your computer with the path `C:/path/to/the/library`.
