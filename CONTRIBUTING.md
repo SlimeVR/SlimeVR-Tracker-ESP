@@ -110,7 +110,7 @@ In order, these dependencies do the following:
   fork (which is checked out at that path), but you don't want to have to constantly
   commit and push to your fork just to get the changes usable by the firmware.
 
-> **NOTE:**
+> **Note**
 > If you have forked the dependency instead of using it as-is, we recommend using the
 > `symlink://` approach while developing locally, and then using the Git approach when
 > submitting your code for a pull request. This is because while developing locally,
