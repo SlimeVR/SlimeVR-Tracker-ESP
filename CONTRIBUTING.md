@@ -53,7 +53,7 @@ unsure, feel free to ask us in our Discord.
 
 ### (Optional) Fork the dependency
 
-When you want to use the depdendency, you should ask yoursef: "Can I simply call the
+When you want to use the depdendency, you should ask yourself: "Can I simply call the
 functions/classes in the dependency in *my* code, or do I actually need to modify the
 source code of the original files"? If the answer is "I need to modify the original
 files", then you will need to fork the dependency so that your modifications are clear.
