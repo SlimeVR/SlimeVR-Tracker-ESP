@@ -26,6 +26,7 @@
 #include "logging/Logger.h"
 #include <CmdCallback.hpp>
 #include "GlobalVars.h"
+
 #if ESP32
     #include "nvs_flash.h"
 #endif
@@ -82,18 +83,19 @@ namespace SerialCommands {
         WiFi.disconnect(true); // Clear WiFi credentials
         #if ESP8266
             ESP.eraseConfig(); // Clear ESP config
-        #else 
-        #if ESP32
+        #elif ESP32
                 nvs_flash_erase();
         #else
             #warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED
             logger.info("FACTORY RESET NOT SUPPORTED");
             return;
         #endif
-        #endif
+
         #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
-            logger.error("FACTORY RESET can not clear your hardcoded WiFi crediential!");
+            #warning FACTORY RESET does not clear your hardcoded WiFi credentials!
+            logger.warn("FACTORY RESET does not clear your hardcoded WiFi credentials!");
         #endif
+
         delay(3000);
         ESP.restart();
     }
