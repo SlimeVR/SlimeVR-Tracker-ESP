@@ -59,7 +59,7 @@ source code of the original files"? If the answer is "I need to modify the origi
 files", then you will need to fork the dependency so that your modifications are clear.
 
 > **Note**
-> If you have never forked in git before, a fork is basically a copy of a library that
+> If you have never forked on GitHub before, a fork is basically a copy of a library that
 > maintains the original's history. This means that any changes you commit in your fork
 > will show up as changes against the original. We can even update these changes as the
 > original changes!
