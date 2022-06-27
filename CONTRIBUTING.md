@@ -114,7 +114,7 @@ In order, these dependencies do the following:
 > `symlink://` approach while developing locally, and then using the git approach when
 > submitting your code for a pull request. This is because while developing locally,
 > you will want to test out frequent changes and won't want to have to push constantly
-> to git and have platformio constantly retrieve those changes. However, for anyone
+> to Git and have PlatformIO constantly retrieve those changes. However, for anyone
 > else to be able to use your code, it needs to be in a Git repository rather than a symlink.
 >
 > Once you are done doing local testing and are ready to submit a PR, you can push
