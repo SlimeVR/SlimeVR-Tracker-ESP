@@ -21,7 +21,7 @@ copy-paste code from random libraries! There are several reasons for this:
 - It is not clear when/where the code originated from.
 - The original code's license needs to be kept intact.
 - It removes the ability to update our code when the original updates.
-- It makes it harder for us to maintain the code, because we don't what has changed
+- It makes it harder for us to maintain the code, because we don't know what has changed
   from the original!
 
 Instead, we will want to do the following:
