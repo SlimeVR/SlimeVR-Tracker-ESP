@@ -98,7 +98,7 @@ lib_deps=
 In order, these dependencies do the following:
 1. Adds a dependency on version `6.9.12` of the
   [ArduinoJson](https://registry.platformio.org/libraries/bblanchon/ArduinoJson)
-  library by `bblanchon`. This library was uploaded to the platformio
+  library by `bblanchon`. This library was uploaded to the PlatformIO
   [package registry](https://registry.platformio.org/search) which contains many popular
   libraries intended for use with platformio.
 2. Adds a dependency to a git repo located at `https://github.com/Some/Dependency` and
