@@ -73,6 +73,7 @@ original when you commit those changes.
 We will likely ask you to transfer ownership of the fork to the SlimeVR organization if
 your PR is going to be merged.
 
+
 ### Adding the dependency
 
 PlatformIO gives us a helpful way to do dependency management, which you can read an
