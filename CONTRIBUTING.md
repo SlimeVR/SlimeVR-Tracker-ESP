@@ -80,7 +80,7 @@ PlatformIO gives us a helpful way to do dependency management, which you can rea
 overview of [here](https://docs.platformio.org/en/latest/librarymanager/dependencies.html).
 But to save you time, we have outlined the basic workflow for you.
 
-There is a field called `lib_deps` of the `platformio.ini` file that describes the list
+There is a field called `lib_deps` in the `platformio.ini` file that describes the list
 of dependencies in the code. These are third-party libraries not located in the main
 firmware git repo. You want to add your dependency to this list. The full list of
 options for this field is outlined [here], but for simplicity, there are a few common
