@@ -64,7 +64,7 @@ files", then you will need to fork the dependency so that your modifications are
 > will show up as changes against the original. We can even update these changes as the
 > original changes!
 
-To create a fork in github, simply go to the original library and click this button:
+To create a fork in GitHub, simply go to the original library and click this button:
 ![](https://docs.github.com/assets/cb-28613/images/help/repository/fork_button.png)
 Now clone your repo to your computer. From this point forward, any changes that you
 make while working on your fork will have their git history preserved and linked to the
