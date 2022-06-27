@@ -30,7 +30,7 @@ Instead, we will want to do the following:
 1. Add the dependency via platformio
 
 
-### Check the License
+### Check the license
 
 The SlimeVR firmware is under the MIT License and also is intended to be permissively
 licensed. This means that we will not accept contributions that include code from any
