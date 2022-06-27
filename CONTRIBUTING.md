@@ -115,7 +115,7 @@ In order, these dependencies do the following:
 > submitting your code for a pull request. This is because while developing locally,
 > you will want to test out frequent changes and won't want to have to push constantly
 > to git and have platformio constantly retrieve those changes. However, for anyone
-> else to be able to use your code, it needs to be on git rather than a symlink.
+> else to be able to use your code, it needs to be in a Git repository rather than a symlink.
 >
 > Once you are done doing local testing and are ready to submit a PR, you can push
 > whatever changes you made to the forked dependency to its repository, and switch the
