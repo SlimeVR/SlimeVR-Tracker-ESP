@@ -9,7 +9,7 @@ have any questions or want to hang out! 😎
 
 ## Setting up the development environment
 
-We use platformio as our build tooling and rely on git for version control. There are
+We use PlatformIO as our build tooling and rely on Git for version control. There are
 instructions to set all of this up [here](https://docs.slimevr.dev/firmware/setup-and-install.html).
 
 
