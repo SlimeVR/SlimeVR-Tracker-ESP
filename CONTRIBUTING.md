@@ -15,7 +15,7 @@ instructions to set all of this up [here](https://docs.slimevr.dev/firmware/setu
 
 ## Using third-party code
 
-Often you will want to use or reference third party code. You should not just
+Often you will want to use or reference third-party code. You should not just
 copy-paste code from random libraries! There are several reasons for this:
 
 - It is not clear when/where the code originated from.
