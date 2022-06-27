@@ -119,7 +119,7 @@ In order, these dependencies do the following:
 >
 > Once you are done doing local testing and are ready to submit a PR, you can push
 > whatever changes you made to the forked dependency to its repository, and switch the
-> firmware's `lib_deps` back to the git url.
+> firmware's `lib_deps` back to the Git url.
 >
 > Dont forget that your fork will need to be pushed and publicly viewable on GitHub for
 > us to be able to use and review it!
