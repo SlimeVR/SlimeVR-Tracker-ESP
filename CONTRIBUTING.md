@@ -111,7 +111,7 @@ In order, these dependencies do the following:
 
 > **NOTE:**
 > If you have forked the dependency instead of using it as-is, we recommend using the
-> `symlink://` approach while developing locally, and then using the git approach when
+> `symlink://` approach while developing locally, and then using the Git approach when
 > submitting your code for a pull request. This is because while developing locally,
 > you will want to test out frequent changes and won't want to have to push constantly
 > to Git and have PlatformIO constantly retrieve those changes. However, for anyone
