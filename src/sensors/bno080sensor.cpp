@@ -53,20 +53,20 @@ void BNO080Sensor::motionSetup()
                 );
 
 #if USE_6_AXIS
-#if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
+    #if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
     imu.enableARVRStabilizedGameRotationVector(10);
-#else
+    #else
     imu.enableGameRotationVector(10);
-#endif
-#if BNO_USE_MAGNETOMETER_CORRECTION
+    #endif
+    #if BNO_USE_MAGNETOMETER_CORRECTION
     imu.enableRotationVector(1000);
-#endif
+    #endif
 #else
-#if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
+    #if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
     imu.enableARVRStabilizedRotationVector(10);
-#else
+    #else
     imu.enableRotationVector(10);
-#endif
+    #endif
 #endif
 
     imu.enableTapDetector(100);
@@ -118,11 +118,11 @@ void BNO080Sensor::motionLoop()
             imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
             quaternion *= sensorOffset;
 
-#if ENABLE_INSPECTION
+    #if ENABLE_INSPECTION
             {
                 Network::sendInspectionFusedIMUData(sensorId, quaternion);
             }
-#endif // ENABLE_INSPECTION
+    #endif // ENABLE_INSPECTION
 
             if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
             {
@@ -131,32 +131,32 @@ void BNO080Sensor::motionLoop()
             }
         }
 
-#if BNO_USE_MAGNETOMETER_CORRECTION
+    #if BNO_USE_MAGNETOMETER_CORRECTION
         if (imu.hasNewMagQuat())
         {
             imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
             magQuaternion *= sensorOffset;
 
-#if ENABLE_INSPECTION
+        #if ENABLE_INSPECTION
             {
                 Network::sendInspectionCorrectionData(sensorId, quaternion);
             }
-#endif // ENABLE_INSPECTION
+        #endif // ENABLE_INSPECTION
 
             newMagData = true;
         }
-#endif // BNO_USE_MAGNETOMETER_CORRECTION
+    #endif // BNO_USE_MAGNETOMETER_CORRECTION
 #else // USE_6_AXIS
         if (imu.hasNewQuat())
         {
             imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
             quaternion *= sensorOffset;
 
-#if ENABLE_INSPECTION
+    #if ENABLE_INSPECTION
             {
                 Network::sendInspectionFusedIMUData(sensorId, quaternion);
             }
-#endif // ENABLE_INSPECTION
+    #endif // ENABLE_INSPECTION
 
             if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
             {
