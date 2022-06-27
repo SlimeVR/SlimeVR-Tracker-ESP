@@ -26,7 +26,7 @@ copy-paste code from random libraries! There are several reasons for this:
 
 Instead, we will want to do the following:
 1. Check that the dependency has a permissive license
-2. (Optional) Fork the dependency if it needs any modification
+1. (Optional) Fork the dependency if it needs any modification
 1. Add the dependency via platformio
 
 
@@ -102,10 +102,10 @@ In order, these dependencies do the following:
   library by `bblanchon`. This library was uploaded to the PlatformIO
   [package registry](https://registry.platformio.org/search) which contains many popular
   libraries intended for use with platformio.
-2. Adds a dependency to a Git repo located at `https://github.com/Some/Dependency` and
+1. Adds a dependency to a Git repo located at `https://github.com/Some/Dependency` and
   uses the commit tagged as `v1.2.3`. This could also have been a branch name, or a
   commit hash.
-3. Links to a folder locally on your computer with the path `C:/path/to/the/library`.
+1. Links to a folder locally on your computer with the path `C:/path/to/the/library`.
   This is useful when testing your code locally where you want to make changes in your
   fork (which is checked out at that path), but you don't want to have to constantly
   commit and push to your fork just to get the changes usable by the firmware.
