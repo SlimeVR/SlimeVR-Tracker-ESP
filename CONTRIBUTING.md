@@ -67,7 +67,7 @@ files", then you will need to fork the dependency so that your modifications are
 To create a fork in GitHub, simply go to the original library and click this button:
 ![](https://docs.github.com/assets/cb-28613/images/help/repository/fork_button.png)
 Now clone your repo to your computer. From this point forward, any changes that you
-make while working on your fork will have their git history preserved and linked to the
+make while working on your fork will have their Git history preserved and linked to the
 original when you commit those changes.
 
 We will likely ask you to transfer ownership of the fork to the SlimeVR organization if
