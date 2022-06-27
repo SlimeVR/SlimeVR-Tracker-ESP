@@ -48,7 +48,7 @@ common software licenses:
 > * No license
 
 This includes the license of any code that your dependency depends on! If you are ever
-unsure, feel free to ask us on discord.
+unsure, feel free to ask us in our Discord.
 
 
 ### (Optional) Fork the dependency
