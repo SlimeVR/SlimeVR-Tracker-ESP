@@ -101,7 +101,7 @@ In order, these dependencies do the following:
   [ArduinoJson](https://registry.platformio.org/libraries/bblanchon/ArduinoJson)
   library by `bblanchon`. This library was uploaded to the PlatformIO
   [package registry](https://registry.platformio.org/search) which contains many popular
-  libraries intended for use with platformio.
+  libraries intended for use with PlatformIO.
 1. Adds a dependency to a Git repo located at `https://github.com/Some/Dependency` and
   uses the commit tagged as `v1.2.3`. This could also have been a branch name, or a
   commit hash.
