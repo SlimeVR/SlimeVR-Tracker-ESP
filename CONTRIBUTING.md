@@ -27,7 +27,7 @@ copy-paste code from random libraries! There are several reasons for this:
 Instead, we will want to do the following:
 1. Check that the dependency has a permissive license
 1. (Optional) Fork the dependency if it needs any modification
-1. Add the dependency via platformio
+1. Add the dependency via PlatformIO
 
 
 ### Check the license
