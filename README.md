@@ -55,3 +55,5 @@ Follow the instructions in this link [Platformio](https://docs.platformio.org/en
 ## Contributions
 
 By contributing to this project you are placing all your code under MIT or less restricting licenses, and you certify that the code you have used is compatible with those licenses or is authored by you. If you're doing so on your work time, you certify that your employer is okay with this.
+
+For an explanation on how to contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md)
