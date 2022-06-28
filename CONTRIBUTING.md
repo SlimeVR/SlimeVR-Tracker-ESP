@@ -6,12 +6,10 @@ contributing.
 We are most active on [Discord](https://discord.gg/SlimeVR), come chat with us if you
 have any questions or want to hang out! 😎
 
-
 ## Setting up the development environment
 
 We use PlatformIO as our build tooling and rely on Git for version control. There are
 instructions to set all of this up [here](https://docs.slimevr.dev/firmware/setup-and-install.html).
-
 
 ## Using third-party code
 
@@ -28,7 +26,6 @@ Instead, we will want to do the following:
 1. Check that the dependency has a permissive license.
 1. (Optional) Fork the dependency if it needs any modification.
 1. Add the dependency via PlatformIO.
-
 
 ### Check the license
 
@@ -49,7 +46,6 @@ common software licenses:
 
 This includes the license of any code that your dependency depends on! If you are ever
 unsure, feel free to ask us in our Discord.
-
 
 ### (Optional) Fork the dependency
 
