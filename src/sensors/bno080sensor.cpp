@@ -58,6 +58,7 @@ void BNO080Sensor::motionSetup()
     #else
     imu.enableGameRotationVector(10);
     #endif
+
     #if BNO_USE_MAGNETOMETER_CORRECTION
     imu.enableRotationVector(1000);
     #endif
@@ -147,6 +148,7 @@ void BNO080Sensor::motionLoop()
         }
     #endif // BNO_USE_MAGNETOMETER_CORRECTION
 #else // USE_6_AXIS
+
         if (imu.hasNewQuat())
         {
             imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
@@ -215,6 +217,7 @@ void BNO080Sensor::sendData()
     {
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
+
 #if !USE_6_AXIS
         Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
 #endif
