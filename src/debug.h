@@ -78,6 +78,6 @@
 #define ENABLE_INSPECTION false
 
 #define FIRMWARE_BUILD_NUMBER 11
-#define FIRMWARE_VERSION "0.2.1"
+#define FIRMWARE_VERSION "0.2.2"
 
 #endif // SLIMEVR_DEBUG_H_
