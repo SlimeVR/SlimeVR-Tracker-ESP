@@ -2760,21 +2760,11 @@ int8_t MPU6050::GetCurrentFIFOPacket(uint8_t *data, uint8_t length) { // overflo
         return 2;
     } else if (fifoCounter > length) { // If FIFO counter exceeds a size of one packet - read full packets and get the latest packet
         uint8_t fifoBuf[192] = {0};
-        uint8_t bytesCounter = 0;
         // Count only full packets and read them into buffer
         fifoCounter = length * (fifoCounter / length);
-        do {
-            uint8_t i2cBuf[BUFFER_LENGTH] = {0};
-            uint8_t readBytes = min(fifoCounter, (uint16_t)BUFFER_LENGTH);
-            getFIFOBytes(i2cBuf, readBytes);
-            for (uint8_t i = 0; i < readBytes; i++) {
-                fifoBuf[i + bytesCounter] = i2cBuf[i];
-            }
-            fifoCounter -= readBytes;
-            bytesCounter += readBytes;
-        } while (fifoCounter);
+        getFIFOBytes(fifoBuf, fifoCounter);
         // Read the last packet
-        for (uint8_t i = 0, start = bytesCounter - length; i < length; i++) {
+        for (uint8_t i = 0, start = fifoCounter - length; i < length; i++) {
             data[i] = fifoBuf[start + i];
         }
         return 1;
