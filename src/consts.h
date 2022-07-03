@@ -43,6 +43,7 @@
 #define BOARD_TTGO_TBASE 7
 #define BOARD_ESP01 8
 #define BOARD_SLIMEVR 9
+#define BOARD_LOLIN_C3_MINI 10
 
 #define BAT_EXTERNAL 1
 #define BAT_INTERNAL 2

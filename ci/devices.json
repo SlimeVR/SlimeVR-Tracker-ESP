@@ -5,8 +5,13 @@
     "board": "SLIMEVR"
   },
   {
-    "platform": "espressif32 @ 3.5.0",
+    "platform": "espressif32 @ 4.4.0",
     "platformio_board": "esp32dev",
     "board": "WROOM32"
+  },
+  {
+    "platform": "espressif32 @ 4.4.0",
+    "platformio_board": "lolin_c3_mini",
+    "board": "SLIMEVR"
   }
 ]
