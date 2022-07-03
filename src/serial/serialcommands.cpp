@@ -27,6 +27,10 @@
 #include <CmdCallback.hpp>
 #include "GlobalVars.h"
 
+#if ESP32
+    #include "nvs_flash.h"
+#endif
+
 namespace SerialCommands {
     SlimeVR::Logging::Logger logger("SerialCommands");
 
@@ -78,10 +82,20 @@ namespace SerialCommands {
 
         WiFi.disconnect(true); // Clear WiFi credentials
         #if ESP8266
-        ESP.eraseConfig(); // Clear ESP config
+            ESP.eraseConfig(); // Clear ESP config
+        #elif ESP32
+                nvs_flash_erase();
         #else
-        // TODO: Implement eraseConfig for other boards
+            #warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED
+            logger.info("FACTORY RESET NOT SUPPORTED");
+            return;
         #endif
+
+        #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
+            #warning FACTORY RESET does not clear your hardcoded WiFi credentials!
+            logger.warn("FACTORY RESET does not clear your hardcoded WiFi credentials!");
+        #endif
+
         delay(3000);
         ESP.restart();
     }
