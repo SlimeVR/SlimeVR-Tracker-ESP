@@ -50,7 +50,15 @@ BatteryMonitor battery;
 
 void setup()
 {
+// Change from TheButlah
+// Here it seems to be a problem.
+// Each board seems to have different apoche how to name the Serial Ports (USB, Onboard,..)
+// Some seem to need Serial0 instead of Serial
+#if ARDUINO_USB_CDC_ON_BOOT
+    Serial.begin();
+#else
     Serial.begin(serialBaudRate);
+#endif
     Serial.println();
     Serial.println();
     Serial.println();
@@ -71,7 +79,10 @@ void setup()
     // Do it only for MPU, cause reaction of BNO to this is not investigated yet
 #endif
     // join I2C bus
-    Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
+    Wire.end(); // For some unknown reason the Wire seem to be open on ESP32-C3 ... lets just close it befor open it again. (C3 has only 1 I2C)
+    Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL)); 
+    // using here static_cast seems to be better, because there are 2 similar functions (Slave / Master mode)
+    
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif

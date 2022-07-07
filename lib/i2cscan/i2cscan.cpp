@@ -17,7 +17,8 @@ namespace I2CSCAN
         if(!I2CSCAN::isI2CExist(addr2)) {
             if(scanIfNotFound) {
                 Serial.println("[ERR] I2C: Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
-                I2CSCAN::scani2cports();
+// Disable I2CSCAN, i need to find the define for ESP32C3 because the pinout (portArray / portMap) is different
+//                I2CSCAN::scani2cports();
             } else {
                 Serial.println("[ERR] I2C: Can't find I2C device on provided addresses");
             }
