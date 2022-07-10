@@ -53,7 +53,10 @@ namespace SerialCommands {
     }
 
     void cmdGet(CmdParser * parser) {
-        if(parser->getParamCount() != 1 && parser->equalCmdParam(1, "INFO")  ) {
+        if (parser->getParamCount() <= 1)
+            return ;
+        
+        if(parser->equalCmdParam(1, "INFO")  ) {
             logger.info(
                 "SlimeVR Tracker, board: %d, hardware: %d, build: %d, firmware: %s, address: %s",
                 BOARD,
@@ -63,6 +66,46 @@ namespace SerialCommands {
                 WiFiNetwork::getAddress().toString().c_str()
             );
             // TODO Print sensors number and types
+        }
+        if(parser->equalCmdParam(1, "CONFIG")  ) {
+            String str = "SlimeVR Tracker Config\n" 
+                "BOARD: %d\n" 
+                "IMU: %d\n"
+                "SECOND_IMU: %d\n"
+                "IMU_ROTATION: %f\n"
+                "SECOND_IMU_ROTATION: %f\n"
+                "BATTERY_MONITOR: %d\n"
+                "BATTERY_SHIELD_RESISTANCE: %d\n"
+                "PIN_IMU_SDA: %d\n"
+                "PIN_IMU_SCL: %d\n"
+                "PIN_IMU_INT: %d\n"
+                "PIN_IMU_INT_2: %d\n"
+                "PIN_BATTERY_LEVEL: %d";
+            logger.info(
+                str.c_str(),
+                BOARD,
+                IMU,
+                SECOND_IMU,
+                IMU_ROTATION,
+                SECOND_IMU_ROTATION,
+                BATTERY_MONITOR,
+                BATTERY_SHIELD_RESISTANCE,
+                PIN_IMU_SDA,
+                PIN_IMU_SCL,
+                PIN_IMU_INT,
+                PIN_IMU_INT_2,
+                PIN_BATTERY_LEVEL
+            );
+            // Had to do this because the string was not fitting in the 256 bytes buffer.
+            // Idk if it is a valid solution
+            String str2 = 
+                "LED_PIN: %d\n"
+                "LED_INVERTED: %d\n";
+            Serial.printf(
+                str2.c_str(),
+                LED_PIN,
+                LED_INVERTED
+            );
         }
     }
 
