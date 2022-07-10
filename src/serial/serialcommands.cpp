@@ -26,6 +26,7 @@
 #include "logging/Logger.h"
 #include <CmdCallback.hpp>
 #include "GlobalVars.h"
+#include "batterymonitor.h"
 
 #if ESP32
     #include "nvs_flash.h"
