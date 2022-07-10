@@ -78,6 +78,8 @@ namespace SerialCommands {
                 "SECOND_IMU_ROTATION=%f\n"
                 "BATTERY_MONITOR=%d\n"
                 "BATTERY_SHIELD_RESISTANCE=%d\n"
+                "BATTERY_SHIELD_R1=%d\n"
+                "BATTERY_SHIELD_R2=%d\n"
                 "PIN_IMU_SDA=%d\n"
                 "PIN_IMU_SCL=%d\n"
                 "PIN_IMU_INT=%d\n"
