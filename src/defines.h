@@ -28,7 +28,7 @@
 // Set parameters of IMU and board used
 #define IMU IMU_ICM20948
 #define SECOND_IMU IMU
-#define BOARD BOARD_LOLIN_C3_MINI
+#define BOARD BOARD_BEETLE32C3
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
 
@@ -113,6 +113,14 @@
 #elif BOARD == BOARD_LOLIN_C3_MINI   //Board esp32-c3-devkitm-1
   #define PIN_IMU_SDA 5
   #define PIN_IMU_SCL 4
+  #define PIN_IMU_INT 6
+  #define PIN_IMU_INT_2 7
+  #define PIN_BATTERY_LEVEL 3
+  #define LED_PIN LED_OFF  // RGB LED Protocol would need to be implementetet did not brother for the test, because the board ideal for tracker ifself
+//  #define LED_INVERTED false
+#elif BOARD == BOARD_BEETLE32C3   //Board esp32-c3-devkitm-1
+  #define PIN_IMU_SDA 8
+  #define PIN_IMU_SCL 9
   #define PIN_IMU_INT 6
   #define PIN_IMU_INT_2 7
   #define PIN_BATTERY_LEVEL 3
