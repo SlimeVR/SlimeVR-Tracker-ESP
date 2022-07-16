@@ -35,6 +35,8 @@
 #include "calibration.h"
 #include "GlobalVars.h"
 
+#define MPU6050_16BITACCEL_RANGE_2G_MPS (1.0f / 16384.0f) * 9.80665f
+
 void MPU6050Sensor::motionSetup()
 {
     imu.initialize(addr);
@@ -134,6 +136,22 @@ void MPU6050Sensor::motionLoop()
         imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
         quaternion.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
         quaternion *= sensorOffset;
+
+        VectorFloat gravity;
+        imu.dmpGetGravity(&gravity, &rawQuat);
+        gravity.x *= 2;
+        gravity.y *= 2;
+        gravity.z *= 2;
+
+        imu.dmpGetAccel(&accel, fifoBuffer);
+        imu.dmpGetLinearAccel(&accel, &accel, &gravity);
+        
+        // convert acceleration to m/s^2 (implicitly casts to float)
+        acceleration[0] = accel.x * MPU6050_16BITACCEL_RANGE_2G_MPS;
+        acceleration[1] = accel.y * MPU6050_16BITACCEL_RANGE_2G_MPS;
+        acceleration[2] = accel.z * MPU6050_16BITACCEL_RANGE_2G_MPS;
+
+        
 
 #if ENABLE_INSPECTION
         {

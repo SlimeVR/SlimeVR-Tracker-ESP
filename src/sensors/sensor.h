@@ -77,6 +77,8 @@ protected:
     Quat quaternion{};
     Quat lastQuatSent{};
 
+    float acceleration[3]{};
+
     SlimeVR::Logging::Logger m_Logger;
 };
 

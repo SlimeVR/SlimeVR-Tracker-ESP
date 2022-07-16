@@ -119,6 +119,9 @@ void BNO080Sensor::motionLoop()
             imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
             quaternion *= sensorOffset;
 
+            uint8 accuracy;
+            imu.getLinAccel(acceleration[0], acceleration[1], acceleration[2], accuracy);
+
     #if ENABLE_INSPECTION
             {
                 Network::sendInspectionFusedIMUData(sensorId, quaternion);
@@ -217,6 +220,7 @@ void BNO080Sensor::sendData()
     {
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
+        Network::sendAccel(acceleration, sensorId);
 
 #if !USE_6_AXIS
         Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
