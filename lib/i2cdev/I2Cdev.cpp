@@ -278,7 +278,6 @@ int8_t I2Cdev::readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8
                 useWire->beginTransmission(devAddr);
                 useWire->write(regAddr);
                 useWire->endTransmission(false);
-                useWire->beginTransmission(devAddr);
                 useWire->requestFrom((uint8_t)devAddr, (uint8_t)min((int)length - k, I2CDEVLIB_WIRE_BUFFER_LENGTH));
         
                 for (; useWire->available() && (timeout == 0 || millis() - t1 < timeout); count++) {
@@ -414,7 +413,6 @@ int8_t I2Cdev::readWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint1
                 useWire->beginTransmission(devAddr);
                 useWire->write(regAddr);
                 useWire->endTransmission(false);
-                useWire->beginTransmission(devAddr);
                 useWire->requestFrom(devAddr, (uint8_t)(length * 2)); // length=words, this wants bytes
         
                 bool msb = true; // starts with MSB, then LSB
