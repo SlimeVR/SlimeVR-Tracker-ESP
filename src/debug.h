@@ -71,7 +71,7 @@
 // Experimental
 #define OPTIMIZE_UPDATES true
 
-#define I2C_SPEED 400000
+#define I2C_SPEED 800000
 
 // Send inspection packets over the network to a profiler
 // Not recommended for production

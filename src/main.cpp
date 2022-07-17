@@ -71,7 +71,7 @@ void setup()
     // Do it only for MPU, cause reaction of BNO to this is not investigated yet
 #endif
     // join I2C bus
-    Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
+    Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL_A);
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif
@@ -97,8 +97,8 @@ void loop()
 {
     SerialCommands::update();
     OTA::otaUpdate();
-    Network::update(sensorManager.getFirst(), sensorManager.getSecond());
     sensorManager.update();
+    Network::update(sensorManager.get());
     battery.Loop();
     ledManager.update();
 
