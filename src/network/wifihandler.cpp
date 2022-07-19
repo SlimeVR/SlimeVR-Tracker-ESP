@@ -141,6 +141,7 @@ void WiFiNetwork::upkeep() {
                     if(!hadWifi && !WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
                         if(WiFi.status() != WL_IDLE_STATUS) {
                             wifiHandlerLogger.error("Can't connect from any credentials, status: %d.", WiFi.status());
+                            wifiConnectionTimeout = millis();
                         }
                         startProvisioning();
                     }
