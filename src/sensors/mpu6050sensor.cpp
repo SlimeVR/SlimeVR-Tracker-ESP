@@ -35,7 +35,7 @@
 #include "calibration.h"
 #include "GlobalVars.h"
 
-#define MPU6050_16BITACCEL_RANGE_2G_MPS (1.0f / 16384.0f) * 9.80665f
+#define MPU6050_2G_TO_MPS2 (1.0f / 16384.0f) * 9.80665f
 
 void MPU6050Sensor::motionSetup()
 {
@@ -139,6 +139,7 @@ void MPU6050Sensor::motionLoop()
 
         VectorFloat gravity;
         imu.dmpGetGravity(&gravity, &rawQuat);
+        // dmpgetGravity returns gravity in 4g mode so doubling it gets it to 2g mode
         gravity.x *= 2;
         gravity.y *= 2;
         gravity.z *= 2;
@@ -147,9 +148,9 @@ void MPU6050Sensor::motionLoop()
         imu.dmpGetLinearAccel(&accel, &accel, &gravity);
         
         // convert acceleration to m/s^2 (implicitly casts to float)
-        acceleration[0] = accel.x * MPU6050_16BITACCEL_RANGE_2G_MPS;
-        acceleration[1] = accel.y * MPU6050_16BITACCEL_RANGE_2G_MPS;
-        acceleration[2] = accel.z * MPU6050_16BITACCEL_RANGE_2G_MPS;
+        acceleration[0] = accel.x * MPU6050_2G_TO_MPS2;
+        acceleration[1] = accel.y * MPU6050_2G_TO_MPS2;
+        acceleration[2] = accel.z * MPU6050_2G_TO_MPS2;
 
         
 
