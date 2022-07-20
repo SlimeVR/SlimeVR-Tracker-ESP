@@ -33,8 +33,21 @@
 #include "dmpmag.h"
 #endif
 
+// See AK8693 datasheet for sensitivity scales in different mode
+// We use 16-bit continuous reading mode
+#define MAG_UT_LSB_16_BIT 0.15f
+
+// 131 LSB/deg/s = 250 deg/s
+#define TYPICAL_GYRO_SENSITIVITY 131
+// 16384 LSB/G = 2G
+#define TYPICAL_ACCEL_SENSITIVITY 16384.
+
 #if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
-constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
+#define SENSORS_GRAVITY_EARTH 9.80665
+// Gyro scale conversion steps: LSB/°/s -> °/s -> step/°/s -> step/rad/s
+constexpr float GSCALE = ((32768. / TYPICAL_GYRO_SENSITIVITY) / 32768.) * (PI / 180.0);
+// Accel scale conversion steps: LSB/G -> G -> m/s^2
+constexpr float ASCALE = ((32768. / TYPICAL_ACCEL_SENSITIVITY) / 32768.) * SENSORS_GRAVITY_EARTH;
 #endif
 
 #define MAG_CORR_RATIO 0.02
@@ -54,7 +67,7 @@ void MPU9250Sensor::motionSetup() {
     // turn on while flip back to calibrate. then, flip again after 5 seconds.
     // TODO: Move calibration invoke after calibrate button on slimeVR server available
     imu.getAcceleration(&ax, &ay, &az);
-    float g_az = (float)az / 16384; // For 2G sensitivity
+    float g_az = (float)az / TYPICAL_ACCEL_SENSITIVITY; // For 2G sensitivity
     if(g_az < -0.75f) {
         ledManager.on();
         m_Logger.info("Flip front to confirm start calibration");
@@ -62,7 +75,7 @@ void MPU9250Sensor::motionSetup() {
         ledManager.off();
 
         imu.getAcceleration(&ax, &ay, &az);
-        g_az = (float)az / 16384;
+        g_az = (float)az / TYPICAL_ACCEL_SENSITIVITY;
         if(g_az > 0.75f) {
             m_Logger.debug("Starting calibration...");
             startCalibration(0);
@@ -201,9 +214,9 @@ void MPU9250Sensor::getMPUScaled()
 #if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
     int16_t ax, ay, az, gx, gy, gz, mx, my, mz;
     imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-    Gxyz[0] = ((float)gx - m_Calibration.G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
-    Gxyz[1] = ((float)gy - m_Calibration.G_off[1]) * gscale;
-    Gxyz[2] = ((float)gz - m_Calibration.G_off[2]) * gscale;
+    Gxyz[0] = ((float)gx - m_Calibration.G_off[0]) * GSCALE;
+    Gxyz[1] = ((float)gy - m_Calibration.G_off[1]) * GSCALE;
+    Gxyz[2] = ((float)gz - m_Calibration.G_off[2]) * GSCALE;
 
     Axyz[0] = (float)ax;
     Axyz[1] = (float)ay;
@@ -213,9 +226,9 @@ void MPU9250Sensor::getMPUScaled()
     #if useFullCalibrationMatrix == true
         for (i = 0; i < 3; i++)
             temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
-        Axyz[0] = m_Calibration.A_Ainv[0][0] * temp[0] + m_Calibration.A_Ainv[0][1] * temp[1] + m_Calibration.A_Ainv[0][2] * temp[2];
-        Axyz[1] = m_Calibration.A_Ainv[1][0] * temp[0] + m_Calibration.A_Ainv[1][1] * temp[1] + m_Calibration.A_Ainv[1][2] * temp[2];
-        Axyz[2] = m_Calibration.A_Ainv[2][0] * temp[0] + m_Calibration.A_Ainv[2][1] * temp[1] + m_Calibration.A_Ainv[2][2] * temp[2];
+        Axyz[0] = (m_Calibration.A_Ainv[0][0] * temp[0] + m_Calibration.A_Ainv[0][1] * temp[1] + m_Calibration.A_Ainv[0][2] * temp[2]) * ASCALE;
+        Axyz[1] = (m_Calibration.A_Ainv[1][0] * temp[0] + m_Calibration.A_Ainv[1][1] * temp[1] + m_Calibration.A_Ainv[1][2] * temp[2]) * ASCALE;
+        Axyz[2] = (m_Calibration.A_Ainv[2][0] * temp[0] + m_Calibration.A_Ainv[2][1] * temp[1] + m_Calibration.A_Ainv[2][2] * temp[2]) * ASCALE;
     #else
         for (i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - m-Calibration.A_B[i]);
@@ -237,9 +250,9 @@ void MPU9250Sensor::getMPUScaled()
     #if useFullCalibrationMatrix == true
         for (i = 0; i < 3; i++)
             temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
-        Mxyz[0] = m_Calibration.M_Ainv[0][0] * temp[0] + m_Calibration.M_Ainv[0][1] * temp[1] + m_Calibration.M_Ainv[0][2] * temp[2];
-        Mxyz[1] = m_Calibration.M_Ainv[1][0] * temp[0] + m_Calibration.M_Ainv[1][1] * temp[1] + m_Calibration.M_Ainv[1][2] * temp[2];
-        Mxyz[2] = m_Calibration.M_Ainv[2][0] * temp[0] + m_Calibration.M_Ainv[2][1] * temp[1] + m_Calibration.M_Ainv[2][2] * temp[2];
+        Mxyz[0] = (m_Calibration.M_Ainv[0][0] * temp[0] + m_Calibration.M_Ainv[0][1] * temp[1] + m_Calibration.M_Ainv[0][2] * temp[2]) * MAG_UT_LSB_16_BIT;
+        Mxyz[1] = (m_Calibration.M_Ainv[1][0] * temp[0] + m_Calibration.M_Ainv[1][1] * temp[1] + m_Calibration.M_Ainv[1][2] * temp[2]) * MAG_UT_LSB_16_BIT;
+        Mxyz[2] = (m_Calibration.M_Ainv[2][0] * temp[0] + m_Calibration.M_Ainv[2][1] * temp[1] + m_Calibration.M_Ainv[2][2] * temp[2]) * MAG_UT_LSB_16_BIT;
     #else
         for (i = 0; i < 3; i++)
             Mxyz[i] = (Mxyz[i] - m_Calibration.M_B[i]);

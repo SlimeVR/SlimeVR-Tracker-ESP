@@ -25,13 +25,19 @@
 #include "network/network.h"
 #include "GlobalVars.h"
 
+#define SENSORS_GRAVITY_EARTH 9.80665
+
 // Typical sensitivity at 25C
 // See p. 9 of https://www.mouser.com/datasheet/2/783/BST-BMI160-DS000-1509569.pdf
 // 65.6 LSB/deg/s = 500 deg/s
-#define TYPICAL_SENSITIVITY_LSB 65.6
+#define TYPICAL_GYRO_SENSITIVITY 65.6
+// 8192 LSB/G = 4G
+#define TYPICAL_ACCEL_SENSITIVITY 8192.
 
-// Scale conversion steps: LSB/°/s -> °/s -> step/°/s -> step/rad/s
-constexpr float GSCALE = ((32768. / TYPICAL_SENSITIVITY_LSB) / 32768.) * (PI / 180.0);
+// Gyro scale conversion steps: LSB/°/s -> °/s -> step/°/s -> step/rad/s
+constexpr float GSCALE = ((32768. / TYPICAL_GYRO_SENSITIVITY) / 32768.) * (PI / 180.0);
+// Accel scale conversion steps: LSB/G -> G -> m/s^2
+constexpr float ASCALE = ((32768. / TYPICAL_ACCEL_SENSITIVITY) / 32768.) * SENSORS_GRAVITY_EARTH;
 
 // LSB change per temperature step map.
 // These values were calculated for 500 deg/s sensitivity
@@ -68,14 +74,14 @@ void BMI160Sensor::motionSetup() {
 
     int16_t ax, ay, az;
     imu.getAcceleration(&ax, &ay, &az);
-    float g_az = (float)az / 8192; // For 4G sensitivity
+    float g_az = (float)az / TYPICAL_ACCEL_SENSITIVITY; // For 4G sensitivity
     if(g_az < -0.75f) {
         ledManager.on();
 
         m_Logger.info("Flip front to confirm start calibration");
         delay(5000);
         imu.getAcceleration(&ax, &ay, &az);
-        g_az = (float)az / 8192;
+        g_az = (float)az / TYPICAL_ACCEL_SENSITIVITY;
         if(g_az > 0.75f)
         {
             m_Logger.debug("Starting calibration...");
@@ -188,9 +194,9 @@ void BMI160Sensor::getScaledValues(float Gxyz[3], float Axyz[3])
         float temp[3];
         for (uint8_t i = 0; i < 3; i++)
             temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
-        Axyz[0] = m_Calibration.A_Ainv[0][0] * temp[0] + m_Calibration.A_Ainv[0][1] * temp[1] + m_Calibration.A_Ainv[0][2] * temp[2];
-        Axyz[1] = m_Calibration.A_Ainv[1][0] * temp[0] + m_Calibration.A_Ainv[1][1] * temp[1] + m_Calibration.A_Ainv[1][2] * temp[2];
-        Axyz[2] = m_Calibration.A_Ainv[2][0] * temp[0] + m_Calibration.A_Ainv[2][1] * temp[1] + m_Calibration.A_Ainv[2][2] * temp[2];
+        Axyz[0] = (m_Calibration.A_Ainv[0][0] * temp[0] + m_Calibration.A_Ainv[0][1] * temp[1] + m_Calibration.A_Ainv[0][2] * temp[2]) * ASCALE;
+        Axyz[1] = (m_Calibration.A_Ainv[1][0] * temp[0] + m_Calibration.A_Ainv[1][1] * temp[1] + m_Calibration.A_Ainv[1][2] * temp[2]) * ASCALE;
+        Axyz[2] = (m_Calibration.A_Ainv[2][0] * temp[0] + m_Calibration.A_Ainv[2][1] * temp[1] + m_Calibration.A_Ainv[2][2] * temp[2]) * ASCALE;
     #else
         for (uint8_t i = 0; i < 3; i++)
             Axyz[i] = (Axyz[i] - calibration->A_B[i]);
