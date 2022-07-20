@@ -35,7 +35,9 @@ static float ix = 0.0f, iy = 0.0f, iz = 0.0f;  //integral feedback terms
 // Modified from Madgwick version to remove Z component of magnetometer:
 // reference vectors are Up (Acc) and West (Acc cross Mag)
 // sjr 12/2020
-// gx, gy, gz must be in units of radians/second
+// gx, gy, gz must be in radians/second
+// ax, ay, az must be in meters/second^2
+// mx, my, mz must be in microteslas (µT)
 void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat)
 {
     // short name local variable for readability
@@ -144,6 +146,8 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     q[3] = q4 * norm;
 }
 
+// gx, gy, gz must be in radians/second
+// ax, ay, az must be in meters/second^2
 void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float deltat)
 {
     // short name local variable for readability
