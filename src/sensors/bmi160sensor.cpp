@@ -25,8 +25,6 @@
 #include "network/network.h"
 #include "GlobalVars.h"
 
-#define SENSORS_GRAVITY_EARTH 9.80665
-
 // Typical sensitivity at 25C
 // See p. 9 of https://www.mouser.com/datasheet/2/783/BST-BMI160-DS000-1509569.pdf
 // 65.6 LSB/deg/s = 500 deg/s

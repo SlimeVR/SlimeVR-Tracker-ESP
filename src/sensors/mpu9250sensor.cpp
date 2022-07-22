@@ -43,7 +43,6 @@
 #define TYPICAL_ACCEL_SENSITIVITY 16384.
 
 #if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
-#define SENSORS_GRAVITY_EARTH 9.80665
 // Gyro scale conversion steps: LSB/°/s -> °/s -> step/°/s -> step/rad/s
 constexpr float GSCALE = ((32768. / TYPICAL_GYRO_SENSITIVITY) / 32768.) * (PI / 180.0);
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
