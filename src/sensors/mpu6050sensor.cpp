@@ -139,18 +139,16 @@ void MPU6050Sensor::motionLoop()
 
         VectorFloat gravity;
         imu.dmpGetGravity(&gravity, &rawQuat);
-        // dmpgetGravity returns gravity in 4g mode so doubling it gets it to 2g mode
+        // dmpgetGravity returns gravity in 4g mode so double it to get the 2g mode vector
         gravity.x *= 2;
         gravity.y *= 2;
         gravity.z *= 2;
-
-        imu.dmpGetAccel(&accel, fifoBuffer);
-        imu.dmpGetLinearAccel(&accel, &accel, &gravity);
-        
+        imu.dmpGetAccel(&rawAccel, fifoBuffer);
+        imu.dmpGetLinearAccel(&rawAccel, &rawAccel, &gravity);
         // convert acceleration to m/s^2 (implicitly casts to float)
-        acceleration[0] = accel.x * MPU6050_2G_TO_MPS2;
-        acceleration[1] = accel.y * MPU6050_2G_TO_MPS2;
-        acceleration[2] = accel.z * MPU6050_2G_TO_MPS2;
+        acceleration[0] = rawAccel.x * MPU6050_2G_TO_MPS2;
+        acceleration[1] = rawAccel.y * MPU6050_2G_TO_MPS2;
+        acceleration[2] = rawAccel.z * MPU6050_2G_TO_MPS2;
 
         
 
