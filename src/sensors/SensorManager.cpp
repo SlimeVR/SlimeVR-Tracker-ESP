@@ -30,6 +30,7 @@
 #include "mpu6050sensor.h"
 #include "bmi160sensor.h"
 #include "icm20948sensor.h"
+#include "AdafruitNXPsensor.h"
 #include "ErroneousSensor.h"
 
 namespace SlimeVR
@@ -48,6 +49,8 @@ namespace SlimeVR
                 firstIMUAddress = I2CSCAN::pickDevice(0x29, 0x28, true);
 #elif IMU == IMU_MPU9250 || IMU == IMU_BMI160 || IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_ICM20948
                 firstIMUAddress = I2CSCAN::pickDevice(0x68, 0x69, true);
+#elif IMU == IMU_NXP
+                firstIMUAddress = I2CSCAN::pickDevice(0x21, 0x22, true);
 #else
 #error Unsupported primary IMU
 #endif
@@ -72,6 +75,8 @@ namespace SlimeVR
                     m_Sensor1 = new MPU6050Sensor(0, IMU, firstIMUAddress, IMU_ROTATION);
 #elif IMU == IMU_ICM20948
                     m_Sensor1 = new ICM20948Sensor(0, firstIMUAddress, IMU_ROTATION);
+#elif IMU == IMU_NXP
+                    m_Sensor1 = new ADANXPSensor(0, firstIMUAddress, IMU_ROTATION);
 #endif
                 }
 
@@ -85,6 +90,8 @@ namespace SlimeVR
                 secondIMUAddress = I2CSCAN::pickDevice(0x28, 0x29, false);
 #elif SECOND_IMU == IMU_MPU9250 || SECOND_IMU == IMU_BMI160 || SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050 || SECOND_IMU == IMU_ICM20948
                 secondIMUAddress = I2CSCAN::pickDevice(0x69, 0x68, false);
+#elif SECOND_IMU == IMU_NXP
+                secondIMUAddress = I2CSCAN::pickDevice(0x22, 0x21, false);
 #else
 #error Unsupported secondary IMU
 #endif
@@ -113,6 +120,8 @@ namespace SlimeVR
                     m_Sensor2 = new MPU6050Sensor(1, IMU, secondIMUAddress, SECOND_IMU_ROTATION);
 #elif SECOND_IMU == IMU_ICM20948
                     m_Sensor2 = new ICM20948Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
+#elif SECOND_IMU == IMU_NXP
+                    m_Sensor2 = new ADANXPSensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
 #endif
                 }
 
