@@ -35,7 +35,9 @@
 #include "calibration.h"
 #include "GlobalVars.h"
 
-#define MPU6050_2G_TO_MPS2 (1.0f / 16384.0f) * 9.80665f
+#define ACCEL_SENSITIVITY_2G 16384.0f
+
+constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * SENSORS_GRAVITY_EARTH;
 
 void MPU6050Sensor::motionSetup()
 {
@@ -146,9 +148,9 @@ void MPU6050Sensor::motionLoop()
         imu.dmpGetAccel(&rawAccel, fifoBuffer);
         imu.dmpGetLinearAccel(&rawAccel, &rawAccel, &gravity);
         // convert acceleration to m/s^2 (implicitly casts to float)
-        acceleration[0] = rawAccel.x * MPU6050_2G_TO_MPS2;
-        acceleration[1] = rawAccel.y * MPU6050_2G_TO_MPS2;
-        acceleration[2] = rawAccel.z * MPU6050_2G_TO_MPS2;
+        acceleration[0] = rawAccel.x * ASCALE_2G;
+        acceleration[1] = rawAccel.y * ASCALE_2G;
+        acceleration[2] = rawAccel.z * ASCALE_2G;
 
         
 
