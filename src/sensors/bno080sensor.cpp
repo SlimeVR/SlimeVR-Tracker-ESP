@@ -221,7 +221,8 @@ void BNO080Sensor::sendData()
     {
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
-        Network::sendAccel(acceleration, sensorId);
+        if (sendAcceleration)
+            Network::sendAccel(acceleration, sensorId);
 
 #if !USE_6_AXIS
         Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);

@@ -36,7 +36,7 @@
 #include "GlobalVars.h"
 
 #define ACCEL_SENSITIVITY_2G 16384.0f
-
+// Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * SENSORS_GRAVITY_EARTH;
 
 void MPU6050Sensor::motionSetup()
