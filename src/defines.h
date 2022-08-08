@@ -36,7 +36,7 @@
 //   BAT_EXTERNAL for ADC pin, 
 //   BAT_INTERNAL for internal - can detect only low battery, 
 //   BAT_MCP3021 for external ADC connected over I2C
-#define BATTERY_MONITOR BAT_EXTERNAL
+#define BATTERY_MONITOR BAT_INTERNAL
 
 // BAT_EXTERNAL definition
 // D1 Mini boards with ESP8266 have internal resistors. For these boards you only have to adjust BATTERY_SHIELD_RESISTANCE.
@@ -110,17 +110,25 @@
   #define PIN_BATTERY_LEVEL 36
 //  #define LED_PIN 2
 //  #define LED_INVERTED false
-#elif BOARD == BOARD_LOLIN_C3_MINI   //Board esp32-c3-devkitm-1
+#elif BOARD == BOARD_LOLIN_C3_MINI
   #define PIN_IMU_SDA 5
   #define PIN_IMU_SCL 4
   #define PIN_IMU_INT 6
-  #define PIN_IMU_INT_2 7
+  #define PIN_IMU_INT_2 8
   #define PIN_BATTERY_LEVEL 3
-  #define LED_PIN LED_OFF  // RGB LED Protocol would need to be implementetet did not brother for the test, because the board ideal for tracker ifself
+  #define LED_PIN 7
 //  #define LED_INVERTED false
-#elif BOARD == BOARD_BEETLE32C3   //Board esp32-c3-devkitm-1
+#elif BOARD == BOARD_BEETLE32C3
   #define PIN_IMU_SDA 8
   #define PIN_IMU_SCL 9
+  #define PIN_IMU_INT 6
+  #define PIN_IMU_INT_2 7
+  #define PIN_BATTERY_LEVEL 3
+  #define LED_PIN 10
+  #define LED_INVERTED false
+#elif BOARD == BOARD_ES32C3DEVKITM1
+  #define PIN_IMU_SDA 5
+  #define PIN_IMU_SCL 4
   #define PIN_IMU_INT 6
   #define PIN_IMU_INT_2 7
   #define PIN_BATTERY_LEVEL 3
