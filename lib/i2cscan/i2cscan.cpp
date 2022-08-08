@@ -1,11 +1,18 @@
 #include "i2cscan.h"
+#include "../../src/globals.h"
 
 #ifdef ESP8266
 uint8_t portArray[] = {16, 5, 4, 2, 14, 12, 13};
+uint8_t portExclude[] = {LED_PIN};
 String portMap[] = {"D0", "D1", "D2", "D4", "D5", "D6", "D7"};
+#elif defined(ESP32C3)  //ESP32C3 has not that much ports as a ESP32
+uint8_t portArray[] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
+uint8_t portExclude[] = {18, 19, 20, 21, LED_PIN};
+String portMap[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10"};
 #elif defined(ESP32)
 uint8_t portArray[] = {4, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
 String portMap[] = {"4", "13", "14", "15", "16", "17", "18", "19", "21", "22", "23", "25", "26", "27", "32", "33"};
+uint8_t portExclude[] = {LED_PIN};
 #endif
 
 namespace I2CSCAN
@@ -17,8 +24,7 @@ namespace I2CSCAN
         if(!I2CSCAN::isI2CExist(addr2)) {
             if(scanIfNotFound) {
                 Serial.println("[ERR] I2C: Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
-// Disable I2CSCAN, i need to find the define for ESP32C3 because the pinout (portArray / portMap) is different
-//                I2CSCAN::scani2cports();
+                I2CSCAN::scani2cports();
             } else {
                 Serial.println("[ERR] I2C: Can't find I2C device on provided addresses");
             }
@@ -34,7 +40,7 @@ namespace I2CSCAN
         {
             for (uint8_t j = 0; j < sizeof(portArray); j++)
             {
-                if (i != j)
+                if ((i != j) && !inArray(portArray[i], portArray[j], portExclude, sizeof(portExclude)))
                 {
                     if(checkI2C(i, j))
                         found = true;
@@ -44,8 +50,38 @@ namespace I2CSCAN
         if(!found) {
             Serial.println("[ERR] I2C: No I2C devices found");
         }
+    // begin Reset the Wire interface back to the original Values
+    #if ESP32
+        Wire.end();
+    #endif
+        Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
+    // end Reset the Wire interface back to the original Values
     }
 
+    boolean  inArray(uint8_t search, uint8_t search2, uint8_t arraysearch[], uint8_t size )
+    {
+        boolean ret = false;
+        
+        if (size>0) 
+        {
+            for (uint8_t k = 0; k < size; k++)
+            {
+                if (search == arraysearch[k]) 
+                {
+                    ret = true;
+                    k = size;
+                }
+                if (search2 == arraysearch[k]) 
+                {
+                    ret = true;
+                    k = size;
+                }
+            }
+        }
+        //Serial.printf("InArray: %d, %d, %d, result: %x\n", search, search2, size, ret);
+        return ret;
+    }
+    
     bool checkI2C(uint8_t i, uint8_t j)
     {
         bool found = false;
