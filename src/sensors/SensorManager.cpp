@@ -109,7 +109,7 @@ namespace SlimeVR
                     m_Sensor2 = new MPU9250Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
 #elif SECOND_IMU == IMU_BMI160
                     m_Sensor2 = new BMI160Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
-#elif SECOND_IMU == IMU_MPU6500 || IMU == IMU_MPU6050
+#elif SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050
                     m_Sensor2 = new MPU6050Sensor(1, IMU, secondIMUAddress, SECOND_IMU_ROTATION);
 #elif SECOND_IMU == IMU_ICM20948
                     m_Sensor2 = new ICM20948Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
