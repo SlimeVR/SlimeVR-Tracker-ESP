@@ -152,8 +152,6 @@ void MPU6050Sensor::motionLoop()
         acceleration[1] = rawAccel.y * ASCALE_2G;
         acceleration[2] = rawAccel.z * ASCALE_2G;
 
-        
-
 #if ENABLE_INSPECTION
         {
             Network::sendInspectionFusedIMUData(sensorId, quaternion);
