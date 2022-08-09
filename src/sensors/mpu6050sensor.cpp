@@ -148,9 +148,9 @@ void MPU6050Sensor::motionLoop()
         imu.dmpGetAccel(&rawAccel, fifoBuffer);
         imu.dmpGetLinearAccel(&rawAccel, &rawAccel, &gravity);
         // convert acceleration to m/s^2 (implicitly casts to float)
-        acceleration[0] = rawAccel.x * ASCALE_2G;
-        acceleration[1] = rawAccel.y * ASCALE_2G;
-        acceleration[2] = rawAccel.z * ASCALE_2G;
+        this->acceleration[0] = rawAccel.x * ASCALE_2G;
+        this->acceleration[1] = rawAccel.y * ASCALE_2G;
+        this->acceleration[2] = rawAccel.z * ASCALE_2G;
 
 #if ENABLE_INSPECTION
         {
