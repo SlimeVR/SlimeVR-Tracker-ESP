@@ -29,6 +29,10 @@
 // seconds after previous save (from start) when calibration (DMP Bias) data will be saved to NVS. Increments through the list then stops; to prevent unwelcome eeprom wear.
 int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 10min + 10min (no more saves after 30min)
 
+#define ACCEL_SENSITIVITY_4G 8192.0f
+// Accel scale conversion steps: LSB/G -> G -> m/s^2
+constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * SENSORS_GRAVITY_EARTH;
+
 // #ifndef ENABLE_TAP
 //     #define ENABLE_TAP false
 // #endif
@@ -396,6 +400,27 @@ void ICM20948Sensor::motionLoop() {
                     lastData = millis();
                 }
             }
+            if (sendAcceleration){
+                acceleration[0] = (float)dmpData.Raw_Accel.Data.X;
+                acceleration[1] = (float)dmpData.Raw_Accel.Data.Y;
+                acceleration[2] = (float)dmpData.Raw_Accel.Data.Z;
+
+                // get the component of the acceleration that is gravity
+                float gravity[3];
+                gravity[0] = 2 * (quaternion.x*quaternion.z - quaternion.w*quaternion.y);
+                gravity[1] = 2 * (quaternion.w*quaternion.x + quaternion.y*quaternion.z);
+                gravity[2] = quaternion.w*quaternion.w - quaternion.x*quaternion.x - quaternion.y*quaternion.y + quaternion.z*quaternion.z;
+                
+                // subtract gravity from the acceleration vector
+                this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
+                this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
+                this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
+
+                // finally scale the acceleration values to mps2
+                this->acceleration[0] *= ASCALE_4G;
+                this->acceleration[1] *= ASCALE_4G;
+                this->acceleration[2] *= ASCALE_4G;
+            }
         }
         else 
         {
@@ -427,6 +452,9 @@ void ICM20948Sensor::sendData() {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId);
         } else {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
+        }
+        if (sendAcceleration) {
+            Network::sendAccel(acceleration, sensorId);
         }
     }
 }

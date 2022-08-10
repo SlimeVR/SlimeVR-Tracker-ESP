@@ -48,6 +48,7 @@ private:
     unsigned long lastData = 0;
     int bias_save_counter = 0;
     bool newTap;
+    int16_t rawAccel[3];
 
     ICM_20948_I2C imu;
     ICM_20948_Device_t pdev;

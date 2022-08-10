@@ -121,7 +121,7 @@ void BNO080Sensor::motionLoop()
             quaternion *= sensorOffset;
 
             uint8_t accelAccuracy = 0;
-            imu.getLinAccel(acceleration[0], acceleration[1], acceleration[2], accelAccuracy);
+            imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], accelAccuracy);
 
     #if ENABLE_INSPECTION
             {
