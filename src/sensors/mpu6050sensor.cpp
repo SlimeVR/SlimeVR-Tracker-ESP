@@ -139,7 +139,8 @@ void MPU6050Sensor::motionLoop()
         quaternion.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
         quaternion *= sensorOffset;
 
-        if (sendAcceleration){
+        if (sendAcceleration)
+        {
             VectorFloat gravity;
             imu.dmpGetGravity(&gravity, &rawQuat);
             // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
