@@ -454,7 +454,9 @@ void ICM20948Sensor::sendData() {
         } else {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
-        if (sendAcceleration) {
+
+        if (sendAcceleration)
+        {
             Network::sendAccel(acceleration, sensorId);
         }
     }
