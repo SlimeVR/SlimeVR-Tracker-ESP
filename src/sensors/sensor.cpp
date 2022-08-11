@@ -33,6 +33,7 @@ void Sensor::sendData() {
     if(newData) {
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
+
         if (sendAcceleration)
             Network::sendAccel(acceleration, sensorId);
 
