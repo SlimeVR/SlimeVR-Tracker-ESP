@@ -400,7 +400,8 @@ void ICM20948Sensor::motionLoop() {
                     lastData = millis();
                 }
             }
-            if (sendAcceleration){
+            if (sendAcceleration)
+            {
                 acceleration[0] = (float)dmpData.Raw_Accel.Data.X;
                 acceleration[1] = (float)dmpData.Raw_Accel.Data.Y;
                 acceleration[2] = (float)dmpData.Raw_Accel.Data.Z;
