@@ -88,7 +88,7 @@ namespace I2CSCAN
 #if ESP32
         Wire.end();
 #endif
-        Wire.begin(portArray[i], portArray[j]);
+        Wire.begin((int)portArray[i], (int)portArray[j]);
         byte error, address;
         int nDevices;
         nDevices = 0;
