@@ -20,48 +20,37 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
+#ifndef SENSORS_FSP201SENSOR_H
+#define SENSORS_FSP201SENSOR_H
+
 #include "sensor.h"
-#include "network/network.h"
-#include <i2cscan.h>
-#include "calibration.h"
+#include <BNO080.h>
 
-uint8_t Sensor::getSensorState() {
-    return isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
-}
-
-void Sensor::sendData() {
-    if(newData) {
-        newData = false;
-        Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
-
-#ifdef DEBUG_SENSOR
-        m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
-#endif
+class FSP201Sensor : public Sensor
+{
+public:
+    FSP201Sensor(uint8_t id, uint8_t type, uint8_t address, float rotation, uint8_t intPin)
+        : Sensor("FSP201Sensor", type, id, address, rotation), m_IntPin(intPin) {};
+    ~FSP201Sensor(){};
+    void motionSetup() override final;
+    void postSetup() override {
+        lastData = millis();
     }
-}
 
-const char * getIMUNameByType(int imuType) {
-    switch(imuType) {
-        case IMU_MPU9250:
-            return "MPU9250";
-        case IMU_MPU6500:
-            return "MPU6500";
-        case IMU_BNO080:
-            return "BNO080";
-        case IMU_BNO085:
-            return "BNO085";
-        case IMU_BNO055:
-            return "BNO055";
-        case IMU_MPU6050:
-            return "MPU6050";
-        case IMU_BNO086:
-            return "BNO086";
-        case IMU_BMI160:
-            return "BMI160";
-        case IMU_ICM20948:
-            return "ICM20948";
-        case IMU_FSP201:
-            return "FSP201";
-    }
-    return "Unknown";
-}
+    void motionLoop() override final;
+    void sendData() override final;
+    void startCalibration(int calibrationType) override final;
+    uint8_t getSensorState() override final;
+
+private:
+    BNO080 imu{};
+
+    uint8_t m_IntPin;
+
+    unsigned long lastData = 0;
+    uint8_t lastReset = 0;
+    BNO080Error lastError{};
+};
+
+#endif // SENSORS_FSP201SENSOR_H

@@ -21,12 +21,12 @@
     THE SOFTWARE.
 */
 
-#include "sensors/bno080sensor.h"
+#include "sensors/fsp201sensor.h"
 #include "network/network.h"
 #include "utils.h"
 #include "GlobalVars.h"
 
-void BNO080Sensor::motionSetup()
+void FSP201Sensor::motionSetup()
 {
 #ifdef DEBUG_SENSOR
     imu.enableDebugging(Serial);
@@ -52,23 +52,13 @@ void BNO080Sensor::motionSetup()
                   imu.swVersionPatch
                 );
 
-#if USE_6_AXIS
-    #if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
+#if BNO_USE_ARVR_STABILIZATION
     imu.enableARVRStabilizedGameRotationVector(10);
-    #else
-    imu.enableGameRotationVector(10);
-    #endif
-
-    #if BNO_USE_MAGNETOMETER_CORRECTION
-    imu.enableRotationVector(1000);
-    #endif
 #else
-    #if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
-    imu.enableARVRStabilizedRotationVector(10);
-    #else
-    imu.enableRotationVector(10);
-    #endif
+    imu.enableGameRotationVector(10);
 #endif
+
+    //imu.enableTapDetector(100);
 
 #if ENABLE_INSPECTION
     imu.enableRawGyro(10);
@@ -82,7 +72,7 @@ void BNO080Sensor::motionSetup()
     configured = true;
 }
 
-void BNO080Sensor::motionLoop()
+void FSP201Sensor::motionLoop()
 {
     //Look for reports from the IMU
     while (imu.dataAvailable())
@@ -111,7 +101,6 @@ void BNO080Sensor::motionLoop()
         lastReset = 0;
         lastData = millis();
 
-#if USE_6_AXIS
         if (imu.hasNewGameQuat())
         {
             imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
@@ -130,41 +119,6 @@ void BNO080Sensor::motionLoop()
             }
         }
 
-    #if BNO_USE_MAGNETOMETER_CORRECTION
-        if (imu.hasNewMagQuat())
-        {
-            imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
-            magQuaternion *= sensorOffset;
-
-        #if ENABLE_INSPECTION
-            {
-                Network::sendInspectionCorrectionData(sensorId, quaternion);
-            }
-        #endif // ENABLE_INSPECTION
-
-            newMagData = true;
-        }
-    #endif // BNO_USE_MAGNETOMETER_CORRECTION
-#else // USE_6_AXIS
-
-        if (imu.hasNewQuat())
-        {
-            imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
-            quaternion *= sensorOffset;
-
-    #if ENABLE_INSPECTION
-            {
-                Network::sendInspectionFusedIMUData(sensorId, quaternion);
-            }
-    #endif // ENABLE_INSPECTION
-
-            if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
-            {
-                newData = true;
-                lastQuatSent = quaternion;
-            }
-        }
-#endif // USE_6_AXIS
         if (imu.hasNewAccel())
         {
             float v[3];
@@ -200,37 +154,24 @@ void BNO080Sensor::motionLoop()
     }
 }
 
-uint8_t BNO080Sensor::getSensorState() {
+uint8_t FSP201Sensor::getSensorState() {
     return lastReset > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
-void BNO080Sensor::sendData()
+void FSP201Sensor::sendData()
 {
     if (newData)
     {
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
 
-#if !USE_6_AXIS
-        Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
-#endif
-
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
 #endif
     }
-
-#if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
-    if (newMagData)
-    {
-        newMagData = false;
-        Network::sendRotationData(&magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy, sensorId);
-        Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
-    }
-#endif
 }
 
-void BNO080Sensor::startCalibration(int calibrationType)
+void FSP201Sensor::startCalibration(int calibrationType)
 {
     // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
     ledManager.pattern(20, 20, 10);

@@ -74,7 +74,7 @@ namespace I2CSCAN
             }
             else if (error == 4)
             {
-                Serial.print("[ERR] I2C (@ " + portMap[i] + " : " + portMap[j] + "): ");
+                Serial.print("[ERR] I2C (@ " + portMap[i] + "(" + i + ") : " + portMap[j] + "(" + j + ")): ");
                 Serial.print("Unknow error at address 0x");
                 if (address < 16)
                     Serial.print("0");

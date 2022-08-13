@@ -30,6 +30,7 @@
 #include "mpu6050sensor.h"
 #include "bmi160sensor.h"
 #include "icm20948sensor.h"
+#include "fsp201sensor.h"
 #include "ErroneousSensor.h"
 
 namespace SlimeVR
@@ -48,6 +49,8 @@ namespace SlimeVR
                 firstIMUAddress = I2CSCAN::pickDevice(0x29, 0x28, true);
 #elif IMU == IMU_MPU9250 || IMU == IMU_BMI160 || IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_ICM20948
                 firstIMUAddress = I2CSCAN::pickDevice(0x68, 0x69, true);
+#elif IMU == IMU_FSP201
+                firstIMUAddress = I2CSCAN::pickDevice(0x4D, 0x4C, true);
 #else
 #error Unsupported primary IMU
 #endif
@@ -72,6 +75,8 @@ namespace SlimeVR
                     m_Sensor1 = new MPU6050Sensor(0, IMU, firstIMUAddress, IMU_ROTATION);
 #elif IMU == IMU_ICM20948
                     m_Sensor1 = new ICM20948Sensor(0, firstIMUAddress, IMU_ROTATION);
+#elif IMU == IMU_FSP201
+                    m_Sensor1 = new FSP201Sensor(0, IMU, firstIMUAddress, IMU_ROTATION, PIN_IMU_INT);
 #endif
                 }
 
@@ -85,6 +90,8 @@ namespace SlimeVR
                 secondIMUAddress = I2CSCAN::pickDevice(0x28, 0x29, false);
 #elif SECOND_IMU == IMU_MPU9250 || SECOND_IMU == IMU_BMI160 || SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050 || SECOND_IMU == IMU_ICM20948
                 secondIMUAddress = I2CSCAN::pickDevice(0x69, 0x68, false);
+#elif SECOND_IMU == IMU_FSP201
+                secondIMUAddress = I2CSCAN::pickDevice(0x4C, 0x4D, false);
 #else
 #error Unsupported secondary IMU
 #endif
@@ -102,7 +109,7 @@ namespace SlimeVR
                     m_Logger.trace("Secondary IMU found at address 0x%02X", secondIMUAddress);
 
 #if SECOND_IMU == IMU_BNO080 || SECOND_IMU == IMU_BNO085 || SECOND_IMU == IMU_BNO086
-                    m_Sensor2 = new BNO080Sensor(1, IMU, secondIMUAddress, SECOND_IMU_ROTATION, PIN_IMU_INT_2);
+                    m_Sensor2 = new BNO080Sensor(1, SECOND_IMU, secondIMUAddress, SECOND_IMU_ROTATION, PIN_IMU_INT_2);
 #elif SECOND_IMU == IMU_BNO055
                     m_Sensor2 = new BNO055Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
 #elif SECOND_IMU == IMU_MPU9250
@@ -110,9 +117,11 @@ namespace SlimeVR
 #elif SECOND_IMU == IMU_BMI160
                     m_Sensor2 = new BMI160Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
 #elif SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050
-                    m_Sensor2 = new MPU6050Sensor(1, IMU, secondIMUAddress, SECOND_IMU_ROTATION);
+                    m_Sensor2 = new MPU6050Sensor(1, SECOND_IMU, secondIMUAddress, SECOND_IMU_ROTATION);
 #elif SECOND_IMU == IMU_ICM20948
                     m_Sensor2 = new ICM20948Sensor(1, secondIMUAddress, SECOND_IMU_ROTATION);
+#elif SECOND_IMU == IMU_FSP201
+                    m_Sensor2 = new FSP201Sensor(1, SECOND_IMU, secondIMUAddress, SECOND_IMU_ROTATION, PIN_IMU_INT_2);
 #endif
                 }
 

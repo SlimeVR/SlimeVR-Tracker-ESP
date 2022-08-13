@@ -33,6 +33,7 @@
 #define IMU_BNO086 7
 #define IMU_BMI160 8
 #define IMU_ICM20948 9
+#define IMU_FSP201 10
 
 #define BOARD_SLIMEVR_LEGACY 1
 #define BOARD_SLIMEVR_DEV 2

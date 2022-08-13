@@ -75,10 +75,18 @@ void setup()
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif
+#if IMU == IMU_FSP201 || SECOND_IMU == IMU_FSP201 // TODO : Engineering samples of FSP201 don't seem to run faster than 100kHz
+    Wire.setClock(100000);
+#else
     Wire.setClock(I2C_SPEED);
+#endif
 
     // Wait for IMU to boot
+#if IMU == IMU_FSP201 || SECOND_IMU == IMU_FSP201 // TODO Engineering samples of FSP201 require 4 seconds to boot
+    delay(4000);
+#else
     delay(500);
+#endif
     
     sensorManager.setup();
     
