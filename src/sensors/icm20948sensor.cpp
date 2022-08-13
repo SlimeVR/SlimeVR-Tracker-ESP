@@ -240,6 +240,16 @@ void ICM20948Sensor::motionSetup() {
         }
     }
 
+    if(imu.setDMPODRrate(DMP_ODR_Reg_Accel, 1.25) == ICM_20948_Stat_Ok)
+    {
+        m_Logger.debug("Set Accel to 100Hz frequency");
+    }
+    else
+    {
+       m_Logger.fatal("Failed to set Accel to 100Hz frequency");
+        return;
+    }
+
     // Enable the FIFO
     if(imu.enableFIFO() == ICM_20948_Stat_Ok)
     {
