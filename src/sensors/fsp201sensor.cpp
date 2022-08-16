@@ -58,7 +58,6 @@ void FSP201Sensor::motionSetup()
     imu.enableGameRotationVector(10);
 #endif
 
-    //imu.enableTapDetector(100);
 
 #if ENABLE_INSPECTION
     imu.enableRawGyro(10);
