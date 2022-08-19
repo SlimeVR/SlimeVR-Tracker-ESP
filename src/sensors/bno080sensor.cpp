@@ -120,9 +120,6 @@ void BNO080Sensor::motionLoop()
             imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
             quaternion *= sensorOffset;
 
-            uint8_t accelAccuracy = 0;
-            imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], accelAccuracy);
-
     #if ENABLE_INSPECTION
             {
                 Network::sendInspectionFusedIMUData(sensorId, quaternion);
@@ -178,10 +175,8 @@ void BNO080Sensor::motionLoop()
         }
         if (imu.hasNewAccel())
         {
-            float v[3];
             uint8_t acc;
-            imu.getAccel(v[0], v[1], v[2], acc);
-            Network::sendAccel(v, PACKET_ACCEL);
+            imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
         }
         if (m_IntPin == 255 || imu.I2CTimedOut())
             break;
