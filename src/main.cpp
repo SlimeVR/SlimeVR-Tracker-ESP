@@ -34,12 +34,14 @@
 #include "status/StatusManager.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
+#include "network/WiFiManager.h"
 
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
 SlimeVR::LEDManager ledManager(LED_PIN);
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
+SlimeVR::Network::WiFiManager wifiManager;
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -79,10 +81,10 @@ void setup()
 
     // Wait for IMU to boot
     delay(500);
-    
+
     sensorManager.setup();
-    
-    Network::setUp();
+
+    wifiManager.setup();
     OTA::otaSetup(otaPassword);
     battery.Setup();
 

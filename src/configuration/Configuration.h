@@ -24,9 +24,11 @@
 #ifndef SLIMEVR_CONFIGURATION_CONFIGURATION_H
 #define SLIMEVR_CONFIGURATION_CONFIGURATION_H
 
+#include <unordered_map>
 #include <vector>
 
 #include "DeviceConfig.h"
+#include "WiFiCredential.h"
 #include "logging/Logger.h"
 
 namespace SlimeVR {
@@ -46,20 +48,29 @@ namespace SlimeVR {
             CalibrationConfig getCalibration(size_t sensorID) const;
             void setCalibration(size_t sensorID, const CalibrationConfig& config);
 
+            size_t getWiFiCredentialCount() const;
+            const std::unordered_map<std::string, WiFiCredential>* const getWiFiCredentials() const;
+            void setWiFiCredential(const WiFiCredential& config);
+            void removeWiFiCredential(std::string ssid);
+
         private:
             void loadCalibrations();
+            void loadWiFiCredentials();
+
             bool runMigrations(int32_t version);
+            bool runWiFiCredentialMigrations(WiFiCredential& config);
 
             bool m_Loaded = false;
 
             DeviceConfig m_Config{};
             std::vector<CalibrationConfig> m_Calibrations;
+            std::unordered_map<std::string, WiFiCredential> m_WiFiCredentials;
 
             Logging::Logger m_Logger = Logging::Logger("Configuration");
 
             static CalibrationConfig m_EmptyCalibration;
         };
-    }
-}
+    } // namespace Configuration
+} // namespace SlimeVR
 
 #endif

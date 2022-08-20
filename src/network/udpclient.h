@@ -27,7 +27,6 @@
 #include <Arduino.h>
 #include "quat.h"
 #include "sensors/sensor.h"
-#include "wifihandler.h"
 #include "globals.h"
 
 namespace ServerConnection {

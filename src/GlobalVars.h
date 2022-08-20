@@ -24,12 +24,19 @@
 #ifndef GLOBALVARS_H
 #define GLOBALVARS_H
 
+/**
+ * DO NOT INCLUDE THIS FILE FROM HEADER FILES!
+ * You *will* get compile errors.
+ */
+
 #include "LEDManager.h"
 #include "status/StatusManager.h"
 #include "configuration/Configuration.h"
+#include "network/WiFiManager.h"
 
 extern SlimeVR::LEDManager ledManager;
 extern SlimeVR::Status::StatusManager statusManager;
 extern SlimeVR::Configuration::Configuration configuration;
+extern SlimeVR::Network::WiFiManager wifiManager;
 
 #endif

@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 TheDevMinerTV
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,21 +20,26 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef SLIMEVR_WIFI_H_
-#define SLIMEVR_WIFI_H_
 
-#ifdef ESP8266
-    #include <ESP8266WiFi.h>
-#else
-    #include <WiFi.h>
+#ifndef SLIMEVR_CONFIGURATION_WIFICREDENTIAL_H
+#define SLIMEVR_CONFIGURATION_WIFICREDENTIAL_H
+
+// We can't use `cstdint` here because some target's compilers don't support C++11 yet
+#include <stdint.h>
+#include <string>
+
+constexpr int32_t CURRENT_WIFICREDENTIAL_VERSION = 1;
+
+namespace SlimeVR {
+    namespace Configuration {
+        struct WiFiCredential {
+            int32_t version;
+            // max 32 characters + \0 character
+            std::string ssid; 
+            // max 63 characters + \0 character
+            std::string password; 
+        };
+    } // namespace Configuration
+} // namespace SlimeVR
+
 #endif
-
-namespace WiFiNetwork {
-    bool isConnected();
-    void setUp();
-    void upkeep();
-    void setWiFiCredentials(const char * SSID, const char * pass);
-    IPAddress getAddress();
-}
-
-#endif // SLIMEVR_WIFI_H_

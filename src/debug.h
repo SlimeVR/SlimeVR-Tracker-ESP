@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -76,6 +76,8 @@
 // Send inspection packets over the network to a profiler
 // Not recommended for production
 #define ENABLE_INSPECTION false
+
+constexpr const char* TRACKER_HOSTNAME = "SlimeVR FBT Tracker";
 
 #define FIRMWARE_BUILD_NUMBER 11
 #define FIRMWARE_VERSION "0.2.2"

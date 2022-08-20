@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,21 +20,24 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+
 #include "network.h"
+
+#include "GlobalVars.h"
 
 bool lastWifiConnected = false;
 
-void Network::setUp() {
-    WiFiNetwork::setUp();
-}
+void Network::update(Sensor* const sensor, Sensor* const sensor2) {
+    wifiManager.update();
 
-void Network::update(Sensor * const sensor, Sensor * const sensor2) {
-    WiFiNetwork::upkeep();
-    if(WiFiNetwork::isConnected()) {
-        if(lastWifiConnected == false) {
-            lastWifiConnected = true;
-            ServerConnection::resetConnection(); // WiFi was reconnected, reconnect to the server
+    if (wifiManager.isConnected()) {
+        if (!lastWifiConnected) {
+            // WiFi was reconnected, reconnect to the server
+            ServerConnection::resetConnection();
         }
+
+        lastWifiConnected = true;
+
         ServerConnection::update(sensor, sensor2);
     } else {
         lastWifiConnected = false;

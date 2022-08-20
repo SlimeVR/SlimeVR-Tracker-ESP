@@ -35,21 +35,112 @@
 namespace SerialCommands {
     SlimeVR::Logging::Logger logger("SerialCommands");
 
-    CmdCallback<5> cmdCallbacks;
+    CmdCallback<6> cmdCallbacks;
     CmdParser cmdParser;
     CmdBuffer<64> cmdBuffer;
 
     void cmdSet(CmdParser * parser) {
-        if(parser->getParamCount() != 1 && parser->equalCmdParam(1, "WIFI")  ) {
+        logger.error("CMD SET ERROR: Unrecognized variable to set");
+
+        if (parser->getParamCount() != 1 && parser->equalCmdParam(1, "WIFI")) {
+            logger.warn("You are using the deprecated command to set WiFi credentials. Please migrate to using `WIFI ADD`");
+
             if(parser->getParamCount() < 3) {
                 logger.error("CMD SET WIFI ERROR: Too few arguments");
                 logger.info("Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
-            } else {
-                WiFiNetwork::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
-                logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
+                return;
             }
+
+            std::string ssid = parser->getCmdParam(2);
+            std::string password = parser->getCmdParam(3);
+
+            if (ssid.length() >= 32) {
+                logger.error("CMD WIFI ADD ERROR: SSID too long");
+                return;
+            }
+
+            if (password.length() >= 64) {
+                logger.error("CMD WIFI ADD ERROR: Password too long");
+                return;
+            }
+
+            SlimeVR::Configuration::WiFiCredential wifiCredential;
+
+            auto existingCredentials = configuration.getWiFiCredentials();
+            for (auto& credential : *existingCredentials) {
+                configuration.removeWiFiCredential(credential.first);
+            }
+
+            configuration.setWiFiCredential(wifiCredential);
+            configuration.save();
+
+            wifiManager.reload();
+
+            logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
         } else {
             logger.error("CMD SET ERROR: Unrecognized variable to set");
+        }
+    }
+
+    void cmdWiFi(CmdParser* parser) {
+        if (parser->getParamCount() < 2) {
+            logger.error("CMD WIFI ERROR: No operation specified");
+            return;
+        }
+
+        if (parser->equalCmdParam(1, "ADD")) {
+            if (parser->getParamCount() < 4) {
+                logger.error("CMD WIFI ADD ERROR: Too few arguments");
+                logger.info("Syntax: WIFI ADD \"<SSID>\" \"<PASSWORD>\"");
+                return;
+            }
+
+            std::string ssid = parser->getCmdParam(2);
+            std::string password = parser->getCmdParam(3);
+
+            if (ssid.length() >= 32) {
+                logger.error("CMD WIFI ADD ERROR: SSID too long");
+                return;
+            }
+
+            if (password.length() >= 64) {
+                logger.error("CMD WIFI ADD ERROR: Password too long");
+                return;
+            }
+
+            SlimeVR::Configuration::WiFiCredential wifiCredential = {
+                CURRENT_WIFICREDENTIAL_VERSION,
+                ssid,
+                password
+            };
+
+            configuration.setWiFiCredential(wifiCredential);
+            configuration.save();
+
+            wifiManager.reload();
+
+            logger.info("CMD WIFI ADD OK: New WiFi credential added");
+        } else if (parser->equalCmdParam(1, "REMOVE")) {
+            if (parser->getParamCount() < 3) {
+                logger.error("CMD WIFI REMOVE ERROR: Too few arguments");
+                logger.info("Syntax: WIFI REMOVE \"<SSID>\"");
+                return;
+            }
+
+            configuration.removeWiFiCredential(parser->getCmdParam(2));
+            configuration.save();
+
+            wifiManager.reload();
+
+            logger.info("CMD WIFI REMOVE OK: WiFi credential removed");
+        } else if (parser->equalCmdParam(1, "LIST")) {
+            logger.info("CMD WIFI LIST: List of WiFi credentials");
+
+            for (const auto& wifiCredential : *configuration.getWiFiCredentials()) {
+                logger.info("SSID: %s", wifiCredential.second.ssid);
+            }
+        } else {
+            logger.error("CMD WIFI ERROR: Unrecognized operation");
         }
     }
 
@@ -65,7 +156,7 @@ namespace SerialCommands {
                 HARDWARE_MCU,
                 FIRMWARE_BUILD_NUMBER,
                 FIRMWARE_VERSION,
-                WiFiNetwork::getAddress().toString().c_str()
+                wifiManager.getIP().toString().c_str()
             );
             // TODO Print sensors number and types
         }
@@ -147,6 +238,7 @@ namespace SerialCommands {
 
     void setUp() {
         cmdCallbacks.addCmd("SET", &cmdSet);
+        cmdCallbacks.addCmd("WIFI", &cmdWiFi);
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REP", &cmdReport);

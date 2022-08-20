@@ -38,17 +38,17 @@ namespace SlimeVR {
 
             bool status = LittleFS.begin();
             if (!status) {
-                this->m_Logger.warn("Could not mount LittleFS, formatting");
+                m_Logger.warn("Could not mount LittleFS, formatting");
 
                 status = LittleFS.format();
                 if (!status) {
-                    this->m_Logger.warn("Could not format LittleFS, aborting");
+                    m_Logger.warn("Could not format LittleFS, aborting");
                     return;
                 }
 
                 status = LittleFS.begin();
                 if (!status) {
-                    this->m_Logger.error("Could not mount LittleFS, aborting");
+                    m_Logger.error("Could not mount LittleFS, aborting");
                     return;
                 }
             }
@@ -81,6 +81,7 @@ namespace SlimeVR {
             }
 
             loadCalibrations();
+            loadWiFiCredentials();
 
             m_Loaded = true;
 
@@ -108,6 +109,20 @@ namespace SlimeVR {
                 file.close();
             }
 
+            for (const auto& c : m_WiFiCredentials) {
+                const WiFiCredential credential = c.second;
+
+                // 51 = 18 (for the path) + 32 (for the max SSID length) + 1 (for the null terminator)
+                char path[51];
+                sprintf(path, "/wifi_credentials/%s", credential.ssid.c_str());
+
+                m_Logger.trace("Saving WiFi credentials data for %s", credential.ssid);
+
+                File file = LittleFS.open(path, "w");
+                file.write(reinterpret_cast<const uint8_t*>(&credential), sizeof(WiFiCredential));
+                file.close();
+            }
+
             {
                 File file = LittleFS.open("/config.bin", "w");
                 file.write((uint8_t*)&m_Config, sizeof(DeviceConfig));
@@ -121,6 +136,7 @@ namespace SlimeVR {
             LittleFS.format();
 
             m_Calibrations.clear();
+            m_WiFiCredentials.clear();
             m_Config.version = 1;
             save();
 
@@ -151,6 +167,22 @@ namespace SlimeVR {
             }
 
             m_Calibrations[sensorID] = config;
+        }
+
+        size_t Configuration::getWiFiCredentialCount() const {
+            return m_WiFiCredentials.size();
+        }
+
+        const std::unordered_map<std::string, WiFiCredential>* const Configuration::getWiFiCredentials() const {
+            return &m_WiFiCredentials;
+        }
+
+        void Configuration::setWiFiCredential(const WiFiCredential& credential) {
+            m_WiFiCredentials[credential.ssid] = credential;
+        }
+
+        void Configuration::removeWiFiCredential(std::string ssid) {
+            m_WiFiCredentials.erase(ssid);
         }
 
         void Configuration::loadCalibrations() {
@@ -227,8 +259,11 @@ namespace SlimeVR {
                         continue;
                     }
 
+                    m_Logger.trace("Found calibration data file: %s", f.name());
+
                     CalibrationConfig calibrationConfig;
                     f.read((uint8_t*)&calibrationConfig, sizeof(CalibrationConfig));
+                    f.close();
 
                     uint8_t sensorId = strtoul(calibrations.fileName().c_str(), nullptr, 10);
                     m_Logger.debug("Found sensor calibration for %s at index %d", calibrationConfigTypeToString(calibrationConfig.type), sensorId);
@@ -239,7 +274,125 @@ namespace SlimeVR {
 #endif
         }
 
+        void Configuration::loadWiFiCredentials() {
+#ifdef ESP32
+            {
+                File calibrations = LittleFS.open("/wifi_credentials");
+                if (!calibrations) {
+                    m_Logger.warn("No WiFi credentials found, creating new directory...");
+
+                    if (!LittleFS.mkdir("/wifi_credentials")) {
+                        m_Logger.error("Failed to create directory: /wifi_credentials");
+                        return;
+                    }
+
+                    calibrations = LittleFS.open("/wifi_credentials");
+                }
+
+                if (!calibrations.isDirectory()) {
+                    calibrations.close();
+
+                    m_Logger.warn("Found file instead of directory: /wifi_credentials");
+
+                    if (!LittleFS.remove("/wifi_credentials")) {
+                        m_Logger.error("Failed to remove directory: /wifi_credentials");
+                        return;
+                    }
+
+                    if (!LittleFS.mkdir("/wifi_credentials")) {
+                        m_Logger.error("Failed to create directory: /wifi_credentials");
+                        return;
+                    }
+
+                    calibrations = LittleFS.open("/wifi_credentials");
+                }
+
+                m_Logger.debug("Found WiFi credential directory");
+
+                while (File f = calibrations.openNextFile()) {
+                    if (f.isDirectory()) {
+                        continue;
+                    }
+
+                    m_Logger.trace("Found WiFi credential file: %s", f.name());
+
+                    WiFiCredential wifiCredential;
+
+                    f.read(reinterpret_cast<uint8_t*>(&wifiCredential.version), sizeof(int32_t));
+                    if (wifiCredential.version < CURRENT_WIFICREDENTIAL_VERSION) {
+                        m_Logger.debug("WiFi Credential version is outdated: v%d < v%d", wifiCredential.version, CURRENT_WIFICREDENTIAL_VERSION);
+
+                        if (!runWiFiCredentialMigrations(wifiCredential)) {
+                            m_Logger.error("Failed to migrate WiFi credential from v%d to v%d", wifiCredential.version, CURRENT_WIFICREDENTIAL_VERSION);
+                            continue;
+                        }
+                    } else {
+                        m_Logger.info("Found up-to-date WiFi credential v%d", m_Config.version);
+                    }
+
+                    f.seek(0);
+                    f.read(reinterpret_cast<uint8_t*>(&wifiCredential), sizeof(WiFiCredential));
+                    f.close();
+
+                    setWiFiCredential(wifiCredential);
+                }
+
+                calibrations.close();
+            }
+#else
+            {
+                if (!LittleFS.exists("/wifi_credentials")) {
+                    m_Logger.warn("No WiFi credentials found, creating new directory...");
+
+                    if (!LittleFS.mkdir("/wifi_credentials")) {
+                        m_Logger.error("Failed to create directory: /wifi_credentials");
+                        return;
+                    }
+
+                    // There's no credentials here, so we're done
+                    return;
+                }
+
+                Dir calibrations = LittleFS.openDir("/wifi_credentials");
+                while (calibrations.next()) {
+                    File f = calibrations.openFile("r");
+                    if (!f.isFile()) {
+                        continue;
+                    }
+
+                    m_Logger.trace("Found WiFi credential file: %s", f.name());
+
+                    WiFiCredential wifiCredential;
+
+                    f.read(reinterpret_cast<uint8_t*>(&wifiCredential.version), sizeof(int32_t));
+                    if (wifiCredential.version < CURRENT_WIFICREDENTIAL_VERSION) {
+                        m_Logger.debug("WiFi Credential version is outdated: v%d < v%d", wifiCredential.version, CURRENT_WIFICREDENTIAL_VERSION);
+
+                        if (!runWiFiCredentialMigrations(wifiCredential)) {
+                            m_Logger.error("Failed to migrate WiFi credential from v%d to v%d", wifiCredential.version, CURRENT_WIFICREDENTIAL_VERSION);
+                            continue;
+                        }
+                    } else {
+                        m_Logger.info("Found up-to-date WiFi credential v%d", m_Config.version);
+                    }
+
+                    f.seek(0);
+                    f.read(reinterpret_cast<uint8_t*>(&wifiCredential), sizeof(WiFiCredential));
+                    f.close();
+
+                    m_Logger.trace("Found WiFi credential file for SSID \"%s\"", wifiCredential.ssid);
+
+                    setWiFiCredential(wifiCredential);
+                }
+            }
+#endif
+        }
+
         bool Configuration::runMigrations(int32_t version) {
+            return true;
+        }
+
+        bool Configuration::runWiFiCredentialMigrations(WiFiCredential& wifiCredential) {
             return true;
         }
 
@@ -301,6 +454,12 @@ namespace SlimeVR {
 
                     break;
                 }
+            }
+
+            m_Logger.info("  %d WiFi credentials:", m_WiFiCredentials.size());
+
+            for (const auto& c : m_WiFiCredentials) {
+                m_Logger.info("    - %s", c.second.ssid);
             }
         }
     }
