@@ -82,7 +82,8 @@ void setup()
 #endif
 
     // Wait for IMU to boot
-#if IMU == IMU_FSP201 || SECOND_IMU == IMU_FSP201 // TODO Engineering samples of FSP201 require 4 seconds to boot
+// TODO: Engineering samples of FSP201 require 4 seconds to boot
+#if IMU == IMU_FSP201 || SECOND_IMU == IMU_FSP201
     delay(4000);
 #else
     delay(500);

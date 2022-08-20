@@ -125,19 +125,24 @@ void FSP201Sensor::motionLoop()
             imu.getAccel(v[0], v[1], v[2], acc);
             Network::sendAccel(v, PACKET_ACCEL);
         }
+
         if (m_IntPin == 255 || imu.I2CTimedOut())
             break;
     }
+
     if (lastData + 1000 < millis() && configured)
     {
         while(true) {
             BNO080Error error = imu.readError();
+
             if(error.error_source == 255)
                 break;
+
             lastError = error;
             m_Logger.error("BNO08X error. Severity: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
                 error.severity, error.error_sequence_number, error.error_source, error.error, error.error_module, error.error_code);
         }
+
         statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
         working = false;
         lastData = millis();
@@ -172,10 +177,11 @@ void FSP201Sensor::sendData()
 
 void FSP201Sensor::startCalibration(int calibrationType)
 {
-    // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
+    // TODO: It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
     ledManager.pattern(20, 20, 10);
     ledManager.blink(2000);
     imu.calibrateGyro();
+
     do
     {
         ledManager.on();
@@ -185,5 +191,6 @@ void FSP201Sensor::startCalibration(int calibrationType)
         ledManager.off();
         delay(20);
     } while (!imu.calibrationComplete());
+
     imu.saveCalibration();
 }
