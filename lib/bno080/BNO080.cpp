@@ -63,38 +63,17 @@ boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, uint8_t intPin)
 	//Check communication with device
 	shtpData[0] = SHTP_REPORT_PRODUCT_ID_REQUEST; //Request the product ID and reset info
 	shtpData[1] = 0;							  //Reserved
+	hasImuInfo = false;
 
 	//Transmit packet on channel 2, 2 bytes
 	sendPacket(CHANNEL_CONTROL, 2);
 
 	//Now we wait for response
-	if (receivePacket() == true)
-	{
-		if (shtpData[0] == SHTP_REPORT_PRODUCT_ID_RESPONSE)
-		{
-			if (_printDebug == true)
-			{
-				swMajor = shtpData[2];
-				swMinor = shtpData[3];
-				swPartNumber = ((uint32_t)shtpData[7] << 24) | ((uint32_t)shtpData[6] << 16) | ((uint32_t)shtpData[5] << 8) | ((uint32_t)shtpData[4]);
-				swBuildNumber = ((uint32_t)shtpData[11] << 24) | ((uint32_t)shtpData[10] << 16) | ((uint32_t)shtpData[9] << 8) | ((uint32_t)shtpData[8]);
-				swVersionPatch = ((uint16_t)shtpData[13] << 8) | ((uint16_t)shtpData[12]);
-				_debugPort->print(F("SW Version Major: 0x"));
-				_debugPort->print(swMajor, HEX);
-				_debugPort->print(F(" SW Version Minor: 0x"));
-				_debugPort->print(swMinor, HEX);
-				_debugPort->print(F(" SW Part Number: 0x"));
-				_debugPort->print(swPartNumber, HEX);
-				_debugPort->print(F(" SW Build Number: 0x"));
-				_debugPort->print(swBuildNumber, HEX);
-				_debugPort->print(F(" SW Version Patch: 0x"));
-				_debugPort->println(swVersionPatch, HEX);
-			}
-			return (true);
-		}
-	}
+	unsigned long endTime = millis() + 2000;
+	while(!hasImuInfo && endTime > millis())
+		getReadings();
 
-	return (false); //Something went wrong
+	return hasImuInfo;
 }
 
 boolean BNO080::beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_INTPin, uint8_t user_RSTPin, uint32_t spiPortSpeed, SPIClass &spiPort)
@@ -156,7 +135,7 @@ boolean BNO080::beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_I
 	waitForSPI();
 	if (receivePacket() == true)
 	{
-		if (shtpData[0] == SHTP_REPORT_PRODUCT_ID_RESPONSE)
+		if (shtpData[0] == SHTP_REPORT_PRODUCT_ID_RESPONSE) {
 			if (_printDebug == true)
 			{
 				_debugPort->print(F("SW Version Major: 0x"));
@@ -174,6 +153,7 @@ boolean BNO080::beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_I
 				_debugPort->println(SW_Version_Patch, HEX);
 			}
 			return (true);
+		}
 	}
 
 	return (false); //Something went wrong
@@ -218,7 +198,7 @@ uint16_t BNO080::getReadings(void)
 		}
 		else if(shtpHeader[2] == CHANNEL_GYRO)
 		{
-		return parseInputReport(); //This will update the rawAccelX, etc variables depending on which feature report is found
+			return parseInputReport(); //This will update the rawAccelX, etc variables depending on which feature report is found
 		}
 	}
 	return 0;
@@ -253,6 +233,29 @@ uint16_t BNO080::parseCommandReport(void)
 		{
 			calibrationStatus = shtpData[5 + 0]; //R0 - Status (0 = success, non-zero = fail)
 		}
+		return shtpData[0];
+	}
+	else if (shtpData[0] == SHTP_REPORT_PRODUCT_ID_RESPONSE)
+	{
+		swMajor = shtpData[2];
+		swMinor = shtpData[3];
+		swPartNumber = ((uint32_t)shtpData[7] << 24) | ((uint32_t)shtpData[6] << 16) | ((uint32_t)shtpData[5] << 8) | ((uint32_t)shtpData[4]);
+		swBuildNumber = ((uint32_t)shtpData[11] << 24) | ((uint32_t)shtpData[10] << 16) | ((uint32_t)shtpData[9] << 8) | ((uint32_t)shtpData[8]);
+		swVersionPatch = ((uint16_t)shtpData[13] << 8) | ((uint16_t)shtpData[12]);
+		if (_printDebug == true)
+		{
+			_debugPort->print(F("SW Version Major: 0x"));
+			_debugPort->print(swMajor, HEX);
+			_debugPort->print(F(" SW Version Minor: 0x"));
+			_debugPort->print(swMinor, HEX);
+			_debugPort->print(F(" SW Part Number: 0x"));
+			_debugPort->print(swPartNumber, HEX);
+			_debugPort->print(F(" SW Build Number: 0x"));
+			_debugPort->print(swBuildNumber, HEX);
+			_debugPort->print(F(" SW Version Patch: 0x"));
+			_debugPort->println(swVersionPatch, HEX);
+		}
+		hasImuInfo = true;
 		return shtpData[0];
 	}
 	else
@@ -1039,12 +1042,14 @@ void BNO080::softReset(void)
 	sendPacket(CHANNEL_EXECUTABLE, 1); //Transmit packet on channel 1, 1 byte
 
 	//Read all incoming data and flush it
-	delay(50);
-	while (receivePacket() == true)
-		; //delay(1);
-	delay(50);
-	while (receivePacket() == true)
-		; //delay(1);
+	for(int i = 0; i < 2; ++i) {
+		//Do it for no more than 1 second, because
+		//new data can start coming up very fast after restart
+		unsigned long endTime = millis() + 1000;
+		delay(50);
+		while (receivePacket() == true && endTime > millis())
+			; //delay(1);
+	}
 }
 
 //Set the operating mode to "On"

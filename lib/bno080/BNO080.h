@@ -301,6 +301,7 @@ public:
 	uint32_t swPartNumber;
 	uint32_t swBuildNumber;
 	uint16_t swVersionPatch;
+	bool hasImuInfo;
 
 private:
 	//Variables
