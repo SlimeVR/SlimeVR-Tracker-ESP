@@ -51,6 +51,7 @@ void BNO080Sensor::motionSetup()
                   imu.swBuildNumber, 
                   imu.swVersionPatch
                 );
+
     imu.enableLinearAccelerometer(10);
 
 #if USE_6_AXIS
