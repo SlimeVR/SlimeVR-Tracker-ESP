@@ -119,6 +119,8 @@ void BNO080Sensor::motionLoop()
         {
             imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
             quaternion *= sensorOffset;
+            uint8_t acc;
+            imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
 
     #if ENABLE_INSPECTION
             {
@@ -172,11 +174,6 @@ void BNO080Sensor::motionLoop()
         if (imu.getTapDetected())
         {
             tap = imu.getTapDetector();
-        }
-        if (imu.hasNewAccel())
-        {
-            uint8_t acc;
-            imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
         }
         if (m_IntPin == 255 || imu.I2CTimedOut())
             break;
