@@ -246,7 +246,7 @@ void ICM20948Sensor::motionSetup() {
     }
     else
     {
-       m_Logger.fatal("Failed to set Accel to 100Hz frequency");
+        m_Logger.fatal("Failed to set Accel to 100Hz frequency");
         return;
     }
 
