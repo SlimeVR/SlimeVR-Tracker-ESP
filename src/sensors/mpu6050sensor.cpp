@@ -151,6 +151,7 @@ void MPU6050Sensor::motionLoop()
             gravity.x *= 2;
             gravity.y *= 2;
             gravity.z *= 2;
+
             imu.dmpGetAccel(&rawAccel, fifoBuffer);
             imu.dmpGetLinearAccel(&rawAccel, &rawAccel, &gravity);
 
