@@ -168,7 +168,7 @@ void MPU9250Sensor::motionLoop() {
         }
     }
 
-    if (sendAcceleration){
+    if (sendAcceleration) {
         // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
         // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
         // we need to multiply by the gravity scale by two to convert to 2g mode ()
