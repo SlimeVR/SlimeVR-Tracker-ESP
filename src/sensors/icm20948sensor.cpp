@@ -30,6 +30,7 @@
 int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 10min + 10min (no more saves after 30min)
 
 #define ACCEL_SENSITIVITY_4G 8192.0f
+
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * SENSORS_GRAVITY_EARTH;
 
