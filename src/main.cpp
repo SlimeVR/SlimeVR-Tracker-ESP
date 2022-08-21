@@ -50,22 +50,20 @@ BatteryMonitor battery;
 
 void setup()
 {
-// Change from TheButlah
-// Here it seems to be a problem.
-// Each board seems to have different apoche how to name the Serial Ports (USB, Onboard,..)
-// Some seem to need Serial0 instead of Serial
-#if ARDUINO_USB_CDC_ON_BOOT
-    Serial.begin();
-#else
+// TODO:
+// - ESP32 USB Delay only when a USB device is connected not on USB to Serial chips
+// - ESP32 USB Only print debug info when USB is connected
+
     Serial.begin(serialBaudRate);
+#ifdef ESP32C3 
+    // Wait for the Computer to be able to connect.
+    delay(2000);
 #endif
     Serial.println();
     Serial.println();
     Serial.println();
 
     logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
-
-    //wifi_set_sleep_type(NONE_SLEEP_T);
 
     statusManager.setStatus(SlimeVR::Status::LOADING, true);
 
@@ -84,7 +82,6 @@ void setup()
 #endif
     Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL)); 
     // using here static_cast seems to be better, because there are 2 similar functions (Slave / Master mode)
-    
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif
