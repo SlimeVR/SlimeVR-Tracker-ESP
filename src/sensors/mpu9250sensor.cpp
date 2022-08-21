@@ -40,6 +40,7 @@ constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB
 #define MAG_CORR_RATIO 0.02
 
 #define ACCEL_SENSITIVITY_2G 16384.0f
+
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * SENSORS_GRAVITY_EARTH;
 
