@@ -32,7 +32,7 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 #define ACCEL_SENSITIVITY_4G 8192.0f
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
-constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * SENSORS_GRAVITY_EARTH;
+constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
 
 // #ifndef ENABLE_TAP
 //     #define ENABLE_TAP false
@@ -411,7 +411,7 @@ void ICM20948Sensor::motionLoop() {
                     lastData = millis();
                 }
             }
-            if (sendAcceleration)
+            if (SEND_ACCELERATION)
             {
                 acceleration[0] = (float)dmpData.Raw_Accel.Data.X;
                 acceleration[1] = (float)dmpData.Raw_Accel.Data.Y;
@@ -466,7 +466,7 @@ void ICM20948Sensor::sendData() {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
 
-        if (sendAcceleration)
+        if (SEND_ACCELERATION)
         {
             Network::sendAccel(acceleration, sensorId);
         }

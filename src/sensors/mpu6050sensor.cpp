@@ -38,7 +38,7 @@
 #define ACCEL_SENSITIVITY_2G 16384.0f
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
-constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * SENSORS_GRAVITY_EARTH;
+constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * EARTH_GRAVITY;
 
 void MPU6050Sensor::motionSetup()
 {
@@ -140,7 +140,7 @@ void MPU6050Sensor::motionLoop()
         quaternion.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
         quaternion *= sensorOffset;
 
-        if (sendAcceleration)
+        if (SEND_ACCELERATION)
         {
             VectorFloat gravity;
             imu.dmpGetGravity(&gravity, &rawQuat);

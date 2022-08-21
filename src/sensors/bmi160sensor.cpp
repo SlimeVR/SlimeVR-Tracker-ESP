@@ -36,7 +36,7 @@ constexpr float GSCALE = ((32768. / TYPICAL_SENSITIVITY_LSB) / 32768.) * (PI / 1
 #define ACCEL_SENSITIVITY_4G 8192.0f
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
-constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * SENSORS_GRAVITY_EARTH;
+constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
 
 // LSB change per temperature step map.
 // These values were calculated for 500 deg/s sensitivity
@@ -136,7 +136,7 @@ void BMI160Sensor::motionLoop() {
     quaternion.set(-q[2], q[1], q[3], q[0]);
     quaternion *= sensorOffset;
 
-    if (sendAcceleration)
+    if (SEND_ACCELERATION)
     {
         this->acceleration[0] = Axyz[0];
         this->acceleration[1] = Axyz[1];

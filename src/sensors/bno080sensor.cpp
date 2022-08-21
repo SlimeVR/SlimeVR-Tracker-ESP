@@ -215,7 +215,7 @@ void BNO080Sensor::sendData()
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
 
-        if (sendAcceleration)
+        if (SEND_ACCELERATION)
             Network::sendAccel(acceleration, sensorId);
 
 #if !USE_6_AXIS

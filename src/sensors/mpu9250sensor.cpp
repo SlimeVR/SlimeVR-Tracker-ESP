@@ -42,7 +42,7 @@ constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB
 #define ACCEL_SENSITIVITY_2G 16384.0f
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
-constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * SENSORS_GRAVITY_EARTH;
+constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * EARTH_GRAVITY;
 
 void MPU9250Sensor::motionSetup() {
     // initialize device
@@ -169,7 +169,7 @@ void MPU9250Sensor::motionLoop() {
         }
     }
 
-    if (sendAcceleration) {
+    if (SEND_ACCELERATION) {
         // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
         // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
         // we need to multiply by the gravity scale by two to convert to 2g mode ()

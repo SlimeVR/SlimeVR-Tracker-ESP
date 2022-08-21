@@ -59,7 +59,7 @@ void BNO055Sensor::motionLoop() {
     quaternion.set(quat.x, quat.y, quat.z, quat.w);
     quaternion *= sensorOffset;
 
-    if (sendAcceleration)
+    if (SEND_ACCELERATION)
     {
         Vector3 accel = imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
         this->acceleration[0] = accel.x;
