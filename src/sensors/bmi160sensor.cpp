@@ -136,7 +136,7 @@ void BMI160Sensor::motionLoop() {
     quaternion.set(-q[2], q[1], q[3], q[0]);
     quaternion *= sensorOffset;
 
-    if (SEND_ACCELERATION)
+#if SEND_ACCELERATION
     {
         this->acceleration[0] = Axyz[0];
         this->acceleration[1] = Axyz[1];
@@ -158,6 +158,7 @@ void BMI160Sensor::motionLoop() {
         this->acceleration[1] *= ASCALE_4G;
         this->acceleration[2] *= ASCALE_4G;
     }
+#endif
 
 #if ENABLE_INSPECTION
     {

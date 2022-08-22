@@ -411,28 +411,29 @@ void ICM20948Sensor::motionLoop() {
                     lastData = millis();
                 }
             }
-            if (SEND_ACCELERATION)
-            {
-                acceleration[0] = (float)dmpData.Raw_Accel.Data.X;
-                acceleration[1] = (float)dmpData.Raw_Accel.Data.Y;
-                acceleration[2] = (float)dmpData.Raw_Accel.Data.Z;
+#if SEND_ACCELERATION
+        {
+            acceleration[0] = (float)dmpData.Raw_Accel.Data.X;
+            acceleration[1] = (float)dmpData.Raw_Accel.Data.Y;
+            acceleration[2] = (float)dmpData.Raw_Accel.Data.Z;
 
-                // get the component of the acceleration that is gravity
-                float gravity[3];
-                gravity[0] = 2 * (quaternion.x*quaternion.z - quaternion.w*quaternion.y);
-                gravity[1] = 2 * (quaternion.w*quaternion.x + quaternion.y*quaternion.z);
-                gravity[2] = quaternion.w*quaternion.w - quaternion.x*quaternion.x - quaternion.y*quaternion.y + quaternion.z*quaternion.z;
-                
-                // subtract gravity from the acceleration vector
-                this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
-                this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
-                this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
+            // get the component of the acceleration that is gravity
+            float gravity[3];
+            gravity[0] = 2 * (quaternion.x*quaternion.z - quaternion.w*quaternion.y);
+            gravity[1] = 2 * (quaternion.w*quaternion.x + quaternion.y*quaternion.z);
+            gravity[2] = quaternion.w*quaternion.w - quaternion.x*quaternion.x - quaternion.y*quaternion.y + quaternion.z*quaternion.z;
+            
+            // subtract gravity from the acceleration vector
+            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
 
-                // finally scale the acceleration values to mps2
-                this->acceleration[0] *= ASCALE_4G;
-                this->acceleration[1] *= ASCALE_4G;
-                this->acceleration[2] *= ASCALE_4G;
-            }
+            // finally scale the acceleration values to mps2
+            this->acceleration[0] *= ASCALE_4G;
+            this->acceleration[1] *= ASCALE_4G;
+            this->acceleration[2] *= ASCALE_4G;
+        }
+#endif
         }
         else 
         {
@@ -466,10 +467,11 @@ void ICM20948Sensor::sendData() {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
 
-        if (SEND_ACCELERATION)
-        {
-            Network::sendAccel(acceleration, sensorId);
-        }
+        #if SEND_ACCELERATION
+            {
+                Network::sendAccel(acceleration, sensorId);
+            }
+        #endif
     }
 }
 

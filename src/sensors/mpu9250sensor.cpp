@@ -169,14 +169,15 @@ void MPU9250Sensor::motionLoop() {
         }
     }
 
-    if (SEND_ACCELERATION) {
+#if SEND_ACCELERATION
+    {
         // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
         // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
         // we need to multiply by the gravity scale by two to convert to 2g mode ()
         grav.x *= 2;
         grav.y *= 2;
         grav.z *= 2;
-        
+
         imu.dmpGetAccel(&rawAccel, fifoBuffer);
         imu.dmpGetLinearAccel(&rawAccel, &rawAccel, &grav);
 
@@ -185,6 +186,7 @@ void MPU9250Sensor::motionLoop() {
         this->acceleration[1] = rawAccel.y * ASCALE_2G;
         this->acceleration[2] = rawAccel.z * ASCALE_2G;
     }
+#endif
 
     quaternion = correction * quat;
 #else

@@ -35,7 +35,6 @@
 #define EARTH_GRAVITY 9.80665
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
-#define SEND_ACCELERATION true
 
 class Sensor
 {

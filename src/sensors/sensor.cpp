@@ -34,8 +34,11 @@ void Sensor::sendData() {
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
 
-        if (SEND_ACCELERATION)
+    #if SEND_ACCELERATION
+        {
             Network::sendAccel(acceleration, sensorId);
+        }
+    #endif
 
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));

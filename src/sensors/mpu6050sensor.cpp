@@ -140,26 +140,27 @@ void MPU6050Sensor::motionLoop()
         quaternion.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
         quaternion *= sensorOffset;
 
-        if (SEND_ACCELERATION)
-        {
-            VectorFloat gravity;
-            imu.dmpGetGravity(&gravity, &rawQuat);
+#if SEND_ACCELERATION
+    {
+        VectorFloat gravity;
+        imu.dmpGetGravity(&gravity, &rawQuat);
 
-            // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
-            // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
-            // we need to multiply by the gravity scale by two to convert to 2g mode
-            gravity.x *= 2;
-            gravity.y *= 2;
-            gravity.z *= 2;
+        // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
+        // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
+        // we need to multiply by the gravity scale by two to convert to 2g mode
+        gravity.x *= 2;
+        gravity.y *= 2;
+        gravity.z *= 2;
 
-            imu.dmpGetAccel(&rawAccel, fifoBuffer);
-            imu.dmpGetLinearAccel(&rawAccel, &rawAccel, &gravity);
+        imu.dmpGetAccel(&rawAccel, fifoBuffer);
+        imu.dmpGetLinearAccel(&rawAccel, &rawAccel, &gravity);
 
-            // convert acceleration to m/s^2 (implicitly casts to float)
-            this->acceleration[0] = rawAccel.x * ASCALE_2G;
-            this->acceleration[1] = rawAccel.y * ASCALE_2G;
-            this->acceleration[2] = rawAccel.z * ASCALE_2G;
-        }
+        // convert acceleration to m/s^2 (implicitly casts to float)
+        this->acceleration[0] = rawAccel.x * ASCALE_2G;
+        this->acceleration[1] = rawAccel.y * ASCALE_2G;
+        this->acceleration[2] = rawAccel.z * ASCALE_2G;
+    }
+#endif
         
 #if ENABLE_INSPECTION
         {
