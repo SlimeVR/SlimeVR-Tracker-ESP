@@ -62,23 +62,16 @@ namespace I2CSCAN
 
             if (error == 0)
             {
-                Serial.print("[DBG] I2C (@ " + portMap[i] + " : " + portMap[j] + "): ");
-                Serial.print("I2C device found at address 0x");
-                if (address < 16)
-                    Serial.print("0");
-                Serial.print(address, HEX);
-                Serial.println("  !");
+                Serial.printf("[DBG] I2C (@ %s/%d : %s/%d):\n", portMap[i], portArray[i], portMap[j], portArray[j]);
+                Serial.printf("I2C device found at address 0x%02X!\n", address);
 
                 nDevices++;
                 found = true;
             }
             else if (error == 4)
             {
-                Serial.print("[ERR] I2C (@ " + portMap[i] + "(" + portArray[i] + ") : " + portMap[j] + "(" + portArray[j] + ")): ");
-                Serial.print("Unknow error at address 0x");
-                if (address < 16)
-                    Serial.print("0");
-                Serial.println(address, HEX);
+                Serial.printf("[DBG] I2C (@ %s/%d : %s/%d):\n", portMap[i], portArray[i], portMap[j], portArray[j]);
+                Serial.printf("Unknow error at address 0x%02X\n", address);
             }
         }
         return found;

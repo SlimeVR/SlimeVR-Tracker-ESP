@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -144,12 +144,14 @@ void FSP201Sensor::motionLoop()
         statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
         working = false;
         lastData = millis();
+        
         uint8_t rr = imu.resetReason();
         if (rr != lastReset)
         {
             lastReset = rr;
             Network::sendError(rr, this->sensorId);
         }
+
         m_Logger.error("Sensor %d doesn't respond. Last reset reason:", sensorId, lastReset);
         m_Logger.error("Last error: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
                 lastError.severity, lastError.error_sequence_number, lastError.error_source, lastError.error, lastError.error_module, lastError.error_code);
