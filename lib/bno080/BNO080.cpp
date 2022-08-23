@@ -59,6 +59,7 @@ boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, uint8_t intPin)
 
 	//Begin by resetting the IMU
 	softReset();
+	delay(5000);
 
 	//Check communication with device
 	shtpData[0] = SHTP_REPORT_PRODUCT_ID_REQUEST; //Request the product ID and reset info
@@ -69,7 +70,7 @@ boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, uint8_t intPin)
 	sendPacket(CHANNEL_CONTROL, 2);
 
 	//Now we wait for response
-	unsigned long endTime = millis() + 2000;
+	unsigned long endTime = millis() + 1300;
 	while(!hasImuInfo && endTime > millis())
 		getReadings();
 
@@ -187,6 +188,12 @@ uint16_t BNO080::getReadings(void)
 
 	if (receivePacket() == true)
 	{
+		//if(!hasImuInfo) {
+		//	Serial.printf("[BNO080.cpp] Rcvd packet header 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X\n", shtpHeader[0],
+		//			shtpHeader[1], shtpHeader[2], shtpHeader[3], shtpHeader[4]);
+		//	Serial.printf("[BNO080.cpp] Rcvd packet data   0x%02X 0x%02X 0x%02X 0x%02X 0x%02X\n", shtpData[0],
+		//			shtpData[1], shtpData[2], shtpData[3], shtpData[4]);
+		//}
 		//Check to see if this packet is a sensor reporting its data to us
 		if (shtpHeader[2] == CHANNEL_REPORTS && shtpData[0] == SHTP_REPORT_BASE_TIMESTAMP)
 		{
@@ -200,6 +207,13 @@ uint16_t BNO080::getReadings(void)
 		{
 			return parseInputReport(); //This will update the rawAccelX, etc variables depending on which feature report is found
 		}
+	}
+	if(i2cTimedOut) {
+		Serial.println("[BNO080.cpp] I2C timed out on read. Last data:");
+		Serial.printf("[BNO080.cpp] Rcvd packet header 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X\n", shtpHeader[0],
+				shtpHeader[1], shtpHeader[2], shtpHeader[3], shtpHeader[4]);
+		Serial.printf("[BNO080.cpp] Rcvd packet data   0x%02X 0x%02X 0x%02X 0x%02X 0x%02X\n", shtpData[0],
+				shtpData[1], shtpData[2], shtpData[3], shtpData[4]);
 	}
 	return 0;
 }
@@ -232,6 +246,13 @@ uint16_t BNO080::parseCommandReport(void)
 		if (command == COMMAND_ME_CALIBRATE)
 		{
 			calibrationStatus = shtpData[5 + 0]; //R0 - Status (0 = success, non-zero = fail)
+		} else if(command == COMMAND_ERRORS) {
+			lastError.severity = shtpData[5];
+			lastError.error_sequence_number = shtpData[6];
+			lastError.error_source = shtpData[7];
+			lastError.error = shtpData[8];
+			lastError.error_module = shtpData[9];
+			lastError.error_code = shtpData[10];
 		}
 		return shtpData[0];
 	}
@@ -1047,7 +1068,7 @@ void BNO080::softReset(void)
 		//new data can start coming up very fast after restart
 		unsigned long endTime = millis() + 1000;
 		delay(50);
-		while (receivePacket() == true && endTime > millis())
+		while (getReadings() > 0 && endTime > millis())
 			; //delay(1);
 	}
 }
@@ -1483,11 +1504,10 @@ boolean BNO080::waitForSPI()
 //Read the contents of the incoming packet into the shtpData array
 boolean BNO080::receivePacket(void)
 {
+	if (_int != 255 && digitalRead(_int) == HIGH)
+		return (false); //Data is not available
 	if (_i2cPort == NULL) //Do SPI
 	{
-		if (digitalRead(_int) == HIGH)
-			return (false); //Data is not available
-
 		//Old way: if (waitForSPI() == false) return (false); //Something went wrong
 
 		//Get first four bytes to find out how much data we need to read
@@ -1569,7 +1589,11 @@ boolean BNO080::receivePacket(void)
 			return (false); //All done
 		}
 		dataLength -= 4; //Remove the header bytes from the data count
-
+		if(dataLength > 28) {
+			Serial.printf("[BNO080.cpp] Receiving big packet, length %d\n", dataLength);
+			Serial.printf("[BNO080.cpp] Header 0x%02X 0x%02X 0x%02X 0x%02X\n", shtpHeader[0],
+					shtpHeader[1], shtpHeader[2], shtpHeader[3]);
+		}
 		getData(dataLength);
 	}
 

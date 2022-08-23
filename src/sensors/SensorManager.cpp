@@ -50,7 +50,7 @@ namespace SlimeVR
 #elif IMU == IMU_MPU9250 || IMU == IMU_BMI160 || IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_ICM20948
                 firstIMUAddress = I2CSCAN::pickDevice(0x68, 0x69, true);
 #elif IMU == IMU_FSP201
-                firstIMUAddress = I2CSCAN::pickDevice(0x4D, 0x4C, true);
+                firstIMUAddress = I2CSCAN::pickDevice(0x4C, 0x4D, true);
 #else
 #error Unsupported primary IMU
 #endif
@@ -80,7 +80,6 @@ namespace SlimeVR
 #endif
                 }
 
-                m_Sensor1->motionSetup();
             }
 
             {
@@ -91,7 +90,7 @@ namespace SlimeVR
 #elif SECOND_IMU == IMU_MPU9250 || SECOND_IMU == IMU_BMI160 || SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050 || SECOND_IMU == IMU_ICM20948
                 secondIMUAddress = I2CSCAN::pickDevice(0x69, 0x68, false);
 #elif SECOND_IMU == IMU_FSP201
-                secondIMUAddress = I2CSCAN::pickDevice(0x4C, 0x4D, false);
+                secondIMUAddress = I2CSCAN::pickDevice(0x4D, 0x4C, false);
 #else
 #error Unsupported secondary IMU
 #endif
@@ -125,8 +124,9 @@ namespace SlimeVR
 #endif
                 }
 
-                m_Sensor2->motionSetup();
             }
+            m_Sensor1->motionSetup();
+            m_Sensor2->motionSetup();
         }
 
         void SensorManager::postSetup()

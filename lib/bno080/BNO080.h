@@ -302,6 +302,7 @@ public:
 	uint32_t swBuildNumber;
 	uint16_t swVersionPatch;
 	bool hasImuInfo;
+	BNO080Error lastError;
 
 private:
 	//Variables

@@ -72,8 +72,10 @@ void FSP201Sensor::motionSetup()
 
 void FSP201Sensor::motionLoop()
 {
+    if(imu.I2CTimedOut())
+        return; // We will not get anything useful anymore
     //Look for reports from the IMU
-    while (imu.dataAvailable())
+    if (imu.dataAvailable())
     {
 #if ENABLE_INSPECTION
         {
@@ -124,9 +126,6 @@ void FSP201Sensor::motionLoop()
             imu.getAccel(v[0], v[1], v[2], acc);
             Network::sendAccel(v, PACKET_ACCEL);
         }
-
-        if (m_IntPin == 255 || imu.I2CTimedOut())
-            break;
     }
 
     if (lastData + 1000 < millis() && configured)
