@@ -36,7 +36,7 @@
 //   BAT_EXTERNAL for ADC pin, 
 //   BAT_INTERNAL for internal - can detect only low battery, 
 //   BAT_MCP3021 for external ADC connected over I2C
-#define BATTERY_MONITOR BAT_INTERNAL
+#define BATTERY_MONITOR BAT_EXTERNAL
 
 // BAT_EXTERNAL definition
 // D1 Mini boards with ESP8266 have internal resistors. For these boards you only have to adjust BATTERY_SHIELD_RESISTANCE.
