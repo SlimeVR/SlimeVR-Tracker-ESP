@@ -26,9 +26,9 @@
 // ================================================
 
 // Set parameters of IMU and board used
-#define IMU IMU_ICM20948
+#define IMU IMU_BNO085
 #define SECOND_IMU IMU
-#define BOARD BOARD_BEETLE32C3
+#define BOARD BOARD_SLIMEVR
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
 
