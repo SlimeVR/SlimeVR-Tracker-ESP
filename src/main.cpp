@@ -50,10 +50,6 @@ BatteryMonitor battery;
 
 void setup()
 {
-// TODO:
-// - ESP32 USB Delay only when a USB device is connected not on USB to Serial chips
-// - ESP32 USB Only print debug info when USB is connected
-
     Serial.begin(serialBaudRate);
 #ifdef ESP32C3 
     // Wait for the Computer to be able to connect.
