@@ -413,9 +413,9 @@ void ICM20948Sensor::motionLoop() {
             }
 #if SEND_ACCELERATION
         {
-            acceleration[0] = (float)dmpData.Raw_Accel.Data.X;
-            acceleration[1] = (float)dmpData.Raw_Accel.Data.Y;
-            acceleration[2] = (float)dmpData.Raw_Accel.Data.Z;
+            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
+            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
+            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
 
             // get the component of the acceleration that is gravity
             float gravity[3];
