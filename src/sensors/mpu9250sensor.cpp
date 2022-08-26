@@ -179,7 +179,7 @@ void MPU9250Sensor::motionLoop() {
         grav.z *= 2;
 
         imu.dmpGetAccel(&this->rawAccel, fifoBuffer);
-        imu.dmpGetLinearAccel(&rawAccel, &rawAccel, &grav);
+        imu.dmpGetLinearAccel(&this->rawAccel, &this->rawAccel, &grav);
 
         // convert acceleration to m/s^2 (implicitly casts to float)
         this->acceleration[0] = this->rawAccel.x * ASCALE_2G;

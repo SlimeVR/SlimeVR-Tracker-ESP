@@ -143,7 +143,7 @@ void MPU6050Sensor::motionLoop()
 #if SEND_ACCELERATION
     {
         VectorFloat gravity;
-        this->imu.dmpGetGravity(&gravity, &rawQuat);
+        this->imu.dmpGetGravity(&gravity, &this->rawQuat);
 
         // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
         // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
