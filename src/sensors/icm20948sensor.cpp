@@ -241,7 +241,7 @@ void ICM20948Sensor::motionSetup() {
         }
     }
 
-    if(imu.setDMPODRrate(DMP_ODR_Reg_Accel, 1.25) == ICM_20948_Stat_Ok)
+    if (imu.setDMPODRrate(DMP_ODR_Reg_Accel, 1.25) == ICM_20948_Stat_Ok)
     {
         m_Logger.debug("Set Accel to 100Hz frequency");
     }
@@ -411,6 +411,7 @@ void ICM20948Sensor::motionLoop() {
                     lastData = millis();
                 }
             }
+
 #if SEND_ACCELERATION
         {
             this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
@@ -434,6 +435,7 @@ void ICM20948Sensor::motionLoop() {
             this->acceleration[2] *= ASCALE_4G;
         }
 #endif
+
         }
         else 
         {

@@ -52,7 +52,7 @@ void BNO080Sensor::motionSetup()
                   imu.swVersionPatch
                 );
 
-    imu.enableLinearAccelerometer(10);
+    this->imu.enableLinearAccelerometer(10);
 
 #if USE_6_AXIS
     #if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION

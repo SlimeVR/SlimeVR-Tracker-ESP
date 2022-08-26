@@ -152,8 +152,8 @@ void MPU6050Sensor::motionLoop()
         gravity.y *= 2;
         gravity.z *= 2;
 
-        this->imu.dmpGetAccel(&this->rawAccel, fifoBuffer);
-        this->imu.dmpGetLinearAccel(&this->rawAccel, &rawAccel, &gravity);
+        this->imu.dmpGetAccel(&this->rawAccel, this->fifoBuffer);
+        this->imu.dmpGetLinearAccel(&this->rawAccel, &this->rawAccel, &gravity);
 
         // convert acceleration to m/s^2 (implicitly casts to float)
         this->acceleration[0] = this->rawAccel.x * ASCALE_2G;
