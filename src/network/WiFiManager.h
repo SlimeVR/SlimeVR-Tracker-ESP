@@ -29,12 +29,18 @@
 
 #ifdef ESP8266
     #include <ESP8266WiFi.h>
-    #include <ESP8266WiFiMulti.h>
-    #define WiFiMulti ESP8266WiFiMulti
+//    #include <ESP8266WiFiMulti.h>
+//    #define WiFiMulti ESP8266WiFiMulti
 #else
     #include <WiFi.h>
-    #include <WiFiMulti.h>
+//    #include <WiFiMulti.h>
 #endif
+
+// WiFiMulti has some downsides.
+// It does not allow async operations, what we would need to have proper operation for the WiFi Core
+// It only works when the SSID is shown. 
+// It does not work with hidden SSIDs
+
 
 namespace SlimeVR {
     namespace Network {
@@ -58,7 +64,13 @@ namespace SlimeVR {
             const IPAddress getIP() const;
 
         private:
+            /* `WiFiManager#update_connected()` runs the WiFi when connected. */
+            void update_connected();
+            /* `WiFiManager#update_disconnected()` runs the WiFi when disconnected  */
+            void update_disconnected();
+            /* `onConnect()` Called as soon the WiFi status changes to Connected. */
             void onConnect();
+            /* `onDisconnect()` Called as soon the WiFi status changes to Disconnected. */
             void onDisconnect();
 
             void loadCredentials();
@@ -71,11 +83,16 @@ namespace SlimeVR {
             // This is just here for the future
             // void provideNeighbours();
 
-            WiFiMulti wifi;
+// Todo: Remove WiFiMulti wifi;
+//            WiFiMulti wifi;
 
             bool connected = false;
             bool hadWiFi = false;
             bool provisioning = false;
+            bool noWiFiMsg = false;
+            uint8_t constatus=0;
+            int8_t scanresults=0;
+
 
             unsigned int attempts = 0;
             unsigned long lastRSSISampleTime = 0;

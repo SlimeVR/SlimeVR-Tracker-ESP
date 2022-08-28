@@ -90,18 +90,30 @@ namespace SlimeVR {
         }
 
         void WiFiManager::loadCredentials() {
+// Todo: 
+// - Remove Serial.printf();
+// - Remove uint8_t i and i++
+            uint8_t i = 0;
             auto wifiCredentials = configuration.getWiFiCredentials();
             for (const auto& wifiCredential : *wifiCredentials) {
                 this->addCredential(wifiCredential.second);
+                i++;    
             }
 
+            Serial.printf("Serial Configurations loaded: %d", i);
+/*
+//moved to configuration
 #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
             Configuration::WiFiCredential wifiCredential = {CURRENT_WIFICREDENTIAL_VERSION,
                                                             WIFI_CREDS_SSID, WIFI_CREDS_PASSWD};
             this->addCredential(wifiCredential);
 #endif
+*/
         }
 
+// Todo:
+// - soft todo: do we need this function? Or does the check more belonge to Configuration?
+// addCredential 
         void WiFiManager::addCredential(const Configuration::WiFiCredential& credential) {
             if (credential.ssid.length() >= 32) {
                 this->logger.error("SSID too long!");
@@ -114,16 +126,17 @@ namespace SlimeVR {
             }
 
             this->logger.trace("Adding WiFi credential: %s", credential.ssid);
-
+/* Todo replace this code when needed
             if (this->wifi.addAP(credential.ssid.c_str(), credential.password.c_str())) {
                 this->logger.info("Loaded credentials for \"%s\"", credential.ssid.c_str());
             }
+*/
         }
 
         void WiFiManager::reload() {
             this->logger.info("Reloading WiFi credentials...");
 
-            this->wifi = WiFiMulti();
+//            this->wifi = WiFiMulti();
 
             this->loadCredentials();
 
@@ -154,37 +167,150 @@ namespace SlimeVR {
         }
 
         void WiFiManager::update() {
-            wl_status_t status = static_cast<wl_status_t>(this->wifi.run(10000));
-
+            wl_status_t status = WiFi.status();
+            // When connected run all the stuff we need when connected.
             if (status == WL_CONNECTED) {
-                if (!this->connected) {
-                    this->onConnect();
-                }
-
-                if (this->lastRSSISampleTime + 2000 < millis()) {
-                    this->lastRSSISampleTime = millis();
-                    uint8_t rssi = WiFi.RSSI();
-                    ::Network::sendSignalStrength(rssi);
-                }
-
+                this->update_connected();
+                Serial.print("\nc\n");
                 return;
             }
-
             // Call our `onDisconnect` handler when we were connected previously and now aren't
             // anymore
             if (this->connected) {
                 this->onDisconnect();
             }
-
-            if (this->millisSinceConnectionStart + 5000 < millis() && !this->hadWiFi &&
-                !this->isProvisioning()) {
-                if (status == WL_IDLE_STATUS) {
-                    this->logger.error("Can't connect from any credentials, status: %d.",
-                                       WiFi.status());
-                }
-
-                this->startProvisioning();
+#if ESP8266
+            if ((status == WL_WRONG_PASSWORD) ||
+                (status == WL_CONNECTION_LOST) ||
+                (status == WL_CONNECT_FAILED) ||
+                (status == WL_DISCONNECTED) ||
+                (status == WL_IDLE_STATUS)) {
+#else //if ESP32
+            if ((status == WL_CONNECTION_LOST) ||
+                (status == WL_CONNECT_FAILED) ||
+                (status == WL_DISCONNECTED) ||
+                (status == WL_IDLE_STATUS)) {
+#endif
+                //Serial.print("\nd\n");
+                this->update_disconnected();
             }
+
+
+            if (this->millisSinceConnectionStart + 5000 < millis() && !this->hadWiFi) {
+                Serial.printf(".%d", status);
+                if (!this->isProvisioning()) {
+                    if (status == WL_IDLE_STATUS) {
+                        this->logger.error("Can't connect from any credentials, status: %d.",
+                                        WiFi.status());
+                    }
+                    this->startProvisioning();
+                }
+            }
+        }
+
+        void WiFiManager::update_connected() {
+            if (!this->connected) {
+                this->onConnect();
+            }
+
+            if (this->lastRSSISampleTime + 2000 < millis()) {
+                this->lastRSSISampleTime = millis();
+                uint8_t rssi = WiFi.RSSI();
+                ::Network::sendSignalStrength(rssi);
+            }
+            return;
+        }
+        /* `WiFiManager::update_disconnected()` reconnecting to WiFi  */
+        // Todo:
+        //  - WiFi Scan (nonblocking)
+        //  - Wait for Scan to Complete
+        //  - Compare strenghts results
+        //  - 
+        void WiFiManager::update_disconnected() {
+//            if (this->noWiFiMsg) this->logger.info("noWiFiMsg true");
+//            else this->logger.info("noWiFiMsg false");
+            if ((configuration.getWiFiCredentialCount()<=0)) {
+                if (!this->noWiFiMsg) {
+                    this->logger.info("No WiFi Credentials configured");
+                    this->noWiFiMsg = true;
+                }
+                // Should we still scan the WiFi and print them?
+            } else {
+                // Only applys after all WiFi configs are deleted
+                this->noWiFiMsg = false;
+            }
+
+            if (this->constatus == 0)
+            {   
+                // Starting wifi scan
+                if (WiFi.scanNetworks(true, true,0, 0)==WIFI_SCAN_RUNNING){
+                    this->constatus = 1;
+                }
+                // forcing a other loop
+                return; 
+            }
+            
+            if (this->constatus == 1) {   
+                // waiting for the Scan to be done
+                 this->scanresults = WiFi.scanComplete();
+                if (scanresults >= 0) {
+                    this->constatus = 2;
+                    this->logger.info("Scan found %d WiFi Accesspoints", this->scanresults);
+                } else {
+                    // What if scanresults returns 0 or less for a longer time?
+                }
+                // forcing a other loop
+                return;
+            } 
+
+            if (this->constatus == 2) {
+
+                String ssid;
+                uint8_t encryptionType; 
+                int32_t rssi;
+                uint8_t *bssid;
+                int32_t channel;
+                bool hidden;
+                bool ssidfound = false;
+                auto wifiCredentials = configuration.getWiFiCredentials();
+                
+                // Maybe we should save if the network is hidden or not
+                for (const auto& wifiCredential : *wifiCredentials) {           
+                }
+                for (uint8_t i=0;  i < this->scanresults; i++) {
+#if ESP8266
+                    WiFi.getNetworkInfo(i, ssid, encryptionType, rssi, bssid, channel, hidden);
+#else  //if ESP32
+                    WiFi.getNetworkInfo(i, ssid, encryptionType, rssi, bssid, channel);
+#endif
+                    for (const auto& wifiCredential : *wifiCredentials) {
+                        if (strcmp(ssid.c_str(), wifiCredential.first.c_str())==0) {
+                            ssidfound = true;
+                        }
+                    }
+
+                    WiFi.begin();
+                    // What todo when the WiFi is not listed in the APs?
+                    // There is still the possibility that it is a hidden SSID. 
+                    // Would it be maybe better just to  to try all trough and test the RSSI
+                    // and after the best RSSI is found we go online again?
+                    //todo list and sort
+/*
+                    this->logger.trace("%2d: %s, %u, %d dbm, %02x:%02x:%02x:%02x:%02x:%02x, %d", 
+                                        i, ssid.c_str(), encryptionType, rssi, 
+                                        bssid[0], bssid[1], bssid[2], 
+                                        bssid[3], bssid[4], bssid[5], 
+                                        channel);
+*/                    
+                    
+                }
+                this->logger.info("Scan End scanresults: %d", this->scanresults);
+                this->constatus = 0;
+                WiFi.scanDelete();
+                // forcing a other loop
+                return;
+            }
+            
         }
 
         void WiFiManager::updateProvisioning() {

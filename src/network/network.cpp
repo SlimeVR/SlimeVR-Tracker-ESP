@@ -29,7 +29,11 @@ bool lastWifiConnected = false;
 
 void Network::update(Sensor* const sensor, Sensor* const sensor2) {
     wifiManager.update();
-
+// Todo:
+// - Remove comments
+// - Look that wihle WiFi is not connected there is no Network traffic (programming)
+// - On WiFi Dissconnect clear Network Buffers (programming)
+/*
     if (wifiManager.isConnected()) {
         if (!lastWifiConnected) {
             // WiFi was reconnected, reconnect to the server
@@ -42,4 +46,5 @@ void Network::update(Sensor* const sensor, Sensor* const sensor2) {
     } else {
         lastWifiConnected = false;
     }
+*/
 }

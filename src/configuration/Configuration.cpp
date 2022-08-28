@@ -93,6 +93,9 @@ namespace SlimeVR {
         }
 
         void Configuration::save() {
+// Todo:
+// - Delete files if no longer needed?
+// - Only save files that have actualy changed
             for (size_t i = 0; i < m_Calibrations.size(); i++) {
                 CalibrationConfig config = m_Calibrations[i];
                 if (config.type == CalibrationConfigType::NONE) {
@@ -108,7 +111,9 @@ namespace SlimeVR {
                 file.write((uint8_t*)&config, sizeof(CalibrationConfig));
                 file.close();
             }
-
+// Todo:
+// - Delete files if no longer needed
+// - Only save files that have actualy changed
             for (const auto& c : m_WiFiCredentials) {
                 const WiFiCredential credential = c.second;
 
@@ -122,7 +127,8 @@ namespace SlimeVR {
                 file.write(reinterpret_cast<const uint8_t*>(&credential), sizeof(WiFiCredential));
                 file.close();
             }
-
+// Todo:
+// - Only save files that have actualy changed
             {
                 File file = LittleFS.open("/config.bin", "w");
                 file.write((uint8_t*)&m_Config, sizeof(DeviceConfig));
@@ -385,6 +391,11 @@ namespace SlimeVR {
                     setWiFiCredential(wifiCredential);
                 }
             }
+#endif
+#if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
+            m_Logger.info("Found hardcoded WiFi credentials loading");
+            WiFiCredential wifiCredentialHC = {CURRENT_WIFICREDENTIAL_VERSION, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD};
+            setWiFiCredential(wifiCredentialHC);
 #endif
         }
 

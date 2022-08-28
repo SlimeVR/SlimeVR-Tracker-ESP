@@ -40,8 +40,6 @@ namespace SerialCommands {
     CmdBuffer<64> cmdBuffer;
 
     void cmdSet(CmdParser * parser) {
-        logger.error("CMD SET ERROR: Unrecognized variable to set");
-
         if (parser->getParamCount() != 1 && parser->equalCmdParam(1, "WIFI")) {
             logger.warn("You are using the deprecated command to set WiFi credentials. Please migrate to using `WIFI ADD`");
 
@@ -55,12 +53,12 @@ namespace SerialCommands {
             std::string password = parser->getCmdParam(3);
 
             if (ssid.length() >= 32) {
-                logger.error("CMD WIFI ADD ERROR: SSID too long");
+                logger.error("CMD SET WIFI ERROR: SSID too long");
                 return;
             }
 
             if (password.length() >= 64) {
-                logger.error("CMD WIFI ADD ERROR: Password too long");
+                logger.error("CMD SET WIFI ERROR: Password too long");
                 return;
             }
 
