@@ -144,9 +144,9 @@ void BMI160Sensor::motionLoop() {
 
         // get the component of the acceleration that is gravity
         VectorFloat gravity;
-        gravity.x = 2 * (quaternion.x*quaternion.z - quaternion.w*quaternion.y);
-        gravity.y = 2 * (quaternion.w*quaternion.x + quaternion.y*quaternion.z);
-        gravity.z = quaternion.w*quaternion.w - quaternion.x*quaternion.x - quaternion.y*quaternion.y + quaternion.z*quaternion.z;
+        gravity.x = 2 * (this->quaternion.x * this->quaternion.z - this->quaternion.w * this->quaternion.y);
+        gravity.y = 2 * (this->quaternion.w * this->quaternion.x + this->quaternion.y * this->quaternion.z);
+        gravity.z = this->quaternion.w * this->quaternion.w - this->quaternion.x * this->quaternion.x - this->quaternion.y * this->quaternion.y + this->quaternion.z * this->quaternion.z;
         
         // subtract gravity from the acceleration vector
         this->acceleration[0] -= gravity.x * ACCEL_SENSITIVITY_4G;

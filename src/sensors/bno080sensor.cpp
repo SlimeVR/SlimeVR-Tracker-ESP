@@ -121,10 +121,10 @@ void BNO080Sensor::motionLoop()
             imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
             quaternion *= sensorOffset;
     #if SEND_ACCELERATION
-        {
-            uint8_t acc;
-            this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
-        }
+            {
+                uint8_t acc;
+                this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
+            }
     #endif // SEND_ACCELERATION
 
     #if ENABLE_INSPECTION
@@ -220,9 +220,9 @@ void BNO080Sensor::sendData()
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
 
 #if SEND_ACCELERATION
-    {
-        Network::sendAccel(acceleration, sensorId);
-    }
+        {
+            Network::sendAccel(this->acceleration, this->sensorId);
+        }
 #endif
 
 #if !USE_6_AXIS

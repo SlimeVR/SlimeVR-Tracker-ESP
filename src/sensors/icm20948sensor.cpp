@@ -241,13 +241,13 @@ void ICM20948Sensor::motionSetup() {
         }
     }
 
-    if (imu.setDMPODRrate(DMP_ODR_Reg_Accel, 1.25) == ICM_20948_Stat_Ok)
+    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, 1.25) == ICM_20948_Stat_Ok)
     {
-        m_Logger.debug("Set Accel to 100Hz frequency");
+        this->m_Logger.debug("Set Accel to 100Hz frequency");
     }
     else
     {
-        m_Logger.fatal("Failed to set Accel to 100Hz frequency");
+        this->m_Logger.fatal("Failed to set Accel to 100Hz frequency");
         return;
     }
 
@@ -420,9 +420,9 @@ void ICM20948Sensor::motionLoop() {
 
             // get the component of the acceleration that is gravity
             float gravity[3];
-            gravity[0] = 2 * (quaternion.x*quaternion.z - quaternion.w*quaternion.y);
-            gravity[1] = 2 * (quaternion.w*quaternion.x + quaternion.y*quaternion.z);
-            gravity[2] = quaternion.w*quaternion.w - quaternion.x*quaternion.x - quaternion.y*quaternion.y + quaternion.z*quaternion.z;
+            gravity[0] = 2 * (this->quaternion.x * this->quaternion.z - this->quaternion.w * this->quaternion.y);
+            gravity[1] = 2 * (this->quaternion.w * this->quaternion.x + this->quaternion.y * this->quaternion.z);
+            gravity[2] = this->quaternion.w * this->quaternion.w - this->quaternion.x * this->quaternion.x - this->quaternion.y * this->quaternion.y + this->quaternion.z * this->quaternion.z;
             
             // subtract gravity from the acceleration vector
             this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
@@ -469,11 +469,11 @@ void ICM20948Sensor::sendData() {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
 
-        #if SEND_ACCELERATION
-            {
-                Network::sendAccel(acceleration, sensorId);
-            }
-        #endif
+#if SEND_ACCELERATION
+        {
+            Network::sendAccel(acceleration, sensorId);
+        }
+#endif
     }
 }
 
