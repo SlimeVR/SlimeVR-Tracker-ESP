@@ -214,7 +214,17 @@ void ICM20948Sensor::motionSetup() {
         }
     }
 
-    // Might need to set up other DMP functions later, just Quad6/Quad9 for now
+    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
+    {
+        m_Logger.debug("Enabled DMP sensor for accelerometer");
+    }
+    else
+    {
+        m_Logger.fatal("Failed to enable DMP sensor for accelerometer");
+        return; 
+    }
+
+    // Might need to set up other DMP functions later, just Quad6/Quad9/Accel for now
 
     if (USE_6_AXIS)
     {
