@@ -32,10 +32,7 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 #define ACCEL_SENSITIVITY_4G 8192.0f
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
-//constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
-
-// Accel scale conversion steps: Milli G's -> G's -> m/s^2
-constexpr float ASCALE_4G = (1.0f / 1000.0f) * EARTH_GRAVITY;
+constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
 
 // #ifndef ENABLE_TAP
 //     #define ENABLE_TAP false
@@ -427,14 +424,9 @@ void ICM20948Sensor::motionLoop() {
 
 #if SEND_ACCELERATION
         {
-            this->acceleration[0] = this->imu.accX();
-            this->acceleration[1] = this->imu.accY();
-            this->acceleration[2] = this->imu.accZ();
-
-
-            //this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
-            //this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
-            //this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
+            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
+            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
+            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
 
             // get the component of the acceleration that is gravity
             float gravity[3];
@@ -443,9 +435,9 @@ void ICM20948Sensor::motionLoop() {
             gravity[2] = this->quaternion.w * this->quaternion.w - this->quaternion.x * this->quaternion.x - this->quaternion.y * this->quaternion.y + this->quaternion.z * this->quaternion.z;
             
             // subtract gravity from the acceleration vector
-            this->acceleration[0] -= gravity[0]  / 1000.0f;
-            this->acceleration[1] -= gravity[1]  / 1000.0f;
-            this->acceleration[2] -= gravity[2]  / 1000.0f;
+            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
 
             // finally scale the acceleration values to mps2
             this->acceleration[0] *= ASCALE_4G;
