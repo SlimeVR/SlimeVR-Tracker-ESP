@@ -50,11 +50,10 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
 
 ## Infos about ESP32-C3 with direct connection to USB
 
-The ESP32-C3 has 2 ways to connect the serial port. One is directly via the onboard USB CDC or via the onboard UART.
-When the Chip is connected to the USB-CDC, the serial port shows is displayed as "USB Serial Port". The SlimeVR server is not currently connecting to this port.
+The ESP32-C3 has two ways to connect the serial port. One is directly via the onboard USB CDC or via the onboard UART.
+When the chip is connected to the USB CDC, the serial port shows as `USB Serial Port` in Device Manager. The SlimeVR server will currently not connect to this port.
 If you want to set your WiFi credentials, you can use the PlatformIO serial console.
-There you have to enter the following:
-`SET WIFI "SSID" "PASSWORD"`
+There you have to enter the following: `SET WIFI "SSID" "PASSWORD"`
 
 ## Uploading On Linux
 
