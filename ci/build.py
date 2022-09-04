@@ -27,19 +27,21 @@ class DeviceConfiguration:
         self.platformio_board = platformio_board
 
     def get_platformio_section(self) -> str:
-        section  = f"""[env:{self.platformio_board}]\n"""
-        section += f"""platform = {self.platform}\n"""
+        section = f"[env:{self.platformio_board}]\n"
+        section += f"platform = {self.platform}\n"
+        section += f"board = {self.platformio_board}\n"
+
         if self.board == Board.LOLIN_C3_MINI:
             section += "build_flags = \n"
             section += " ${env.build_flags}\n"
             section += " -DESP32C3\n"
             section += " -DARDUINO_USB_MODE=1\n"
             section += " -DARDUINO_USB_CDC_ON_BOOT=1\n"
+
         if self.board == Board.ES32C3DEVKITM1:
             section += "build_flags = \n"
             section += " ${env.build_flags}\n"
             section += " -DESP32C3\n"
-        section += f"""board = {self.platformio_board}\n"""
         return section
 
     def filename(self) -> str:
