@@ -95,7 +95,7 @@ void MPU9250Sensor::motionSetup() {
     }
 
 #if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
-    devStatus = imu.dmpInitialize();
+    uint8_t devStatus = imu.dmpInitialize();
     if(devStatus == 0){
         ledManager.pattern(50, 50, 5);
 
@@ -144,8 +144,9 @@ void MPU9250Sensor::motionLoop() {
     if(!dmpReady)
         return;
     Quaternion rawQuat{};
-    if(!imu.GetCurrentFIFOPacket(fifoBuffer,imu.dmpGetFIFOPacketSize())) return;
-    if(imu.dmpGetQuaternion(&rawQuat, fifoBuffer)) return; // FIFO CORRUPTED
+    uint8_t dmpPacket[packetSize];
+    if(!imu.GetCurrentFIFOPacket(dmpPacket, packetSize)) return;
+    if(imu.dmpGetQuaternion(&rawQuat, dmpPacket)) return; // FIFO CORRUPTED
     Quat quat(-rawQuat.y,rawQuat.x,rawQuat.z,rawQuat.w);
 
     getMPUScaled();

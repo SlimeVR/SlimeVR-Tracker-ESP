@@ -42,17 +42,15 @@ public:
 private:
     MPU9250 imu{};
     bool dmpReady = false;    // set true if DMP init was successful
-    uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
-    uint8_t devStatus;        // return status after each device operation (0 = success, !0 = error)
+    // TODO: actually check interrupt status
+    // uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
     uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
-    uint16_t fifoCount;       // count of all bytes currently in FIFO
-    uint8_t fifoBuffer[64]{}; // FIFO storage buffer
+
     // raw data and scaled as vector
     float q[4]{1.0f, 0.0f, 0.0f, 0.0f}; // for raw filter
     float Axyz[3]{};
     float Gxyz[3]{};
     float Mxyz[3]{};
-    float rawMag[3]{};
     VectorInt16 rawAccel{};
     Quat correction{0, 0, 0, 0};
     // Loop timing globals
