@@ -59,28 +59,17 @@ namespace I2CSCAN
         Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
     }
 
-    boolean  inArray(uint8_t search, uint8_t search2, uint8_t arraysearch[], uint8_t size )
+    boolean inArray(uint8_t value, uint8_t* array, size_t arraySize)
     {
-        boolean ret = false;
-        
-        if (size>0) 
+        for (size_t i = 0; i < arraySize; i++)
         {
-            for (uint8_t k = 0; k < size; k++)
+            if (value == array[i]) 
             {
-                if (search == arraysearch[k]) 
-                {
-                    ret = true;
-                    k = size;
-                }
-                if (search2 == arraysearch[k]) 
-                {
-                    ret = true;
-                    k = size;
-                }
+                return true;
             }
         }
-        //Serial.printf("InArray: %d, %d, %d, result: %x\n", search, search2, size, ret);
-        return ret;
+
+        return false;
     }
     
     bool checkI2C(uint8_t i, uint8_t j)
