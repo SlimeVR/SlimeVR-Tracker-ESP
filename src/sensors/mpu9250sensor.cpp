@@ -356,8 +356,9 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         calibrationDataMag[i * 3 + 0] = my;
         calibrationDataMag[i * 3 + 1] = mx;
         calibrationDataMag[i * 3 + 2] = -mz;
-        Network::sendRawCalibrationData(calibrationDataAcc, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
-        Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
+        // Thought: make the server run magneto for us, don't store samples in memory?
+        Network::sendRawCalibrationData(calibrationDataAcc + i * 3, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
+        Network::sendRawCalibrationData(calibrationDataMag + i * 3, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
         ledManager.off();
         delay(250);
     }
