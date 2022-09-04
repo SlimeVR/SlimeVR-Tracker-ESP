@@ -51,12 +51,12 @@ namespace I2CSCAN
         if(!found) {
             Serial.println("[ERR] I2C: No I2C devices found");
         }
-    // begin Reset the Wire interface back to the original Values
-    #if ESP32
+#if ESP32
         Wire.end();
-    #endif
+#endif
+
+        // Reset the I2C interface back to it's original values
         Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
-    // end Reset the Wire interface back to the original Values
     }
 
     boolean  inArray(uint8_t search, uint8_t search2, uint8_t arraysearch[], uint8_t size )
