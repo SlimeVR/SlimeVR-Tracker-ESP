@@ -35,8 +35,6 @@ class DeviceConfiguration:
             section += "build_flags = \n"
             section += " ${env.build_flags}\n"
             section += " -DESP32C3\n"
-            section += " -DARDUINO_USB_MODE=1\n"
-            section += " -DARDUINO_USB_CDC_ON_BOOT=1\n"
 
         if self.board == Board.ES32C3DEVKITM1:
             section += "build_flags = \n"
