@@ -51,10 +51,12 @@ BatteryMonitor battery;
 void setup()
 {
     Serial.begin(serialBaudRate);
+
 #ifdef ESP32C3 
     // Wait for the Computer to be able to connect.
     delay(2000);
 #endif
+
     Serial.println();
     Serial.println();
     Serial.println();
