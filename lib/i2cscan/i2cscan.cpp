@@ -41,7 +41,7 @@ namespace I2CSCAN
         {
             for (uint8_t j = 0; j < sizeof(portArray); j++)
             {
-                if ((i != j) && !inArray(portArray[i], portArray[j], portExclude, sizeof(portExclude)))
+                if ((i != j) && !inArray(portArray[i], portExclude, sizeof(portExclude)) && !inArray(portArray[j], portExclude, sizeof(portExclude)))
                 {
                     if(checkI2C(i, j))
                         found = true;
