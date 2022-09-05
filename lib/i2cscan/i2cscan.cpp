@@ -60,7 +60,7 @@ namespace I2CSCAN
         Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
     }
 
-    boolean inArray(uint8_t value, uint8_t* array, size_t arraySize)
+    bool inArray(uint8_t value, uint8_t* array, size_t arraySize)
     {
         for (size_t i = 0; i < arraySize; i++)
         {
