@@ -407,7 +407,7 @@ void ICM20948Sensor::motionLoop() {
                     double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
                     quaternion.w = q0;
                     quaternion.x = q1;
-                    quaternion.y = q2;
+                    quaternion.y = -q2; // make the acceleration work correctly
                     quaternion.z = q3;
                     quaternion *= sensorOffset; //imu rotation
 
