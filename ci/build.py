@@ -40,6 +40,7 @@ class DeviceConfiguration:
             section += "build_flags = \n"
             section += " ${env.build_flags}\n"
             section += " -DESP32C3\n"
+
         return section
 
     def filename(self) -> str:
