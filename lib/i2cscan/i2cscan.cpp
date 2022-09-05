@@ -76,10 +76,13 @@ namespace I2CSCAN
     bool checkI2C(uint8_t i, uint8_t j)
     {
         bool found = false;
+
 #if ESP32
         Wire.end();
 #endif
+
         Wire.begin((int)portArray[i], (int)portArray[j]);
+
         byte error, address;
         int nDevices;
         nDevices = 0;
