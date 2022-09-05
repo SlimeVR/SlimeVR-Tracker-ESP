@@ -51,6 +51,7 @@ namespace I2CSCAN
         if(!found) {
             Serial.println("[ERR] I2C: No I2C devices found");
         }
+
 #if ESP32
         Wire.end();
 #endif
