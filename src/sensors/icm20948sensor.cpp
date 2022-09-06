@@ -214,7 +214,7 @@ void ICM20948Sensor::motionSetup() {
         }
     }
 
-    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
+    if (imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
     {
         m_Logger.debug("Enabled DMP sensor for accelerometer");
     }
