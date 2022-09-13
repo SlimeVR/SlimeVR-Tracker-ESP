@@ -32,6 +32,7 @@
 #include "logging/Logger.h"
 #include "utils.h"
 
+#define EARTH_GRAVITY 9.80665
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
 
@@ -76,6 +77,8 @@ protected:
 
     Quat quaternion{};
     Quat lastQuatSent{};
+
+    float acceleration[3]{};
 
     SlimeVR::Logging::Logger m_Logger;
 };

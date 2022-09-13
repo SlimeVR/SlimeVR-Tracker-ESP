@@ -29,6 +29,11 @@
 // seconds after previous save (from start) when calibration (DMP Bias) data will be saved to NVS. Increments through the list then stops; to prevent unwelcome eeprom wear.
 int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 10min + 10min (no more saves after 30min)
 
+#define ACCEL_SENSITIVITY_4G 8192.0f
+
+// Accel scale conversion steps: LSB/G -> G -> m/s^2
+constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
+
 // #ifndef ENABLE_TAP
 //     #define ENABLE_TAP false
 // #endif
@@ -209,7 +214,17 @@ void ICM20948Sensor::motionSetup() {
         }
     }
 
-    // Might need to set up other DMP functions later, just Quad6/Quad9 for now
+    if (imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
+    {
+        m_Logger.debug("Enabled DMP sensor for accelerometer");
+    }
+    else
+    {
+        m_Logger.fatal("Failed to enable DMP sensor for accelerometer");
+        return; 
+    }
+
+    // Might need to set up other DMP functions later, just Quad6/Quad9/Accel for now
 
     if (USE_6_AXIS)
     {
@@ -234,6 +249,16 @@ void ICM20948Sensor::motionSetup() {
            m_Logger.fatal("Failed to set Quat9 to 100Hz frequency");
             return;
         }
+    }
+
+    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, 1.25) == ICM_20948_Stat_Ok)
+    {
+        this->m_Logger.debug("Set Accel to 100Hz frequency");
+    }
+    else
+    {
+        this->m_Logger.fatal("Failed to set Accel to 100Hz frequency");
+        return;
     }
 
     // Enable the FIFO
@@ -382,7 +407,7 @@ void ICM20948Sensor::motionLoop() {
                     double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
                     quaternion.w = q0;
                     quaternion.x = q1;
-                    quaternion.y = q2;
+                    quaternion.y = -q2; // make the acceleration work correctly
                     quaternion.z = q3;
                     quaternion *= sensorOffset; //imu rotation
 
@@ -396,6 +421,31 @@ void ICM20948Sensor::motionLoop() {
                     lastData = millis();
                 }
             }
+
+#if SEND_ACCELERATION
+        {
+            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
+            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
+            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
+
+            // get the component of the acceleration that is gravity
+            float gravity[3];
+            gravity[0] = 2 * (this->quaternion.x * this->quaternion.z - this->quaternion.w * this->quaternion.y);
+            gravity[1] = 2 * (this->quaternion.w * this->quaternion.x + this->quaternion.y * this->quaternion.z);
+            gravity[2] = this->quaternion.w * this->quaternion.w - this->quaternion.x * this->quaternion.x - this->quaternion.y * this->quaternion.y + this->quaternion.z * this->quaternion.z;
+            
+            // subtract gravity from the acceleration vector
+            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
+
+            // finally scale the acceleration values to mps2
+            this->acceleration[0] *= ASCALE_4G;
+            this->acceleration[1] *= ASCALE_4G;
+            this->acceleration[2] *= ASCALE_4G;
+        }
+#endif
+
         }
         else 
         {
@@ -428,6 +478,12 @@ void ICM20948Sensor::sendData() {
         } else {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
+
+#if SEND_ACCELERATION
+        {
+            Network::sendAccel(acceleration, sensorId);
+        }
+#endif
     }
 }
 
