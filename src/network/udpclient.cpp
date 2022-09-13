@@ -177,6 +177,7 @@ void Network::sendAccel(float* vector, uint8_t sensorId) {
         DataTransfer::sendFloat(vector[0]);
         DataTransfer::sendFloat(vector[1]);
         DataTransfer::sendFloat(vector[2]);
+        DataTransfer::sendByte(sensorId);
         DataTransfer::endPacket();
     }
 }

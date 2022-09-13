@@ -59,6 +59,15 @@ void BNO055Sensor::motionLoop() {
     quaternion.set(quat.x, quat.y, quat.z, quat.w);
     quaternion *= sensorOffset;
 
+#if SEND_ACCELERATION
+    {
+        Vector3 accel = this->imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+        this->acceleration[0] = accel.x;
+        this->acceleration[1] = accel.y;
+        this->acceleration[2] = accel.z;
+    }
+#endif
+
 #if ENABLE_INSPECTION
     {
         Network::sendInspectionFusedIMUData(sensorId, quaternion);
