@@ -72,6 +72,10 @@
 // Experimental
 #define OPTIMIZE_UPDATES true
 
+#define AUTOSLEEP true // Set to false to disable auto sleep
+#define AUTOSLEEP_TIME 30 // Time in seconds to sleep after last movement
+
+
 #define I2C_SPEED 400000
 
 // Send inspection packets over the network to a profiler

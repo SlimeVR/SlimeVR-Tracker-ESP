@@ -171,23 +171,35 @@ void MPU6050Sensor::motionLoop()
         if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
         {
             newData = true;
-            updateTPS++;
-            //only dispay each 1 second
-            if (millis() - lastDisplay > 1000)
-            {
-                lastDisplay = millis();
-                Serial.print("TPS: ");
-                Serial.println(updateTPS);
-                if(updateTPS < 10)
-                {
-                    Serial.printf("TPS is low");
-                }
-
-
-                updateTPS = 0;
-            }
+            TPS++;
             lastQuatSent = quaternion;
         }
+        if (millis() - lastTPSUpdateTimer > 1000)
+            {
+                lastTPSUpdateTimer = millis();
+                Serial.print("TPS: ");
+                Serial.println(TPS);
+                if(TPS < 10 && !sleepMode)
+                {
+                    Serial.printf("TPS is low, %ds remaining until auto-sleep mode\n", autoSleepTimer--);
+                } else {
+                    autoSleepTimer = AUTOSLEEP_TIME;
+                }
+                if (sleepMode && TPS > 50)
+                {
+                    sleepMode = false;
+                    // WiFi.mode(WIFI_STA);
+                    WiFiNetwork::setUp();
+                    Serial.println("Auto-sleep mode disabled");
+                }
+                if (autoSleepTimer == 0)
+                {
+                    Serial.println("Auto-sleep mode activated");
+                    WiFi.mode(WIFI_OFF); //turn off wifi for saving power
+                    sleepMode = true;
+                }
+                TPS = 0;
+            }
     }
 }
 
