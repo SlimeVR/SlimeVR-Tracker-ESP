@@ -34,7 +34,6 @@ namespace WiFiNetwork {
     void setUp();
     void upkeep();
     void setWiFiCredentials(const char * SSID, const char * pass);
-    void setStaticIP();
     IPAddress getAddress();
 }
 
