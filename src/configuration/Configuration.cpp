@@ -21,11 +21,22 @@
     THE SOFTWARE.
 */
 
-#include <LittleFS.h>
+#ifdef ESP32
+    // #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
+    // #define CONFIG_LITTLEFS_LFS_YES_TRACE
+    // #define LFS_YES_TRACE
+    #include <LITTLEFS.h>
+    #define LittleFS LITTLEFS
+#else
+    #include <LittleFS.h>
+#endif
 
 #include "Configuration.h"
 #include "consts.h"
 #include "utils.h"
+
+#define DIR_CALIBRATIONS "/calibrations"
+#define DIR_TEMPERATURE_CALIBRATIONS "/tempcalibrations"
 
 namespace SlimeVR {
     namespace Configuration {
@@ -99,7 +110,7 @@ namespace SlimeVR {
                 }
 
                 char path[17];
-                sprintf(path, "/calibrations/%d", i);
+                sprintf(path, DIR_CALIBRATIONS"/%d", i);
 
                 m_Logger.trace("Saving calibration data for %d", i);
 
@@ -156,34 +167,34 @@ namespace SlimeVR {
         void Configuration::loadCalibrations() {
 #ifdef ESP32
             {
-                File calibrations = LittleFS.open("/calibrations");
+                File calibrations = LittleFS.open(DIR_CALIBRATIONS);
                 if (!calibrations) {
                     m_Logger.warn("No calibration data found, creating new directory...");
 
-                    if (!LittleFS.mkdir("/calibrations")) {
-                        m_Logger.error("Failed to create directory: /calibrations");
+                    if (!LittleFS.mkdir(DIR_CALIBRATIONS)) {
+                        m_Logger.error("Failed to create directory: "DIR_CALIBRATIONS);
                         return;
                     }
 
-                    calibrations = LittleFS.open("/calibrations");
+                    calibrations = LittleFS.open(DIR_CALIBRATIONS);
                 }
 
                 if (!calibrations.isDirectory()) {
                     calibrations.close();
 
-                    m_Logger.warn("Found file instead of directory: /calibrations");
+                    m_Logger.warn("Found file instead of directory: "DIR_CALIBRATIONS);
 
-                    if (!LittleFS.remove("/calibrations")) {
-                        m_Logger.error("Failed to remove directory: /calibrations");
+                    if (!LittleFS.remove(DIR_CALIBRATIONS)) {
+                        m_Logger.error("Failed to remove directory: "DIR_CALIBRATIONS);
                         return;
                     }
 
-                    if (!LittleFS.mkdir("/calibrations")) {
-                        m_Logger.error("Failed to create directory: /calibrations");
+                    if (!LittleFS.mkdir(DIR_CALIBRATIONS)) {
+                        m_Logger.error("Failed to create directory: "DIR_CALIBRATIONS);
                         return;
                     }
 
-                    calibrations = LittleFS.open("/calibrations");
+                    calibrations = LittleFS.open(DIR_CALIBRATIONS);
                 }
 
                 m_Logger.debug("Found calibration data directory");
@@ -192,13 +203,14 @@ namespace SlimeVR {
                     if (f.isDirectory()) {
                         continue;
                     }
-                    uint8_t sensorId = strtoul(f.name(), nullptr, 10);
+
                     m_Logger.trace("Found calibration data file: %s", f.name());
 
                     CalibrationConfig calibrationConfig;
                     f.read((uint8_t*)&calibrationConfig, sizeof(CalibrationConfig));
                     f.close();
 
+                    uint8_t sensorId = strtoul(calibrations.name(), nullptr, 10);
                     m_Logger.debug("Found sensor calibration for %s at index %d", calibrationConfigTypeToString(calibrationConfig.type), sensorId);
 
                     setCalibration(sensorId, calibrationConfig);
@@ -208,11 +220,11 @@ namespace SlimeVR {
             }
 #else
             {
-                if (!LittleFS.exists("/calibrations")) {
+                if (!LittleFS.exists(DIR_CALIBRATIONS)) {
                     m_Logger.warn("No calibration data found, creating new directory...");
 
-                    if (!LittleFS.mkdir("/calibrations")) {
-                        m_Logger.error("Failed to create directory: /calibrations");
+                    if (!LittleFS.mkdir(DIR_CALIBRATIONS)) {
+                        m_Logger.error("Failed to create directory: " DIR_CALIBRATIONS);
                         return;
                     }
 
@@ -220,23 +232,169 @@ namespace SlimeVR {
                     return;
                 }
 
-                Dir calibrations = LittleFS.openDir("/calibrations");
+                Dir calibrations = LittleFS.openDir(DIR_CALIBRATIONS);
                 while (calibrations.next()) {
                     File f = calibrations.openFile("r");
                     if (!f.isFile()) {
                         continue;
                     }
 
-                    CalibrationConfig calibrationConfig;
-                    f.read((uint8_t*)&calibrationConfig, sizeof(CalibrationConfig));
-
                     uint8_t sensorId = strtoul(calibrations.fileName().c_str(), nullptr, 10);
-                    m_Logger.debug("Found sensor calibration for %s at index %d", calibrationConfigTypeToString(calibrationConfig.type), sensorId);
 
-                    setCalibration(sensorId, calibrationConfig);
+                    CalibrationConfig calibrationConfig;
+                    if (f.size() == sizeof(CalibrationConfig)) {
+                        f.read((uint8_t*)&calibrationConfig, sizeof(CalibrationConfig));
+                        f.close();
+
+                        m_Logger.debug("Found sensor calibration for %s at index %d", calibrationConfigTypeToString(calibrationConfig.type), sensorId);
+                        
+                        setCalibration(sensorId, calibrationConfig);
+                    } else {
+                        m_Logger.debug("Found incompatible sensor calibration at index %d, skipping", sensorId);
+                    }
                 }
             }
 #endif
+        }
+
+        bool Configuration::loadTemperatureCalibration(uint8_t sensorId, GyroTemperatureCalibrationConfig& config) {
+#ifdef ESP32
+            static_assert(false, "loadTemperatureCalibration: untested on esp32, remove this line to proceed");
+            {
+                File calibrations = LittleFS.open(DIR_TEMPERATURE_CALIBRATIONS);
+                if (!calibrations) {
+                    m_Logger.warn("No temperature calibration data found, creating new directory...");
+
+                    if (!LittleFS.mkdir(DIR_TEMPERATURE_CALIBRATIONS)) {
+                        m_Logger.error("Failed to create directory: "DIR_TEMPERATURE_CALIBRATIONS);
+                        return false;
+                    }
+
+                    calibrations = LittleFS.open(DIR_TEMPERATURE_CALIBRATIONS);
+                }
+
+                if (!calibrations.isDirectory()) {
+                    calibrations.close();
+
+                    m_Logger.warn("Found file instead of directory: "DIR_TEMPERATURE_CALIBRATIONS);
+
+                    if (!LittleFS.remove(DIR_TEMPERATURE_CALIBRATIONS)) {
+                        m_Logger.error("Failed to remove directory: "DIR_TEMPERATURE_CALIBRATIONS);
+                        return false;
+                    }
+
+                    if (!LittleFS.mkdir(DIR_TEMPERATURE_CALIBRATIONS)) {
+                        m_Logger.error("Failed to create directory: "DIR_TEMPERATURE_CALIBRATIONS);
+                        return false;
+                    }
+
+                    return false;
+                }
+                
+                calibrations.close();
+
+                m_Logger.debug("Found temperature calibration data directory");
+
+                char path[32];
+                sprintf(path, DIR_TEMPERATURE_CALIBRATIONS"/%d", sensorId);
+                if (LittleFS.exists(path)) {
+                    File f = LittleFS.open(path, "r");
+                    if (f.isDirectory()) {
+                        return false;
+                    }
+
+                    if (f.size() == sizeof(GyroTemperatureCalibrationConfig)) {
+                        CalibrationConfigType storedConfigType;
+                        f.read((uint8_t*)&storedConfigType, sizeof(CalibrationConfigType));
+                        if (storedConfigType != config.type) {
+                            f.close();
+                            m_Logger.debug(
+                                "Found incompatible sensor temperature calibration (expected %s, found %s) sensorId:%d, skipping",
+                                calibrationConfigTypeToString(config.type),
+                                calibrationConfigTypeToString(storedConfigType),
+                                sensorId
+                            );
+                            return false;
+                        }
+
+                        f.seek(0);
+                        f.read((uint8_t*)&config, sizeof(GyroTemperatureCalibrationConfig));
+                        f.close();
+                        m_Logger.debug("Found sensor temperature calibration for %s sensorId:%d", calibrationConfigTypeToString(config.type), sensorId);
+                        return true;
+                    } else {
+                        m_Logger.debug("Found incompatible sensor temperature calibration (size mismatch) sensorId:%d, skipping", sensorId);
+                    }
+                }
+                return false;
+            }
+#else
+            {
+                if (!LittleFS.exists(DIR_TEMPERATURE_CALIBRATIONS)) {
+                    m_Logger.warn("No temperature calibration data found, creating new directory...");
+
+                    if (!LittleFS.mkdir(DIR_TEMPERATURE_CALIBRATIONS)) {
+                        m_Logger.error("Failed to create directory: " DIR_TEMPERATURE_CALIBRATIONS);
+                        return false;
+                    }
+
+                    // There's no calibrations here, so we're done
+                    return false;
+                }
+
+                char path[32];
+                sprintf(path, DIR_TEMPERATURE_CALIBRATIONS"/%d", sensorId);
+                if (LittleFS.exists(path)) {
+                    File f = LittleFS.open(path, "r");
+                    if (!f.isFile()) {
+                        return false;
+                    }
+
+                    if (f.size() == sizeof(GyroTemperatureCalibrationConfig)) {
+                        CalibrationConfigType storedConfigType;
+                        f.read((uint8_t*)&storedConfigType, sizeof(CalibrationConfigType));
+                        if (storedConfigType != config.type) {
+                            f.close();
+                            m_Logger.debug(
+                                "Found incompatible sensor temperature calibration (expected %s, found %s) sensorId:%d, skipping",
+                                calibrationConfigTypeToString(config.type),
+                                calibrationConfigTypeToString(storedConfigType),
+                                sensorId
+                            );
+                            return false;
+                        }
+
+                        f.seek(0);
+                        f.read((uint8_t*)&config, sizeof(GyroTemperatureCalibrationConfig));
+                        f.close();
+                        m_Logger.debug("Found sensor temperature calibration for %s sensorId:%d", calibrationConfigTypeToString(config.type), sensorId);
+                        return true;
+                    } else {
+                        m_Logger.debug("Found incompatible sensor temperature calibration (size mismatch) sensorId:%d, skipping", sensorId);
+                    }
+                }
+                
+                return false;
+            }
+#endif
+        }
+
+        bool Configuration::saveTemperatureCalibration(uint8_t sensorId, const GyroTemperatureCalibrationConfig& config) {
+            if (config.type == CalibrationConfigType::NONE) {
+                return false;
+            }
+
+            char path[32];
+            sprintf(path, DIR_TEMPERATURE_CALIBRATIONS"/%d", sensorId);
+
+            m_Logger.trace("Saving temperature calibration data for sensorId:%d", sensorId);
+
+            File file = LittleFS.open(path, "w");
+            file.write((uint8_t*)&config, sizeof(GyroTemperatureCalibrationConfig));
+            file.close();
+
+            m_Logger.debug("Saved temperature calibration data for sensorId:%i", sensorId);
+            return true;
         }
 
         bool Configuration::runMigrations(int32_t version) {

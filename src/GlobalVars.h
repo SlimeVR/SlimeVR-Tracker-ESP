@@ -30,6 +30,7 @@
 #include "sensors/SensorManager.h"
 
 extern SlimeVR::LEDManager ledManager;
+extern SlimeVR::Sensors::SensorManager sensorManager;
 extern SlimeVR::Status::StatusManager statusManager;
 extern SlimeVR::Configuration::Configuration configuration;
 extern SlimeVR::Sensors::SensorManager sensorManager;

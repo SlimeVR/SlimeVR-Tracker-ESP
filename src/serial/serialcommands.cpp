@@ -36,7 +36,7 @@
 namespace SerialCommands {
     SlimeVR::Logging::Logger logger("SerialCommands");
 
-    CmdCallback<5> cmdCallbacks;
+    CmdCallback<6> cmdCallbacks;
     CmdParser cmdParser;
     CmdBuffer<64> cmdBuffer;
 
@@ -192,12 +192,41 @@ namespace SerialCommands {
         ESP.restart();
     }
 
+    void cmdTemperatureCalibration(CmdParser* parser) {
+        if (parser->getParamCount() > 1) {
+            if (parser->equalCmdParam(1, "PRINT")) {
+                sensorManager.getFirst()->printTemperatureCalibrationState();
+                sensorManager.getSecond()->printTemperatureCalibrationState();
+                return;
+            } else if (parser->equalCmdParam(1, "DEBUG")) {
+                sensorManager.getFirst()->printDebugTemperatureCalibrationState();
+                sensorManager.getSecond()->printDebugTemperatureCalibrationState();
+                return;
+            } else if (parser->equalCmdParam(1, "RESET")) {
+                sensorManager.getFirst()->resetTemperatureCalibrationState();
+                sensorManager.getSecond()->resetTemperatureCalibrationState();
+                return;
+            } else if (parser->equalCmdParam(1, "SAVE")) {
+                sensorManager.getFirst()->saveTemperatureCalibration();
+                sensorManager.getSecond()->saveTemperatureCalibration();
+                return;
+            }
+        }
+        logger.info("Usage:");
+        logger.info("  TCAL PRINT: print current temperature calibration config");
+        logger.info("  TCAL DEBUG: print current temperature calibration matrix with raw values");
+        logger.info("  TCAL RESET: reset current temperature calibration in RAM (does not delete already saved)");
+        logger.info("  TCAL SAVE: save current temperature calibration to persistent flash (full or checkpoint)");
+        logger.info("Note:");
+        logger.info("  Temperature calibration config saves automatically when calibration percent is at 100%");
+    }
+    
     void setUp() {
         cmdCallbacks.addCmd("SET", &cmdSet);
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REBOOT", &cmdReboot);
-        
+        cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
     }
 
     void update() {

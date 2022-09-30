@@ -53,6 +53,10 @@ public:
     virtual void sendData();
     virtual void startCalibration(int calibrationType){};
     virtual uint8_t getSensorState();
+    virtual void printTemperatureCalibrationState();
+    virtual void printDebugTemperatureCalibrationState();
+    virtual void resetTemperatureCalibrationState();
+    virtual void saveTemperatureCalibration();
     bool isWorking()
     {
         return working;
@@ -84,6 +88,9 @@ protected:
     float linearAcceleration[3]{};
 
     SlimeVR::Logging::Logger m_Logger;
+
+private:
+    void printTemperatureCalibrationUnsupported();
 };
 
 const char * getIMUNameByType(int imuType);

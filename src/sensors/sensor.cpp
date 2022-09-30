@@ -46,6 +46,15 @@ void Sensor::sendData() {
     }
 }
 
+void Sensor::printTemperatureCalibrationUnsupported() {
+    m_Logger.error("Temperature calibration not supported for imu %s", getIMUNameByType(sensorType));
+}
+void Sensor::printTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
+void Sensor::printDebugTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
+void Sensor::saveTemperatureCalibration() { printTemperatureCalibrationUnsupported(); };
+void Sensor::resetTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
+
+
 const char * getIMUNameByType(int imuType) {
     switch(imuType) {
         case IMU_MPU9250:
