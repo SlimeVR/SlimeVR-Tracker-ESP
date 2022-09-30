@@ -36,7 +36,7 @@ void Sensor::sendData() {
 
 #if SEND_ACCELERATION
         {
-            Network::sendAccel(acceleration, sensorId);
+            Network::sendAccel(linearAcceleration, sensorId);
         }
 #endif
 

@@ -68,9 +68,9 @@ void BNO055Sensor::motionLoop() {
 #if SEND_ACCELERATION
     {
         Vector3 accel = this->imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
-        this->acceleration[0] = accel.x;
-        this->acceleration[1] = accel.y;
-        this->acceleration[2] = accel.z;
+        this->linearAcceleration[0] = accel.x;
+        this->linearAcceleration[1] = accel.y;
+        this->linearAcceleration[2] = accel.z;
     }
 #endif
 

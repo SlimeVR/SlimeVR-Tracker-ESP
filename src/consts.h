@@ -65,6 +65,8 @@
 #define DEG_180 PI
 #define DEG_270 PI / 2
 
+#define CONST_EARTH_GRAVITY 9.80665
+
 #ifdef ESP8266
   #define HARDWARE_MCU 1
 #elif defined(ESP32)
