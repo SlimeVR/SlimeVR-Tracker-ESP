@@ -112,7 +112,7 @@ void BMI160Sensor::motionSetup() {
         #endif
     #endif
 
-    if(!imu.testConnection()) {
+    if (!imu.testConnection()) {
         m_Logger.fatal("Can't connect to BMI160 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
         ledManager.pattern(50, 50, 200);
         return;
@@ -123,15 +123,14 @@ void BMI160Sensor::motionSetup() {
     int16_t ax, ay, az;
     getRemappedAcceleration(&ax, &ay, &az);
     float g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
-    if(g_az < -0.75f) {
+    if (g_az < -0.75f) {
         ledManager.on();
 
         m_Logger.info("Flip front to confirm start calibration");
         delay(5000);
         getRemappedAcceleration(&ax, &ay, &az);
         g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
-        if(g_az > 0.75f)
-        {
+        if (g_az > 0.75f) {
             m_Logger.debug("Starting calibration...");
             startCalibration(0);
         }
@@ -168,28 +167,28 @@ void BMI160Sensor::motionSetup() {
     );
 
     #if BMI160_USE_TEMPCAL
-    gyroTempCalibrator->loadConfig(BMI160_GYRO_TYPICAL_SENSITIVITY_LSB);
+        gyroTempCalibrator->loadConfig(BMI160_GYRO_TYPICAL_SENSITIVITY_LSB);
     #endif
 
     #if BMI160_USE_SENSCAL
-    String localDevice = WiFi.macAddress();
-    for (auto const& kv : sensitivityOffsets) {
-        auto mac = kv.first;
-        if (mac != localDevice) continue;
-        
-        auto offsets = kv.second;
-        if (offsets.sensorId != sensorId) continue;
+        String localDevice = WiFi.macAddress();
+        for (auto const& kv : sensitivityOffsets) {
+            auto mac = kv.first;
+            if (mac != localDevice) continue;
 
-        #define BMI160_CALCULATE_SENSITIVTY_MUL(degrees) (1.0 / (1.0 - ((degrees)/(360.0 * offsets.spins))))
+            auto offsets = kv.second;
+            if (offsets.sensorId != sensorId) continue;
 
-        gscaleX = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.x);
-        gscaleY = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.y);
-        gscaleZ = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.z);
-        m_Logger.debug("Custom sensitivity offset enabled: %s %s",
-            mac.c_str(),
-            offsets.sensorId == SENSORID_PRIMARY ? "primary" : "aux" 
-        );
-    }
+            #define BMI160_CALCULATE_SENSITIVTY_MUL(degrees) (1.0 / (1.0 - ((degrees)/(360.0 * offsets.spins))))
+
+            gscaleX = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.x);
+            gscaleY = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.y);
+            gscaleZ = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.z);
+            m_Logger.debug("Custom sensitivity offset enabled: %s %s",
+                mac.c_str(),
+                offsets.sensorId == SENSORID_PRIMARY ? "primary" : "aux" 
+            );
+        }
     #endif
 
     imu.setFIFOHeaderModeEnabled(true);
@@ -206,7 +205,7 @@ void BMI160Sensor::motionSetup() {
 }
 
 void BMI160Sensor::motionLoop() {
-#if ENABLE_INSPECTION
+    #if ENABLE_INSPECTION
     {
         int16_t rX, rY, rZ, aX, aY, aZ;
         getRemappedRotation(&rX, &rY, &rZ);
@@ -214,7 +213,7 @@ void BMI160Sensor::motionLoop() {
 
         Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
     }
-#endif
+    #endif
 
     {
         constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 3000;
@@ -323,11 +322,11 @@ void BMI160Sensor::motionLoop() {
 
             quaternion *= sensorOffset;
 
-        #if ENABLE_INSPECTION
+            #if ENABLE_INSPECTION
             {
                 Network::sendInspectionFusedIMUData(sensorId, quaternion);
             }
-        #endif
+            #endif
 
             lastRotationPacketSent = nowPacket - (elapsed - sendInterval);
 
@@ -356,8 +355,8 @@ void BMI160Sensor::readFIFO() {
     int16_t ax, ay, az;
     bool gnew, anew;
     #if !USE_6_AXIS
-    int16_t mx, my, mz;
-    bool mnew;
+        int16_t mx, my, mz;
+        bool mnew;
     #endif
 
     uint8_t header;
@@ -422,7 +421,7 @@ void BMI160Sensor::readFIFO() {
 
             // gyro callback updates fusion and must be last
             #if !USE_6_AXIS
-            if (mnew) onMagRawSample(BMI160_ODR_MAG_MICROS, mx, my, mz);
+                if (mnew) onMagRawSample(BMI160_ODR_MAG_MICROS, mx, my, mz);
             #endif
             if (anew) onAccelRawSample(BMI160_ODR_ACC_MICROS, ax, ay, az);
             if (gnew) onGyroRawSample(BMI160_ODR_GYR_MICROS, gx, gy, gz);
@@ -576,8 +575,7 @@ void BMI160Sensor::saveTemperatureCalibration() {
     gyroTempCalibrator->saveConfig();
 }
 
-float BMI160Sensor::getTemperature()
-{
+float BMI160Sensor::getTemperature() {
     // Middle value is 23 degrees C (0x0000)
     #define BMI160_ZERO_TEMP_OFFSET 23
     // Temperature per step from -41 + 1/2^9 degrees C (0x8001) to 87 - 1/2^9 degrees C (0x7FFF)
@@ -605,18 +603,18 @@ void BMI160Sensor::applyAccelCalibrationAndScale(sensor_real_t Axyz[3]) {
 
 void BMI160Sensor::applyMagCalibrationAndScale(sensor_real_t Mxyz[3]) {
     #if !USE_6_AXIS
-    //apply offsets and scale factors from Magneto
-    #if useFullCalibrationMatrix == true
-        float temp[3];
-        for (uint8_t i = 0; i < 3; i++)
-            temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
-        Mxyz[0] = m_Calibration.M_Ainv[0][0] * temp[0] + m_Calibration.M_Ainv[0][1] * temp[1] + m_Calibration.M_Ainv[0][2] * temp[2];
-        Mxyz[1] = m_Calibration.M_Ainv[1][0] * temp[0] + m_Calibration.M_Ainv[1][1] * temp[1] + m_Calibration.M_Ainv[1][2] * temp[2];
-        Mxyz[2] = m_Calibration.M_Ainv[2][0] * temp[0] + m_Calibration.M_Ainv[2][1] * temp[1] + m_Calibration.M_Ainv[2][2] * temp[2];
-    #else
-        for (i = 0; i < 3; i++)
-            Mxyz[i] = (Mxyz[i] - m_Calibration.M_B[i]);
-    #endif
+        //apply offsets and scale factors from Magneto
+        #if useFullCalibrationMatrix == true
+            float temp[3];
+            for (uint8_t i = 0; i < 3; i++)
+                temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+            Mxyz[0] = m_Calibration.M_Ainv[0][0] * temp[0] + m_Calibration.M_Ainv[0][1] * temp[1] + m_Calibration.M_Ainv[0][2] * temp[2];
+            Mxyz[1] = m_Calibration.M_Ainv[1][0] * temp[0] + m_Calibration.M_Ainv[1][1] * temp[1] + m_Calibration.M_Ainv[1][2] * temp[2];
+            Mxyz[2] = m_Calibration.M_Ainv[2][0] * temp[0] + m_Calibration.M_Ainv[2][1] * temp[1] + m_Calibration.M_Ainv[2][2] * temp[2];
+        #else
+            for (i = 0; i < 3; i++)
+                Mxyz[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+        #endif
     #endif
 }
 
