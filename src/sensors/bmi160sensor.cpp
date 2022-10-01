@@ -33,6 +33,11 @@
 // Scale conversion steps: LSB/°/s -> °/s -> step/°/s -> step/rad/s
 constexpr float GSCALE = ((32768. / TYPICAL_SENSITIVITY_LSB) / 32768.) * (PI / 180.0);
 
+#define ACCEL_SENSITIVITY_4G 8192.0f
+
+// Accel scale conversion steps: LSB/G -> G -> m/s^2
+constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
+
 // LSB change per temperature step map.
 // These values were calculated for 500 deg/s sensitivity
 // Step quantization - 5 degrees per step
@@ -59,12 +64,12 @@ void BMI160Sensor::motionSetup() {
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
-        m_Logger.fatal("Can't connect to BMI160 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+        m_Logger.fatal("Can't connect to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
         ledManager.pattern(50, 50, 200);
         return;
     }
 
-    m_Logger.info("Connected to BMI160 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+    m_Logger.info("Connected to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
 
     int16_t ax, ay, az;
     imu.getAcceleration(&ax, &ay, &az);
@@ -130,6 +135,30 @@ void BMI160Sensor::motionLoop() {
     mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
     quaternion.set(-q[2], q[1], q[3], q[0]);
     quaternion *= sensorOffset;
+
+#if SEND_ACCELERATION
+    {
+        this->acceleration[0] = Axyz[0];
+        this->acceleration[1] = Axyz[1];
+        this->acceleration[2] = Axyz[2];
+
+        // get the component of the acceleration that is gravity
+        VectorFloat gravity;
+        gravity.x = 2 * (this->quaternion.x * this->quaternion.z - this->quaternion.w * this->quaternion.y);
+        gravity.y = 2 * (this->quaternion.w * this->quaternion.x + this->quaternion.y * this->quaternion.z);
+        gravity.z = this->quaternion.w * this->quaternion.w - this->quaternion.x * this->quaternion.x - this->quaternion.y * this->quaternion.y + this->quaternion.z * this->quaternion.z;
+        
+        // subtract gravity from the acceleration vector
+        this->acceleration[0] -= gravity.x * ACCEL_SENSITIVITY_4G;
+        this->acceleration[1] -= gravity.y * ACCEL_SENSITIVITY_4G;
+        this->acceleration[2] -= gravity.z * ACCEL_SENSITIVITY_4G;
+
+        // finally scale the acceleration values to mps2
+        this->acceleration[0] *= ASCALE_4G;
+        this->acceleration[1] *= ASCALE_4G;
+        this->acceleration[2] *= ASCALE_4G;
+    }
+#endif
 
 #if ENABLE_INSPECTION
     {

@@ -39,15 +39,20 @@ constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB
 
 #define MAG_CORR_RATIO 0.02
 
+#define ACCEL_SENSITIVITY_2G 16384.0f
+
+// Accel scale conversion steps: LSB/G -> G -> m/s^2
+constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * EARTH_GRAVITY;
+
 void MPU9250Sensor::motionSetup() {
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
-        m_Logger.fatal("Can't connect to MPU9250 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+        m_Logger.fatal("Can't connect to MPU9250 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
         return;
     }
 
-    m_Logger.info("Connected to MPU9250 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+    m_Logger.info("Connected to MPU9250 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
 
     int16_t ax,ay,az;
 
@@ -163,6 +168,25 @@ void MPU9250Sensor::motionLoop() {
             correction = correction.slerp(newCorr, MAG_CORR_RATIO);
         }
     }
+
+#if SEND_ACCELERATION
+    {
+        // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
+        // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
+        // we need to multiply by the gravity scale by two to convert to 2g mode ()
+        grav.x *= 2;
+        grav.y *= 2;
+        grav.z *= 2;
+
+        this->imu.dmpGetAccel(&this->rawAccel, fifoBuffer);
+        this->imu.dmpGetLinearAccel(&this->rawAccel, &this->rawAccel, &grav);
+
+        // convert acceleration to m/s^2 (implicitly casts to float)
+        this->acceleration[0] = this->rawAccel.x * ASCALE_2G;
+        this->acceleration[1] = this->rawAccel.y * ASCALE_2G;
+        this->acceleration[2] = this->rawAccel.z * ASCALE_2G;
+    }
+#endif
 
     quaternion = correction * quat;
 #else

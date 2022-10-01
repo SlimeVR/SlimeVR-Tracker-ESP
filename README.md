@@ -48,6 +48,13 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
   * LED will turn off when calibration is complete
   * You don't have to calibrate next time you power it off, calibration values will be saved for the next use
 
+## Infos about ESP32-C3 with direct connection to USB
+
+The ESP32-C3 has two ways to connect the serial port. One is directly via the onboard USB CDC or via the onboard UART.
+When the chip is connected to the USB CDC, the serial port shows as `USB Serial Port` in Device Manager. The SlimeVR server will currently not connect to this port.
+If you want to set your WiFi credentials, you can use the PlatformIO serial console.
+There you have to enter the following: `SET WIFI "SSID" "PASSWORD"`
+
 ## Uploading On Linux
 
 Follow the instructions in this link [Platformio](https://docs.platformio.org/en/latest//faq.html#platformio-udev-rules), this should solve any permission denied errors
@@ -55,3 +62,5 @@ Follow the instructions in this link [Platformio](https://docs.platformio.org/en
 ## Contributions
 
 By contributing to this project you are placing all your code under MIT or less restricting licenses, and you certify that the code you have used is compatible with those licenses or is authored by you. If you're doing so on your work time, you certify that your employer is okay with this.
+
+For an explanation on how to contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md)

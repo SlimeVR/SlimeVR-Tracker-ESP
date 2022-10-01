@@ -39,6 +39,7 @@ public:
 private:
     MPU6050 imu{};
     Quaternion rawQuat{};
+    VectorInt16 rawAccel{};
     // MPU dmp control/status vars
     bool dmpReady = false;    // set true if DMP init was successful
     uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU

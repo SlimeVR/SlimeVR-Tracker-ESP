@@ -53,6 +53,7 @@ private:
     float Gxyz[3]{};
     float Mxyz[3]{};
     float rawMag[3]{};
+    VectorInt16 rawAccel{};
     Quat correction{0, 0, 0, 0};
     // Loop timing globals
     unsigned long now = 0, last = 0; // micros() timers

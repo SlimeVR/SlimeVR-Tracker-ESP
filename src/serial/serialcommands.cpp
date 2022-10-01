@@ -26,6 +26,11 @@
 #include "logging/Logger.h"
 #include <CmdCallback.hpp>
 #include "GlobalVars.h"
+#include "batterymonitor.h"
+
+#if ESP32
+    #include "nvs_flash.h"
+#endif
 
 namespace SerialCommands {
     SlimeVR::Logging::Logger logger("SerialCommands");
@@ -49,7 +54,11 @@ namespace SerialCommands {
     }
 
     void cmdGet(CmdParser * parser) {
-        if(parser->getParamCount() != 1 && parser->equalCmdParam(1, "INFO")  ) {
+        if (parser->getParamCount() < 2) {
+            return;
+        }
+        
+        if (parser->equalCmdParam(1, "INFO")) {
             logger.info(
                 "SlimeVR Tracker, board: %d, hardware: %d, build: %d, firmware: %s, address: %s",
                 BOARD,
@@ -59,6 +68,46 @@ namespace SerialCommands {
                 WiFiNetwork::getAddress().toString().c_str()
             );
             // TODO Print sensors number and types
+        }
+
+        if (parser->equalCmdParam(1, "CONFIG")) {
+            String str =
+                "BOARD=%d\n" 
+                "IMU=%d\n"
+                "SECOND_IMU=%d\n"
+                "IMU_ROTATION=%f\n"
+                "SECOND_IMU_ROTATION=%f\n"
+                "BATTERY_MONITOR=%d\n"
+                "BATTERY_SHIELD_RESISTANCE=%d\n"
+                "BATTERY_SHIELD_R1=%d\n"
+                "BATTERY_SHIELD_R2=%d\n"
+                "PIN_IMU_SDA=%d\n"
+                "PIN_IMU_SCL=%d\n"
+                "PIN_IMU_INT=%d\n"
+                "PIN_IMU_INT_2=%d\n"
+                "PIN_BATTERY_LEVEL=%d\n"
+                "LED_PIN=%d\n"
+                "LED_INVERTED=%d\n";
+
+            Serial.printf(
+                str.c_str(),
+                BOARD,
+                IMU,
+                SECOND_IMU,
+                IMU_ROTATION,
+                SECOND_IMU_ROTATION,
+                BATTERY_MONITOR,
+                BATTERY_SHIELD_RESISTANCE,
+                BATTERY_SHIELD_R1,
+                BATTERY_SHIELD_R2,
+                PIN_IMU_SDA,
+                PIN_IMU_SCL,
+                PIN_IMU_INT,
+                PIN_IMU_INT_2,
+                PIN_BATTERY_LEVEL,
+                LED_PIN,
+                LED_INVERTED
+            );
         }
     }
 
@@ -78,10 +127,20 @@ namespace SerialCommands {
 
         WiFi.disconnect(true); // Clear WiFi credentials
         #if ESP8266
-        ESP.eraseConfig(); // Clear ESP config
+            ESP.eraseConfig(); // Clear ESP config
+        #elif ESP32
+                nvs_flash_erase();
         #else
-        // TODO: Implement eraseConfig for other boards
+            #warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED
+            logger.info("FACTORY RESET NOT SUPPORTED");
+            return;
         #endif
+
+        #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
+            #warning FACTORY RESET does not clear your hardcoded WiFi credentials!
+            logger.warn("FACTORY RESET does not clear your hardcoded WiFi credentials!");
+        #endif
+
         delay(3000);
         ESP.restart();
     }
