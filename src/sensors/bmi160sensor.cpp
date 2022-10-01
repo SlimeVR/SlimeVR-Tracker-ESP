@@ -122,14 +122,14 @@ void BMI160Sensor::motionSetup() {
 
     int16_t ax, ay, az;
     getRemappedAcceleration(&ax, &ay, &az);
-    float g_az = (float)az / 8192; // For 4G sensitivity
+    float g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
     if(g_az < -0.75f) {
         ledManager.on();
 
         m_Logger.info("Flip front to confirm start calibration");
         delay(5000);
         getRemappedAcceleration(&ax, &ay, &az);
-        g_az = (float)az / 8192;
+        g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
         if(g_az > 0.75f)
         {
             m_Logger.debug("Starting calibration...");
