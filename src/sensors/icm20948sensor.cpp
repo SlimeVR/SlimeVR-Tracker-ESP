@@ -424,31 +424,15 @@ void ICM20948Sensor::motionLoop() {
 
 #if SEND_ACCELERATION
         {
-            Quat quat_test{};
-            quat_test.w = quaternion.w;
-            quat_test.x = -quaternion.x;
-            quat_test.y = quaternion.y;
-            quat_test.z = -quaternion.z;
-
             this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.Y;
             this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.X;
             this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
 
             // get the component of the acceleration that is gravity
             float gravity[3];
-            gravity[0] = -2 * (quat_test.x * quat_test.z - quat_test.w * quat_test.y);
-            gravity[1] = -2 * (quat_test.w * quat_test.x + quat_test.y * quat_test.z);
-            gravity[2] = quat_test.w * quat_test.w - quat_test.x * quat_test.x - quat_test.y * quat_test.y + quat_test.z * quat_test.z;
-/*            
-            m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+6.0f y:%+6.0f z:%+6.0f, quat_test x:%+0.3f y:%+0.3f z:%+0.3f",
-                            gravity[0], gravity[1], gravity[2], 
-                            this->acceleration[0], this->acceleration[1], this->acceleration[2],
-                            quat_test.x, quat_test.y, quat_test.z);
-*/
-            m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+7.1f y:%+7.1f z:%+7.1f",
-                            gravity[0], gravity[1], gravity[2], 
-                            this->acceleration[0], this->acceleration[1], this->acceleration[2]);
-
+            gravity[0] = -2 * ((-quaternion.x) * (-quaternion.z) - quaternion.w * quaternion.y);
+            gravity[1] = -2 * (quaternion.w * (-quaternion.x) + quaternion.y * (-quaternion.z));
+            gravity[2] = quaternion.w * quaternion.w - quaternion.x * quaternion.x - quaternion.y * quaternion.y + quaternion.z * quaternion.z;
 
             // subtract gravity from the acceleration vector
             this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
@@ -459,14 +443,6 @@ void ICM20948Sensor::motionLoop() {
             this->acceleration[0] *= ASCALE_4G;
             this->acceleration[1] *= ASCALE_4G;
             this->acceleration[2] *= ASCALE_4G;
-
-            // finally scale the acceleration values to mps2
-/*
-            imu.getAGMT();
-            this->acceleration[0] = imu.accX()/1000*9.81;
-            this->acceleration[1] = imu.accY()/1000*9.81;
-            this->acceleration[2] = imu.accZ()/1000*9.81;
-*/
         }
 #endif
 
