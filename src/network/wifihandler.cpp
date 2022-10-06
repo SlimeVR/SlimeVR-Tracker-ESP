@@ -46,10 +46,12 @@ void reportWifiError() {
 }
 
 void setStaticIP() {
-    const IPAddress ip(WIFI_STATIC_IP);
-    const IPAddress gateway(WIFI_STATIC_GATEWAY);
-    const IPAddress subnet(WIFI_STATIC_SUBNET);
-    WiFi.config(ip, gateway, subnet);
+    #ifdef WIFI_USE_STATICIP
+        const IPAddress ip(WIFI_STATIC_IP);
+        const IPAddress gateway(WIFI_STATIC_GATEWAY);
+        const IPAddress subnet(WIFI_STATIC_SUBNET);
+        WiFi.config(ip, gateway, subnet);
+    #endif
 }
 
 bool WiFiNetwork::isConnected() {
