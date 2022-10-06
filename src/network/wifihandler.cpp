@@ -45,12 +45,22 @@ void reportWifiError() {
     }
 }
 
+void setStaticIP() {
+    const IPAddress ip(WIFI_STATIC_IP);
+    const IPAddress gateway(WIFI_STATIC_GATEWAY);
+    const IPAddress subnet(WIFI_STATIC_SUBNET);
+    WiFi.config(ip, gateway, subnet);
+}
+
 bool WiFiNetwork::isConnected() {
     return isWifiConnected;
 }
 
 void WiFiNetwork::setWiFiCredentials(const char * SSID, const char * pass) {
     stopProvisioning();
+    #ifdef WIFI_USE_STATICIP
+        setStaticIP();
+    #endif
     WiFi.begin(SSID, pass);
     // Reset state, will get back into provisioning if can't connect
     hadWifi = false;
@@ -68,6 +78,9 @@ void WiFiNetwork::setUp() {
     WiFi.mode(WIFI_STA);
     WiFi.hostname("SlimeVR FBT Tracker");
     wifiHandlerLogger.info("Loaded credentials for SSID %s and pass length %d", WiFi.SSID().c_str(), WiFi.psk().length());
+    #ifdef WIFI_USE_STATICIP
+        setStaticIP();
+    #endif
     wl_status_t status = WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
     wifiHandlerLogger.debug("Status: %d", status);
     wifiState = 1;
@@ -129,6 +142,9 @@ void WiFiNetwork::upkeep() {
                 case 1: // Couldn't connect with first set of credentials
                     #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
                         // Try hardcoded credentials now
+                        #ifdef WIFI_USE_STATICIP
+                            setStaticIP();
+                        #endif
                         WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
                         wifiConnectionTimeout = millis();
                         wifiHandlerLogger.error("Can't connect from saved credentials, status: %d.", WiFi.status());
