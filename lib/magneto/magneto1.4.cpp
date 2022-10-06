@@ -6,88 +6,40 @@
 
 using namespace mymathlib::matrix;
 
-//Magneto 1.3 4/24/2020
-void CalculateCalibration(float *buf, int sampleCount, float BAinv[4][3])
-{
-    double xs = 0, xave = 0;
+void MagnetoCalibration::sample(double x, double y, double z) {
+    sample_count += 1.0;
+    norm_sum += sqrt(x * x + y * y + z * z);
 
-    //
-    // calculate mean (norm) and standard deviation for possible outlier rejection
-    //
-    for (int i = 0; i < sampleCount; i++)
-    {
-        double x = buf[i * 3 + 0];
-        double y = buf[i * 3 + 1];
-        double z = buf[i * 3 + 2];
-        double x2 = x * x + y * y + z * z;
-        xs += x2;
-        xave += sqrt(x2);
-    }
-    xave = xave / sampleCount; //mean vector length
-    xs = sqrt(xs / sampleCount - (xave * xave)); //std. dev.
+    double D[10] = {
+        x * x,
+        y * y,
+        z * z,
+        2.0 * y * z,
+        2.0 * x * z,
+        2.0 * x * y,
+        2.0 * x,
+        2.0 * y,
+        2.0 * z,
+        1.0
+    };
 
-    // third time through!
-    // allocate array space for accepted measurements
-    double* D = new double[10 * sampleCount];
-    double* raw = new double[3 * sampleCount];
+    Multiply_Self_Transpose(ata, D, 10, 1);
+}
 
-    {
-        // summarize statistics, give user opportunity to reject outlying measurements
-        double nxsrej = 0;
-
-        int j = 0;  //array index for good measurements
-        // printf("\r\nAccepted measurements (file index, internal index, ...)\r\n");
-        for (int i = 0; i < sampleCount; i++)
-        {
-            double x = buf[i * 3 + 0];
-            double y = buf[i * 3 + 1];
-            double z = buf[i * 3 + 2];
-            double x2 = sqrt(x * x + y * y + z * z);  //vector length
-            x2 = fabs(x2 - xave) / xs; //standard deviation from mean
-            if ((nxsrej == 0) || (x2 <= nxsrej)) {
-                // accepted measurement
-                //   printf("%d, %d: %6.1f %6.1f %6.1f\r\n",i,j,x,y,z);
-
-                raw[3 * j] = x;
-                raw[3 * j + 1] = y;
-                raw[3 * j + 2] = z;
-                D[j] = x * x;
-                D[sampleCount + j] = y * y;
-                D[sampleCount * 2 + j] = z * z;
-                D[sampleCount * 3 + j] = 2.0 * y * z;
-                D[sampleCount * 4 + j] = 2.0 * x * z;
-                D[sampleCount * 5 + j] = 2.0 * x * y;
-                D[sampleCount * 6 + j] = 2.0 * x;
-                D[sampleCount * 7 + j] = 2.0 * y;
-                D[sampleCount * 8 + j] = 2.0 * z;
-                D[sampleCount * 9 + j] = 1.0;
-                j++; //count good measurements
-            }
-        }
-    }
-    delete[] raw;
-
-    //printf("\r\nExpected norm of local field vector Hm? (Enter 0 for default %8.1f) ", xave);
-    //scanf("%lf", &hm);
-
-    //if (hm == 0.0) hm = xave;
-    //printf("\r\nSet Hm = %8.1f\r\n", hm);
-    double hm = xave;
-
-    // allocate memory for matrix S
-    double* S = new double[10 * 10];
-    Multiply_Self_Transpose(S, D, 10, sampleCount);
-    delete[] D;
-
+void MagnetoCalibration::current_calibration(float BAinv[4][3]) {
     double* S11 = new double[6 * 6];
-    Get_Submatrix(S11, 6, 6, S, 10, 0, 0);
+    Get_Submatrix(S11, 6, 6, ata, 10, 0, 0);
     double* S12 = new double[6 * 4];
-    Get_Submatrix(S12, 6, 4, S, 10, 0, 6);
+    Get_Submatrix(S12, 6, 4, ata, 10, 0, 6);
     double* S12t = new double[4 * 6];
-    Get_Submatrix(S12t, 4, 6, S, 10, 6, 0);
+    Get_Submatrix(S12t, 4, 6, ata, 10, 6, 0);
     double* S22 = new double[4 * 4];
-    Get_Submatrix(S22, 4, 4, S, 10, 6, 6);
-    delete[] S;
+    Get_Submatrix(S22, 4, 4, ata, 10, 6, 6);
+
+    double hm = norm_sum / sample_count;
+
+    // this is where we'd deallocate ata or the entire calibration class
+    // if we decided to compute the calibration destructively
 
     Choleski_LU_Decomposition(S22, 4);
     Choleski_LU_Inverse(S22, 4);
@@ -285,7 +237,6 @@ void CalculateCalibration(float *buf, int sampleCount, float BAinv[4][3])
     }
 
 
-    // hm = 0.569;
     double* A_1 = new double[3 * 3];
     // Calculate hmb = sqrt(btqb - J).
     double hmb = sqrt(btqb - J);

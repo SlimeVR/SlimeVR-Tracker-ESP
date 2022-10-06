@@ -25,8 +25,28 @@
 // In https://github.com/jremington/MPU-9250-AHRS
 // magneto 1.4 magnetometer/accelerometer calibration code
 // from http://sailboatinstruments.blogspot.com/2011/08/improved-magnetometer-calibration.html
-// tested and works with Code::Blocks 10.05 through 20.03
 
-void CalculateCalibration(float *buf, int sampleCount, float BAinv[4][3]);
+/// @brief Accelerometer/Magnetometer calibration assistant
+class MagnetoCalibration {
+    public:
+        /// @brief Updates calibration with the sample (x, y, z)
+        void sample(double x, double y, double z);
+
+        /// @brief Outputs the calibration matrix corresponding to all previous samples
+        /// 
+        /// This does not consume/destroy the calibration struct, allowing for the possibility of
+        /// continuously updating the calibration. That said, there may be limitations on how many
+        /// samples are useful to collect, due to the limitations of finite-storage numbers.
+        ///
+        /// @param BAinv 
+        void current_calibration(float BAinv[4][3]);
+
+    private:
+        // internal 10x10 matrix representing the 10x<sample count> matrix multiplied by its transpose,
+        // resulting in a 10x10 symmetric matrix
+        double ata[100] = {0.0};
+        double norm_sum = 0.0;
+        double sample_count = 0.0;
+};
 
 #endif // __MAGENTO_1_4__

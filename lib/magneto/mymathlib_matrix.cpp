@@ -50,9 +50,9 @@ namespace mymathlib::matrix {
     //  void Multiply_Self_Transpose(double *C, double *A, int nrows, int ncols ) //
     //                                                                            //
     //  Description:                                                              //
-    //     Post multiply an nrows x ncols matrix A by its transpose.   The result //
-    //     is an  nrows x nrows square symmetric matrix C, i.e. C = A A', where ' //
-    //     denotes the transpose.                                                 //
+    //     Post multiply an nrows x ncols matrix A by its transpose, and add the  //
+    //     result to the nrows x nrows square symmetric matrix C, i.e. C += A A', //
+    //     where ' denotes the transpose.                                         //
     //     The matrix C should be declared as double C[nrows][nrows] in the       //
     //     calling routine.  The memory allocated to C should not include any     //
     //     memory allocated to A.                                                 //
@@ -92,7 +92,9 @@ namespace mymathlib::matrix {
             pB = p_A;
             for (j = i; j < nrows; pC++, pCt += nrows, j++) {
                 pA = p_A;
-                *pC = 0.0;
+                //*pC = 0.0;
+                // NOTE: if it matters in the future, we can handle a non-symmetric matrix C
+                // using a temporary variable, then adding to *pC and *pCt
                 for (k = 0; k < ncols; k++) *pC += *(pA++) * *(pB++);
                 *pCt = *pC;
             }
