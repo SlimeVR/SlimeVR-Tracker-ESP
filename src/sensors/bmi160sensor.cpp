@@ -113,12 +113,12 @@ void BMI160Sensor::motionSetup() {
     #endif
 
     if (!imu.testConnection()) {
-        m_Logger.fatal("Can't connect to BMI160 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+        m_Logger.fatal("Can't connect to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
         ledManager.pattern(50, 50, 200);
         return;
     }
 
-    m_Logger.info("Connected to BMI160 (0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+    m_Logger.info("Connected to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
 
     int16_t ax, ay, az;
     getRemappedAcceleration(&ax, &ay, &az);
