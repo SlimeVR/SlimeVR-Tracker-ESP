@@ -69,14 +69,11 @@ protected:
     uint8_t addr = 0;
     uint8_t sensorId = 0;
     uint8_t sensorType = 0;
-    
-    uint8_t TPS = 0;
-    int lastTPSUpdateTimer = 0;
-    int autoSleepTimer = AUTOSLEEP_TIME;
+    uint8_t updateTPS = 0;
+    int lastDisplay = 0;
     bool configured = false;
     bool newData = false;
     bool working = false;
-    bool sleepMode = false;
     uint8_t calibrationAccuracy = 0;
     Quat sensorOffset;
 
