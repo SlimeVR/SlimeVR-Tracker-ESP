@@ -69,8 +69,6 @@ protected:
     uint8_t addr = 0;
     uint8_t sensorId = 0;
     uint8_t sensorType = 0;
-    uint8_t updateTPS = 0;
-    int lastDisplay = 0;
     bool configured = false;
     bool newData = false;
     bool working = false;

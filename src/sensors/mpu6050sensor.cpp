@@ -171,21 +171,6 @@ void MPU6050Sensor::motionLoop()
         if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
         {
             newData = true;
-            updateTPS++;
-            //only dispay each 1 second
-            if (millis() - lastDisplay > 1000)
-            {
-                lastDisplay = millis();
-                Serial.print("TPS: ");
-                Serial.println(updateTPS);
-                if(updateTPS < 10)
-                {
-                    Serial.printf("TPS is low");
-                }
-
-
-                updateTPS = 0;
-            }
             lastQuatSent = quaternion;
         }
     }
