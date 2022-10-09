@@ -45,6 +45,7 @@ public:
     void load_bias();
 
 private:
+    void calculateAcceleration(Quat *quaternion);
     unsigned long lastData = 0;
     int bias_save_counter = 0;
     bool newTap;
