@@ -28,6 +28,12 @@
 // Set parameters of IMU and board used
 #define BOARD BOARD_CUSTOM
 
+// IMU count
+#define IMU_COUNT 2
+
+// Use internal mux for multiple IMUs
+#define INTERNAL_MUX true
+
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin, 
 //   BAT_INTERNAL for internal - can detect only low battery, 
