@@ -28,67 +28,6 @@
 // Set parameters of IMU and board used
 #define BOARD BOARD_CUSTOM
 
-#define IMU_A1 IMU_MPU9250
-#define IMU_A2 IMU_MPU9250
-#define IMU_B1 IMU_MPU9250
-#define IMU_B2 IMU_MPU9250
-#define IMU_C1 IMU_MPU9250
-#define IMU_C2 IMU_MPU9250
-#define IMU_D1 IMU_MPU9250
-#define IMU_D2 IMU_MPU9250
-#define IMU_ROTATION_A1 DEG_90
-#define IMU_ROTATION_A2 DEG_90
-#define IMU_ROTATION_B1 DEG_90
-#define IMU_ROTATION_B2 DEG_90
-#define IMU_ROTATION_C1 DEG_90
-#define IMU_ROTATION_C2 DEG_90
-#define IMU_ROTATION_D1 DEG_90
-#define IMU_ROTATION_D2 DEG_90
-//#define PIN_IMU_SDA 26
-//#define PIN_IMU_SCL_A 25
-#define PIN_IMU_SCL_B 15
-#define PIN_IMU_SCL_C 2
-#define PIN_IMU_SCL_D 0
-//#define PIN_IMU_INT_A1 255
-//#define PIN_IMU_INT_A2 255
-#define PIN_IMU_INT_B1 255
-#define PIN_IMU_INT_B2 255
-#define PIN_IMU_INT_C1 255
-#define PIN_IMU_INT_C2 255
-#define PIN_IMU_INT_D1 255
-#define PIN_IMU_INT_D2 255
-
-// Usable with ESP32 (Wire1) only?
-#define IMU_1A1 IMU_MPU9250
-#define IMU_1A2 IMU_MPU9250
-#define IMU_1B1 IMU_MPU9250
-#define IMU_1B2 IMU_MPU9250
-#define IMU_1C1 IMU_MPU9250
-#define IMU_1C2 IMU_MPU9250
-#define IMU_1D1 IMU_MPU9250
-#define IMU_1D2 IMU_MPU9250
-#define IMU_ROTATION_1A1 DEG_90
-#define IMU_ROTATION_1A2 DEG_90
-#define IMU_ROTATION_1B1 DEG_90
-#define IMU_ROTATION_1B2 DEG_90
-#define IMU_ROTATION_1C1 DEG_90
-#define IMU_ROTATION_1C2 DEG_90
-#define IMU_ROTATION_1D1 DEG_90
-#define IMU_ROTATION_1D2 DEG_90
-#define PIN_IMU_SDA_1 23
-#define PIN_IMU_SCL_1A 4
-#define PIN_IMU_SCL_1B 16
-#define PIN_IMU_SCL_1C 17
-#define PIN_IMU_SCL_1D 5
-#define PIN_IMU_INT_1A1 255
-#define PIN_IMU_INT_1A2 255
-#define PIN_IMU_INT_1B1 255
-#define PIN_IMU_INT_1B2 255
-#define PIN_IMU_INT_1C1 255
-#define PIN_IMU_INT_1C2 255
-#define PIN_IMU_INT_1D1 255
-#define PIN_IMU_INT_1D2 255
-
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin, 
 //   BAT_INTERNAL for internal - can detect only low battery, 
@@ -119,57 +58,57 @@
 // Board-specific configurations
 #if BOARD == BOARD_SLIMEVR
   #define PIN_IMU_SDA 14
-  #define PIN_IMU_SCL_A 12
-  #define PIN_IMU_INT_A1 16
-  #define PIN_IMU_INT_A2 13
+  #define PIN_IMU_SCL 12
+  #define PIN_IMU_INT 16
+  #define PIN_IMU_INT_2 13
   #define PIN_BATTERY_LEVEL 17
   #define LED_PIN 2
   #define LED_INVERTED true
 #elif BOARD == BOARD_SLIMEVR_LEGACY || BOARD == BOARD_SLIMEVR_DEV
   #define PIN_IMU_SDA 4
-  #define PIN_IMU_SCL_A 5
-  #define PIN_IMU_INT_A1 10
-  #define PIN_IMU_INT_A2 13
+  #define PIN_IMU_SCL 5
+  #define PIN_IMU_INT 10
+  #define PIN_IMU_INT_2 13
   #define PIN_BATTERY_LEVEL 17
   #define LED_PIN 2
   #define LED_INVERTED true
 #elif BOARD == BOARD_NODEMCU || BOARD == BOARD_WEMOSD1MINI
   #define PIN_IMU_SDA D2
-  #define PIN_IMU_SCL_A D1
-  #define PIN_IMU_INT_A1 D5
-  #define PIN_IMU_INT_A2 D6
+  #define PIN_IMU_SCL D1
+  #define PIN_IMU_INT D5
+  #define PIN_IMU_INT_2 D6
   #define PIN_BATTERY_LEVEL A0
 //  #define LED_PIN 2
 //  #define LED_INVERTED true
 #elif BOARD == BOARD_ESP01
   #define PIN_IMU_SDA 2
-  #define PIN_IMU_SCL_A 0
-  #define PIN_IMU_INT_A1 255
-  #define PIN_IMU_INT_A2 255
+  #define PIN_IMU_SCL 0
+  #define PIN_IMU_INT 255
+  #define PIN_IMU_INT_2 255
   #define PIN_BATTERY_LEVEL 255
   #define LED_PIN LED_OFF
   #define LED_INVERTED false
 #elif BOARD == BOARD_TTGO_TBASE
   #define PIN_IMU_SDA 5
-  #define PIN_IMU_SCL_A 4
-  #define PIN_IMU_INT_A1 14
-  #define PIN_IMU_INT_A2 13
+  #define PIN_IMU_SCL 4
+  #define PIN_IMU_INT 14
+  #define PIN_IMU_INT_2 13
   #define PIN_BATTERY_LEVEL A0
 //  #define LED_PIN 2
 //  #define LED_INVERTED false
 #elif BOARD == BOARD_CUSTOM
   #define PIN_IMU_SDA 26
-  #define PIN_IMU_SCL_A 25
-  #define PIN_IMU_INT_A1 18
-  #define PIN_IMU_INT_A2 17
+  #define PIN_IMU_SCL 25
+  #define PIN_IMU_INT 18
+  #define PIN_IMU_INT_2 17
   #define PIN_BATTERY_LEVEL 36
   #define LED_PIN 22
   #define LED_INVERTED false
 #elif BOARD == BOARD_WROOM32
   #define PIN_IMU_SDA 0
-  #define PIN_IMU_SCL_A 2
-  #define PIN_IMU_INT_A1 23
-  #define PIN_IMU_INT_A2 25
+  #define PIN_IMU_SCL 2
+  #define PIN_IMU_INT 23
+  #define PIN_IMU_INT_2 25
   #define PIN_BATTERY_LEVEL 32
   #define LED_PIN 22
   #define LED_INVERTED false
@@ -178,25 +117,32 @@
 #elif BOARD == BOARD_LOLIN_C3_MINI
   #define PIN_IMU_SDA 5
   #define PIN_IMU_SCL 4
-  #define PIN_IMU_INT_A1 6
-  #define PIN_IMU_INT_A2 8
+  #define PIN_IMU_INT 6
+  #define PIN_IMU_INT_2 8
   #define PIN_BATTERY_LEVEL 3
   #define LED_PIN 7
 //  #define LED_INVERTED false
 #elif BOARD == BOARD_BEETLE32C3
   #define PIN_IMU_SDA 8
   #define PIN_IMU_SCL 9
-  #define PIN_IMU_INT_A1 6
-  #define PIN_IMU_INT_A2 7
+  #define PIN_IMU_INT 6
+  #define PIN_IMU_INT_2 7
   #define PIN_BATTERY_LEVEL 3
   #define LED_PIN 10
   #define LED_INVERTED false
 #elif BOARD == BOARD_ES32C3DEVKITM1
   #define PIN_IMU_SDA 5
   #define PIN_IMU_SCL 4
-  #define PIN_IMU_INT_A1 6
-  #define PIN_IMU_INT_A2 7
+  #define PIN_IMU_INT 6
+  #define PIN_IMU_INT_2 7
   #define PIN_BATTERY_LEVEL 3
   #define LED_PIN LED_OFF  // RGB LED Protocol would need to be implementetet did not brother for the test, because the board ideal for tracker ifself
 //  #define LED_INVERTED false
 #endif
+
+#define IMUS IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250, IMU_MPU9250
+#define IMU_ROTATION DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90, DEG_90
+//#define PIN_IMU_SDA 26
+//#define PIN_IMU_SCL 25
+#define IMU_SCL PIN_IMU_SCL, 15, 2, 0, 4, 16, 17, 5
+#define IMU_INT PIN_IMU_INT, PIN_IMU_INT_2, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255

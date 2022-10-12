@@ -36,11 +36,10 @@ namespace SlimeVR
 {
     namespace Sensors
     {
-        uint8_t imu[16] = {IMU_A1, IMU_A2, IMU_B1, IMU_B2, IMU_C1, IMU_C2, IMU_D1, IMU_D2, IMU_1A1, IMU_1A2, IMU_1B1, IMU_1B2, IMU_1C1, IMU_1C2, IMU_1D1, IMU_1D2};
-        double imuRotation[16] = {IMU_ROTATION_A1, IMU_ROTATION_A2, IMU_ROTATION_B1, IMU_ROTATION_B2, IMU_ROTATION_C1, IMU_ROTATION_C2, IMU_ROTATION_D1, IMU_ROTATION_D2, IMU_ROTATION_1A1, IMU_ROTATION_1A2, IMU_ROTATION_1B1, IMU_ROTATION_1B2, IMU_ROTATION_1C1, IMU_ROTATION_1C2, IMU_ROTATION_1D1, IMU_ROTATION_1D2};
-        uint8_t imuIntPin[16] = {PIN_IMU_INT_A1, PIN_IMU_INT_A2, PIN_IMU_INT_B1, PIN_IMU_INT_B2, PIN_IMU_INT_C1, PIN_IMU_INT_C2, PIN_IMU_INT_D1, PIN_IMU_INT_D2, PIN_IMU_INT_1A1, PIN_IMU_INT_1A2, PIN_IMU_INT_1B1, PIN_IMU_INT_1B2, PIN_IMU_INT_1C1, PIN_IMU_INT_1C2, PIN_IMU_INT_1D1, PIN_IMU_INT_1D2};
-        uint8_t imuSDAPin[2] = {PIN_IMU_SDA, PIN_IMU_SDA_1};
-        uint8_t imuSCLPin[8] = {PIN_IMU_SCL_A, PIN_IMU_SCL_B, PIN_IMU_SCL_C, PIN_IMU_SCL_D, PIN_IMU_SCL_1A, PIN_IMU_SCL_1B, PIN_IMU_SCL_1C, PIN_IMU_SCL_1D};
+        uint8_t imu[16] = {IMUS};
+        double imuRotation[16] = {IMU_ROTATION};
+        uint8_t imuIntPin[16] = {IMU_INT};
+        uint8_t imuSCLPin[8] = {IMU_SCL};
 
         void SensorManager::setup()
         {
@@ -53,7 +52,7 @@ namespace SlimeVR
 #endif
                 uint8_t firstIMUAddress = 0;
                 uint8_t secondIMUAddress = 0;
-                Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
+                Wire.begin(PIN_IMU_SDA, imuSCLPin[i/2]);
 
                 {
                     if (imu[i] == IMU_BNO080 || imu[i] == IMU_BNO085 || imu[i] == IMU_BNO086)
@@ -70,7 +69,7 @@ namespace SlimeVR
                     else
                     {
                         foundIMU = true;
-                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i, imuSDAPin[i/8], imuSCLPin[i/2], firstIMUAddress);
+                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i, PIN_IMU_SDA, imuSCLPin[i/2], firstIMUAddress);
 
                         if (imu[i] == IMU_BNO080 || imu[i] == IMU_BNO085 || imu[i] == IMU_BNO086)
                             m_Sensor[i] = new BNO080Sensor(i, imu[i], firstIMUAddress, imuRotation[i], imuIntPin[i]);
@@ -100,7 +99,7 @@ namespace SlimeVR
                     else
                     {
                         foundIMU = true;
-                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i+1, imuSDAPin[i/8], imuSCLPin[i/2], secondIMUAddress);
+                        m_Logger.info("IMU %d found at pins %d,%d and address 0x%02X", i+1, PIN_IMU_SDA, imuSCLPin[i/2], secondIMUAddress);
 
                         if (imu[i+1] == IMU_BNO080 || imu[i+1] == IMU_BNO085 || imu[i+1] == IMU_BNO086)
                             m_Sensor[i+1] = new BNO080Sensor(i+1, imu[i+1], secondIMUAddress, imuRotation[i+1], imuIntPin[i+1]);
@@ -120,10 +119,11 @@ namespace SlimeVR
             if (foundIMU) {
 #ifdef ESP32
                 for (uint8_t i=0; i<16; i++) {
+                    Wire.end();
 #else
                 for (uint8_t i=0; i<8; i++) {
 #endif
-                    Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
+                    Wire.begin(PIN_IMU_SDA, imuSCLPin[i/2]);
                     m_Sensor[i]->motionSetup();
                 }
             } else {
@@ -136,10 +136,11 @@ namespace SlimeVR
         {
 #ifdef ESP32
             for (uint8_t i=0; i<16; i++) {
+                Wire.end();
 #else
             for (uint8_t i=0; i<8; i++) {
 #endif
-                Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
+                Wire.begin(PIN_IMU_SDA, imuSCLPin[i/2]);
                 m_Sensor[i]->postSetup();
             }
         }
@@ -149,10 +150,11 @@ namespace SlimeVR
             // Gather IMU data
 #ifdef ESP32
             for (uint8_t i=0; i<16; i++) {
+                Wire.end();
 #else
             for (uint8_t i=0; i<8; i++) {
 #endif
-                Wire.begin(imuSDAPin[i/8], imuSCLPin[i/2]);
+                Wire.begin(PIN_IMU_SDA, imuSCLPin[i/2]);
                 m_Sensor[i]->motionLoop();
                 if (ServerConnection::isConnected()) {
                     m_Sensor[i]->sendData();

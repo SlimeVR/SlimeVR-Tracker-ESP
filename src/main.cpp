@@ -82,7 +82,7 @@ void setup()
 #endif
 
     // using `static_cast` here seems to be better, because there are 2 similar function signatures
-    Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL_A)); 
+    Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL)); 
 
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
