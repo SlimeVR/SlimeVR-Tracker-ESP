@@ -33,6 +33,7 @@
 #define SAVE_BIAS 1 // Periodically saves bias calibration data to NVS (ESP32 Only)
 #define BIAS_DEBUG false // Printing BIAS Variables to serial (ICM20948 only)
 #define ENABLE_TAP false // monitor accel for (triple) tap events and send them. Uses more cpu, disable if problems. Server does nothing with value so disabled atm
+#define SEND_ACCELERATION true // send linear acceleration to the server
 
 //Debug information
 
@@ -77,7 +78,7 @@
 // Not recommended for production
 #define ENABLE_INSPECTION false
 
-#define FIRMWARE_BUILD_NUMBER 11
-#define FIRMWARE_VERSION "0.2.2"
+#define FIRMWARE_BUILD_NUMBER 12
+#define FIRMWARE_VERSION "0.2.3"
 
 #endif // SLIMEVR_DEBUG_H_

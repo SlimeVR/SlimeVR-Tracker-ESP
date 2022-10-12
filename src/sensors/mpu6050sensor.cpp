@@ -35,16 +35,21 @@
 #include "calibration.h"
 #include "GlobalVars.h"
 
+#define ACCEL_SENSITIVITY_2G 16384.0f
+
+// Accel scale conversion steps: LSB/G -> G -> m/s^2
+constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * EARTH_GRAVITY;
+
 void MPU6050Sensor::motionSetup()
 {
     imu.initialize(addr);
     if (!imu.testConnection())
     {
-        m_Logger.fatal("Can't connect to MPU6050 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+        m_Logger.fatal("Can't connect to %s (reported device ID 0x%02x) at address 0x%02x",getIMUNameByType(sensorType), imu.getDeviceID(), addr);
         return;
     }
 
-    m_Logger.info("Connected to MPU6050 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+    m_Logger.info("Connected to %s (reported device ID 0x%02x) at address 0x%02x", getIMUNameByType(sensorType), imu.getDeviceID(), addr);
 
 #ifndef IMU_MPU6050_RUNTIME_CALIBRATION
     // Initialize the configuration
@@ -135,6 +140,28 @@ void MPU6050Sensor::motionLoop()
         quaternion.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
         quaternion *= sensorOffset;
 
+    #if SEND_ACCELERATION
+        {
+            VectorFloat gravity;
+            this->imu.dmpGetGravity(&gravity, &this->rawQuat);
+
+            // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
+            // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
+            // we need to multiply by the gravity scale by two to convert to 2g mode
+            gravity.x *= 2;
+            gravity.y *= 2;
+            gravity.z *= 2;
+
+            this->imu.dmpGetAccel(&this->rawAccel, this->fifoBuffer);
+            this->imu.dmpGetLinearAccel(&this->rawAccel, &this->rawAccel, &gravity);
+
+            // convert acceleration to m/s^2 (implicitly casts to float)
+            this->acceleration[0] = this->rawAccel.x * ASCALE_2G;
+            this->acceleration[1] = this->rawAccel.y * ASCALE_2G;
+            this->acceleration[2] = this->rawAccel.z * ASCALE_2G;
+        }
+    #endif
+        
 #if ENABLE_INSPECTION
         {
             Network::sendInspectionFusedIMUData(sensorId, quaternion);
