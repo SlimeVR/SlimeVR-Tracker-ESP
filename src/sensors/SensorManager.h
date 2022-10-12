@@ -49,6 +49,8 @@ namespace SlimeVR
 
             void update();
 
+            void swap(int id);
+
             Sensor *get(int id) { return m_Sensor[id]; };
             Sensor **get() { return m_Sensor; };
 

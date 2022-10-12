@@ -28,7 +28,7 @@
 // Set parameters of IMU and board used
 #define BOARD BOARD_CUSTOM
 
-// IMU count
+// IMU count (max 16)
 #define IMU_COUNT 2
 
 // Use internal mux for multiple IMUs

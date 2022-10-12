@@ -44,12 +44,8 @@ namespace SlimeVR
         void SensorManager::setup()
         {
             bool foundIMU = false;
-            
-#ifdef ESP32
-            for (uint8_t i=0; i<16; i+=2) {
-#else
-            for (uint8_t i=0; i<8; i+=2) {
-#endif
+
+            for (uint8_t i=0; i<IMU_COUNT; i+=2) {
                 uint8_t firstIMUAddress = 0;
                 uint8_t secondIMUAddress = 0;
                 Wire.begin(PIN_IMU_SDA, imuSCLPin[i/2]);
@@ -117,13 +113,8 @@ namespace SlimeVR
                 }
             }
             if (foundIMU) {
-#ifdef ESP32
-                for (uint8_t i=0; i<16; i++) {
-                    Wire.end();
-#else
-                for (uint8_t i=0; i<8; i++) {
-#endif
-                    Wire.begin(PIN_IMU_SDA, imuSCLPin[i/2]);
+                for (uint8_t i=0; i<IMU_COUNT; i++) {
+                    swap(i);
                     m_Sensor[i]->motionSetup();
                 }
             } else {
@@ -134,13 +125,8 @@ namespace SlimeVR
 
         void SensorManager::postSetup()
         {
-#ifdef ESP32
-            for (uint8_t i=0; i<16; i++) {
-                Wire.end();
-#else
-            for (uint8_t i=0; i<8; i++) {
-#endif
-                Wire.begin(PIN_IMU_SDA, imuSCLPin[i/2]);
+            for (uint8_t i=0; i<IMU_COUNT; i++) {
+                swap(i);
                 m_Sensor[i]->postSetup();
             }
         }
@@ -148,17 +134,23 @@ namespace SlimeVR
         void SensorManager::update()
         {
             // Gather IMU data
-#ifdef ESP32
-            for (uint8_t i=0; i<16; i++) {
-                Wire.end();
-#else
-            for (uint8_t i=0; i<8; i++) {
-#endif
-                Wire.begin(PIN_IMU_SDA, imuSCLPin[i/2]);
+            for (uint8_t i=0; i<IMU_COUNT; i++) {
+                swap(i);
                 m_Sensor[i]->motionLoop();
                 if (ServerConnection::isConnected()) {
                     m_Sensor[i]->sendData();
                 }
+            }
+        }
+
+        void SensorManager::swap(int id) {
+            if (INTERNAL_MUX) {
+#ifdef ESP32
+                Wire.end();
+#endif
+                Wire.begin(PIN_IMU_SDA, imuSCLPin[id/2]);
+            } else {
+                //todo
             }
         }
     }
