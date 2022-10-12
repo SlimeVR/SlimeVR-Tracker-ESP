@@ -378,7 +378,8 @@ void Network::sendHandshake() {
         // This is kept for backwards compatibility,
         // but the latest SlimeVR server will not initialize trackers
         // with firmware build > 8 until it recieves sensor info packet
-        DataTransfer::sendInt(IMU_A1);
+        int imus[16] = {IMUS};
+        DataTransfer::sendInt(imus[0]);
         DataTransfer::sendInt(HARDWARE_MCU);
         DataTransfer::sendInt(0); 
         DataTransfer::sendInt(0);
