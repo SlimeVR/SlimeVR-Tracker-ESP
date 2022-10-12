@@ -89,20 +89,22 @@ namespace SerialCommands {
                 "LED_PIN=%d\n"
                 "LED_INVERTED=%d\n";
 
+            int imus[16] = {IMUS};
+            float imu_rotation[16] = {IMU_ROTATION};
             Serial.printf(
                 str.c_str(),
                 BOARD,
-                IMU_A1,
-                IMU_A2,
-                IMU_ROTATION_A1,
-                IMU_ROTATION_A2,
+                imus[0],
+                imus[1],
+                imu_rotation[0],
+                imu_rotation[1],
                 BATTERY_MONITOR,
                 BATTERY_SHIELD_RESISTANCE,
                 BATTERY_SHIELD_R1,
                 BATTERY_SHIELD_R2,
                 PIN_IMU_SDA,
-                PIN_IMU_SCL_A,
-                PIN_IMU_INT_A1,
+                PIN_IMU_SCL,
+                PIN_IMU_INT,
                 PIN_IMU_INT_2,
                 PIN_BATTERY_LEVEL,
                 LED_PIN,
