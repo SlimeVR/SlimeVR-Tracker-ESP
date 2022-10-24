@@ -37,4 +37,15 @@ namespace WiFiNetwork {
     IPAddress getAddress();
 }
 
+/** Wifi Reconnection Statuses **/
+typedef enum {
+    SLIME_WIFI_NOT_SETUP = 0,
+    SLIME_WIFI_SAVED_ATTEMPT,
+    SLIME_WIFI_SAVED_G_ATTEMPT,
+    SLIME_WIFI_HARDCODE_ATTEMPT,
+    SLIME_WIFI_HARDCODE_G_ATTEMPT,
+    SLIME_WIFI_SERVER_CRED_ATTEMPT,
+    SLIME_WIFI_SERVER_CRED_G_ATTEMPT
+} wifi_reconnection_statuses;
+
 #endif // SLIMEVR_WIFI_H_
