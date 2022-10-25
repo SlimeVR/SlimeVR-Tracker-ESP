@@ -28,7 +28,11 @@
 void BNO055Sensor::motionSetup() {
     imu = Adafruit_BNO055(sensorId, addr);
     delay(3000);
+#if USE_6_AXIS
+    if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS))
+#else
     if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_NDOF))
+#endif
     {
         m_Logger.fatal("Can't connect to BNO055 at address 0x%02x", addr);
         ledManager.pattern(50, 50, 200);
