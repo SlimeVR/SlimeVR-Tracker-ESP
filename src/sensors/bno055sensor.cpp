@@ -40,13 +40,10 @@ void BNO055Sensor::motionSetup() {
     }
 
     delay(1000);
+    imu.setExtCrystalUse(true); //Adafruit BNO055's use external crystal. Enable it, otherwise it does not work.
     imu.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
     imu.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
     m_Logger.info("Connected to BNO055 at address 0x%02x", addr);
-
-    //Adafruit BNO055's use external crystal. Enable it, otherwise it does not work.
-    delay(1000);
-    imu.setExtCrystalUse(true);
 
     working = true;
     configured = true;
