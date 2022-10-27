@@ -28,7 +28,7 @@
 #define IMU_MPU6050_RUNTIME_CALIBRATION // Comment to revert to startup/traditional-calibration
 #define BNO_USE_ARVR_STABILIZATION true // Set to false to disable stabilization for BNO085+ IMUs
 #define BNO_USE_MAGNETOMETER_CORRECTION false // Set to true to enable magnetometer correction for BNO08x IMUs. Only works with USE_6_AXIS set to true.
-#define USE_6_AXIS true // uses 9 DoF (with mag) if false (only for ICM-20948 and BNO08x currently)
+#define USE_6_AXIS true // uses 9 DoF (with mag) if false (only for ICM-20948 and BNO0xx currently)
 #define LOAD_BIAS 1 // Loads the bias values from NVS on start (ESP32 Only)
 #define SAVE_BIAS 1 // Periodically saves bias calibration data to NVS (ESP32 Only)
 #define BIAS_DEBUG false // Printing BIAS Variables to serial (ICM20948 only)
