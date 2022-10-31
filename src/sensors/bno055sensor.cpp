@@ -28,7 +28,11 @@
 void BNO055Sensor::motionSetup() {
     imu = Adafruit_BNO055(sensorId, addr);
     delay(3000);
+#if USE_6_AXIS
     if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS))
+#else
+    if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_NDOF))
+#endif
     {
         m_Logger.fatal("Can't connect to BNO055 at address 0x%02x", addr);
         ledManager.pattern(50, 50, 200);
@@ -36,9 +40,11 @@ void BNO055Sensor::motionSetup() {
     }
 
     delay(1000);
+    imu.setExtCrystalUse(true); //Adafruit BNO055's use external crystal. Enable it, otherwise it does not work.
     imu.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
     imu.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
     m_Logger.info("Connected to BNO055 at address 0x%02x", addr);
+
     working = true;
     configured = true;
 }
