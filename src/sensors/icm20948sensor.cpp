@@ -34,12 +34,12 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
 
-// #ifndef ENABLE_TAP
-//     #define ENABLE_TAP false
-// #endif
-
-void ICM20948Sensor::save_bias(bool repeat) {
-#if defined(SAVE_BIAS) && SAVE_BIAS
+void ICM20948Sensor::save_bias(bool repeat) 
+{
+    if(!SAVE_BIAS)
+    {
+        return;
+    }
     #ifdef DEBUG_SENSOR
     m_Logger.trace("Saving Bias");
     #endif
@@ -85,71 +85,91 @@ void ICM20948Sensor::save_bias(bool repeat) {
                 this);
         }
     }
-#endif
 }
 
-void ICM20948Sensor::load_bias() {
-#ifdef DEBUG_SENSOR
-    m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
-    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
-    #if !USE_6_AXIS
-    m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
-    #endif
-#endif
+void ICM20948Sensor::load_bias() 
+{
+    if(!LOAD_BIAS)
+    {
+        return;
+    }
+    SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+    // If no compatible calibration data is found, the calibration data will just be zero-ed out
+    switch (sensorCalibration.type) {
+    case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
+        m_Calibration = sensorCalibration.data.icm20948;
+        break;
 
-#if defined(LOAD_BIAS) && LOAD_BIAS
-    imu.SetBiasGyroX(m_Calibration.G[0]);
-    imu.SetBiasGyroY(m_Calibration.G[1]);
-    imu.SetBiasGyroZ(m_Calibration.G[2]);
+    case SlimeVR::Configuration::CalibrationConfigType::NONE:
+        m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+        m_Logger.info("Calibration is advised");
+        break;
 
-    imu.SetBiasAccelX(m_Calibration.A[0]);
-    imu.SetBiasAccelY(m_Calibration.A[1]);
-    imu.SetBiasAccelZ(m_Calibration.A[2]);
-
-    #if !USE_6_AXIS
-    imu.SetBiasCPassX(m_Calibration.C[0]);
-    imu.SetBiasCPassY(m_Calibration.C[1]);
-    imu.SetBiasCPassZ(m_Calibration.C[2]);
-    #endif
-#else
-    #if BIAS_DEBUG
-    // Sets all bias to 90
-    imu.SetBiasGyroX(90);
-    imu.SetBiasGyroY(90);
-    imu.SetBiasGyroZ(90);
-
-    imu.SetBiasAccelX(90);
-    imu.SetBiasAccelY(90);
-    imu.SetBiasAccelZ(90);
-
-    imu.SetBiasCPassX(90);
-    imu.SetBiasCPassY(90);
-    imu.SetBiasCPassZ(90);
-
-    int32_t bias_gyro[3], bias_accel[3], bias_compass[3];
-
-    // Reloads all bias from memory
-    imu.GetBiasGyroX(&bias_gyro[0]);
-    imu.GetBiasGyroY(&bias_gyro[1]);
-    imu.GetBiasGyroZ(&bias_gyro[2]);
-
-    imu.GetBiasAccelX(&bias_accel[0]);
-    imu.GetBiasAccelY(&bias_accel[1]);
-    imu.GetBiasAccelZ(&bias_accel[2]);
-
-    imu.GetBiasCPassX(&bias_compass[0]);
-    imu.GetBiasCPassY(&bias_compass[1]);
-    imu.GetBiasCPassZ(&bias_compass[2]);
-
-        #ifdef DEBUG_SENSOR
-    m_Logger.trace("All set bias should be 90");
-
-    m_Logger.trace("Gyrometer bias    : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_gyro));
-    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_accel));
-    m_Logger.trace("Compass bias      : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_compass));
+    default:
+        m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+        m_Logger.info("Calibration is advised");
+    }
+    #ifdef DEBUG_SENSOR
+        m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
+        m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
+        #if !USE_6_AXIS
+        m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
         #endif
     #endif
-#endif
+
+    #if defined(LOAD_BIAS) && LOAD_BIAS
+        imu.SetBiasGyroX(m_Calibration.G[0]);
+        imu.SetBiasGyroY(m_Calibration.G[1]);
+        imu.SetBiasGyroZ(m_Calibration.G[2]);
+
+        imu.SetBiasAccelX(m_Calibration.A[0]);
+        imu.SetBiasAccelY(m_Calibration.A[1]);
+        imu.SetBiasAccelZ(m_Calibration.A[2]);
+
+        #if !USE_6_AXIS
+        imu.SetBiasCPassX(m_Calibration.C[0]);
+        imu.SetBiasCPassY(m_Calibration.C[1]);
+        imu.SetBiasCPassZ(m_Calibration.C[2]);
+        #endif
+    #else
+        #if BIAS_DEBUG
+        // Sets all bias to 90
+        imu.SetBiasGyroX(90);
+        imu.SetBiasGyroY(90);
+        imu.SetBiasGyroZ(90);
+
+        imu.SetBiasAccelX(90);
+        imu.SetBiasAccelY(90);
+        imu.SetBiasAccelZ(90);
+
+        imu.SetBiasCPassX(90);
+        imu.SetBiasCPassY(90);
+        imu.SetBiasCPassZ(90);
+
+        int32_t bias_gyro[3], bias_accel[3], bias_compass[3];
+
+        // Reloads all bias from memory
+        imu.GetBiasGyroX(&bias_gyro[0]);
+        imu.GetBiasGyroY(&bias_gyro[1]);
+        imu.GetBiasGyroZ(&bias_gyro[2]);
+
+        imu.GetBiasAccelX(&bias_accel[0]);
+        imu.GetBiasAccelY(&bias_accel[1]);
+        imu.GetBiasAccelZ(&bias_accel[2]);
+
+        imu.GetBiasCPassX(&bias_compass[0]);
+        imu.GetBiasCPassY(&bias_compass[1]);
+        imu.GetBiasCPassZ(&bias_compass[2]);
+
+            #ifdef DEBUG_SENSOR
+        m_Logger.trace("All set bias should be 90");
+
+        m_Logger.trace("Gyrometer bias    : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_gyro));
+        m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_accel));
+        m_Logger.trace("Compass bias      : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_compass));
+            #endif
+        #endif
+    #endif
 }
 
 void ICM20948Sensor::calculateAcceleration(Quat *quaternion) {
@@ -207,11 +227,20 @@ void ICM20948Sensor::calculateAcceleration(Quat *quaternion) {
 #endif
 }
 
-void ICM20948Sensor::motionSetup() {
+void ICM20948Sensor::motionSetup() 
+{
+    connectSensor();
+    startDMP();
+    load_bias();
+    startCalibrationAutoSave();
+    startMotionLoop();
+}
+
+void ICM20948Sensor::connectSensor() 
+{
     #ifdef DEBUG_SENSOR
         imu.enableDebugging(Serial);
     #endif
-    // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
     boolean tracker = false;
     
     if (addr == 0x68) {
@@ -223,15 +252,16 @@ void ICM20948Sensor::motionSetup() {
         m_Logger.fatal("I2C Address not supported by ICM20948 library: 0x%02x", addr);
         return;
     }
-    //m_Logger.debug("Start Init with addr = %s", tracker ? "true" : "false");
     ICM_20948_Status_e imu_err = imu.begin(Wire, tracker);
     if (imu_err != ICM_20948_Stat_Ok) {
         m_Logger.fatal("Can't connect to ICM20948 at address 0x%02x, error code: 0x%02x", addr, imu_err);
         ledManager.pattern(50, 50, 200);
         return;
     }
+}
 
-    // Configure imu setup and load any stored bias values
+void ICM20948Sensor::startDMP() 
+{
     if(imu.initializeDMP() == ICM_20948_Stat_Ok)
     {
         m_Logger.debug("DMP initialized");
@@ -242,32 +272,29 @@ void ICM20948Sensor::motionSetup() {
         return;
     }
 
-    if (USE_6_AXIS)
+    #if USE_6_AXIS
+    m_Logger.debug("Using 6 axis configuration");
+    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
     {
-        m_Logger.debug("Using 6 axis configuration");
-        if(imu.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
-        {
-            m_Logger.debug("Enabled DMP sensor for game rotation vector");
-        }
-        else
-        {
-            m_Logger.fatal("Failed to enable DMP sensor for game rotation vector");
-            return; 
-        }
+        m_Logger.debug("Enabled DMP sensor for game rotation vector");
     }
     else
     {
-        m_Logger.debug("Using 9 axis configuration");
-        if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok)
-        {
-            m_Logger.debug("Enabled DMP sensor for sensor orientation");
-        }
-        else
-        {
-            m_Logger.fatal("Failed to enable DMP sensor orientation");
-            return; 
-        }
+        m_Logger.fatal("Failed to enable DMP sensor for game rotation vector");
+        return; 
     }
+    #else
+    m_Logger.debug("Using 9 axis configuration");
+    if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok)
+    {
+        m_Logger.debug("Enabled DMP sensor for sensor orientation");
+    }
+    else
+    {
+        m_Logger.fatal("Failed to enable DMP sensor orientation");
+        return; 
+    }
+    #endif
 
     if (imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
     {
@@ -279,40 +306,35 @@ void ICM20948Sensor::motionSetup() {
         return; 
     }
 
-    // Might need to set up other DMP functions later, just Quad6/Quad9/Accel for now
-
-    if (USE_6_AXIS)
+    #if USE_6_AXIS
+    if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 0) == ICM_20948_Stat_Ok)
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 1.25) == ICM_20948_Stat_Ok)
-        {
-            m_Logger.debug("Set Quat6 to 100Hz frequency");
-        }
-        else
-        {
-           m_Logger.fatal("Failed to set Quat6 to 100Hz frequency");
-            return;
-        }
+        m_Logger.debug("Set Quat6 to ODR's frequency");
     }
     else
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 1.25) == ICM_20948_Stat_Ok)
-        {
-            m_Logger.debug("Set Quat9 to 100Hz frequency");
-        }
-        else
-        {
-           m_Logger.fatal("Failed to set Quat9 to 100Hz frequency");
-            return;
-        }
+    m_Logger.fatal("Failed to set Quat6 to ODR's frequency");
+        return;
     }
-
-    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, 1.25) == ICM_20948_Stat_Ok)
+    #else
+    if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9,0) == ICM_20948_Stat_Ok)
     {
-        this->m_Logger.debug("Set Accel to 100Hz frequency");
+        m_Logger.debug("Set Quat9 to ODR's frequency");
     }
     else
     {
-        this->m_Logger.fatal("Failed to set Accel to 100Hz frequency");
+        m_Logger.fatal("Failed to set Quat9 to ODR's frequency");
+        return;
+    }
+    #endif
+
+    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok)
+    {
+        this->m_Logger.debug("Set Accel to ODR's frequency");
+    }
+    else
+    {
+        this->m_Logger.fatal("Failed to set Accel to ODR's frequency");
         return;
     }
 
@@ -359,37 +381,21 @@ void ICM20948Sensor::motionSetup() {
        m_Logger.fatal("Failed to reset FIFO");
         return;
     }
+}
 
-#if LOAD_BIAS
-    // Initialize the configuration
+void ICM20948Sensor::startCalibrationAutoSave() 
+{
+    if(!SAVE_BIAS)
     {
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
-        // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        switch (sensorCalibration.type) {
-        case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
-            m_Calibration = sensorCalibration.data.icm20948;
-            break;
-
-        case SlimeVR::Configuration::CalibrationConfigType::NONE:
-            m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
-            m_Logger.info("Calibration is advised");
-            break;
-
-        default:
-            m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
-            m_Logger.info("Calibration is advised");
-        }
+        return;
     }
-#endif
+    timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
+}
 
-    load_bias();
-
+void ICM20948Sensor::startMotionLoop() 
+{
     lastData = millis();
     working = true;
-
-    #if defined(SAVE_BIAS) && SAVE_BIAS
-        timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
-    #endif
 }
 
 void ICM20948Sensor::motionLoop() {
@@ -414,96 +420,111 @@ void ICM20948Sensor::motionLoop() {
 #endif
 
     timer.tick();
-
-    bool dataavaliable = true;
-    while (dataavaliable) {
+    isDataToRead = true;
+    while (isDataToRead) 
+    {
         ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
         if(readStatus == ICM_20948_Stat_Ok)
         {
-            if(USE_6_AXIS)
-            {
-                if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
-                {
-                    // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
-                    // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
-                    // The quaternion data is scaled by 2^30.
-                    // Scale to +/- 1
-                    double q1 = ((double)dmpData.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q2 = ((double)dmpData.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q3 = ((double)dmpData.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-                    quaternion.w = q0;
-                    quaternion.x = q1;
-                    quaternion.y = q2;
-                    quaternion.z = q3;
-#if SEND_ACCELERATION
-                    calculateAcceleration(&quaternion);
-#endif
-                    quaternion *= sensorOffset; //imu rotation
-
-#if ENABLE_INSPECTION
-                    {
-                        Network::sendInspectionFusedIMUData(sensorId, quaternion);
-                    }
-#endif
-
-                    newData = true;
-                    lastData = millis();
-                }
-            }
-            else
-            {
-                if((dmpData.header & DMP_header_bitmap_Quat9) > 0)
-                {
-                    // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
-                    // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
-                    // The quaternion data is scaled by 2^30.
-                    // Scale to +/- 1
-                    double q1 = ((double)dmpData.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q2 = ((double)dmpData.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q3 = ((double)dmpData.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-                    quaternion.w = q0;
-                    quaternion.x = q1;
-                    quaternion.y = q2;
-                    quaternion.z = q3;
-#if SEND_ACCELERATION
-                    calculateAcceleration(&quaternion);
-#endif
-                    quaternion *= sensorOffset; //imu rotation
-
-#if ENABLE_INSPECTION
-                    {
-                        Network::sendInspectionFusedIMUData(sensorId, quaternion);
-                    }
-#endif
-
-                    newData = true;
-                    lastData = millis();
-                }
-            }
+            readRotation(readStatus);
         }
         else 
         {
-            if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) {
-                dataavaliable = false;
-            } else if (readStatus == ICM_20948_Stat_FIFOMoreDataAvail) {
-                dataavaliable = true;
-            }
-            // Sorry for this horrible formatting
-#ifdef DEBUG_SENSOR
-            else {
-                m_Logger.trace("e0x%02x", readStatus);
-            }
-#endif
+            checkForDataToRead(readStatus);
         }
     }
+    checkSensorTimeout();
+}
+
+void ICM20948Sensor::checkForDataToRead(ICM_20948_Status_e readStatus)
+{
+    if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) 
+            {
+                isDataToRead = false;
+            } 
+            else if (readStatus == ICM_20948_Stat_FIFOMoreDataAvail) 
+            {
+                isDataToRead = true;
+            }
+            #ifdef DEBUG_SENSOR
+                else 
+                {
+                    m_Logger.trace("e0x%02x", readStatus);
+                }
+            #endif
+}
+
+void ICM20948Sensor::checkSensorTimeout()
+{
     if(lastData + 1000 < millis()) {
         working = false;
         lastData = millis();  
         m_Logger.error("Sensor timeout I2C Address 0x%02x", addr);
         Network::sendError(1, this->sensorId);
     }
+}
+
+void ICM20948Sensor::readRotation(ICM_20948_Status_e readStatus)
+{
+    #if USE_6_AXIS
+        if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
+        {
+            // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
+            // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+            // The quaternion data is scaled by 2^30.
+            // Scale to +/- 1
+            double q1 = ((double)dmpData.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q2 = ((double)dmpData.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q3 = ((double)dmpData.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+            quaternion.w = q0;
+            quaternion.x = q1;
+            quaternion.y = q2;
+            quaternion.z = q3;
+            #if SEND_ACCELERATION
+            calculateAcceleration(&quaternion);
+            #endif
+            quaternion *= sensorOffset; //imu rotation
+
+            #if ENABLE_INSPECTION
+            {
+                Network::sendInspectionFusedIMUData(sensorId, quaternion);
+            }
+            #endif
+
+            newData = true;
+            lastData = millis();
+        }
+    #else
+        if((dmpData.header & DMP_header_bitmap_Quat9) > 0)
+        {
+            // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
+            // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+            // The quaternion data is scaled by 2^30.
+            // Scale to +/- 1
+            double q1 = ((double)dmpData.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q2 = ((double)dmpData.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q3 = ((double)dmpData.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+            quaternion.w = q0;
+            quaternion.x = q1;
+            quaternion.y = q2;
+            quaternion.z = q3;
+            #if SEND_ACCELERATION
+            calculateAcceleration(&quaternion);
+            #endif
+            quaternion *= sensorOffset; //imu rotation
+
+            #if ENABLE_INSPECTION
+            {
+                Network::sendInspectionFusedIMUData(sensorId, quaternion);
+            }
+            #endif
+
+            newData = true;
+            lastData = millis();
+        }
+    #endif
 }
 
 void ICM20948Sensor::sendData() { 
@@ -525,7 +546,6 @@ void ICM20948Sensor::sendData() {
 
 void ICM20948Sensor::startCalibration(int calibrationType) {
     // 20948 does continuous calibration
-
     save_bias(false);
 }
 
@@ -661,10 +681,13 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     ICM_20948_smplrt_t mySmplrt;
     //mySmplrt.g = 19; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 19 = 55Hz. InvenSense Nucleo example uses 19 (0x13).
     //mySmplrt.a = 19; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 19 = 56.25Hz. InvenSense Nucleo example uses 19 (0x13).
-    mySmplrt.g = 4; // 225Hz
-    mySmplrt.a = 4; // 225Hz
-    //mySmplrt.g = 8; // 112Hz
-    //mySmplrt.a = 8; // 112Hz
+    //mySmplrt.g = 4; // 225Hz
+    //mySmplrt.a = 4; // 225Hz
+    // mySmplrt.g = 8; // 112Hz
+    // mySmplrt.a = 8; // 112Hz
+
+    mySmplrt.g = 10; // 100Hzish
+    mySmplrt.a = 10; // 100Hzish
     result = setSampleRate((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt); if (result > worstResult) worstResult = result;
 
     // Setup DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL

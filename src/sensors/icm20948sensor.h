@@ -44,11 +44,20 @@ public:
     void save_bias(bool repeat);
     void load_bias();
 
+    void startCalibrationAutoSave();
+    void startDMP();
+    void connectSensor();
+    void startMotionLoop();
+    void checkSensorTimeout();
+    void checkForDataToRead(ICM_20948_Status_e readStatus);
+    void readRotation(ICM_20948_Status_e readStatus);
+
 private:
     void calculateAcceleration(Quat *quaternion);
     unsigned long lastData = 0;
     int bias_save_counter = 0;
     bool newTap;
+    bool isDataToRead = false;
     int16_t rawAccel[3];
 
     ICM_20948_I2C imu;
@@ -57,7 +66,7 @@ private:
 
     SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration;
 
-#define OVERRIDEDMPSETUP true
+    #define OVERRIDEDMPSETUP true
 
     Timer<> timer = timer_create_default();
     // TapDetector tapDetector;
