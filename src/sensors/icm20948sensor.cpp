@@ -34,10 +34,6 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
 
-// #ifndef ENABLE_TAP
-//     #define ENABLE_TAP false
-// #endif
-
 void ICM20948Sensor::save_bias(bool repeat) {
 #if defined(SAVE_BIAS) && SAVE_BIAS
     #ifdef DEBUG_SENSOR
@@ -89,6 +85,27 @@ void ICM20948Sensor::save_bias(bool repeat) {
 }
 
 void ICM20948Sensor::load_bias() {
+#if LOAD_BIAS
+    // Initialize the configuration
+    {
+        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        // If no compatible calibration data is found, the calibration data will just be zero-ed out
+        switch (sensorCalibration.type) {
+        case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
+            m_Calibration = sensorCalibration.data.icm20948;
+            break;
+
+        case SlimeVR::Configuration::CalibrationConfigType::NONE:
+            m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Calibration is advised");
+            break;
+
+        default:
+            m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Calibration is advised");
+        }
+    }
+#endif
 #ifdef DEBUG_SENSOR
     m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
     m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
@@ -208,30 +225,84 @@ void ICM20948Sensor::calculateAcceleration(Quat *quaternion) {
 }
 
 void ICM20948Sensor::motionSetup() {
-    #ifdef DEBUG_SENSOR
-        imu.enableDebugging(Serial);
-    #endif
-    // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
-    boolean tracker = false;
     
-    if (addr == 0x68) {
-        tracker = false;
-    } else if (addr == 0x69)
-    {
-        tracker = true;
-    } else {
-        m_Logger.fatal("I2C Address not supported by ICM20948 library: 0x%02x", addr);
-        return;
-    }
-    //m_Logger.debug("Start Init with addr = %s", tracker ? "true" : "false");
-    ICM_20948_Status_e imu_err = imu.begin(Wire, tracker);
-    if (imu_err != ICM_20948_Stat_Ok) {
-        m_Logger.fatal("Can't connect to ICM20948 at address 0x%02x, error code: 0x%02x", addr, imu_err);
-        ledManager.pattern(50, 50, 200);
-        return;
-    }
+    connectSensor();
+    startDMP();
+    load_bias();
+    startMotionLoop();
+    startCalibrationAutoSave();
+}
 
-    // Configure imu setup and load any stored bias values
+void ICM20948Sensor::motionLoop() {
+#if ENABLE_INSPECTION
+    {
+        (void)imu.getAGMT();
+
+        float rX = imu.gyrX();
+        float rY = imu.gyrY();
+        float rZ = imu.gyrZ();
+
+        float aX = imu.accX();
+        float aY = imu.accY();
+        float aZ = imu.accZ();
+
+        float mX = imu.magX();
+        float mY = imu.magY();
+        float mZ = imu.magZ();
+
+        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
+    }
+#endif
+
+    timer.tick();
+    isDataToRead = true;
+    while (isDataToRead) 
+    {
+        ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
+        if(readStatus == ICM_20948_Stat_Ok)
+        {
+            readRotation(readStatus);
+        }
+        else 
+        {
+            checkForDataToRead(readStatus);
+        }
+    }
+    checkSensorTimeout();
+}
+
+void ICM20948Sensor::sendData() { 
+    if(newData) {
+        newData = false;
+        if (USE_6_AXIS) {
+            Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId);
+        } else {
+            Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
+        }
+
+#if SEND_ACCELERATION
+        {
+            Network::sendAccel(acceleration, sensorId);
+        }
+#endif
+    }
+}
+
+void ICM20948Sensor::startCalibration(int calibrationType) {
+    // 20948 does continuous calibration
+
+    save_bias(false);
+}
+
+
+void ICM20948Sensor::startCalibrationAutoSave()
+{
+    #if defined(SAVE_BIAS) && SAVE_BIAS
+    timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
+    #endif
+}
+void ICM20948Sensor::startDMP()
+{
     if(imu.initializeDMP() == ICM_20948_Stat_Ok)
     {
         m_Logger.debug("DMP initialized");
@@ -359,68 +430,66 @@ void ICM20948Sensor::motionSetup() {
        m_Logger.fatal("Failed to reset FIFO");
         return;
     }
-
-#if LOAD_BIAS
-    // Initialize the configuration
+}
+void ICM20948Sensor::connectSensor()
+{
+    #ifdef DEBUG_SENSOR
+        imu.enableDebugging(Serial);
+    #endif
+    // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
+    boolean tracker = false;
+    
+    if (addr == 0x68) {
+        tracker = false;
+    } else if (addr == 0x69)
     {
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
-        // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        switch (sensorCalibration.type) {
-        case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
-            m_Calibration = sensorCalibration.data.icm20948;
-            break;
-
-        case SlimeVR::Configuration::CalibrationConfigType::NONE:
-            m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
-            m_Logger.info("Calibration is advised");
-            break;
-
-        default:
-            m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
-            m_Logger.info("Calibration is advised");
-        }
+        tracker = true;
+    } else {
+        m_Logger.fatal("I2C Address not supported by ICM20948 library: 0x%02x", addr);
+        return;
     }
-#endif
-
-    load_bias();
-
+    //m_Logger.debug("Start Init with addr = %s", tracker ? "true" : "false");
+    ICM_20948_Status_e imu_err = imu.begin(Wire, tracker);
+    if (imu_err != ICM_20948_Stat_Ok) {
+        m_Logger.fatal("Can't connect to ICM20948 at address 0x%02x, error code: 0x%02x", addr, imu_err);
+        ledManager.pattern(50, 50, 200);
+        return;
+    }
+}
+void ICM20948Sensor::startMotionLoop()
+{
     lastData = millis();
     working = true;
-
-    #if defined(SAVE_BIAS) && SAVE_BIAS
-        timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
+}
+void ICM20948Sensor::checkSensorTimeout()
+{
+    if(lastData + 1000 < millis()) {
+        working = false;
+        lastData = millis();  
+        m_Logger.error("Sensor timeout I2C Address 0x%02x", addr);
+        Network::sendError(1, this->sensorId);
+    }
+}
+void ICM20948Sensor::checkForDataToRead(ICM_20948_Status_e readStatus)
+{
+    if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) 
+    {
+        isDataToRead = false;
+    } 
+    else if (readStatus == ICM_20948_Stat_FIFOMoreDataAvail) 
+    {
+        isDataToRead = true;
+    }
+    #ifdef DEBUG_SENSOR
+    else 
+    {
+        m_Logger.trace("e0x%02x", readStatus);
+    }
     #endif
 }
-
-void ICM20948Sensor::motionLoop() {
-#if ENABLE_INSPECTION
-    {
-        (void)imu.getAGMT();
-
-        float rX = imu.gyrX();
-        float rY = imu.gyrY();
-        float rZ = imu.gyrZ();
-
-        float aX = imu.accX();
-        float aY = imu.accY();
-        float aZ = imu.accZ();
-
-        float mX = imu.magX();
-        float mY = imu.magY();
-        float mZ = imu.magZ();
-
-        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
-    }
-#endif
-
-    timer.tick();
-
-    bool dataavaliable = true;
-    while (dataavaliable) {
-        ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
-        if(readStatus == ICM_20948_Stat_Ok)
-        {
-            if(USE_6_AXIS)
+void ICM20948Sensor::readRotation(ICM_20948_Status_e readStatus)
+{
+    if(USE_6_AXIS)
             {
                 if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
                 {
@@ -436,16 +505,16 @@ void ICM20948Sensor::motionLoop() {
                     quaternion.x = q1;
                     quaternion.y = q2;
                     quaternion.z = q3;
-#if SEND_ACCELERATION
+                    #if SEND_ACCELERATION
                     calculateAcceleration(&quaternion);
-#endif
+                    #endif
                     quaternion *= sensorOffset; //imu rotation
 
-#if ENABLE_INSPECTION
+                    #if ENABLE_INSPECTION
                     {
                         Network::sendInspectionFusedIMUData(sensorId, quaternion);
                     }
-#endif
+                    #endif
 
                     newData = true;
                     lastData = millis();
@@ -467,66 +536,21 @@ void ICM20948Sensor::motionLoop() {
                     quaternion.x = q1;
                     quaternion.y = q2;
                     quaternion.z = q3;
-#if SEND_ACCELERATION
+                    #if SEND_ACCELERATION
                     calculateAcceleration(&quaternion);
-#endif
+                    #endif
                     quaternion *= sensorOffset; //imu rotation
 
-#if ENABLE_INSPECTION
+                    #if ENABLE_INSPECTION
                     {
                         Network::sendInspectionFusedIMUData(sensorId, quaternion);
                     }
-#endif
+                    #endif
 
                     newData = true;
                     lastData = millis();
                 }
             }
-        }
-        else 
-        {
-            if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) {
-                dataavaliable = false;
-            } else if (readStatus == ICM_20948_Stat_FIFOMoreDataAvail) {
-                dataavaliable = true;
-            }
-            // Sorry for this horrible formatting
-#ifdef DEBUG_SENSOR
-            else {
-                m_Logger.trace("e0x%02x", readStatus);
-            }
-#endif
-        }
-    }
-    if(lastData + 1000 < millis()) {
-        working = false;
-        lastData = millis();  
-        m_Logger.error("Sensor timeout I2C Address 0x%02x", addr);
-        Network::sendError(1, this->sensorId);
-    }
-}
-
-void ICM20948Sensor::sendData() { 
-    if(newData) {
-        newData = false;
-        if (USE_6_AXIS) {
-            Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId);
-        } else {
-            Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
-        }
-
-#if SEND_ACCELERATION
-        {
-            Network::sendAccel(acceleration, sensorId);
-        }
-#endif
-    }
-}
-
-void ICM20948Sensor::startCalibration(int calibrationType) {
-    // 20948 does continuous calibration
-
-    save_bias(false);
 }
 
 //You need to override the library's initializeDMP to change some settings 
