@@ -34,196 +34,6 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
 
-void ICM20948Sensor::save_bias(bool repeat) {
-#if defined(SAVE_BIAS) && SAVE_BIAS
-    #ifdef DEBUG_SENSOR
-    m_Logger.trace("Saving Bias");
-    #endif
-
-    imu.GetBiasGyroX(&m_Calibration.G[0]);
-    imu.GetBiasGyroY(&m_Calibration.G[1]);
-    imu.GetBiasGyroZ(&m_Calibration.G[2]);
-
-    imu.GetBiasAccelX(&m_Calibration.A[0]);
-    imu.GetBiasAccelY(&m_Calibration.A[1]);
-    imu.GetBiasAccelZ(&m_Calibration.A[2]);
-
-    #if !USE_6_AXIS
-    imu.GetBiasCPassX(&m_Calibration.C[0]);
-    imu.GetBiasCPassY(&m_Calibration.C[1]);
-    imu.GetBiasCPassZ(&m_Calibration.C[2]);
-    #endif
-
-    #ifdef DEBUG_SENSOR
-    m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
-    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
-        #if !USE_6_AXIS
-    m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
-        #endif
-    #endif
-
-    SlimeVR::Configuration::CalibrationConfig calibration;
-    calibration.type = SlimeVR::Configuration::CalibrationConfigType::ICM20948;
-    calibration.data.icm20948 = m_Calibration;
-    configuration.setCalibration(sensorId, calibration);
-    configuration.save();
-
-    if (repeat) {
-        bias_save_counter++;
-        // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
-        if (sizeof(bias_save_periods) != bias_save_counter) {
-            timer.in(
-                bias_save_periods[bias_save_counter] * 1000,
-                [](void* arg) -> bool {
-                    ((ICM20948Sensor*)arg)->save_bias(true);
-                    return false;
-                },
-                this);
-        }
-    }
-#endif
-}
-
-void ICM20948Sensor::load_bias() {
-#if LOAD_BIAS
-    // Initialize the configuration
-    {
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
-        // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        switch (sensorCalibration.type) {
-        case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
-            m_Calibration = sensorCalibration.data.icm20948;
-            break;
-
-        case SlimeVR::Configuration::CalibrationConfigType::NONE:
-            m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
-            m_Logger.info("Calibration is advised");
-            break;
-
-        default:
-            m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
-            m_Logger.info("Calibration is advised");
-        }
-    }
-#endif
-#ifdef DEBUG_SENSOR
-    m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
-    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
-    #if !USE_6_AXIS
-    m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
-    #endif
-#endif
-
-#if defined(LOAD_BIAS) && LOAD_BIAS
-    imu.SetBiasGyroX(m_Calibration.G[0]);
-    imu.SetBiasGyroY(m_Calibration.G[1]);
-    imu.SetBiasGyroZ(m_Calibration.G[2]);
-
-    imu.SetBiasAccelX(m_Calibration.A[0]);
-    imu.SetBiasAccelY(m_Calibration.A[1]);
-    imu.SetBiasAccelZ(m_Calibration.A[2]);
-
-    #if !USE_6_AXIS
-    imu.SetBiasCPassX(m_Calibration.C[0]);
-    imu.SetBiasCPassY(m_Calibration.C[1]);
-    imu.SetBiasCPassZ(m_Calibration.C[2]);
-    #endif
-#else
-    #if BIAS_DEBUG
-    // Sets all bias to 90
-    imu.SetBiasGyroX(90);
-    imu.SetBiasGyroY(90);
-    imu.SetBiasGyroZ(90);
-
-    imu.SetBiasAccelX(90);
-    imu.SetBiasAccelY(90);
-    imu.SetBiasAccelZ(90);
-
-    imu.SetBiasCPassX(90);
-    imu.SetBiasCPassY(90);
-    imu.SetBiasCPassZ(90);
-
-    int32_t bias_gyro[3], bias_accel[3], bias_compass[3];
-
-    // Reloads all bias from memory
-    imu.GetBiasGyroX(&bias_gyro[0]);
-    imu.GetBiasGyroY(&bias_gyro[1]);
-    imu.GetBiasGyroZ(&bias_gyro[2]);
-
-    imu.GetBiasAccelX(&bias_accel[0]);
-    imu.GetBiasAccelY(&bias_accel[1]);
-    imu.GetBiasAccelZ(&bias_accel[2]);
-
-    imu.GetBiasCPassX(&bias_compass[0]);
-    imu.GetBiasCPassY(&bias_compass[1]);
-    imu.GetBiasCPassZ(&bias_compass[2]);
-
-        #ifdef DEBUG_SENSOR
-    m_Logger.trace("All set bias should be 90");
-
-    m_Logger.trace("Gyrometer bias    : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_gyro));
-    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_accel));
-    m_Logger.trace("Compass bias      : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_compass));
-        #endif
-    #endif
-#endif
-}
-
-void ICM20948Sensor::calculateAcceleration(Quat *quaternion) {
-#if SEND_ACCELERATION
-        {
-/*
-            Quat quat_test{};
-            quat_test.w = quaternion->w;
-            quat_test.x = -quaternion->x;
-            quat_test.y = quaternion->y;
-            quat_test.z = -quaternion->z;
-            //{Quat(Vector3(0, 0, 1), rotation)}
-*/            
-            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
-            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
-            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
-
-            // get the component of the acceleration that is gravity
-            float gravity[3];
-//            gravity[0] = 2 * (quat_test.x * quat_test.z - quat_test.w * quat_test.y);
-            gravity[0] = 2 * ((-quaternion->x) * (-quaternion->z) - quaternion->w * quaternion->y);
-//            gravity[1] = -2 * (quat_test.w * quat_test.x + quat_test.y * quat_test.z);
-            gravity[1] = -2 * (quaternion->w * (-quaternion->x) + quaternion->y * (-quaternion->z));
-//            gravity[2] = quat_test.w * quat_test.w - quat_test.x * quat_test.x - quat_test.y * quat_test.y + quat_test.z * quat_test.z;
-            gravity[2] = quaternion->w * quaternion->w - quaternion->x * quaternion->x - quaternion->y * quaternion->y + quaternion->z * quaternion->z;
-
-/*            
-            m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+6.0f y:%+6.0f z:%+6.0f, quat_test x:%+0.3f y:%+0.3f z:%+0.3f",
-                            gravity[0], gravity[1], gravity[2], 
-                            this->acceleration[0], this->acceleration[1], this->acceleration[2],
-                            quat_test.x, quat_test.y, quat_test.z);
-*/
-/*
-            m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+7.1f y:%+7.1f z:%+7.1f",
-                            gravity[0], gravity[1], gravity[2], 
-                            this->acceleration[0], this->acceleration[1], this->acceleration[2]);
-*/
-            // subtract gravity from the acceleration vector
-            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
-
-            // finally scale the acceleration values to mps2
-            this->acceleration[0] *= ASCALE_4G;
-            this->acceleration[1] *= ASCALE_4G;
-            this->acceleration[2] *= ASCALE_4G;
-
-/*
-            imu.getAGMT();
-            this->acceleration[0] = imu.accX()/1000*9.81;
-            this->acceleration[1] = imu.accY()/1000*9.81;
-            this->acceleration[2] = imu.accZ()/1000*9.81;
-*/
-        }
-#endif
-}
-
 void ICM20948Sensor::motionSetup() {
     
     connectSensor();
@@ -294,13 +104,13 @@ void ICM20948Sensor::startCalibration(int calibrationType) {
     save_bias(false);
 }
 
-
 void ICM20948Sensor::startCalibrationAutoSave()
 {
     #if defined(SAVE_BIAS) && SAVE_BIAS
     timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
     #endif
 }
+
 void ICM20948Sensor::startDMP()
 {
     if(imu.initializeDMP() == ICM_20948_Stat_Ok)
@@ -431,6 +241,7 @@ void ICM20948Sensor::startDMP()
         return;
     }
 }
+
 void ICM20948Sensor::connectSensor()
 {
     #ifdef DEBUG_SENSOR
@@ -456,11 +267,13 @@ void ICM20948Sensor::connectSensor()
         return;
     }
 }
+
 void ICM20948Sensor::startMotionLoop()
 {
     lastData = millis();
     working = true;
 }
+
 void ICM20948Sensor::checkSensorTimeout()
 {
     if(lastData + 1000 < millis()) {
@@ -470,6 +283,7 @@ void ICM20948Sensor::checkSensorTimeout()
         Network::sendError(1, this->sensorId);
     }
 }
+
 void ICM20948Sensor::checkForDataToRead(ICM_20948_Status_e readStatus)
 {
     if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) 
@@ -487,6 +301,7 @@ void ICM20948Sensor::checkForDataToRead(ICM_20948_Status_e readStatus)
     }
     #endif
 }
+
 void ICM20948Sensor::readRotation(ICM_20948_Status_e readStatus)
 {
     if(USE_6_AXIS)
@@ -551,6 +366,196 @@ void ICM20948Sensor::readRotation(ICM_20948_Status_e readStatus)
                     lastData = millis();
                 }
             }
+}
+
+void ICM20948Sensor::save_bias(bool repeat) {
+#if defined(SAVE_BIAS) && SAVE_BIAS
+    #ifdef DEBUG_SENSOR
+    m_Logger.trace("Saving Bias");
+    #endif
+
+    imu.GetBiasGyroX(&m_Calibration.G[0]);
+    imu.GetBiasGyroY(&m_Calibration.G[1]);
+    imu.GetBiasGyroZ(&m_Calibration.G[2]);
+
+    imu.GetBiasAccelX(&m_Calibration.A[0]);
+    imu.GetBiasAccelY(&m_Calibration.A[1]);
+    imu.GetBiasAccelZ(&m_Calibration.A[2]);
+
+    #if !USE_6_AXIS
+    imu.GetBiasCPassX(&m_Calibration.C[0]);
+    imu.GetBiasCPassY(&m_Calibration.C[1]);
+    imu.GetBiasCPassZ(&m_Calibration.C[2]);
+    #endif
+
+    #ifdef DEBUG_SENSOR
+    m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
+    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
+        #if !USE_6_AXIS
+    m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
+        #endif
+    #endif
+
+    SlimeVR::Configuration::CalibrationConfig calibration;
+    calibration.type = SlimeVR::Configuration::CalibrationConfigType::ICM20948;
+    calibration.data.icm20948 = m_Calibration;
+    configuration.setCalibration(sensorId, calibration);
+    configuration.save();
+
+    if (repeat) {
+        bias_save_counter++;
+        // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
+        if (sizeof(bias_save_periods) != bias_save_counter) {
+            timer.in(
+                bias_save_periods[bias_save_counter] * 1000,
+                [](void* arg) -> bool {
+                    ((ICM20948Sensor*)arg)->save_bias(true);
+                    return false;
+                },
+                this);
+        }
+    }
+#endif
+}
+
+void ICM20948Sensor::load_bias() {
+    #if LOAD_BIAS
+    // Initialize the configuration
+    {
+        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        // If no compatible calibration data is found, the calibration data will just be zero-ed out
+        switch (sensorCalibration.type) {
+        case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
+            m_Calibration = sensorCalibration.data.icm20948;
+            break;
+
+        case SlimeVR::Configuration::CalibrationConfigType::NONE:
+            m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Calibration is advised");
+            break;
+
+        default:
+            m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Calibration is advised");
+        }
+    }
+    #endif
+    #ifdef DEBUG_SENSOR
+        m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
+        m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
+        #if !USE_6_AXIS
+        m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
+        #endif
+    #endif
+
+    #if defined(LOAD_BIAS) && LOAD_BIAS
+        imu.SetBiasGyroX(m_Calibration.G[0]);
+        imu.SetBiasGyroY(m_Calibration.G[1]);
+        imu.SetBiasGyroZ(m_Calibration.G[2]);
+
+        imu.SetBiasAccelX(m_Calibration.A[0]);
+        imu.SetBiasAccelY(m_Calibration.A[1]);
+        imu.SetBiasAccelZ(m_Calibration.A[2]);
+
+        #if !USE_6_AXIS
+        imu.SetBiasCPassX(m_Calibration.C[0]);
+        imu.SetBiasCPassY(m_Calibration.C[1]);
+        imu.SetBiasCPassZ(m_Calibration.C[2]);
+        #endif
+    #else
+        #if BIAS_DEBUG
+        // Sets all bias to 90
+        imu.SetBiasGyroX(90);
+        imu.SetBiasGyroY(90);
+        imu.SetBiasGyroZ(90);
+
+        imu.SetBiasAccelX(90);
+        imu.SetBiasAccelY(90);
+        imu.SetBiasAccelZ(90);
+
+        imu.SetBiasCPassX(90);
+        imu.SetBiasCPassY(90);
+        imu.SetBiasCPassZ(90);
+
+        int32_t bias_gyro[3], bias_accel[3], bias_compass[3];
+
+        // Reloads all bias from memory
+        imu.GetBiasGyroX(&bias_gyro[0]);
+        imu.GetBiasGyroY(&bias_gyro[1]);
+        imu.GetBiasGyroZ(&bias_gyro[2]);
+
+        imu.GetBiasAccelX(&bias_accel[0]);
+        imu.GetBiasAccelY(&bias_accel[1]);
+        imu.GetBiasAccelZ(&bias_accel[2]);
+
+        imu.GetBiasCPassX(&bias_compass[0]);
+        imu.GetBiasCPassY(&bias_compass[1]);
+        imu.GetBiasCPassZ(&bias_compass[2]);
+
+            #ifdef DEBUG_SENSOR
+        m_Logger.trace("All set bias should be 90");
+
+        m_Logger.trace("Gyrometer bias    : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_gyro));
+        m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_accel));
+        m_Logger.trace("Compass bias      : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_compass));
+            #endif
+        #endif
+    #endif
+}
+
+void ICM20948Sensor::calculateAcceleration(Quat *quaternion) {
+#if SEND_ACCELERATION
+        {
+/*
+            Quat quat_test{};
+            quat_test.w = quaternion->w;
+            quat_test.x = -quaternion->x;
+            quat_test.y = quaternion->y;
+            quat_test.z = -quaternion->z;
+            //{Quat(Vector3(0, 0, 1), rotation)}
+*/            
+            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
+            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
+            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
+
+            // get the component of the acceleration that is gravity
+            float gravity[3];
+//            gravity[0] = 2 * (quat_test.x * quat_test.z - quat_test.w * quat_test.y);
+            gravity[0] = 2 * ((-quaternion->x) * (-quaternion->z) - quaternion->w * quaternion->y);
+//            gravity[1] = -2 * (quat_test.w * quat_test.x + quat_test.y * quat_test.z);
+            gravity[1] = -2 * (quaternion->w * (-quaternion->x) + quaternion->y * (-quaternion->z));
+//            gravity[2] = quat_test.w * quat_test.w - quat_test.x * quat_test.x - quat_test.y * quat_test.y + quat_test.z * quat_test.z;
+            gravity[2] = quaternion->w * quaternion->w - quaternion->x * quaternion->x - quaternion->y * quaternion->y + quaternion->z * quaternion->z;
+
+/*            
+            m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+6.0f y:%+6.0f z:%+6.0f, quat_test x:%+0.3f y:%+0.3f z:%+0.3f",
+                            gravity[0], gravity[1], gravity[2], 
+                            this->acceleration[0], this->acceleration[1], this->acceleration[2],
+                            quat_test.x, quat_test.y, quat_test.z);
+*/
+/*
+            m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+7.1f y:%+7.1f z:%+7.1f",
+                            gravity[0], gravity[1], gravity[2], 
+                            this->acceleration[0], this->acceleration[1], this->acceleration[2]);
+*/
+            // subtract gravity from the acceleration vector
+            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
+
+            // finally scale the acceleration values to mps2
+            this->acceleration[0] *= ASCALE_4G;
+            this->acceleration[1] *= ASCALE_4G;
+            this->acceleration[2] *= ASCALE_4G;
+
+/*
+            imu.getAGMT();
+            this->acceleration[0] = imu.accX()/1000*9.81;
+            this->acceleration[1] = imu.accY()/1000*9.81;
+            this->acceleration[2] = imu.accZ()/1000*9.81;
+*/
+        }
+#endif
 }
 
 //You need to override the library's initializeDMP to change some settings 
