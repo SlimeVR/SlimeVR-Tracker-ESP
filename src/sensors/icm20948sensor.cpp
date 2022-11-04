@@ -34,8 +34,8 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
 
-void ICM20948Sensor::motionSetup() {
-    
+void ICM20948Sensor::motionSetup() 
+{
     connectSensor();
     startDMP();
     load_bias();
@@ -43,7 +43,8 @@ void ICM20948Sensor::motionSetup() {
     startCalibrationAutoSave();
 }
 
-void ICM20948Sensor::motionLoop() {
+void ICM20948Sensor::motionLoop() 
+{
 #if ENABLE_INSPECTION
     {
         (void)imu.getAGMT();
@@ -81,7 +82,8 @@ void ICM20948Sensor::motionLoop() {
     checkSensorTimeout();
 }
 
-void ICM20948Sensor::sendData() { 
+void ICM20948Sensor::sendData() 
+{ 
     if(newData) {
         newData = false;
         if (USE_6_AXIS) {
@@ -98,15 +100,15 @@ void ICM20948Sensor::sendData() {
     }
 }
 
-void ICM20948Sensor::startCalibration(int calibrationType) {
+void ICM20948Sensor::startCalibration(int calibrationType) 
+{
     // 20948 does continuous calibration
-
     save_bias(false);
 }
 
 void ICM20948Sensor::startCalibrationAutoSave()
 {
-    #if defined(SAVE_BIAS) && SAVE_BIAS
+    #if SAVE_BIAS
     timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
     #endif
 }
@@ -123,7 +125,7 @@ void ICM20948Sensor::startDMP()
         return;
     }
 
-    if (USE_6_AXIS)
+    #if(USE_6_AXIS)
     {
         m_Logger.debug("Using 6 axis configuration");
         if(imu.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR) == ICM_20948_Stat_Ok)
@@ -136,7 +138,7 @@ void ICM20948Sensor::startDMP()
             return; 
         }
     }
-    else
+    #else
     {
         m_Logger.debug("Using 9 axis configuration");
         if(imu.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok)
@@ -149,7 +151,9 @@ void ICM20948Sensor::startDMP()
             return; 
         }
     }
+    #endif
 
+    #if(SEND_ACCELERATION)
     if (imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok)
     {
         m_Logger.debug("Enabled DMP sensor for accelerometer");
@@ -159,10 +163,11 @@ void ICM20948Sensor::startDMP()
         m_Logger.fatal("Failed to enable DMP sensor for accelerometer");
         return; 
     }
+    #endif
 
     // Might need to set up other DMP functions later, just Quad6/Quad9/Accel for now
 
-    if (USE_6_AXIS)
+    #if(USE_6_AXIS)
     {
         if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 1.25) == ICM_20948_Stat_Ok)
         {
@@ -174,7 +179,7 @@ void ICM20948Sensor::startDMP()
             return;
         }
     }
-    else
+    #else
     {
         if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 1.25) == ICM_20948_Stat_Ok)
         {
@@ -186,6 +191,7 @@ void ICM20948Sensor::startDMP()
             return;
         }
     }
+    #endif
 
     if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, 1.25) == ICM_20948_Stat_Ok)
     {
@@ -304,72 +310,77 @@ void ICM20948Sensor::checkForDataToRead(ICM_20948_Status_e readStatus)
 
 void ICM20948Sensor::readRotation(ICM_20948_Status_e readStatus)
 {
-    if(USE_6_AXIS)
+    #if(USE_6_AXIS)
+    {
+        if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
+        {
+            // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
+            // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+            // The quaternion data is scaled by 2^30.
+            // Scale to +/- 1
+            double q1 = ((double)dmpData.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q2 = ((double)dmpData.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q3 = ((double)dmpData.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+            quaternion.w = q0;
+            quaternion.x = q1;
+            quaternion.y = q2;
+            quaternion.z = q3;
+            #if SEND_ACCELERATION
+            calculateAcceleration(&quaternion);
+            #endif
+            quaternion *= sensorOffset; //imu rotation
+
+            #if ENABLE_INSPECTION
             {
-                if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
-                {
-                    // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
-                    // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
-                    // The quaternion data is scaled by 2^30.
-                    // Scale to +/- 1
-                    double q1 = ((double)dmpData.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q2 = ((double)dmpData.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q3 = ((double)dmpData.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-                    quaternion.w = q0;
-                    quaternion.x = q1;
-                    quaternion.y = q2;
-                    quaternion.z = q3;
-                    #if SEND_ACCELERATION
-                    calculateAcceleration(&quaternion);
-                    #endif
-                    quaternion *= sensorOffset; //imu rotation
-
-                    #if ENABLE_INSPECTION
-                    {
-                        Network::sendInspectionFusedIMUData(sensorId, quaternion);
-                    }
-                    #endif
-
-                    newData = true;
-                    lastData = millis();
-                }
+                Network::sendInspectionFusedIMUData(sensorId, quaternion);
             }
-            else
+            #endif
+
+            newData = true;
+            lastData = millis();
+        }
+    }
+    #else
+    {
+        if((dmpData.header & DMP_header_bitmap_Quat9) > 0)
+        {
+            // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
+            // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
+            // The quaternion data is scaled by 2^30.
+            // Scale to +/- 1
+            double q1 = ((double)dmpData.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q2 = ((double)dmpData.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q3 = ((double)dmpData.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+            quaternion.w = q0;
+            quaternion.x = q1;
+            quaternion.y = q2;
+            quaternion.z = q3;
+            #if SEND_ACCELERATION
+            calculateAcceleration(&quaternion);
+            #endif
+            quaternion *= sensorOffset; //imu rotation
+
+            #if ENABLE_INSPECTION
             {
-                if((dmpData.header & DMP_header_bitmap_Quat9) > 0)
-                {
-                    // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
-                    // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
-                    // The quaternion data is scaled by 2^30.
-                    // Scale to +/- 1
-                    double q1 = ((double)dmpData.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q2 = ((double)dmpData.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q3 = ((double)dmpData.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
-                    double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-                    quaternion.w = q0;
-                    quaternion.x = q1;
-                    quaternion.y = q2;
-                    quaternion.z = q3;
-                    #if SEND_ACCELERATION
-                    calculateAcceleration(&quaternion);
-                    #endif
-                    quaternion *= sensorOffset; //imu rotation
-
-                    #if ENABLE_INSPECTION
-                    {
-                        Network::sendInspectionFusedIMUData(sensorId, quaternion);
-                    }
-                    #endif
-
-                    newData = true;
-                    lastData = millis();
-                }
+                Network::sendInspectionFusedIMUData(sensorId, quaternion);
             }
+            #endif
+
+            newData = true;
+            lastData = millis();
+        }
+    }
+    #endif
 }
 
-void ICM20948Sensor::save_bias(bool repeat) {
-#if defined(SAVE_BIAS) && SAVE_BIAS
+void ICM20948Sensor::save_bias(bool repeat) 
+{
+    if(!SAVE_BIAS)
+    {
+        return;
+    }
     #ifdef DEBUG_SENSOR
     m_Logger.trace("Saving Bias");
     #endif
@@ -415,147 +426,109 @@ void ICM20948Sensor::save_bias(bool repeat) {
                 this);
         }
     }
-#endif
 }
 
-void ICM20948Sensor::load_bias() {
-    #if LOAD_BIAS
-    // Initialize the configuration
+void ICM20948Sensor::load_bias() 
+{
+    if(!LOAD_BIAS)
     {
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
-        // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        switch (sensorCalibration.type) {
-        case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
-            m_Calibration = sensorCalibration.data.icm20948;
-            break;
-
-        case SlimeVR::Configuration::CalibrationConfigType::NONE:
-            m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
-            m_Logger.info("Calibration is advised");
-            break;
-
-        default:
-            m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
-            m_Logger.info("Calibration is advised");
-        }
+        return;
     }
-    #endif
+    
+    SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+    // If no compatible calibration data is found, the calibration data will just be zero-ed out
+    switch (sensorCalibration.type) {
+    case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
+        m_Calibration = sensorCalibration.data.icm20948;
+        break;
+
+    case SlimeVR::Configuration::CalibrationConfigType::NONE:
+        m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+        m_Logger.info("Calibration is advised");
+        break;
+
+    default:
+        m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+        m_Logger.info("Calibration is advised");
+    }
     #ifdef DEBUG_SENSOR
-        m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
-        m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
-        #if !USE_6_AXIS
-        m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
-        #endif
+    m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
+    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
+    #if !USE_6_AXIS
+    m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
+    #endif
     #endif
 
-    #if defined(LOAD_BIAS) && LOAD_BIAS
-        imu.SetBiasGyroX(m_Calibration.G[0]);
-        imu.SetBiasGyroY(m_Calibration.G[1]);
-        imu.SetBiasGyroZ(m_Calibration.G[2]);
+    imu.SetBiasGyroX(m_Calibration.G[0]);
+    imu.SetBiasGyroY(m_Calibration.G[1]);
+    imu.SetBiasGyroZ(m_Calibration.G[2]);
 
-        imu.SetBiasAccelX(m_Calibration.A[0]);
-        imu.SetBiasAccelY(m_Calibration.A[1]);
-        imu.SetBiasAccelZ(m_Calibration.A[2]);
+    imu.SetBiasAccelX(m_Calibration.A[0]);
+    imu.SetBiasAccelY(m_Calibration.A[1]);
+    imu.SetBiasAccelZ(m_Calibration.A[2]);
 
-        #if !USE_6_AXIS
-        imu.SetBiasCPassX(m_Calibration.C[0]);
-        imu.SetBiasCPassY(m_Calibration.C[1]);
-        imu.SetBiasCPassZ(m_Calibration.C[2]);
-        #endif
-    #else
-        #if BIAS_DEBUG
-        // Sets all bias to 90
-        imu.SetBiasGyroX(90);
-        imu.SetBiasGyroY(90);
-        imu.SetBiasGyroZ(90);
-
-        imu.SetBiasAccelX(90);
-        imu.SetBiasAccelY(90);
-        imu.SetBiasAccelZ(90);
-
-        imu.SetBiasCPassX(90);
-        imu.SetBiasCPassY(90);
-        imu.SetBiasCPassZ(90);
-
-        int32_t bias_gyro[3], bias_accel[3], bias_compass[3];
-
-        // Reloads all bias from memory
-        imu.GetBiasGyroX(&bias_gyro[0]);
-        imu.GetBiasGyroY(&bias_gyro[1]);
-        imu.GetBiasGyroZ(&bias_gyro[2]);
-
-        imu.GetBiasAccelX(&bias_accel[0]);
-        imu.GetBiasAccelY(&bias_accel[1]);
-        imu.GetBiasAccelZ(&bias_accel[2]);
-
-        imu.GetBiasCPassX(&bias_compass[0]);
-        imu.GetBiasCPassY(&bias_compass[1]);
-        imu.GetBiasCPassZ(&bias_compass[2]);
-
-            #ifdef DEBUG_SENSOR
-        m_Logger.trace("All set bias should be 90");
-
-        m_Logger.trace("Gyrometer bias    : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_gyro));
-        m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_accel));
-        m_Logger.trace("Compass bias      : [%d, %d, %d]", UNPACK_VECTOR_ARRAY(bias_compass));
-            #endif
-        #endif
+    #if !USE_6_AXIS
+    imu.SetBiasCPassX(m_Calibration.C[0]);
+    imu.SetBiasCPassY(m_Calibration.C[1]);
+    imu.SetBiasCPassZ(m_Calibration.C[2]);
     #endif
+    
 }
 
-void ICM20948Sensor::calculateAcceleration(Quat *quaternion) {
-#if SEND_ACCELERATION
-        {
+void ICM20948Sensor::calculateAcceleration(Quat *quaternion) 
+{
+    #if SEND_ACCELERATION
+    {
 /*
-            Quat quat_test{};
-            quat_test.w = quaternion->w;
-            quat_test.x = -quaternion->x;
-            quat_test.y = quaternion->y;
-            quat_test.z = -quaternion->z;
-            //{Quat(Vector3(0, 0, 1), rotation)}
+        Quat quat_test{};
+        quat_test.w = quaternion->w;
+        quat_test.x = -quaternion->x;
+        quat_test.y = quaternion->y;
+        quat_test.z = -quaternion->z;
+        //{Quat(Vector3(0, 0, 1), rotation)}
 */            
-            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
-            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
-            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
+        this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
+        this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
+        this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
 
-            // get the component of the acceleration that is gravity
-            float gravity[3];
+        // get the component of the acceleration that is gravity
+        float gravity[3];
 //            gravity[0] = 2 * (quat_test.x * quat_test.z - quat_test.w * quat_test.y);
-            gravity[0] = 2 * ((-quaternion->x) * (-quaternion->z) - quaternion->w * quaternion->y);
+        gravity[0] = 2 * ((-quaternion->x) * (-quaternion->z) - quaternion->w * quaternion->y);
 //            gravity[1] = -2 * (quat_test.w * quat_test.x + quat_test.y * quat_test.z);
-            gravity[1] = -2 * (quaternion->w * (-quaternion->x) + quaternion->y * (-quaternion->z));
+        gravity[1] = -2 * (quaternion->w * (-quaternion->x) + quaternion->y * (-quaternion->z));
 //            gravity[2] = quat_test.w * quat_test.w - quat_test.x * quat_test.x - quat_test.y * quat_test.y + quat_test.z * quat_test.z;
-            gravity[2] = quaternion->w * quaternion->w - quaternion->x * quaternion->x - quaternion->y * quaternion->y + quaternion->z * quaternion->z;
+        gravity[2] = quaternion->w * quaternion->w - quaternion->x * quaternion->x - quaternion->y * quaternion->y + quaternion->z * quaternion->z;
 
 /*            
-            m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+6.0f y:%+6.0f z:%+6.0f, quat_test x:%+0.3f y:%+0.3f z:%+0.3f",
-                            gravity[0], gravity[1], gravity[2], 
-                            this->acceleration[0], this->acceleration[1], this->acceleration[2],
-                            quat_test.x, quat_test.y, quat_test.z);
+        m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+6.0f y:%+6.0f z:%+6.0f, quat_test x:%+0.3f y:%+0.3f z:%+0.3f",
+                        gravity[0], gravity[1], gravity[2], 
+                        this->acceleration[0], this->acceleration[1], this->acceleration[2],
+                        quat_test.x, quat_test.y, quat_test.z);
 */
 /*
-            m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+7.1f y:%+7.1f z:%+7.1f",
-                            gravity[0], gravity[1], gravity[2], 
-                            this->acceleration[0], this->acceleration[1], this->acceleration[2]);
+        m_Logger.debug("Gravity x:%+0.3f y:%+0.3f z:%+0.3f, Accel x:%+7.1f y:%+7.1f z:%+7.1f",
+                        gravity[0], gravity[1], gravity[2], 
+                        this->acceleration[0], this->acceleration[1], this->acceleration[2]);
 */
-            // subtract gravity from the acceleration vector
-            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
+        // subtract gravity from the acceleration vector
+        this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
+        this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
+        this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
 
-            // finally scale the acceleration values to mps2
-            this->acceleration[0] *= ASCALE_4G;
-            this->acceleration[1] *= ASCALE_4G;
-            this->acceleration[2] *= ASCALE_4G;
+        // finally scale the acceleration values to mps2
+        this->acceleration[0] *= ASCALE_4G;
+        this->acceleration[1] *= ASCALE_4G;
+        this->acceleration[2] *= ASCALE_4G;
 
 /*
-            imu.getAGMT();
-            this->acceleration[0] = imu.accX()/1000*9.81;
-            this->acceleration[1] = imu.accY()/1000*9.81;
-            this->acceleration[2] = imu.accZ()/1000*9.81;
+        imu.getAGMT();
+        this->acceleration[0] = imu.accX()/1000*9.81;
+        this->acceleration[1] = imu.accY()/1000*9.81;
+        this->acceleration[2] = imu.accZ()/1000*9.81;
 */
-        }
-#endif
+    }
+    #endif
 }
 
 //You need to override the library's initializeDMP to change some settings 
