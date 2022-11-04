@@ -50,12 +50,13 @@ public:
     void startMotionLoop();
     void checkSensorTimeout();
     void checkForDataToRead(ICM_20948_Status_e readStatus);
-    void readRotation(ICM_20948_Status_e readStatus);
+    void readRotation();
 
 private:
     bool isDataToRead = false;
     void calculateAccelerationWithoutGravity(Quat *quaternion);
     unsigned long lastData = 0;
+    unsigned long lastDataSent = 0;
     int bias_save_counter = 0;
     bool newTap;
     int16_t rawAccel[3];
@@ -63,6 +64,7 @@ private:
     ICM_20948_I2C imu;
     ICM_20948_Device_t pdev;
     icm_20948_DMP_data_t dmpData{};
+    icm_20948_DMP_data_t dmpDataTemp{};
 
     SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration;
 

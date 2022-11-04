@@ -69,34 +69,40 @@ void ICM20948Sensor::motionLoop()
     isDataToRead = true;
     while (isDataToRead) 
     {
-        ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpData);
+        ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpDataTemp);
         if(readStatus == ICM_20948_Stat_Ok)
         {
-            readRotation(readStatus);
+            dmpData = dmpDataTemp;
         }
         else 
         {
             checkForDataToRead(readStatus);
         }
     }
+    readRotation();
     checkSensorTimeout();
 }
 
 void ICM20948Sensor::sendData() 
 { 
-    if(newData) {
+    if(newData && lastDataSent + 7 < millis()) 
+    {
+        lastDataSent = millis();
         newData = false;
-        if (USE_6_AXIS) {
+        #if(USE_6_AXIS) 
+        {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId);
-        } else {
+        } 
+        #else 
+        {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
-
-#if SEND_ACCELERATION
+        #endif
+        #if SEND_ACCELERATION
         {
             Network::sendAccel(acceleration, sensorId);
         }
-#endif
+        #endif
     }
 }
 
@@ -169,7 +175,7 @@ void ICM20948Sensor::startDMP()
 
     #if(USE_6_AXIS)
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 1.25) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 0) == ICM_20948_Stat_Ok)
         {
             m_Logger.debug("Set Quat6 to 100Hz frequency");
         }
@@ -181,7 +187,7 @@ void ICM20948Sensor::startDMP()
     }
     #else
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 1.25) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok)
         {
             m_Logger.debug("Set Quat9 to 100Hz frequency");
         }
@@ -194,7 +200,7 @@ void ICM20948Sensor::startDMP()
     #endif
 
     #if(SEND_ACCELERATION)
-    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, 1.25) == ICM_20948_Stat_Ok)
+    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok)
     {
         this->m_Logger.debug("Set Accel to 100Hz frequency");
     }
@@ -310,7 +316,7 @@ void ICM20948Sensor::checkForDataToRead(ICM_20948_Status_e readStatus)
     #endif
 }
 
-void ICM20948Sensor::readRotation(ICM_20948_Status_e readStatus)
+void ICM20948Sensor::readRotation()
 {
     #if(USE_6_AXIS)
     {
@@ -639,10 +645,10 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     ICM_20948_smplrt_t mySmplrt;
     //mySmplrt.g = 19; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 19 = 55Hz. InvenSense Nucleo example uses 19 (0x13).
     //mySmplrt.a = 19; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 19 = 56.25Hz. InvenSense Nucleo example uses 19 (0x13).
-    mySmplrt.g = 4; // 225Hz
+    mySmplrt.g = 4; // 225Hzh
     mySmplrt.a = 4; // 225Hz
-    //mySmplrt.g = 8; // 112Hz
-    //mySmplrt.a = 8; // 112Hz
+    // mySmplrt.g = 8; // 112Hz
+    // mySmplrt.a = 8; // 112Hz
     result = setSampleRate((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt); if (result > worstResult) worstResult = result;
 
     // Setup DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
