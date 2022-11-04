@@ -645,7 +645,7 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     ICM_20948_smplrt_t mySmplrt;
     //mySmplrt.g = 19; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 19 = 55Hz. InvenSense Nucleo example uses 19 (0x13).
     //mySmplrt.a = 19; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 19 = 56.25Hz. InvenSense Nucleo example uses 19 (0x13).
-    mySmplrt.g = 4; // 225Hzh
+    mySmplrt.g = 4; // 225Hz
     mySmplrt.a = 4; // 225Hz
     // mySmplrt.g = 8; // 112Hz
     // mySmplrt.a = 8; // 112Hz
