@@ -54,7 +54,7 @@ public:
 
 private:
     bool isDataToRead = false;
-    void calculateAcceleration(Quat *quaternion);
+    void calculateAccelerationWithoutGravity(Quat *quaternion);
     unsigned long lastData = 0;
     int bias_save_counter = 0;
     bool newTap;
