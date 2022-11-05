@@ -38,7 +38,7 @@ void ICM20948Sensor::motionSetup()
 {
     connectSensor();
     startDMP();
-    load_bias();
+    loadCalibration();
     startMotionLoop();
     startCalibrationAutoSave();
 }
@@ -66,8 +66,7 @@ void ICM20948Sensor::motionLoop()
 #endif
 
     timer.tick();
-    isDataToRead = true;
-    while (isDataToRead) 
+    while (checkIfDataToRead()) 
     {
         ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpDataTemp);
         if(readStatus == ICM_20948_Stat_Ok)
@@ -81,6 +80,11 @@ void ICM20948Sensor::motionLoop()
     }
     readRotation();
     checkSensorTimeout();
+}
+
+bool ICM20948Sensor::checkIfDataToRead() 
+{
+    return isDataToRead;
 }
 
 void ICM20948Sensor::sendData() 
@@ -109,13 +113,13 @@ void ICM20948Sensor::sendData()
 void ICM20948Sensor::startCalibration(int calibrationType) 
 {
     // 20948 does continuous calibration
-    save_bias(false);
+    saveCalibration(false);
 }
 
 void ICM20948Sensor::startCalibrationAutoSave()
 {
     #if SAVE_BIAS
-    timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->save_bias(true); return false; }, this);
+    timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->saveCalibration(true); return false; }, this);
     #endif
 }
 
@@ -266,14 +270,12 @@ void ICM20948Sensor::connectSensor()
     
     if (addr == 0x68) {
         tracker = false;
-    } else if (addr == 0x69)
-    {
+    } else if (addr == 0x69){
         tracker = true;
     } else {
         m_Logger.fatal("I2C Address not supported by ICM20948 library: 0x%02x", addr);
         return;
     }
-    //m_Logger.debug("Start Init with addr = %s", tracker ? "true" : "false");
     ICM_20948_Status_e imu_err = imu.begin(Wire, tracker);
     if (imu_err != ICM_20948_Stat_Ok) {
         m_Logger.fatal("Can't connect to ICM20948 at address 0x%02x, error code: 0x%02x", addr, imu_err);
@@ -383,12 +385,13 @@ void ICM20948Sensor::readRotation()
     #endif
 }
 
-void ICM20948Sensor::save_bias(bool repeat) 
+void ICM20948Sensor::saveCalibration(bool repeat) 
 {
-    if(!SAVE_BIAS)
+    #if(!SAVE_BIAS)
     {
         return;
     }
+    #endif
     #ifdef DEBUG_SENSOR
     m_Logger.trace("Saving Bias");
     #endif
@@ -428,7 +431,7 @@ void ICM20948Sensor::save_bias(bool repeat)
             timer.in(
                 bias_save_periods[bias_save_counter] * 1000,
                 [](void* arg) -> bool {
-                    ((ICM20948Sensor*)arg)->save_bias(true);
+                    ((ICM20948Sensor*)arg)->saveCalibration(true);
                     return false;
                 },
                 this);
@@ -436,12 +439,13 @@ void ICM20948Sensor::save_bias(bool repeat)
     }
 }
 
-void ICM20948Sensor::load_bias() 
+void ICM20948Sensor::loadCalibration() 
 {
-    if(!LOAD_BIAS)
+    #if(!LOAD_BIAS)
     {
         return;
     }
+    #endif
     
     SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
     // If no compatible calibration data is found, the calibration data will just be zero-ed out

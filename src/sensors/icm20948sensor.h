@@ -41,8 +41,8 @@ public:
 
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
-    void save_bias(bool repeat);
-    void load_bias();
+    void saveCalibration(bool repeat);
+    void loadCalibration();
 
     void startCalibrationAutoSave();
     void startDMP();
@@ -51,9 +51,10 @@ public:
     void checkSensorTimeout();
     void checkForDataToRead(ICM_20948_Status_e readStatus);
     void readRotation();
+    bool checkIfDataToRead();
 
 private:
-    bool isDataToRead = false;
+    bool isDataToRead = true;
     void calculateAccelerationWithoutGravity(Quat *quaternion);
     unsigned long lastData = 0;
     unsigned long lastDataSent = 0;
