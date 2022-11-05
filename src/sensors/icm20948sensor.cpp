@@ -66,6 +66,7 @@ void ICM20948Sensor::motionLoop()
 #endif
 
     timer.tick();
+    isDataToRead = true;
     while (checkIfDataToRead()) 
     {
         ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpDataTemp);
