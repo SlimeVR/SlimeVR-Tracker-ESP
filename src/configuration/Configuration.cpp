@@ -21,15 +21,7 @@
     THE SOFTWARE.
 */
 
-#ifdef ESP32
-    // #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
-    // #define CONFIG_LITTLEFS_LFS_YES_TRACE
-    // #define LFS_YES_TRACE
-    #include <LITTLEFS.h>
-    #define LittleFS LITTLEFS
-#else
-    #include <LittleFS.h>
-#endif
+#include <LittleFS.h>
 
 #include "Configuration.h"
 #include "consts.h"
@@ -172,7 +164,7 @@ namespace SlimeVR {
                     m_Logger.warn("No calibration data found, creating new directory...");
 
                     if (!LittleFS.mkdir(DIR_CALIBRATIONS)) {
-                        m_Logger.error("Failed to create directory: "DIR_CALIBRATIONS);
+                        m_Logger.error("Failed to create directory: " DIR_CALIBRATIONS);
                         return;
                     }
 
@@ -182,15 +174,15 @@ namespace SlimeVR {
                 if (!calibrations.isDirectory()) {
                     calibrations.close();
 
-                    m_Logger.warn("Found file instead of directory: "DIR_CALIBRATIONS);
+                    m_Logger.warn("Found file instead of directory: " DIR_CALIBRATIONS);
 
                     if (!LittleFS.remove(DIR_CALIBRATIONS)) {
-                        m_Logger.error("Failed to remove directory: "DIR_CALIBRATIONS);
+                        m_Logger.error("Failed to remove directory: " DIR_CALIBRATIONS);
                         return;
                     }
 
                     if (!LittleFS.mkdir(DIR_CALIBRATIONS)) {
-                        m_Logger.error("Failed to create directory: "DIR_CALIBRATIONS);
+                        m_Logger.error("Failed to create directory: " DIR_CALIBRATIONS);
                         return;
                     }
 
@@ -266,7 +258,7 @@ namespace SlimeVR {
                     m_Logger.warn("No temperature calibration data found, creating new directory...");
 
                     if (!LittleFS.mkdir(DIR_TEMPERATURE_CALIBRATIONS)) {
-                        m_Logger.error("Failed to create directory: "DIR_TEMPERATURE_CALIBRATIONS);
+                        m_Logger.error("Failed to create directory: " DIR_TEMPERATURE_CALIBRATIONS);
                         return false;
                     }
 
@@ -276,15 +268,15 @@ namespace SlimeVR {
                 if (!calibrations.isDirectory()) {
                     calibrations.close();
 
-                    m_Logger.warn("Found file instead of directory: "DIR_TEMPERATURE_CALIBRATIONS);
+                    m_Logger.warn("Found file instead of directory: " DIR_TEMPERATURE_CALIBRATIONS);
 
                     if (!LittleFS.remove(DIR_TEMPERATURE_CALIBRATIONS)) {
-                        m_Logger.error("Failed to remove directory: "DIR_TEMPERATURE_CALIBRATIONS);
+                        m_Logger.error("Failed to remove directory: " DIR_TEMPERATURE_CALIBRATIONS);
                         return false;
                     }
 
                     if (!LittleFS.mkdir(DIR_TEMPERATURE_CALIBRATIONS)) {
-                        m_Logger.error("Failed to create directory: "DIR_TEMPERATURE_CALIBRATIONS);
+                        m_Logger.error("Failed to create directory: " DIR_TEMPERATURE_CALIBRATIONS);
                         return false;
                     }
 
