@@ -1,6 +1,6 @@
 #include "madgwick.h"
 
-volatile float beta = 0.1f;
+volatile float madgwickBeta = 0.1f;
 
 void madgwickQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float deltat)
 {
@@ -51,10 +51,10 @@ void madgwickQuaternionUpdate(float q[4], float ax, float ay, float az, float gx
 		s3 *= recipNorm;
 
 		// Apply feedback step
-		qDot1 -= beta * s0;
-		qDot2 -= beta * s1;
-		qDot3 -= beta * s2;
-		qDot4 -= beta * s3;
+		qDot1 -= madgwickBeta * s0;
+		qDot2 -= madgwickBeta * s1;
+		qDot3 -= madgwickBeta * s2;
+		qDot4 -= madgwickBeta * s3;
 	}
 
 	// Integrate rate of change of quaternion to yield quaternion
@@ -147,10 +147,10 @@ void madgwickQuaternionUpdate(float q[4], float ax, float ay, float az, float gx
 		s3 *= recipNorm;
 
 		// Apply feedback step
-		qDot1 -= beta * s0;
-		qDot2 -= beta * s1;
-		qDot3 -= beta * s2;
-		qDot4 -= beta * s3;
+		qDot1 -= madgwickBeta * s0;
+		qDot2 -= madgwickBeta * s1;
+		qDot3 -= madgwickBeta * s2;
+		qDot4 -= madgwickBeta * s3;
 	}
 
 	// Integrate rate of change of quaternion to yield quaternion
