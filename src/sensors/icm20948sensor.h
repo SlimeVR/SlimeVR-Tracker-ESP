@@ -43,8 +43,6 @@ public:
     void saveCalibration(bool repeat);
     void loadCalibration();
 
-    
-
 private:
     void calculateAccelerationWithoutGravity(Quat *quaternion);
     unsigned long lastData = 0;
