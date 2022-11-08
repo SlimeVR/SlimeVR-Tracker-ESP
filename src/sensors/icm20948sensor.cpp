@@ -66,27 +66,21 @@ void ICM20948Sensor::motionLoop()
 #endif
 
     timer.tick();
-    isDataToRead = true;
-    while (checkIfDataToRead()) 
+
+    ICM_20948_Status_e readStatus;
+    do
     {
-        ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpDataTemp);
+        readStatus = imu.readDMPdataFromFIFO(&dmpDataTemp);
         if(readStatus == ICM_20948_Stat_Ok)
         {
             dmpData = dmpDataTemp;
         }
-        else 
-        {
-            checkForDataToRead(readStatus);
-        }
-    }
+    }while (checkForDataToRead(readStatus));
+
     readRotation();
     checkSensorTimeout();
 }
 
-bool ICM20948Sensor::checkIfDataToRead() 
-{
-    return isDataToRead;
-}
 
 void ICM20948Sensor::sendData() 
 { 
@@ -94,6 +88,7 @@ void ICM20948Sensor::sendData()
     {
         lastDataSent = millis();
         newData = false;
+
         #if(USE_6_AXIS) 
         {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId);
@@ -103,6 +98,7 @@ void ICM20948Sensor::sendData()
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
         #endif
+
         #if SEND_ACCELERATION
         {
             Network::sendAccel(acceleration, sensorId);
@@ -267,17 +263,18 @@ void ICM20948Sensor::connectSensor()
         imu.enableDebugging(Serial);
     #endif
     // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
-    boolean tracker = false;
+    boolean isOnSecondAddress = false;
     
     if (addr == 0x68) {
-        tracker = false;
+        isOnSecondAddress = false;
     } else if (addr == 0x69){
-        tracker = true;
+        isOnSecondAddress = true;
     } else {
         m_Logger.fatal("I2C Address not supported by ICM20948 library: 0x%02x", addr);
         return;
     }
-    ICM_20948_Status_e imu_err = imu.begin(Wire, tracker);
+
+    ICM_20948_Status_e imu_err = imu.begin(Wire, isOnSecondAddress);
     if (imu_err != ICM_20948_Stat_Ok) {
         m_Logger.fatal("Can't connect to ICM20948 at address 0x%02x, error code: 0x%02x", addr, imu_err);
         ledManager.pattern(50, 50, 200);
@@ -301,22 +298,26 @@ void ICM20948Sensor::checkSensorTimeout()
     }
 }
 
-void ICM20948Sensor::checkForDataToRead(ICM_20948_Status_e readStatus)
+bool ICM20948Sensor::checkForDataToRead(ICM_20948_Status_e readStatus)
 {
-    if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) 
-    {
-        isDataToRead = false;
-    } 
-    else if (readStatus == ICM_20948_Stat_FIFOMoreDataAvail) 
-    {
-        isDataToRead = true;
-    }
     #ifdef DEBUG_SENSOR
     else 
     {
         m_Logger.trace("e0x%02x", readStatus);
     }
     #endif
+
+    if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) 
+    {
+        return false;
+    } 
+    else if (readStatus == ICM_20948_Stat_FIFOMoreDataAvail) 
+    {
+        return true;
+    }
+    
+    m_Logger.error("Sensor unable to deteremine if there is data at I2C Address 0x%02x", addr);
+    return false;
 }
 
 void ICM20948Sensor::readRotation()
@@ -329,17 +330,19 @@ void ICM20948Sensor::readRotation()
             // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
             // The quaternion data is scaled by 2^30.
             // Scale to +/- 1
-            double q1 = ((double)dmpData.Quat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-            double q2 = ((double)dmpData.Quat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-            double q3 = ((double)dmpData.Quat6.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q1 = ((double)dmpData.Quat6.Data.Q1) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
+            double q2 = ((double)dmpData.Quat6.Data.Q2) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
+            double q3 = ((double)dmpData.Quat6.Data.Q3) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
             quaternion.w = q0;
             quaternion.x = q1;
             quaternion.y = q2;
             quaternion.z = q3;
+
             #if SEND_ACCELERATION
             calculateAccelerationWithoutGravity(&quaternion);
             #endif
+
             quaternion *= sensorOffset; //imu rotation
 
             #if ENABLE_INSPECTION
@@ -360,17 +363,19 @@ void ICM20948Sensor::readRotation()
             // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
             // The quaternion data is scaled by 2^30.
             // Scale to +/- 1
-            double q1 = ((double)dmpData.Quat9.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
-            double q2 = ((double)dmpData.Quat9.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30
-            double q3 = ((double)dmpData.Quat9.Data.Q3) / 1073741824.0; // Convert to double. Divide by 2^30
+            double q1 = ((double)dmpData.Quat9.Data.Q1) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
+            double q2 = ((double)dmpData.Quat9.Data.Q2) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
+            double q3 = ((double)dmpData.Quat9.Data.Q3) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
             quaternion.w = q0;
             quaternion.x = q1;
             quaternion.y = q2;
             quaternion.z = q3;
+
             #if SEND_ACCELERATION
             calculateAccelerationWithoutGravity(&quaternion);
             #endif
+
             quaternion *= sensorOffset; //imu rotation
 
             #if ENABLE_INSPECTION
@@ -464,6 +469,7 @@ void ICM20948Sensor::loadCalibration()
         m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
         m_Logger.info("Calibration is advised");
     }
+
     #ifdef DEBUG_SENSOR
     m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
     m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
