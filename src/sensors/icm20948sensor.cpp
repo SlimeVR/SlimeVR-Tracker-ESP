@@ -317,9 +317,9 @@ void ICM20948Sensor::readRotation()
             // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
             // The quaternion data is scaled by 2^30.
             // Scale to +/- 1
-            double q1 = ((double)dmpData.Quat6.Data.Q1) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
-            double q2 = ((double)dmpData.Quat6.Data.Q2) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
-            double q3 = ((double)dmpData.Quat6.Data.Q3) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
+            double q1 = ((double)dmpData.Quat6.Data.Q1) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
+            double q2 = ((double)dmpData.Quat6.Data.Q2) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
+            double q3 = ((double)dmpData.Quat6.Data.Q3) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
             quaternion.w = q0;
             quaternion.x = q1;
@@ -350,9 +350,9 @@ void ICM20948Sensor::readRotation()
             // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
             // The quaternion data is scaled by 2^30.
             // Scale to +/- 1
-            double q1 = ((double)dmpData.Quat9.Data.Q1) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
-            double q2 = ((double)dmpData.Quat9.Data.Q2) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
-            double q3 = ((double)dmpData.Quat9.Data.Q3) / dmpNumberToDoubleConverter; // Convert to double. Divide by 2^30
+            double q1 = ((double)dmpData.Quat9.Data.Q1) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
+            double q2 = ((double)dmpData.Quat9.Data.Q2) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
+            double q3 = ((double)dmpData.Quat9.Data.Q3) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
             quaternion.w = q0;
             quaternion.x = q1;
@@ -478,7 +478,6 @@ void ICM20948Sensor::loadCalibration()
     imu.SetBiasCPassY(m_Calibration.C[1]);
     imu.SetBiasCPassZ(m_Calibration.C[2]);
     #endif
-
 }
 
 void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)

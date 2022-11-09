@@ -48,7 +48,8 @@ private:
     int bias_save_counter = 0;
     bool newTap;
     int16_t rawAccel[3];
-    double dmpNumberToDoubleConverter = 1073741824.0;
+    
+    #define DMPNUMBERTODOUBLECONVERTER 1073741824.0;
 
     ICM_20948_I2C imu;
     ICM_20948_Device_t pdev;
