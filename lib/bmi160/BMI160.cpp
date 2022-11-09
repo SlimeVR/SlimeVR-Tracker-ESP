@@ -79,15 +79,7 @@ void BMI160::initialize(uint8_t addr,
     devAddr = addr;
     /* Issue a soft-reset to bring the device into a clean state */
     setRegister(BMI160_RA_CMD, BMI160_CMD_SOFT_RESET);
-    delay(1);
-
-    /* Power up the accelerometer */
-    setRegister(BMI160_RA_CMD, BMI160_CMD_ACC_MODE_NORMAL);
-    delay(BMI160_ACCEL_POWERUP_DELAY_MS);
-
-    /* Power up the gyroscope */
-    setRegister(BMI160_RA_CMD, BMI160_CMD_GYR_MODE_NORMAL);
-    delay(BMI160_GYRO_POWERUP_DELAY_MS);
+    delay(12);
 
     setGyroRate(gyroRate);
     delay(1);
@@ -101,6 +93,14 @@ void BMI160::initialize(uint8_t addr,
     delay(1);
     setAccelDLPFMode(accelFilterMode);
     delay(1);
+
+    /* Power up the accelerometer */
+    setRegister(BMI160_RA_CMD, BMI160_CMD_ACC_MODE_NORMAL);
+    delay(BMI160_ACCEL_POWERUP_DELAY_MS);
+
+    /* Power up the gyroscope */
+    setRegister(BMI160_RA_CMD, BMI160_CMD_GYR_MODE_NORMAL);
+    delay(BMI160_GYRO_POWERUP_DELAY_MS);
 
     /* Only PIN1 interrupts currently supported - map all interrupts to PIN1 */
     // I2CdevMod::writeByte(devAddr, BMI160_RA_INT_MAP_0, 0xFF);
