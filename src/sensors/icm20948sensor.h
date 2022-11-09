@@ -40,8 +40,6 @@ public:
     void motionLoop() override final;
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
-    void saveCalibration(bool repeat);
-    void loadCalibration();
 
 private:
     void calculateAccelerationWithoutGravity(Quat *quaternion);
@@ -59,6 +57,8 @@ private:
 
     SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration;
 
+    void saveCalibration(bool repeat);
+    void loadCalibration();
     void startCalibrationAutoSave();
     void startDMP();
     void connectSensor();
