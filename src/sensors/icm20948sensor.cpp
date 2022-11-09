@@ -34,7 +34,7 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
 
-void ICM20948Sensor::motionSetup() 
+void ICM20948Sensor::motionSetup()
 {
     connectSensor();
     startDMP();
@@ -43,7 +43,7 @@ void ICM20948Sensor::motionSetup()
     startCalibrationAutoSave();
 }
 
-void ICM20948Sensor::motionLoop() 
+void ICM20948Sensor::motionLoop()
 {
 #if ENABLE_INSPECTION
     {
@@ -67,33 +67,42 @@ void ICM20948Sensor::motionLoop()
 
     timer.tick();
 
-    ICM_20948_Status_e readStatus;
-    do
-    {
-        readStatus = imu.readDMPdataFromFIFO(&dmpDataTemp);
-        if(readStatus == ICM_20948_Stat_Ok)
-        {
-            dmpData = dmpDataTemp;
-        }
-    }while (checkForDataToRead(readStatus));
-
+    readFIFOToEnd();
     readRotation();
     checkSensorTimeout();
 }
 
+void ICM20948Sensor::readFIFOToEnd()
+{
+    ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpDataTemp);
 
-void ICM20948Sensor::sendData() 
-{ 
-    if(newData && lastDataSent + 7 < millis()) 
+    #ifdef DEBUG_SENSOR
+    else
+    {
+        m_Logger.trace("e0x%02x", readStatus);
+    }
+    #endif
+
+    if(readStatus == ICM_20948_Stat_Ok)
+    {
+        dmpData = dmpDataTemp;
+        readFIFOToEnd();
+    }
+}
+
+void ICM20948Sensor::sendData()
+{
+    
+    if(newData && lastDataSent + 7 < millis())
     {
         lastDataSent = millis();
         newData = false;
 
-        #if(USE_6_AXIS) 
+        #if(USE_6_AXIS)
         {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId);
-        } 
-        #else 
+        }
+        #else
         {
             Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
@@ -107,7 +116,7 @@ void ICM20948Sensor::sendData()
     }
 }
 
-void ICM20948Sensor::startCalibration(int calibrationType) 
+void ICM20948Sensor::startCalibration(int calibrationType)
 {
     // 20948 does continuous calibration
     saveCalibration(false);
@@ -142,7 +151,7 @@ void ICM20948Sensor::startDMP()
         else
         {
             m_Logger.fatal("Failed to enable DMP sensor for game rotation vector");
-            return; 
+            return;
         }
     }
     #else
@@ -155,7 +164,7 @@ void ICM20948Sensor::startDMP()
         else
         {
             m_Logger.fatal("Failed to enable DMP sensor orientation");
-            return; 
+            return;
         }
     }
     #endif
@@ -168,7 +177,7 @@ void ICM20948Sensor::startDMP()
     else
     {
         m_Logger.fatal("Failed to enable DMP sensor for accelerometer");
-        return; 
+        return;
     }
     #endif
 
@@ -264,7 +273,7 @@ void ICM20948Sensor::connectSensor()
     #endif
     // SparkFun_ICM-20948_ArduinoLibrary only supports 0x68 or 0x69 via boolean, if something else throw a error
     boolean isOnSecondAddress = false;
-    
+
     if (addr == 0x68) {
         isOnSecondAddress = false;
     } else if (addr == 0x69){
@@ -292,32 +301,10 @@ void ICM20948Sensor::checkSensorTimeout()
 {
     if(lastData + 1000 < millis()) {
         working = false;
-        lastData = millis();  
+        lastData = millis();
         m_Logger.error("Sensor timeout I2C Address 0x%02x", addr);
         Network::sendError(1, this->sensorId);
     }
-}
-
-bool ICM20948Sensor::checkForDataToRead(ICM_20948_Status_e readStatus)
-{
-    #ifdef DEBUG_SENSOR
-    else 
-    {
-        m_Logger.trace("e0x%02x", readStatus);
-    }
-    #endif
-
-    if (readStatus == ICM_20948_Stat_FIFONoDataAvail || lastData + 1000 < millis()) 
-    {
-        return false;
-    } 
-    else if (readStatus == ICM_20948_Stat_FIFOMoreDataAvail) 
-    {
-        return true;
-    }
-    
-    m_Logger.error("Sensor unable to deteremine if there is data at I2C Address 0x%02x", addr);
-    return false;
 }
 
 void ICM20948Sensor::readRotation()
@@ -391,7 +378,7 @@ void ICM20948Sensor::readRotation()
     #endif
 }
 
-void ICM20948Sensor::saveCalibration(bool repeat) 
+void ICM20948Sensor::saveCalibration(bool repeat)
 {
     #if(!SAVE_BIAS)
     {
@@ -445,14 +432,14 @@ void ICM20948Sensor::saveCalibration(bool repeat)
     }
 }
 
-void ICM20948Sensor::loadCalibration() 
+void ICM20948Sensor::loadCalibration()
 {
     #if(!LOAD_BIAS)
     {
         return;
     }
     #endif
-    
+
     SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
     // If no compatible calibration data is found, the calibration data will just be zero-ed out
     switch (sensorCalibration.type) {
@@ -491,10 +478,10 @@ void ICM20948Sensor::loadCalibration()
     imu.SetBiasCPassY(m_Calibration.C[1]);
     imu.SetBiasCPassZ(m_Calibration.C[2]);
     #endif
-    
+
 }
 
-void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion) 
+void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
 {
     #if SEND_ACCELERATION
     {
@@ -524,7 +511,7 @@ void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
     #endif
 }
 
-//You need to override the library's initializeDMP to change some settings 
+//You need to override the library's initializeDMP to change some settings
 #if OVERRIDEDMPSETUP
 // initializeDMP is a weak function. Let's overwrite it so we can increase the sample rate
 ICM_20948_Status_e ICM_20948::initializeDMP(void)
@@ -591,7 +578,7 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     // You can see by monitoring the Aux I2C pins that the next three lines reduce the bus traffic (magnetometer reads) from 1125Hz to the chosen rate: 68.75Hz in this case.
     result = setBank(3); if (result > worstResult) worstResult = result; // Select Bank 3
     uint8_t mstODRconfig = 0x04; // Set the ODR configuration to 1100/2^4 = 68.75Hz
-    result = write(AGB3_REG_I2C_MST_ODR_CONFIG, &mstODRconfig, 1); if (result > worstResult) worstResult = result; // Write one byte to the I2C_MST_ODR_CONFIG register  
+    result = write(AGB3_REG_I2C_MST_ODR_CONFIG, &mstODRconfig, 1); if (result > worstResult) worstResult = result; // Write one byte to the I2C_MST_ODR_CONFIG register
 
     // Configure clock source through PWR_MGMT_1
     // ICM_20948_Clock_Auto selects the best available clock source – PLL if ready, else use the Internal oscillator

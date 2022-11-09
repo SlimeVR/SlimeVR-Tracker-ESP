@@ -64,8 +64,8 @@ private:
     void connectSensor();
     void startMotionLoop();
     void checkSensorTimeout();
-    bool checkForDataToRead(ICM_20948_Status_e readStatus);
     void readRotation();
+    void readFIFOToEnd();
 
 #define OVERRIDEDMPSETUP true
 
