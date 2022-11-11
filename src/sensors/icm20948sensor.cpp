@@ -77,7 +77,6 @@ void ICM20948Sensor::readFIFOToEnd()
     ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpDataTemp);
 
     #ifdef DEBUG_SENSOR
-    else
     {
         m_Logger.trace("e0x%02x", readStatus);
     }
