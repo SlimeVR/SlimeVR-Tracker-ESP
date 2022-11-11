@@ -29,8 +29,8 @@
 #define BNO_USE_ARVR_STABILIZATION true // Set to false to disable stabilization for BNO085+ IMUs
 #define BNO_USE_MAGNETOMETER_CORRECTION false // Set to true to enable magnetometer correction for BNO08x IMUs. Only works with USE_6_AXIS set to true.
 #define USE_6_AXIS true // uses 9 DoF (with mag) if false (only for ICM-20948 and BNO0xx currently)
-#define LOAD_BIAS 1 // Loads the bias values from NVS on start (ESP32 Only)
-#define SAVE_BIAS 1 // Periodically saves bias calibration data to NVS (ESP32 Only)
+#define LOAD_BIAS true // Loads the bias values from NVS on start
+#define SAVE_BIAS true // Periodically saves bias calibration data to NVS
 #define BIAS_DEBUG false // Printing BIAS Variables to serial (ICM20948 only)
 #define ENABLE_TAP false // monitor accel for (triple) tap events and send them. Uses more cpu, disable if problems. Server does nothing with value so disabled atm
 #define SEND_ACCELERATION true // send linear acceleration to the server
