@@ -91,7 +91,6 @@ void ICM20948Sensor::readFIFOToEnd()
 
 void ICM20948Sensor::sendData()
 {
-    
     if(newData && lastDataSent + 7 < millis())
     {
         lastDataSent = millis();
