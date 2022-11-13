@@ -25,6 +25,9 @@
 
 #include <ICM_20948.h>
 #include "sensor.h"
+
+#define ICM_20948_USE_DMP
+#define OVERRIDEDMPSETUP true
 #include <arduino-timer.h> // Used for periodically saving bias
 
 class ICM20948Sensor : public Sensor
@@ -67,9 +70,7 @@ private:
     void checkSensorTimeout();
     void readRotation();
     void readFIFOToEnd();
-
-#define OVERRIDEDMPSETUP true
-
+    
     Timer<> timer = timer_create_default();
     // TapDetector tapDetector;
 };
