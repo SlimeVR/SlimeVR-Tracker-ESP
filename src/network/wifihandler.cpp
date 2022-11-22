@@ -31,7 +31,7 @@
 unsigned long lastWifiReportTime = 0;
 unsigned long wifiConnectionTimeout = millis();
 bool isWifiConnected = false;
-uint8_t wifiState = 0;
+uint8_t wifiState = SLIME_WIFI_NOT_SETUP;
 bool hadWifi = false;
 unsigned long last_rssi_sample = 0;
 
@@ -64,7 +64,7 @@ void WiFiNetwork::setWiFiCredentials(const char * SSID, const char * pass) {
     WiFi.begin(SSID, pass);
     // Reset state, will get back into provisioning if can't connect
     hadWifi = false;
-    wifiState = 2;
+    wifiState = SLIME_WIFI_SERVER_CRED_ATTEMPT;
     wifiConnectionTimeout = millis();
 }
 
@@ -76,12 +76,15 @@ void WiFiNetwork::setUp() {
     wifiHandlerLogger.info("Setting up WiFi");
     WiFi.persistent(true);
     WiFi.mode(WIFI_STA);
+    #if ESP8266
+    WiFi.setPhyMode(WIFI_PHY_MODE_11N);
+    #endif
     WiFi.hostname("SlimeVR FBT Tracker");
     wifiHandlerLogger.info("Loaded credentials for SSID %s and pass length %d", WiFi.SSID().c_str(), WiFi.psk().length());
     setStaticIPIfDefined();
     wl_status_t status = WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
     wifiHandlerLogger.debug("Status: %d", status);
-    wifiState = 1;
+    wifiState = SLIME_WIFI_SAVED_ATTEMPT;
     wifiConnectionTimeout = millis();
     
 #if ESP8266
@@ -135,26 +138,74 @@ void WiFiNetwork::upkeep() {
         reportWifiError();
         if(wifiConnectionTimeout + 11000 < millis()) {
             switch(wifiState) {
-                case 0: // Wasn't set up
+                case SLIME_WIFI_NOT_SETUP: // Wasn't set up
                 return;
-                case 1: // Couldn't connect with first set of credentials
+                case SLIME_WIFI_SAVED_ATTEMPT: // Couldn't connect with first set of credentials
+                    #if ESP8266
+                        // Try again but with 11G
+                        // But only if there are credentials, otherwise we just waste time before
+                        // switching to hardcoded credentials.
+                        if (WiFi.SSID().length() > 0) {
+                            WiFi.setPhyMode(WIFI_PHY_MODE_11G);
+                            setStaticIPIfDefined();
+                            WiFi.begin();
+                            wifiConnectionTimeout = millis();
+                            wifiHandlerLogger.error("Can't connect from saved credentials, status: %d.", WiFi.status());
+                            wifiHandlerLogger.debug("Trying saved credentials with PHY Mode G...");
+                        } else {
+                            wifiHandlerLogger.debug("Skipping PHY Mode G attempt on 0-length SSID...");
+                        }
+                    #endif
+                    wifiState = SLIME_WIFI_SAVED_G_ATTEMPT;
+                return;
+                case SLIME_WIFI_SAVED_G_ATTEMPT: // Couldn't connect with first set of credentials with PHY Mode G
                     #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
                         // Try hardcoded credentials now
+                        #if ESP8266
+                            WiFi.setPhyMode(WIFI_PHY_MODE_11N);
+                        #endif
                         setStaticIPIfDefined();
                         WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
                         wifiConnectionTimeout = millis();
                         wifiHandlerLogger.error("Can't connect from saved credentials, status: %d.", WiFi.status());
                         wifiHandlerLogger.debug("Trying hardcoded credentials...");
                     #endif
-                    wifiState = 2;
+                    wifiState = SLIME_WIFI_HARDCODE_ATTEMPT;
                 return;
-                case 2: // Couldn't connect with second set of credentials
+                case SLIME_WIFI_HARDCODE_ATTEMPT: // Couldn't connect with second set of credentials
+                    #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD) && ESP8266
+                        // Try hardcoded credentials again, but with PHY Mode G
+                        WiFi.setPhyMode(WIFI_PHY_MODE_11G);
+                        setStaticIPIfDefined();
+                        WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
+                        wifiConnectionTimeout = millis();
+                        wifiHandlerLogger.error("Can't connect from saved credentials, status: %d.", WiFi.status());
+                        wifiHandlerLogger.debug("Trying hardcoded credentials with WiFi PHY Mode G...");
+                    #endif
+                    wifiState = SLIME_WIFI_HARDCODE_G_ATTEMPT;
+                return;
+                case SLIME_WIFI_SERVER_CRED_ATTEMPT: // Couldn't connect with server-sent credentials. 
+                    #if ESP8266
+                        // Try again silently but with 11G
+                        WiFi.setPhyMode(WIFI_PHY_MODE_11G);
+                        setStaticIPIfDefined();
+                        WiFi.begin();
+                        wifiConnectionTimeout = millis();
+                        wifiState = SLIME_WIFI_SERVER_CRED_G_ATTEMPT;
+                    #endif
+                return;                
+                case SLIME_WIFI_HARDCODE_G_ATTEMPT: // Couldn't connect with second set of credentials with PHY Mode G.
+                case SLIME_WIFI_SERVER_CRED_G_ATTEMPT: // Or if couldn't connect with server-sent credentials
                     // Start smart config
                     if(!hadWifi && !WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
                         if(WiFi.status() != WL_IDLE_STATUS) {
                             wifiHandlerLogger.error("Can't connect from any credentials, status: %d.", WiFi.status());
                             wifiConnectionTimeout = millis();
                         }
+                        // Return to the default PHY Mode N.
+                        #if ESP8266
+                            WiFi.setPhyMode(WIFI_PHY_MODE_11N);
+                        #endif
                         startProvisioning();
                     }
                 return;

@@ -38,23 +38,35 @@ public:
     }
 
     void motionLoop() override final;
-
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
-    void save_bias(bool repeat);
-    void load_bias();
 
 private:
+    void calculateAccelerationWithoutGravity(Quat *quaternion);
     unsigned long lastData = 0;
+    unsigned long lastDataSent = 0;
     int bias_save_counter = 0;
     bool newTap;
     int16_t rawAccel[3];
+    
+    #define DMPNUMBERTODOUBLECONVERTER 1073741824.0;
 
     ICM_20948_I2C imu;
     ICM_20948_Device_t pdev;
     icm_20948_DMP_data_t dmpData{};
+    icm_20948_DMP_data_t dmpDataTemp{};
 
     SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration;
+
+    void saveCalibration(bool repeat);
+    void loadCalibration();
+    void startCalibrationAutoSave();
+    void startDMP();
+    void connectSensor();
+    void startMotionLoop();
+    void checkSensorTimeout();
+    void readRotation();
+    void readFIFOToEnd();
 
 #define OVERRIDEDMPSETUP true
 
