@@ -30,30 +30,32 @@
 #include "mahony.h"
 #include "magneto1.4.h"
 
-class ADANXPSensor : public Sensor {
-    public:
-        ADANXPSensor(uint8_t id, uint8_t address, float rotation) : Sensor("ADANXPSensor", IMU_NXP, id, address, rotation){};
-        ~ADANXPSensor(){};
-        void motionSetup() override final;
-        void motionLoop() override final;
-        void startCalibration(int calibrationType) override final;
-        void getScaledValues(float Gxyz[3], float Axyz[3], float Mxyz[3]);
-    private:
-        Adafruit_FXAS21002C gyro = Adafruit_FXAS21002C(0x0021002C);
-        Adafruit_FXOS8700 accmag = Adafruit_FXOS8700(0x8700A, 0x8700B);
+class ADANXPSensor : public Sensor
+{
+public:
+    ADANXPSensor(uint8_t id, uint8_t address, float rotation) : Sensor("ADANXPSensor", IMU_NXP, id, address, rotation){};
+    ~ADANXPSensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void startCalibration(int calibrationType) override final;
+    void getScaledValues(float Gxyz[3], float Axyz[3], float Mxyz[3]);
 
-        sensors_event_t gyro_event;
-        sensors_event_t accel_event;
-        sensors_event_t mag_event;
+private:
+    Adafruit_FXAS21002C gyro = Adafruit_FXAS21002C(0x0021002C);
+    Adafruit_FXOS8700 accmag = Adafruit_FXOS8700(0x8700A, 0x8700B);
 
-        float q[4] {1.0f, 0.0f, 0.0f, 0.0f};
-        // Loop timing globals
-        uint32_t now = 0, last = 0;   //micros() timers
-        float deltat = 0;                  //loop time in seconds
-        float GYRO_SCALE_FACTOR = GYRO_SENSITIVITY_2000DPS;
-        float ACCEL_SCALE_FACTOR = (ACCEL_MG_LSB_8G * SENSORS_GRAVITY_STANDARD);
+    sensors_event_t gyro_event;
+    sensors_event_t accel_event;
+    sensors_event_t mag_event;
 
-        SlimeVR::Configuration::NXPCalibrationConfig m_Calibration;
+    float q[4]{1.0f, 0.0f, 0.0f, 0.0f};
+    // Loop timing globals
+    uint32_t now = 0, last = 0; // micros() timers
+    float deltat = 0;           // loop time in seconds
+    float GYRO_SCALE_FACTOR = GYRO_SENSITIVITY_2000DPS;
+    float ACCEL_SCALE_FACTOR = (ACCEL_MG_LSB_8G * SENSORS_GRAVITY_STANDARD);
+
+    SlimeVR::Configuration::NXPCalibrationConfig m_Calibration;
 };
 
 #endif
