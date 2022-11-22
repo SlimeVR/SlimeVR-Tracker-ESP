@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2022 Rosdayle & SlimeVR
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,8 @@ void ADANXPSensor::motionSetup()
 #ifdef DEBUG_SENSOR
     imu.enableDebugging(Serial);
 #endif
-    if(!gyro.begin()) {
+    if (!gyro.begin())
+    {
         m_Logger.fatal("Can't connect to %s at address 0x%02x", "FXAS21002C", addr);
         ledManager.pattern(50, 50, 200);
         return;
@@ -40,24 +41,26 @@ void ADANXPSensor::motionSetup()
     m_Logger.info("Connected to FXAS21002C");
     gyro.setRange(GYRO_RANGE_2000DPS);
 
-    if(!accmag.begin()) {
+    if (!accmag.begin())
+    {
         m_Logger.fatal("Can't connect to %s at address 0x%02x", "FXOS8700", addr);
         ledManager.pattern(50, 50, 200);
         return;
     }
 
     m_Logger.info("Connected to FXOS8700");
-accmag.setAccelRange(ACCEL_RANGE_8G);
+    accmag.setAccelRange(ACCEL_RANGE_8G);
     accmag.getEvent(&accel_event, &mag_event);
     float g_az = (float)accmag.accel_raw.z * ACCEL_SCALE_FACTOR;
-    if(g_az < -0.75f) {
+    if (g_az < -0.75f)
+    {
         ledManager.on();
 
         m_Logger.info("Flip front to confirm start calibration");
         delay(5000);
         accmag.getEvent(&accel_event, &mag_event);
         g_az = (float)accmag.accel_raw.z * ACCEL_SCALE_FACTOR;
-        if(g_az > 0.75f)
+        if (g_az > 0.75f)
         {
             m_Logger.debug("Starting calibration...");
             startCalibration(0);
@@ -70,7 +73,8 @@ accmag.setAccelRange(ACCEL_RANGE_8G);
     {
         SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
         // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        switch (sensorCalibration.type) {
+        switch (sensorCalibration.type)
+        {
         case SlimeVR::Configuration::CalibrationConfigType::NXP:
             m_Calibration = sensorCalibration.data.nxp;
             break;
@@ -94,29 +98,30 @@ void ADANXPSensor::motionLoop()
 {
     // code stolen from bmi160sensor.cpp
     now = micros();
-    deltat = now - last; //seconds since last update
-      if ((deltat * 1.0e-3f) >= samplingRateInMillis)  {
-    last = now;
+    deltat = now - last; // seconds since last update
+    if ((deltat * 1.0e-3f) >= samplingRateInMillis)
+    {
+        last = now;
 
-    float Gxyz[3] = {0};
-    float Axyz[3] = {0};
-    float Mxyz[3] = {0};
-    getScaledValues(Gxyz, Axyz, Mxyz);
+        float Gxyz[3] = {0};
+        float Axyz[3] = {0};
+        float Mxyz[3] = {0};
+        getScaledValues(Gxyz, Axyz, Mxyz);
 
 #if !USE_6_AXIS
-    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6f);  
+        mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6f);
 #else
-    mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
+        mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
 #endif
-    quaternion.set(-q[2], q[1], q[3], q[0]);
-    quaternion *= sensorOffset;
+        quaternion.set(-q[2], q[1], q[3], q[0]);
+        quaternion *= sensorOffset;
 
-    if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
-    {
-        newData = true;
-        lastQuatSent = quaternion;
+        if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
+        {
+            newData = true;
+            lastQuatSent = quaternion;
+        }
     }
-      }
 }
 
 void ADANXPSensor::getScaledValues(float Gxyz[3], float Axyz[3], float Mxyz[3])
@@ -145,38 +150,39 @@ void ADANXPSensor::getScaledValues(float Gxyz[3], float Axyz[3], float Mxyz[3])
     Axyz[0] = (float)ax;
     Axyz[1] = (float)ay;
     Axyz[2] = (float)az;
-    //apply offsets (bias) and scale factors from Magneto
-    #if useFullCalibrationMatrix == true
-        float temp[3];
-        for (uint8_t i = 0; i < 3; i++)
-            temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
-        Axyz[0] = (m_Calibration.A_Ainv[0][0] * temp[0] + m_Calibration.A_Ainv[0][1] * temp[1] + m_Calibration.A_Ainv[0][2] * temp[2]) * ACCEL_SCALE_FACTOR;
-        Axyz[1] = (m_Calibration.A_Ainv[1][0] * temp[0] + m_Calibration.A_Ainv[1][1] * temp[1] + m_Calibration.A_Ainv[1][2] * temp[2]) * ACCEL_SCALE_FACTOR;
-        Axyz[2] = (m_Calibration.A_Ainv[2][0] * temp[0] + m_Calibration.A_Ainv[2][1] * temp[1] + m_Calibration.A_Ainv[2][2] * temp[2]) * ACCEL_SCALE_FACTOR;
-    #else
-        for (uint8_t i = 0; i < 3; i++)
-            Axyz[i] = (Axyz[i] - calibration->A_B[i]);
-    #endif
+// apply offsets (bias) and scale factors from Magneto
+#if useFullCalibrationMatrix == true
+    float temp[3];
+    for (uint8_t i = 0; i < 3; i++)
+        temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
+    Axyz[0] = (m_Calibration.A_Ainv[0][0] * temp[0] + m_Calibration.A_Ainv[0][1] * temp[1] + m_Calibration.A_Ainv[0][2] * temp[2]) * ACCEL_SCALE_FACTOR;
+    Axyz[1] = (m_Calibration.A_Ainv[1][0] * temp[0] + m_Calibration.A_Ainv[1][1] * temp[1] + m_Calibration.A_Ainv[1][2] * temp[2]) * ACCEL_SCALE_FACTOR;
+    Axyz[2] = (m_Calibration.A_Ainv[2][0] * temp[0] + m_Calibration.A_Ainv[2][1] * temp[1] + m_Calibration.A_Ainv[2][2] * temp[2]) * ACCEL_SCALE_FACTOR;
+#else
+    for (uint8_t i = 0; i < 3; i++)
+        Axyz[i] = (Axyz[i] - calibration->A_B[i]);
+#endif
 
 #if !USE_6_AXIS
     Mxyz[0] = (float)mx;
     Mxyz[1] = (float)my;
     Mxyz[2] = (float)mz;
-    //apply offsets and scale factors from Magneto
-    #if useFullCalibrationMatrix == true
-        for (uint8_t i = 0; i < 3; i++)
-            temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
-        Mxyz[0] = (m_Calibration.M_Ainv[0][0] * temp[0] + m_Calibration.M_Ainv[0][1] * temp[1] + m_Calibration.M_Ainv[0][2] * temp[2]) * MAG_UT_LSB;
-        Mxyz[1] = (m_Calibration.M_Ainv[1][0] * temp[0] + m_Calibration.M_Ainv[1][1] * temp[1] + m_Calibration.M_Ainv[1][2] * temp[2]) * MAG_UT_LSB;
-        Mxyz[2] = (m_Calibration.M_Ainv[2][0] * temp[0] + m_Calibration.M_Ainv[2][1] * temp[1] + m_Calibration.M_Ainv[2][2] * temp[2]) * MAG_UT_LSB;
-    #else
-        for (i = 0; i < 3; i++)
-            Mxyz[i] = (Mxyz[i] - m_Calibration.M_B[i]);
-    #endif
+// apply offsets and scale factors from Magneto
+#if useFullCalibrationMatrix == true
+    for (uint8_t i = 0; i < 3; i++)
+        temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+    Mxyz[0] = (m_Calibration.M_Ainv[0][0] * temp[0] + m_Calibration.M_Ainv[0][1] * temp[1] + m_Calibration.M_Ainv[0][2] * temp[2]) * MAG_UT_LSB;
+    Mxyz[1] = (m_Calibration.M_Ainv[1][0] * temp[0] + m_Calibration.M_Ainv[1][1] * temp[1] + m_Calibration.M_Ainv[1][2] * temp[2]) * MAG_UT_LSB;
+    Mxyz[2] = (m_Calibration.M_Ainv[2][0] * temp[0] + m_Calibration.M_Ainv[2][1] * temp[1] + m_Calibration.M_Ainv[2][2] * temp[2]) * MAG_UT_LSB;
+#else
+    for (i = 0; i < 3; i++)
+        Mxyz[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+#endif
 #endif
 }
 
-void ADANXPSensor::startCalibration(int calibrationType) {
+void ADANXPSensor::startCalibration(int calibrationType)
+{
     ledManager.on();
 
     m_Logger.debug("Gathering raw data for device calibration...");
@@ -196,11 +202,11 @@ void ADANXPSensor::startCalibration(int calibrationType) {
         Gxyz[1] += float(gy);
         Gxyz[2] += float(gz);
         delay(10);
-        if (i % (gyroSamples / 10) == 0) {
+        if (i % (gyroSamples / 10) == 0)
+        {
             gyroCounter += 1;
             m_Logger.info("Gyro Cal at %i0%%", gyroCounter);
         }
-        
     }
     Gxyz[0] /= gyroSamples;
     Gxyz[1] /= gyroSamples;
@@ -217,10 +223,11 @@ void ADANXPSensor::startCalibration(int calibrationType) {
 
     // Blink calibrating led before user should rotate the sensor
     m_Logger.info("Gently rotate the device while it's gathering accelerometer and magnetometer data");
-    ledManager.pattern(15, 300, 3000/310);
-    float *calibrationDataAcc = (float*)malloc(accMagSamples * 3 * sizeof(float));
-    float *calibrationDataMag = (float*)malloc(accMagSamples * 3 * sizeof(float));
-    for (int i = 0; i < accMagSamples; i++) {
+    ledManager.pattern(15, 300, 3000 / 310);
+    float *calibrationDataAcc = (float *)malloc(accMagSamples * 3 * sizeof(float));
+    float *calibrationDataMag = (float *)malloc(accMagSamples * 3 * sizeof(float));
+    for (int i = 0; i < accMagSamples; i++)
+    {
         ledManager.on();
         accmag.getEvent(&accel_event, &mag_event);
         int16_t ax = accmag.accel_raw.x, ay = accmag.accel_raw.y, az = accmag.accel_raw.z;
@@ -237,7 +244,8 @@ void ADANXPSensor::startCalibration(int calibrationType) {
 #endif
         ledManager.off();
         delay(250);
-        if (i % (accMagSamples / 10) == 0) {
+        if (i % (accMagSamples / 10) == 0)
+        {
             accMagCounter += 1;
             m_Logger.info("AccelMag Cal at %i0%%", accMagCounter);
         }
@@ -265,7 +273,8 @@ void ADANXPSensor::startCalibration(int calibrationType) {
     free(calibrationDataMag);
     m_Logger.debug("[INFO] Magnetometer calibration matrix:");
     m_Logger.debug("{");
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++)
+    {
         m_Calibration.M_B[i] = M_BAinv[0][i];
         m_Calibration.M_Ainv[0][i] = M_BAinv[1][i];
         m_Calibration.M_Ainv[1][i] = M_BAinv[2][i];
