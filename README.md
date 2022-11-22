@@ -23,14 +23,14 @@ The following IMUs and their corresponding `IMU` values are supported by the fir
 * MPU-9250 (IMU_MPU9250)
   * Using Mahony sensor fusion of Gyroscope, Magnetometer and Accelerometer, requires good magnetic environment.
   * See *Sensor calibration* below for info on calibrating this sensor.
-  * Specify `IMU_MPU6500` in your `defines.h` to use without magentometer in 6DoF mode.
+  * Specify `IMU_MPU6500` in your `defines.h` to use without magnetometer in 6DoF mode.
   * Experimental support!
 * BMI160 (IMU_BMI160)
   * Using Mahony sensor fusion of Gyroscope and Accelerometer
   * See *Sensor calibration* below for info on calibrating this sensor.
   * Experimental support!
 * ICM-20948 (IMU_ICM20948)
-  * Using fision in internal DMP for 6Dof or 9DoF, 9DoF mode requires good magnetic environment.
+  * Using fusion in internal DMP for 6Dof or 9DoF, 9DoF mode requires good magnetic environment.
   * Comment out `USE_6DOF` in `debug.h` for 9DoF mode.
   * Experimental support!
 
@@ -44,13 +44,20 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
 * MPU-9250, BMI160
   * Turn them on with chip facing down. Flip up and put on a surface for a couple of seconds, the LED will light up.
   * After a few blinks, the LED will light up again
-  * Slowly rotate the tracker in an 8-motion facing different derections for about 30 seconds, while LED is blinking
+  * Slowly rotate the tracker in an 8-motion facing different directions for about 30 seconds, while LED is blinking
   * LED will turn off when calibration is complete
   * You don't have to calibrate next time you power it off, calibration values will be saved for the next use
 
+## Infos about ESP32-C3 with direct connection to USB
+
+The ESP32-C3 has two ways to connect the serial port. One is directly via the onboard USB CDC or via the onboard UART.
+When the chip is connected to the USB CDC, the serial port shows as `USB Serial Port` in Device Manager. The SlimeVR server will currently not connect to this port.
+If you want to set your WiFi credentials, you can use the PlatformIO serial console.
+There you have to enter the following: `SET WIFI "SSID" "PASSWORD"`
+
 ## Uploading On Linux
 
-Follow the instructions in this link [Platformio](https://docs.platformio.org/en/latest//faq.html#platformio-udev-rules), this should solve any permission denied errors
+Follow the instructions in this link [PlatformIO](https://docs.platformio.org/en/latest//faq.html#platformio-udev-rules), this should solve any permission denied errors
 
 ## Contributions
 

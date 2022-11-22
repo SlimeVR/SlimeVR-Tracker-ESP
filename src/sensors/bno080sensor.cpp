@@ -52,6 +52,8 @@ void BNO080Sensor::motionSetup()
                   imu.swVersionPatch
                 );
 
+    this->imu.enableLinearAccelerometer(10);
+
 #if USE_6_AXIS
     #if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
     imu.enableARVRStabilizedGameRotationVector(10);
@@ -118,6 +120,12 @@ void BNO080Sensor::motionLoop()
         {
             imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
             quaternion *= sensorOffset;
+    #if SEND_ACCELERATION
+            {
+                uint8_t acc;
+                this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
+            }
+    #endif // SEND_ACCELERATION
 
     #if ENABLE_INSPECTION
             {
@@ -172,13 +180,6 @@ void BNO080Sensor::motionLoop()
         {
             tap = imu.getTapDetector();
         }
-        if (imu.hasNewAccel())
-        {
-            float v[3];
-            uint8_t acc;
-            imu.getAccel(v[0], v[1], v[2], acc);
-            Network::sendAccel(v, PACKET_ACCEL);
-        }
         if (m_IntPin == 255 || imu.I2CTimedOut())
             break;
     }
@@ -217,6 +218,12 @@ void BNO080Sensor::sendData()
     {
         newData = false;
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
+
+#if SEND_ACCELERATION
+        {
+            Network::sendAccel(this->acceleration, this->sensorId);
+        }
+#endif
 
 #if !USE_6_AXIS
         Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);

@@ -51,13 +51,17 @@ BatteryMonitor battery;
 void setup()
 {
     Serial.begin(serialBaudRate);
+
+#ifdef ESP32C3 
+    // Wait for the Computer to be able to connect.
+    delay(2000);
+#endif
+
     Serial.println();
     Serial.println();
     Serial.println();
 
     logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
-
-    //wifi_set_sleep_type(NONE_SLEEP_T);
 
     statusManager.setStatus(SlimeVR::Status::LOADING, true);
 
@@ -66,12 +70,20 @@ void setup()
 
     SerialCommands::setUp();
 
-#if IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_MPU9250
+#if IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_MPU9250 || IMU == IMU_BNO055 || IMU == IMU_ICM20948
     I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); // Make sure the bus isn't stuck when resetting ESP without powering it down
-    // Do it only for MPU, cause reaction of BNO to this is not investigated yet
+    // Fixes I2C issues for certain IMUs. Only has been tested on IMUs above. Testing advised when adding other IMUs.
 #endif
     // join I2C bus
-    Wire.begin(PIN_IMU_SDA, PIN_IMU_SCL);
+
+#if ESP32
+    // For some unknown reason the I2C seem to be open on ESP32-C3 by default. Let's just close it before opening it again. (The ESP32-C3 only has 1 I2C.)
+    Wire.end();
+#endif
+
+    // using `static_cast` here seems to be better, because there are 2 similar function signatures
+    Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL)); 
+
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif

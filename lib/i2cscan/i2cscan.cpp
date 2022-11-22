@@ -1,11 +1,19 @@
 #include "i2cscan.h"
+#include "../../src/globals.h"
 
 #ifdef ESP8266
 uint8_t portArray[] = {16, 5, 4, 2, 14, 12, 13};
+uint8_t portExclude[] = {LED_PIN};
 String portMap[] = {"D0", "D1", "D2", "D4", "D5", "D6", "D7"};
+// ESP32C3 has not as many ports as the ESP32
+#elif defined(ESP32C3)
+uint8_t portArray[] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
+uint8_t portExclude[] = {18, 19, 20, 21, LED_PIN};
+String portMap[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10"};
 #elif defined(ESP32)
 uint8_t portArray[] = {4, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
 String portMap[] = {"4", "13", "14", "15", "16", "17", "18", "19", "21", "22", "23", "25", "26", "27", "32", "33"};
+uint8_t portExclude[] = {LED_PIN};
 #endif
 
 namespace I2CSCAN
@@ -33,7 +41,7 @@ namespace I2CSCAN
         {
             for (uint8_t j = 0; j < sizeof(portArray); j++)
             {
-                if (i != j)
+                if ((i != j) && !inArray(portArray[i], portExclude, sizeof(portExclude)) && !inArray(portArray[j], portExclude, sizeof(portExclude)))
                 {
                     if(checkI2C(i, j))
                         found = true;
@@ -43,12 +51,38 @@ namespace I2CSCAN
         if(!found) {
             Serial.println("[ERR] I2C: No I2C devices found");
         }
+
+#if ESP32
+        Wire.end();
+#endif
+
+        // Reset the I2C interface back to it's original values
+        Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
     }
 
+    bool inArray(uint8_t value, uint8_t* array, size_t arraySize)
+    {
+        for (size_t i = 0; i < arraySize; i++)
+        {
+            if (value == array[i]) 
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
     bool checkI2C(uint8_t i, uint8_t j)
     {
         bool found = false;
-        Wire.begin(portArray[i], portArray[j]);
+
+#if ESP32
+        Wire.end();
+#endif
+
+        Wire.begin((int)portArray[i], (int)portArray[j]);
+
         byte error, address;
         int nDevices;
         nDevices = 0;
@@ -62,23 +96,15 @@ namespace I2CSCAN
 
             if (error == 0)
             {
-                Serial.print("[DBG] I2C (@ " + portMap[i] + " : " + portMap[j] + "): ");
-                Serial.print("I2C device found at address 0x");
-                if (address < 16)
-                    Serial.print("0");
-                Serial.print(address, HEX);
-                Serial.println("  !");
-
+                Serial.printf("[DBG] I2C (@ %s(%d) : %s(%d)): I2C device found at address 0x%02x  !\n", 
+                                portMap[i].c_str(), portArray[i], portMap[j].c_str(), portArray[j], address);
                 nDevices++;
                 found = true;
             }
             else if (error == 4)
             {
-                Serial.print("[ERR] I2C (@ " + portMap[i] + " : " + portMap[j] + "): ");
-                Serial.print("Unknow error at address 0x");
-                if (address < 16)
-                    Serial.print("0");
-                Serial.println(address, HEX);
+                Serial.printf("[ERR] I2C (@ %s(%d) : %s(%d)): Unknow error at address 0x%02x\n", 
+                                portMap[i].c_str(), portArray[i], portMap[j].c_str(), portArray[j], address);
             }
         }
         return found;
