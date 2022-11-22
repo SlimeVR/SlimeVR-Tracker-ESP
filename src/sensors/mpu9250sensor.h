@@ -42,24 +42,47 @@ public:
 private:
     MPU9250 imu{};
     bool dmpReady = false;    // set true if DMP init was successful
-    uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
-    uint8_t devStatus;        // return status after each device operation (0 = success, !0 = error)
+    // TODO: actually check interrupt status
+    // uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
     uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
-    uint16_t fifoCount;       // count of all bytes currently in FIFO
-    uint8_t fifoBuffer[64]{}; // FIFO storage buffer
+
     // raw data and scaled as vector
     float q[4]{1.0f, 0.0f, 0.0f, 0.0f}; // for raw filter
     float Axyz[3]{};
     float Gxyz[3]{};
     float Mxyz[3]{};
-    float rawMag[3]{};
     VectorInt16 rawAccel{};
     Quat correction{0, 0, 0, 0};
     // Loop timing globals
-    unsigned long now = 0, last = 0; // micros() timers
-    float deltat = 0;                // loop time in seconds
+    float deltat = 0;                // sample time in seconds
 
     SlimeVR::Configuration::MPU9250CalibrationConfig m_Calibration;
+
+    // outputs to respective member variables
+    void parseAccelData(int16_t data[3]);
+    void parseGyroData(int16_t data[3]);
+    void parseMagData(int16_t data[3]);
+
+    // 6 bytes for gyro, 6 bytes for accel, 7 bytes for magnetometer
+    static constexpr uint16_t sensor_data_len = 19;
+
+    struct fifo_sample {
+        int16_t accel[3];
+        int16_t gyro[3];
+        int16_t mag[3];
+        uint8_t mag_status;
+    };
+
+    // acts as a memory space for getNextSample. upon success, can read from the sample member
+    // TODO: this may be overcomplicated, we may be able to just use fifo_sample and i misunderstood strict aliasing rules.
+    union fifo_sample_raw {
+        uint8_t raw[sensor_data_len];
+        struct fifo_sample sample;
+    };
+
+    // returns true if sample was read, outputs number of waiting samples in remaining_count if not null.
+    bool getNextSample(union fifo_sample_raw *buffer, uint16_t *remaining_count);
+    static void swapFifoData(union fifo_sample_raw* sample);
 };
 
 #endif
