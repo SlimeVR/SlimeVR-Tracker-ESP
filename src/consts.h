@@ -53,11 +53,11 @@
 
 #define LED_OFF 255
 
-#define POWER_SAVING_LEGACY 0 // No sleeping, but PS enabled
-#define POWER_SAVING_NONE 1 // No sleeping, no PS => for connection issues
-#define POWER_SAVING_MINIMUM 2 // Sleeping and PS => default
+#define POWER_SAVING_LEGACY 0   // No sleeping, but PS enabled
+#define POWER_SAVING_NONE 1     // No sleeping, no PS => for connection issues
+#define POWER_SAVING_MINIMUM 2  // Sleeping and PS => default
 #define POWER_SAVING_MODERATE 3 // Sleeping and better PS => might miss broadcasts, use at own risk
-#define POWER_SAVING_MAXIMUM 4 // Actual CPU sleeping, currently has issues with disconnecting
+#define POWER_SAVING_MAXIMUM 4  // Actual CPU sleeping, currently has issues with disconnecting
 
 #define DEG_0 0.f
 #define DEG_90 -PI / 2
@@ -65,11 +65,11 @@
 #define DEG_270 PI / 2
 
 #ifdef ESP8266
-  #define HARDWARE_MCU 1
+#define HARDWARE_MCU 1
 #elif defined(ESP32)
-  #define HARDWARE_MCU 2
+#define HARDWARE_MCU 2
 #else
-  #define HARDWARE_MCU 0
+#define HARDWARE_MCU 0
 #endif
 
 #define CURRENT_CONFIGURATION_VERSION 1
