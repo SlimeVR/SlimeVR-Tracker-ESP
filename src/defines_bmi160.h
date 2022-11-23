@@ -40,7 +40,12 @@
 // #define BMI160_MAG_TYPE BMI160_MAG_TYPE_QMC
 
 // Use VQF instead of mahony sensor fusion
+// Features: rest bias estimation, magnetic distortion rejection
 #define BMI160_USE_VQF true
+
+// Use BasicVQF instead of VQF (if BMI160_USE_VQF == true)
+// Disables the features above
+#define BMI160_USE_BASIC_VQF false
 
 // Use temperature calibration
 #define BMI160_USE_TEMPCAL true
