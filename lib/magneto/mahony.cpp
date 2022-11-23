@@ -29,7 +29,6 @@
 #define Kp 10.0f
 #define Ki 0.0f
 
-// why is this not a class
 static float ix = 0.0f, iy = 0.0f, iz = 0.0f;  //integral feedback terms
 
 // Mahony orientation filter, assumed World Frame NWU (xNorth, yWest, zUp)
