@@ -171,10 +171,11 @@ void BMI160Sensor::motionSetup() {
     #endif
 
     #if BMI160_USE_SENSCAL
+    {
         String localDevice = WiFi.macAddress();
         for (auto const& kv : sensitivityOffsets) {
             auto mac = kv.first;
-            if (mac != localDevice) continue;
+            if (!localDevice.equals(mac)) continue;
 
             auto offsets = kv.second;
             if (offsets.sensorId != sensorId) continue;
@@ -185,10 +186,11 @@ void BMI160Sensor::motionSetup() {
             gscaleY = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.y);
             gscaleZ = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.z);
             m_Logger.debug("Custom sensitivity offset enabled: %s %s",
-                mac.c_str(),
+                mac,
                 offsets.sensorId == SENSORID_PRIMARY ? "primary" : "aux" 
             );
         }
+    }
     #endif
 
     imu.setFIFOHeaderModeEnabled(true);
