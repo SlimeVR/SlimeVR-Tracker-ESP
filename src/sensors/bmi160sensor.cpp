@@ -235,7 +235,7 @@ void BMI160Sensor::motionLoop() {
         if (!lastCpuUsagePrinted) lastCpuUsagePrinted = end;
         if (end - lastCpuUsagePrinted > 1e6) {
             bool restDetected = false;
-            #if BMI160_USE_VQF
+            #if BMI160_VQF_REST_DETECTION_AVAILABLE
                 restDetected = vqf.getRestDetected();
             #else
                 restDetected = restDetection.getRestDetected();
@@ -438,13 +438,13 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
         gyrReads++;
     #endif
 
-    bool restDetected = false;
-    #if BMI160_USE_VQF
-        restDetected = vqf.getRestDetected();
-    #else
-        restDetected = restDetection.getRestDetected();
-    #endif
     #if BMI160_USE_TEMPCAL
+        bool restDetected = false;
+        #if BMI160_VQF_REST_DETECTION_AVAILABLE
+            restDetected = vqf.getRestDetected();
+        #else
+            restDetected = restDetection.getRestDetected();
+        #endif
         gyroTempCalibrator->updateGyroTemperatureCalibration(temperature, restDetected, x, y, z);
         if (gyroTempCalibrator->shouldSaveConfig()) {
             gyroTempCalibrator->saveConfig();
@@ -472,18 +472,19 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
     }
     remapGyroAccel(&Gxyz[0], &Gxyz[1], &Gxyz[2]);
 
+    #if !BMI160_VQF_REST_DETECTION_AVAILABLE
+        restDetection.updateGyr(dtMicros, Gxyz);
+    #endif
     #if USE_6_AXIS
         #if BMI160_USE_VQF
             vqf.updateGyr(Gxyz);
         #else
-            restDetection.updateGyr(dtMicros, Gxyz);
-            mahonyQuaternionUpdate(qwxyz, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], ((float)dtMicros) * 1.0e-6f);
+            mahony.updateInto(qwxyz, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], ((float)dtMicros) * 1.0e-6);
         #endif
     #else
         #if BMI160_USE_VQF
             vqf.updateGyr(Gxyz);
         #else
-            restDetection.updateGyr(dtMicros, Gxyz);
             mahonyQuaternionUpdate(qwxyz, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], ((float)dtMicros) * 1.0e-6f);
         #endif
     #endif
@@ -506,10 +507,11 @@ void BMI160Sensor::onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int
     lastAxyz[0] = Axyz[0];
     lastAxyz[1] = Axyz[1];
     lastAxyz[2] = Axyz[2];
+    #if !BMI160_VQF_REST_DETECTION_AVAILABLE
+        restDetection.updateAcc(dtMicros, Axyz);
+    #endif
     #if BMI160_USE_VQF
         vqf.updateAcc(Axyz);
-    #else
-        restDetection.updateAcc(dtMicros, Axyz);
     #endif
 }
 void BMI160Sensor::onMagRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z) {
@@ -527,8 +529,6 @@ void BMI160Sensor::onMagRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16
     #if !USE_6_AXIS
         #if BMI160_USE_VQF
             vqf.updateMag(Mxyz);
-        #else
-            restDetection.updateMag(dtMicros, Mxyz);
         #endif
     #endif
 }
@@ -704,7 +704,11 @@ void BMI160Sensor::startCalibration(int calibrationType) {
         RestDetectionParams calibrationRestDetectionParams;
         calibrationRestDetectionParams.restMinTimeMicros = 3 * 1e6;
         calibrationRestDetectionParams.restThAcc = 0.25f;
-        RestDetection calibrationRestDetection(calibrationRestDetectionParams);
+        RestDetection calibrationRestDetection(
+            calibrationRestDetectionParams,
+            BMI160_ODR_GYR_MICROS / 1e6f,
+            BMI160_ODR_ACC_MICROS / 1e6f
+        );
 
         constexpr uint16_t expectedPositions = 6;
         uint16_t numSamplesPerPosition = 32;

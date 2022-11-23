@@ -30,6 +30,7 @@
 
 #include <BMI160.h>
 #include <vqf.h>
+#include <basicvqf.h>
 #include "../motionprocessing/types.h"
 
 #include "../motionprocessing/GyroTemperatureCalibrator.h"
@@ -120,17 +121,28 @@ constexpr uint32_t BMI160_TEMP_CALIBRATION_REQUIRED_SAMPLES_PER_STEP =
     TEMP_CALIBRATION_SECONDS_PER_STEP / (BMI160_ODR_GYR_MICROS / 1e6);
 static_assert(0x7FFF * BMI160_TEMP_CALIBRATION_REQUIRED_SAMPLES_PER_STEP < 0x7FFFFFFF, "Temperature calibration sum overflow");
 
+#define BMI160_VQF_REST_DETECTION_AVAILABLE (BMI160_USE_VQF && !BMI160_USE_BASIC_VQF)
+
+#if BMI160_USE_VQF
+#if !BMI160_USE_BASIC_VQF
 struct BMI160VQFParams: VQFParams {
     BMI160VQFParams() : VQFParams() {
+        #ifndef VQF_NO_MOTION_BIAS_ESTIMATION
         motionBiasEstEnabled = false;
+        #endif
         tauAcc = 2.0f;
-        restThGyr = 0.6f; // 200 norm
+        restMinT = 2.0f;
+        restThGyr = 0.6f; // 400 norm
         restThAcc = 0.06f; // 100 norm
     }
 };
+#endif
+#endif
+
 struct BMI160RestDetectionParams: RestDetectionParams {
     BMI160RestDetectionParams() : RestDetectionParams() {
-        restThGyr = 0.6f; // 200 norm
+        restMinTimeMicros = 2.0f * 1e6;
+        restThGyr = 0.6f; // 400 norm
         restThAcc = 0.06f; // 100 norm
     }
 };
@@ -138,9 +150,18 @@ struct BMI160RestDetectionParams: RestDetectionParams {
 class BMI160Sensor : public Sensor {
     public:
         BMI160Sensor(uint8_t id, uint8_t address, float rotation) :
-            Sensor("BMI160Sensor", IMU_BMI160, id, address, rotation),
-            vqf(vqfParams, BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f, BMI160_ODR_MAG_MICROS / 1e6f),
-            restDetection(restDetectionParams)
+            Sensor("BMI160Sensor", IMU_BMI160, id, address, rotation)
+#if !BMI160_VQF_REST_DETECTION_AVAILABLE
+            , restDetection(restDetectionParams, BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f)
+#endif
+
+#if BMI160_USE_VQF
+#if !BMI160_USE_BASIC_VQF
+            , vqf(vqfParams, BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f, BMI160_ODR_MAG_MICROS / 1e6f)
+#else
+            , vqf(BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f, BMI160_ODR_MAG_MICROS / 1e6f)
+#endif
+#endif
         {
         };
         ~BMI160Sensor(){};
@@ -177,8 +198,21 @@ class BMI160Sensor : public Sensor {
         float getTemperature();
     private:
         BMI160 imu {};
+
+        Mahony<sensor_real_t> mahony;
+#if !BMI160_VQF_REST_DETECTION_AVAILABLE
+        BMI160RestDetectionParams restDetectionParams {};
+        RestDetection restDetection;
+#endif
+#if BMI160_USE_VQF
+#if !BMI160_USE_BASIC_VQF
         BMI160VQFParams vqfParams {};
         VQF vqf;
+#else
+        BasicVQF vqf;
+#endif
+#endif
+
         sensor_real_t qwxyz[4] {1.0f, 0.0f, 0.0f, 0.0f};
         Quaternion quat{};
 
@@ -201,8 +235,6 @@ class BMI160Sensor : public Sensor {
         } fifo {};
         float temperature = 0;
         GyroTemperatureCalibrator* gyroTempCalibrator = nullptr;
-        BMI160RestDetectionParams restDetectionParams {};
-        RestDetection restDetection;
         sensor_real_t Gxyz[3] = {0};
         sensor_real_t Axyz[3] = {0};
         sensor_real_t Mxyz[3] = {0};
