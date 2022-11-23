@@ -4,7 +4,6 @@
 
 #include "vqf.h"
 
-#include <cstdio>
 #include <algorithm>
 #include <limits>
 #define _USE_MATH_DEFINES
@@ -37,7 +36,6 @@ VQFParams::VQFParams()
     , restFilterTau(0.5)
     , restThGyr(2.0)
     , restThAcc(0.5)
-    , restThMag(0.1)
     , magCurrentTau(0.05)
     , magRefTau(20.0)
     , magNormTh(0.1)
@@ -70,11 +68,6 @@ VQF::VQF(const VQFParams &params, vqf_real_t gyrTs, vqf_real_t accTs, vqf_real_t
     coeffs.magTs = magTs > 0 ? magTs : gyrTs;
 
     setup();
-}
-
-VQF::~VQF()
-{
-
 }
 
 void VQF::updateGyr(const vqf_real_t gyr[3])
@@ -299,21 +292,6 @@ void VQF::updateMag(const vqf_real_t mag[3])
         return;
     }
 
-    // rest detection
-    if (params.restBiasEstEnabled) {
-        filterVec(mag, 3, params.restFilterTau, coeffs.magTs, coeffs.restMagLpB, coeffs.restMagLpA,
-                  state.restMagLpState, state.restLastMagLp);
-
-        state.restLastSquaredDeviations[2] = square(mag[0] - state.restLastMagLp[0])
-                + square(mag[1] - state.restLastMagLp[1]) + square(mag[2] - state.restLastMagLp[2]);
-
-        vqf_real_t magNormSquared = square(state.restLastMagLp[0]) + square(state.restLastMagLp[1]) + square(state.restLastMagLp[2]);
-        if (state.restLastSquaredDeviations[2] >= square(params.restThMag)*magNormSquared) {
-            state.restT = 0.0;
-            state.restDetected = false;
-        }
-    }
-
     vqf_real_t magEarth[3];
 
     // bring magnetometer measurement into 6D earth frame
@@ -532,12 +510,10 @@ bool VQF::getMagDistDetected() const
     return state.magDistDetected;
 }
 
-void VQF::getRelativeRestDeviations(vqf_real_t out[3]) const
+void VQF::getRelativeRestDeviations(vqf_real_t out[2]) const
 {
     out[0] = sqrt(state.restLastSquaredDeviations[0]) / (params.restThGyr*vqf_real_t(M_PI/180.0));
     out[1] = sqrt(state.restLastSquaredDeviations[1]) / params.restThAcc;
-    vqf_real_t magNormSquared = square(state.restLastMagLp[0]) + square(state.restLastMagLp[1]) + square(state.restLastMagLp[2]);
-    out[2] = sqrt(state.restLastSquaredDeviations[2]/magNormSquared) / params.restThMag;
 }
 
 vqf_real_t VQF::getMagRefNorm() const
@@ -581,8 +557,6 @@ void VQF::setRestBiasEstEnabled(bool enabled)
     std::fill(state.restGyrLpState, state.restGyrLpState + 3*2, NaN);
     std::fill(state.restLastAccLp, state.restLastAccLp + 3, 0.0);
     std::fill(state.restAccLpState, state.restAccLpState + 3*2, NaN);
-    std::fill(state.restLastMagLp, state.restLastMagLp + 3, 0.0);
-    std::fill(state.restMagLpState, state.restMagLpState + 3*2, NaN);
 }
 
 void VQF::setMagDistRejectionEnabled(bool enabled)
@@ -639,11 +613,10 @@ void VQF::setTauMag(vqf_real_t tauMag)
     coeffs.kMag = gainFromTau(params.tauMag, coeffs.magTs);
 }
 
-void VQF::setRestDetectionThresholds(vqf_real_t thGyr, vqf_real_t thAcc, vqf_real_t thMag)
+void VQF::setRestDetectionThresholds(vqf_real_t thGyr, vqf_real_t thAcc)
 {
     params.restThGyr = thGyr;
     params.restThAcc = thAcc;
-    params.restThMag = thMag;
 }
 
 const VQFParams& VQF::getParams() const
@@ -701,8 +674,6 @@ void VQF::resetState()
     std::fill(state.restGyrLpState, state.restGyrLpState + 3*2, NaN);
     std::fill(state.restLastAccLp, state.restLastAccLp + 3, 0.0);
     std::fill(state.restAccLpState, state.restAccLpState + 3*2, NaN);
-    std::fill(state.restLastMagLp, state.restLastMagLp + 3, 0.0);
-    std::fill(state.restMagLpState, state.restMagLpState + 3*2, NaN);
 
     state.magRefNorm = 0.0;
     state.magRefDip = 0.0;
@@ -1004,7 +975,6 @@ void VQF::setup()
 
     filterCoeffs(params.restFilterTau, coeffs.gyrTs, coeffs.restGyrLpB, coeffs.restGyrLpA);
     filterCoeffs(params.restFilterTau, coeffs.accTs, coeffs.restAccLpB, coeffs.restAccLpA);
-    filterCoeffs(params.restFilterTau, coeffs.magTs, coeffs.restMagLpB, coeffs.restMagLpA);
 
     coeffs.kMagRef = gainFromTau(params.magRefTau, coeffs.magTs);
     if (params.magCurrentTau > 0) {

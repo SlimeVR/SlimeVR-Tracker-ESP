@@ -8,7 +8,7 @@
 #include <stddef.h>
 
 #define VQF_SINGLE_PRECISION
-// #define VQF_NO_MOTION_BIAS_ESTIMATION
+#define VQF_NO_MOTION_BIAS_ESTIMATION
 #define M_PI 3.14159265358979323846
 #define M_SQRT2 1.41421356237309504880
 
@@ -183,15 +183,6 @@ struct VQFParams
      * Default value: 0.5 m/s²
      */
     vqf_real_t restThAcc;
-    /**
-     * @brief Relative magnetic field strength threshold for rest detection.
-     *
-     * For rest to be detected, the norm of the deviation between measurement and reference must be below the given
-     * threshold. This value is relative to the norm of the reference.
-     *
-     * Default value: 0.1 (10%)
-     */
-    vqf_real_t restThMag;
 
     /**
      * @brief Time constant for current norm/dip value in magnetic disturbance detection (in seconds).
@@ -393,12 +384,12 @@ struct VQFState {
      * @brief Last (squared) deviations from the reference of the last sample used in rest detection.
      *
      * Looking at those values can be useful to understand how rest detection is working and which thresholds are
-     * suitable. The array contains the last values for gyroscope, accelerometer, and magnetometer in the respective
+     * suitable. The array contains the last values for gyroscope and accelerometer in the respective
      * units. Note that the values are squared.
      *
      * The method VQF::getRelativeRestDeviations() provides an easier way to obtain and interpret those values.
      */
-    vqf_real_t restLastSquaredDeviations[3];
+    vqf_real_t restLastSquaredDeviations[2];
     /**
      * @brief The current duration for which all sensor readings are within the rest detection thresholds.
      *
@@ -423,14 +414,6 @@ struct VQFState {
      * @brief Internal low-pass filter state for #restLastAccLp.
      */
     double restAccLpState[3*2];
-    /**
-     * @brief Last low-pass filtered magnetometer measurement used as the reference for rest detection.
-     */
-    vqf_real_t restLastMagLp[3];
-    /**
-     * @brief Internal low-pass filter state for #restLastMagLp.
-     */
-    double restMagLpState[3*2];
 
     /**
      * @brief Norm of the currently accepted magnetic field reference.
@@ -560,14 +543,6 @@ struct VQFCoefficients
      * @brief Denominator coefficients of the accelerometer measurement low-pass filter for rest detection.
      */
     double restAccLpA[2];
-    /**
-     * @brief Numerator coefficients of the magnetometer measurement low-pass filter for rest detection.
-     */
-    double restMagLpB[3];
-    /**
-     * @brief Denominator coefficients of the magnetometer measurement low-pass filter for rest detection.
-     */
-    double restMagLpA[2];
 
     /**
      * @brief Gain of the first-order filter used for to update the magnetic field reference and candidate.
@@ -590,8 +565,10 @@ struct VQFCoefficients
  * This class implements the orientation estimation filter described in the following publication:
  *
  *
- *     D. Laidig, T. Seel. "VQF: Highly Accurate IMU Orientation Estimation with Bias Estimation and Magnetic
- *     Disturbance Rejection." arXiv preprint, 2022. `arXiv:2203.17024 <https://arxiv.org/abs/2203.17024>`_.
+ *     D. Laidig and T. Seel. "VQF: Highly Accurate IMU Orientation Estimation with Bias Estimation and Magnetic
+ *     Disturbance Rejection." Information Fusion 2023, 91, 187--204.
+ *     `doi:10.1016/j.inffus.2022.10.014 <https://doi.org/10.1016/j.inffus.2022.10.014>`_.
+ *     [Accepted manuscript available at `arXiv:2203.17024 <https://arxiv.org/abs/2203.17024>`_.]
  *
  * The filter can perform simultaneous 6D (magnetometer-free) and 9D (gyr+acc+mag) sensor fusion and can also be used
  * without magnetometer data. It performs rest detection, gyroscope bias estimation during rest and motion, and magnetic
@@ -664,7 +641,6 @@ public:
      * @param magTs sampling time of the magnetometer measurements in seconds (the value of `gyrTs` is used if set to -1)
      */
     VQF(const VQFParams& params, vqf_real_t gyrTs, vqf_real_t accTs=-1.0, vqf_real_t magTs=-1.0);
-    ~VQF();
 
     /**
      * @brief Performs gyroscope update step.
@@ -810,12 +786,12 @@ public:
      * @brief Returns the relative deviations used in rest detection.
      *
      * Looking at those values can be useful to understand how rest detection is working and which thresholds are
-     * suitable. The output array is filled with the last values for gyroscope, accelerometer, and magnetometer,
-     * relative to the threshold. In order for rest to be detected, all values must stay below 1.
+     * suitable. The output array is filled with the last values for gyroscope and accelerometer,
+     * relative to the threshold. In order for rest to be detected, both values must stay below 1.
      *
-     * @param out output array of size 3 for the relative rest deviations
+     * @param out output array of size 2 for the relative rest deviations
       */
-    void getRelativeRestDeviations(vqf_real_t out[3]) const;
+    void getRelativeRestDeviations(vqf_real_t out[2]) const;
     /**
      * @brief Returns the norm of the currently accepted magnetic field reference.
      */
@@ -864,9 +840,9 @@ public:
     /**
      * @brief Sets the current thresholds for rest detection.
      *
-     * For details about the parameters, see VQFParams.restThGyr,  VQFParams.restThAcc, and VQFParams.restThMag.
+     * For details about the parameters, see VQFParams.restThGyr and VQFParams.restThAcc.
      */
-    void setRestDetectionThresholds(vqf_real_t thGyr, vqf_real_t thAcc, vqf_real_t thMag);
+    void setRestDetectionThresholds(vqf_real_t thGyr, vqf_real_t thAcc);
 
     /**
      * @brief Returns the current parameters.
