@@ -47,7 +47,11 @@ namespace SlimeVR
 #elif IMU == IMU_BNO055
                 firstIMUAddress = I2CSCAN::pickDevice(0x29, 0x28, true);
 #elif IMU == IMU_MPU9250 || IMU == IMU_BMI160 || IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_ICM20948
+                #if FLIP_ROTATIONS
+                firstIMUAddress = I2CSCAN::pickDevice(0x69, 0x68, true);
+                #else
                 firstIMUAddress = I2CSCAN::pickDevice(0x68, 0x69, true);
+                #endif
 #else
 #error Unsupported primary IMU
 #endif

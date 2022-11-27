@@ -133,9 +133,14 @@ void ICM20948Sensor::startDMP()
     {
         m_Logger.debug("DMP initialized");
     }
+    else if(imu.initializeDMP() == ICM_20948_Stat_DMPNotSupported)
+    {
+        m_Logger.fatal("DMP Firmware not found");
+        return;
+    }
     else
     {
-       m_Logger.fatal("Failed to initialize DMP");
+        m_Logger.fatal("Failed to initialize DMP");
         return;
     }
 
@@ -387,18 +392,18 @@ void ICM20948Sensor::saveCalibration(bool repeat)
     m_Logger.trace("Saving Bias");
     #endif
 
-    imu.GetBiasGyroX(&m_Calibration.G[0]);
-    imu.GetBiasGyroY(&m_Calibration.G[1]);
-    imu.GetBiasGyroZ(&m_Calibration.G[2]);
+    imu.getBiasGyroX(&m_Calibration.G[0]);
+    imu.getBiasGyroY(&m_Calibration.G[1]);
+    imu.getBiasGyroZ(&m_Calibration.G[2]);
 
-    imu.GetBiasAccelX(&m_Calibration.A[0]);
-    imu.GetBiasAccelY(&m_Calibration.A[1]);
-    imu.GetBiasAccelZ(&m_Calibration.A[2]);
+    imu.getBiasAccelX(&m_Calibration.A[0]);
+    imu.getBiasAccelY(&m_Calibration.A[1]);
+    imu.getBiasAccelZ(&m_Calibration.A[2]);
 
     #if !USE_6_AXIS
-    imu.GetBiasCPassX(&m_Calibration.C[0]);
-    imu.GetBiasCPassY(&m_Calibration.C[1]);
-    imu.GetBiasCPassZ(&m_Calibration.C[2]);
+    imu.getBiasCPassX(&m_Calibration.C[0]);
+    imu.getBiasCPassY(&m_Calibration.C[1]);
+    imu.getBiasCPassZ(&m_Calibration.C[2]);
     #endif
 
     #ifdef DEBUG_SENSOR
@@ -463,18 +468,18 @@ void ICM20948Sensor::loadCalibration()
     #endif
     #endif
 
-    imu.SetBiasGyroX(m_Calibration.G[0]);
-    imu.SetBiasGyroY(m_Calibration.G[1]);
-    imu.SetBiasGyroZ(m_Calibration.G[2]);
+    imu.setBiasGyroX(m_Calibration.G[0]);
+    imu.setBiasGyroY(m_Calibration.G[1]);
+    imu.setBiasGyroZ(m_Calibration.G[2]);
 
-    imu.SetBiasAccelX(m_Calibration.A[0]);
-    imu.SetBiasAccelY(m_Calibration.A[1]);
-    imu.SetBiasAccelZ(m_Calibration.A[2]);
+    imu.setBiasAccelX(m_Calibration.A[0]);
+    imu.setBiasAccelY(m_Calibration.A[1]);
+    imu.setBiasAccelZ(m_Calibration.A[2]);
 
     #if !USE_6_AXIS
-    imu.SetBiasCPassX(m_Calibration.C[0]);
-    imu.SetBiasCPassY(m_Calibration.C[1]);
-    imu.SetBiasCPassZ(m_Calibration.C[2]);
+    imu.setBiasCPassX(m_Calibration.C[0]);
+    imu.setBiasCPassY(m_Calibration.C[1]);
+    imu.setBiasCPassZ(m_Calibration.C[2]);
     #endif
 }
 
@@ -600,7 +605,7 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     // Set Gyro FSR (Full scale range) to 2000dps through GYRO_CONFIG_1
     // Set Accel FSR (Full scale range) to 4g through ACCEL_CONFIG
     ICM_20948_fss_t myFSS; // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
-    myFSS.a = gpm4;        // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
+    myFSS.a = gpm16;        // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
                             // gpm2
                             // gpm4
                             // gpm8
@@ -640,10 +645,10 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
     ICM_20948_smplrt_t mySmplrt;
     //mySmplrt.g = 19; // ODR is computed as follows: 1.1 kHz/(1+GYRO_SMPLRT_DIV[7:0]). 19 = 55Hz. InvenSense Nucleo example uses 19 (0x13).
     //mySmplrt.a = 19; // ODR is computed as follows: 1.125 kHz/(1+ACCEL_SMPLRT_DIV[11:0]). 19 = 56.25Hz. InvenSense Nucleo example uses 19 (0x13).
-    mySmplrt.g = 4; // 225Hz
-    mySmplrt.a = 4; // 225Hz
-    // mySmplrt.g = 8; // 112Hz
-    // mySmplrt.a = 8; // 112Hz
+    //mySmplrt.g = 4; // 225Hz
+    //mySmplrt.a = 4; // 225Hz
+    mySmplrt.g = 8; // 112Hz
+    mySmplrt.a = 8; // 112Hz
     result = setSampleRate((ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), mySmplrt); if (result > worstResult) worstResult = result;
 
     // Setup DMP start address through PRGM_STRT_ADDRH/PRGM_STRT_ADDRL
