@@ -31,7 +31,7 @@
 #define BOARD BOARD_SLIMEVR
 #define IMU_ROTATION DEG_90
 #define SECOND_IMU_ROTATION DEG_270
-#define FLIP_ROTATIONS true //if you are having issues with aux trackers try this.
+#define FLIP_ROTATIONS false //if you are having issues with aux trackers try this.
 
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin, 
