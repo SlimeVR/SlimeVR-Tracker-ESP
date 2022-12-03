@@ -120,24 +120,6 @@ void BMI160Sensor::motionSetup() {
 
     m_Logger.info("Connected to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
 
-    int16_t ax, ay, az;
-    getRemappedAcceleration(&ax, &ay, &az);
-    float g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
-    if (g_az < -0.75f) {
-        ledManager.on();
-
-        m_Logger.info("Flip front to confirm start calibration");
-        delay(5000);
-        getRemappedAcceleration(&ax, &ay, &az);
-        g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
-        if (g_az > 0.75f) {
-            m_Logger.debug("Starting calibration...");
-            startCalibration(0);
-        }
-
-        ledManager.off();
-    }
-
     // Initialize the configuration
     {
         SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
@@ -156,6 +138,24 @@ void BMI160Sensor::motionSetup() {
             m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
             m_Logger.info("Calibration is advised");
         }
+    }
+
+    int16_t ax, ay, az;
+    getRemappedAcceleration(&ax, &ay, &az);
+    float g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
+    if (g_az < -0.75f) {
+        ledManager.on();
+
+        m_Logger.info("Flip front to confirm start calibration");
+        delay(5000);
+        getRemappedAcceleration(&ax, &ay, &az);
+        g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
+        if (g_az > 0.75f) {
+            m_Logger.debug("Starting calibration...");
+            startCalibration(0);
+        }
+
+        ledManager.off();
     }
 
     // allocate temperature memory after calibration because OOM
@@ -677,7 +677,12 @@ void BMI160Sensor::startCalibration(int calibrationType) {
 
     // Wait for sensor to calm down before calibration
     constexpr uint8_t GYRO_CALIBRATION_DELAY_SEC = 3;
-    m_Logger.info("Put down the device and wait for baseline gyro reading calibration (%i seconds)", GYRO_CALIBRATION_DELAY_SEC);
+    #ifndef BMI160_CALIBRATION_GYRO_ONLY
+    constexpr uint8_t GYRO_CALIBRATION_DURATION_SEC = 5;
+    #else
+    constexpr uint8_t GYRO_CALIBRATION_DURATION_SEC = 15;
+    #endif
+    m_Logger.info("Put down the device and wait for baseline gyro reading calibration (%i seconds)", GYRO_CALIBRATION_DURATION_SEC);
     ledManager.on();
     for (uint8_t i = GYRO_CALIBRATION_DELAY_SEC; i > 0; i--) {
         m_Logger.info("%i...", i);
@@ -688,9 +693,9 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     temperature = getTemperature();
     m_Calibration.temperature = temperature;
 
-    // get sample count over 5 seconds
-    constexpr uint16_t gyroCalibrationSamples = 5 / (BMI160_ODR_GYR_MICROS / 1e6);
-    float rawGxyz[3] = {0};
+    constexpr uint16_t gyroCalibrationSamples =
+        GYRO_CALIBRATION_DURATION_SEC / (BMI160_ODR_GYR_MICROS / 1e6);
+    int32_t rawGxyz[3] = {0};
 
     #ifdef DEBUG_SENSOR
         m_Logger.trace("Calibration temperature: %f", temperature);
@@ -704,19 +709,20 @@ void BMI160Sensor::startCalibration(int calibrationType) {
 
         int16_t gx, gy, gz;
         imu.getRotation(&gx, &gy, &gz);
-        rawGxyz[0] += float(gx);
-        rawGxyz[1] += float(gy);
-        rawGxyz[2] += float(gz);
+        rawGxyz[0] += gx;
+        rawGxyz[1] += gy;
+        rawGxyz[2] += gz;
     }
     ledManager.off();
-    m_Calibration.G_off[0] = rawGxyz[0] / gyroCalibrationSamples;
-    m_Calibration.G_off[1] = rawGxyz[1] / gyroCalibrationSamples;
-    m_Calibration.G_off[2] = rawGxyz[2] / gyroCalibrationSamples;
+    m_Calibration.G_off[0] = ((double)rawGxyz[0]) / gyroCalibrationSamples;
+    m_Calibration.G_off[1] = ((double)rawGxyz[1]) / gyroCalibrationSamples;
+    m_Calibration.G_off[2] = ((double)rawGxyz[2]) / gyroCalibrationSamples;
 
     #ifdef DEBUG_SENSOR
         m_Logger.trace("Gyro calibration results: %f %f %f", UNPACK_VECTOR_ARRAY(m_Calibration.G_off));
     #endif
 
+    #ifndef BMI160_CALIBRATION_GYRO_ONLY
     // Blink calibrating led before user should rotate the sensor
     #if BMI160_ACCEL_CALIBRATION_METHOD == ACCEL_CALIBRATION_METHOD_ROTATION
         m_Logger.info("After 3 seconds, Gently rotate the device while it's gathering data");
@@ -763,7 +769,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
         );
 
         constexpr uint16_t expectedPositions = 6;
-        uint16_t numSamplesPerPosition = 32;
+        constexpr uint16_t numSamplesPerPosition = 96;
 
         uint16_t numPositionsRecorded = 0;
         uint16_t numCurrentPositionSamples = 0;
@@ -888,6 +894,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
             m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
         }
         m_Logger.debug("}");
+    #endif
     #endif
 
     m_Logger.debug("Saving the calibration data");
