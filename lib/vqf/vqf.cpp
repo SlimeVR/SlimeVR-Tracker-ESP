@@ -70,7 +70,7 @@ VQF::VQF(const VQFParams &params, vqf_real_t gyrTs, vqf_real_t accTs, vqf_real_t
     setup();
 }
 
-void VQF::updateGyr(const vqf_real_t gyr[3])
+void VQF::updateGyr(const vqf_real_t gyr[3], double gyrTs)
 {
     // rest detection
     if (params.restBiasEstEnabled || params.magDistRejectionEnabled) {
@@ -91,10 +91,9 @@ void VQF::updateGyr(const vqf_real_t gyr[3])
 
     // remove estimated gyro bias
     vqf_real_t gyrNoBias[3] = {gyr[0]-state.bias[0], gyr[1]-state.bias[1], gyr[2]-state.bias[2]};
-
     // gyroscope prediction step
     vqf_real_t gyrNorm = norm(gyrNoBias, 3);
-    vqf_real_t angle = gyrNorm * coeffs.gyrTs;
+    vqf_real_t angle = gyrNorm * gyrTs;
     if (gyrNorm > EPS) {
         vqf_real_t c = cos(angle/2);
         vqf_real_t s = sin(angle/2)/gyrNorm;
@@ -397,53 +396,6 @@ void VQF::updateMag(const vqf_real_t mag[3])
         state.delta -= vqf_real_t(2*M_PI);
     } else if (state.delta < vqf_real_t(-M_PI)) {
         state.delta += vqf_real_t(2*M_PI);
-    }
-}
-
-void VQF::update(const vqf_real_t gyr[3], const vqf_real_t acc[3])
-{
-    updateGyr(gyr);
-    updateAcc(acc);
-}
-
-void VQF::update(const vqf_real_t gyr[3], const vqf_real_t acc[3], const vqf_real_t mag[3])
-{
-    updateGyr(gyr);
-    updateAcc(acc);
-    updateMag(mag);
-}
-
-void VQF::updateBatch(const vqf_real_t gyr[], const vqf_real_t acc[], const vqf_real_t mag[], size_t N,
-                      vqf_real_t out6D[], vqf_real_t out9D[], vqf_real_t outDelta[], vqf_real_t outBias[],
-                      vqf_real_t outBiasSigma[], bool outRest[], bool outMagDist[])
-{
-    for (size_t i = 0; i < N; i++) {
-        if (mag) {
-            update(gyr+3*i, acc+3*i, mag+3*i);
-        } else {
-            update(gyr+3*i, acc+3*i);
-        }
-        if (out6D) {
-            getQuat6D(out6D+4*i);
-        }
-        if (out9D) {
-            getQuat9D(out9D+4*i);
-        }
-        if (outDelta) {
-            outDelta[i] = state.delta;
-        }
-        if (outBias) {
-            std::copy(state.bias, state.bias+3, outBias+3*i);
-        }
-        if (outBiasSigma) {
-            outBiasSigma[i] = getBiasEstimate(0);
-        }
-        if (outRest) {
-            outRest[i] = state.restDetected;
-        }
-        if (outMagDist) {
-            outMagDist[i] = state.magDistDetected;
-        }
     }
 }
 

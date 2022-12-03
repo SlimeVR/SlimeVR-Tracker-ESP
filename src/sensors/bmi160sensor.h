@@ -216,7 +216,22 @@ class BMI160Sensor : public Sensor {
         sensor_real_t qwxyz[4] {1.0f, 0.0f, 0.0f, 0.0f};
         Quaternion quat{};
 
+        // clock sync and sample timestamping
+        uint32_t sensorTime0 = 0;
+        uint32_t sensorTime1 = 0;
+        uint32_t localTime0 = 0;
+        uint32_t localTime1 = 0;
+        double sensorTimeRatio = 1;
+        double sensorTimeRatioEma = 1;
+        double sampleDtMicros = BMI160_ODR_GYR_MICROS;
+        uint32_t syncLatencyMicros = 0;
+        uint32_t samplesSinceClockSync = 0;
+        uint32_t timestamp0 = 0;
+        uint32_t timestamp1 = 0;
+
+        // scheduling
         uint32_t lastPollTime = micros();
+        uint32_t lastClockPollTime = micros();
         #if BMI160_DEBUG
         uint32_t cpuUsageMicros = 0;
         uint32_t lastCpuUsagePrinted = 0;

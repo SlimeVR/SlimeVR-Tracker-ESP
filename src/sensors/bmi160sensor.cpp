@@ -217,78 +217,112 @@ void BMI160Sensor::motionLoop() {
     }
     #endif
 
+    uint32_t now = micros();
+
+    {
+        constexpr uint32_t BMI160_TARGET_SYNC_INTERVAL_MICROS = 25000;
+        uint32_t elapsed = now - lastClockPollTime;
+        if (elapsed >= BMI160_TARGET_SYNC_INTERVAL_MICROS) {
+            lastClockPollTime = now - (elapsed - BMI160_TARGET_SYNC_INTERVAL_MICROS);
+
+            localTime0 = localTime1;
+            localTime1 = micros();
+            uint32_t rawSensorTime;
+            imu.getSensorTime(&rawSensorTime);
+            syncLatencyMicros = (micros() - localTime1) * 0.3;
+            sensorTime0 = sensorTime1;
+            sensorTime1 = rawSensorTime;
+            if ((sensorTime0 > 0 || localTime0 > 0) && (sensorTime1 > 0 || sensorTime1 > 0)) {
+                // handle 24 bit overflow
+                double remoteDt = 
+                    sensorTime1 >= sensorTime0 ?
+                    sensorTime1 - sensorTime0 :
+                    (sensorTime1 + 0xFFFFFF) - sensorTime0;
+                double localDt = localTime1 - localTime0;
+                sensorTimeRatio = localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
+
+                constexpr double EMA_APPROX_SECONDS = 1;
+                constexpr uint32_t EMA_SAMPLES = (EMA_APPROX_SECONDS / 3 * 1e6) / BMI160_TARGET_SYNC_INTERVAL_MICROS;
+                sensorTimeRatioEma -= (double)sensorTimeRatioEma / EMA_SAMPLES;
+                sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
+
+                sampleDtMicros = BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
+                samplesSinceClockSync = 0;
+            }
+        }
+    }
+    
     {
         constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 3000;
-        uint32_t nowPollTime = micros();
-        uint32_t elapsed = nowPollTime - lastPollTime;
-        if (elapsed < BMI160_TARGET_POLL_INTERVAL_MICROS) return;
-        lastPollTime = nowPollTime - (elapsed - BMI160_TARGET_POLL_INTERVAL_MICROS);
-    }
+        uint32_t elapsed = now - lastPollTime;
+        if (elapsed >= BMI160_TARGET_POLL_INTERVAL_MICROS) {
+            lastPollTime = now - (elapsed - BMI160_TARGET_POLL_INTERVAL_MICROS);
 
-    temperature = getTemperature();
+            temperature = getTemperature();
 
-    #if BMI160_DEBUG
-        uint32_t start = micros();
-        readFIFO();
-        uint32_t end = micros();
-        cpuUsageMicros += end - start;
-        if (!lastCpuUsagePrinted) lastCpuUsagePrinted = end;
-        if (end - lastCpuUsagePrinted > 1e6) {
-            bool restDetected = false;
-            #if BMI160_VQF_REST_DETECTION_AVAILABLE
-                restDetected = vqf.getRestDetected();
+            #if BMI160_DEBUG
+                uint32_t start = micros();
+                readFIFO();
+                uint32_t end = micros();
+                cpuUsageMicros += end - start;
+                if (!lastCpuUsagePrinted) lastCpuUsagePrinted = end;
+                if (end - lastCpuUsagePrinted > 1e6) {
+                    bool restDetected = false;
+                    #if BMI160_VQF_REST_DETECTION_AVAILABLE
+                        restDetected = vqf.getRestDetected();
+                    #else
+                        restDetected = restDetection.getRestDetected();
+                    #endif
+
+                    #if BMI160_USE_VQF
+                        #define BMI160_FUSION_TYPE "vqf"
+                    #else
+                        #define BMI160_FUSION_TYPE "mahony"
+                    #endif
+                    m_Logger.debug("readFIFO took %0.4f ms, read gyr %i acc %i mag %i rest %i resets %i type " BMI160_FUSION_TYPE,
+                        ((float)cpuUsageMicros / 1e3f),
+                        gyrReads,
+                        accReads,
+                        magReads,
+                        restDetected,
+                        numFIFODropped
+                    );
+
+                    cpuUsageMicros = 0;
+                    lastCpuUsagePrinted = end;
+                    gyrReads = 0;
+                    accReads = 0;
+                    magReads = 0;
+                }
             #else
-                restDetected = restDetection.getRestDetected();
+                readFIFO();
             #endif
-
-            #if BMI160_USE_VQF
-                #define BMI160_FUSION_TYPE "vqf"
-            #else
-                #define BMI160_FUSION_TYPE "mahony"
-            #endif
-            m_Logger.debug("readFIFO took %0.4f ms, read gyr %i acc %i mag %i rest %i resets %i type " BMI160_FUSION_TYPE,
-                ((float)cpuUsageMicros / 1e3f),
-                gyrReads,
-                accReads,
-                magReads,
-                restDetected,
-                numFIFODropped
-            );
-
-            cpuUsageMicros = 0;
-            lastCpuUsagePrinted = end;
-            gyrReads = 0;
-            accReads = 0;
-            magReads = 0;
+            if (!fusionUpdated) return;
+            fusionUpdated = false;
         }
-    #else
-        readFIFO();
-    #endif
-
-    if (!fusionUpdated) return;
-    fusionUpdated = false;
-
-    uint32_t nowPacket = micros();
+    }
 
     {
         constexpr float maxSendRateHz = 2.0f;
         constexpr uint32_t sendInterval = 1.0f/maxSendRateHz * 1e6;
-        uint32_t elapsed = nowPacket - lastTemperaturePacketSent;
+        uint32_t elapsed = now - lastTemperaturePacketSent;
         if (elapsed >= sendInterval) {
+            lastTemperaturePacketSent = now - (elapsed - sendInterval);
             #if BMI160_TEMPCAL_DEBUG
                 Network::sendTemperature(100000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature, sensorId);
             #else
                 Network::sendTemperature(temperature, sensorId);
             #endif
-            lastTemperaturePacketSent = nowPacket - (elapsed - sendInterval);
         }
     }
 
     {
         constexpr float maxSendRateHz = 120.0f;
         constexpr uint32_t sendInterval = 1.0f/maxSendRateHz * 1e6;
-        uint32_t elapsed = nowPacket - lastRotationPacketSent;
+        uint32_t elapsed = now - lastRotationPacketSent;
         if (elapsed >= sendInterval) {
+            lastRotationPacketSent = now - (elapsed - sendInterval);
+
             #if BMI160_USE_VQF
                 #if USE_6_AXIS
                     vqf.getQuat6D(qwxyz);
@@ -330,8 +364,6 @@ void BMI160Sensor::motionLoop() {
             }
             #endif
 
-            lastRotationPacketSent = nowPacket - (elapsed - sendInterval);
-
             if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
             {
                 newData = true;
@@ -351,6 +383,7 @@ void BMI160Sensor::readFIFO() {
         imu.resetFIFO();
         return;
     }
+    std::fill(fifo.data, fifo.data + fifo.length, 0);
     imu.getFIFOBytes(fifo.data, fifo.length);
 
     int16_t gx, gy, gz;
@@ -362,7 +395,7 @@ void BMI160Sensor::readFIFO() {
     #endif
 
     uint8_t header;
-    for (uint16_t i = 0; i < fifo.length;) {
+    for (uint32_t i = 0; i < fifo.length;) {
         #define BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(len) { if (i + len > fifo.length) break; }
         BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(1);
         
@@ -426,7 +459,26 @@ void BMI160Sensor::readFIFO() {
                 if (mnew) onMagRawSample(BMI160_ODR_MAG_MICROS, mx, my, mz);
             #endif
             if (anew) onAccelRawSample(BMI160_ODR_ACC_MICROS, ax, ay, az);
-            if (gnew) onGyroRawSample(BMI160_ODR_GYR_MICROS, gx, gy, gz);
+            if (gnew) {
+                constexpr uint32_t alignmentBitmask = ~(0xFFFFFFFF << (16 - BMI160_GYRO_RATE));
+                uint32_t alignmentOffset =
+                    (sensorTime1 & alignmentBitmask) * BMI160_TIMESTAMP_RESOLUTION_MICROS * sensorTimeRatioEma;
+
+                timestamp0 = timestamp1;
+                timestamp1 = (localTime1 - alignmentOffset - syncLatencyMicros) +
+                    (++samplesSinceClockSync) * sampleDtMicros;
+                int32_t dtMicros = timestamp1 - timestamp0;
+                
+                constexpr float invPeriod = 1.0f / BMI160_ODR_GYR_MICROS;
+                int32_t sampleOffset = round((float)dtMicros * invPeriod) - 1;
+                if (abs(sampleOffset) > 3) {
+                    dtMicros = sampleDtMicros;
+                } else if (sampleOffset != 0) {
+                    dtMicros -= sampleOffset * sampleDtMicros;
+                }
+
+                onGyroRawSample(dtMicros, gx, gy, gz);
+            }
         } else {
             break;
         }
@@ -477,13 +529,13 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
     #endif
     #if USE_6_AXIS
         #if BMI160_USE_VQF
-            vqf.updateGyr(Gxyz);
+            vqf.updateGyr(Gxyz, (double)dtMicros * 1.0e-6);
         #else
             mahony.updateInto(qwxyz, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], ((float)dtMicros) * 1.0e-6);
         #endif
     #else
         #if BMI160_USE_VQF
-            vqf.updateGyr(Gxyz);
+            vqf.updateGyr(Gxyz, (double)dtMicros * 1.0e-6);
         #else
             mahonyQuaternionUpdate(qwxyz, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], ((float)dtMicros) * 1.0e-6f);
         #endif
