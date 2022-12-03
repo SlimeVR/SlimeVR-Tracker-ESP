@@ -67,4 +67,7 @@
 // Use sensitivity calibration
 #define BMI160_USE_SENSCAL true
 
+// Uncomment if you have already calibrated accelerometer and want to skip this step next time
+// #define BMI160_CALIBRATION_GYRO_ONLY
+
 #endif
