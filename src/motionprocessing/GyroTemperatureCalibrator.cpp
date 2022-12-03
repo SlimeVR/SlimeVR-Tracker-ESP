@@ -24,11 +24,6 @@
 #include "GyroTemperatureCalibrator.h"
 #include "GlobalVars.h"
 
-inline float linearInterpBetween(float t1, float t2, float tCur, float axisValue1, float axisValue2) {
-  float v = (tCur - t1) / (t2 - t1);
-  return v * (axisValue2 - axisValue1) + axisValue1;
-}
-
 void GyroTemperatureCalibrator::resetCurrentTemperatureState() {
     if (!state.numSamples) return;
     state.numSamples = 0;
@@ -42,6 +37,51 @@ void GyroTemperatureCalibrator::resetCurrentTemperatureState() {
 void GyroTemperatureCalibrator::updateGyroTemperatureCalibration(const float temperature, const bool restDetected, int16_t x, int16_t y, int16_t z) {
     if (!restDetected) {
         return resetCurrentTemperatureState();
+    }
+
+    if (temperature < TEMP_CALIBRATION_MIN && !calibrationRunning) {
+        calibrationRunning = true;
+        configSaved = false;
+        config.reset();
+    }
+    if (temperature > TEMP_CALIBRATION_MAX && calibrationRunning) {
+        auto coeffs = poly.computeCoefficients();
+        for (uint32_t i = 0; i < poly.numCoefficients; i++) {
+            config.cx[i] = coeffs[0][i];
+            config.cy[i] = coeffs[1][i];
+            config.cz[i] = coeffs[2][i];
+        }
+        config.hasCoeffs = true;
+        bst = 0.0f;
+        bsx = 0;
+        bsy = 0;
+        bsz = 0;
+        bn = 0;
+        lastTemp = 0;
+        calibrationRunning = false;
+    }
+    if (calibrationRunning) {
+        if (fabs(lastTemp - temperature) > 0.03f) {
+            const double avgt = (double)bst / bn;
+            const double avgValues[] = {
+                (double)bsx / bn,
+                (double)bsy / bn,
+                (double)bsz / bn,
+            };
+            if (bn > 0) poly.update(avgt, avgValues);
+            bst = 0.0f;
+            bsx = 0;
+            bsy = 0;
+            bsz = 0;
+            bn = 0;
+            lastTemp = temperature;
+        } else {
+            bst += temperature;
+            bsx += x;
+            bsy += y;
+            bsz += z;
+            bn++;
+        }
     }
     
     const int16_t idx = TEMP_CALIBRATION_TEMP_TO_IDX(temperature);
@@ -75,9 +115,9 @@ void GyroTemperatureCalibrator::updateGyroTemperatureCalibration(const float tem
             config.samplesTotal++;
         }
         config.samples[idx].t = state.tSum / state.numSamples;
-        config.samples[idx].x = ((float)state.xSum / state.numSamples);
-        config.samples[idx].y = ((float)state.ySum / state.numSamples);
-        config.samples[idx].z = ((float)state.zSum / state.numSamples);
+        config.samples[idx].x = ((double)state.xSum / state.numSamples);
+        config.samples[idx].y = ((double)state.ySum / state.numSamples);
+        config.samples[idx].z = ((double)state.zSum / state.numSamples);
 
         config.minTemperatureRange =
             min(config.samples[idx].t, config.minTemperatureRange);
@@ -93,6 +133,25 @@ void GyroTemperatureCalibrator::updateGyroTemperatureCalibration(const float tem
 
 bool GyroTemperatureCalibrator::approximateOffset(const float temperature, float GOxyz[3]) {
     if (!config.hasData()) return false;
+    if (config.hasCoeffs) {
+        if (lastApproximatedTemperature != 0.0f && temperature == lastApproximatedTemperature) {
+            GOxyz[0] = lastApproximatedOffsets[0];
+            GOxyz[1] = lastApproximatedOffsets[1];
+            GOxyz[2] = lastApproximatedOffsets[2];
+        } else {
+            float offsets[3] = { config.cx[3], config.cy[3], config.cz[3] };
+            for (int32_t i = 2; i >= 0; i--) {
+                offsets[0] = offsets[0] * temperature + config.cx[i];
+                offsets[1] = offsets[1] * temperature + config.cy[i];
+                offsets[2] = offsets[2] * temperature + config.cz[i];
+            }
+            lastApproximatedTemperature = temperature;
+            lastApproximatedOffsets[0] = GOxyz[0] = offsets[0];
+            lastApproximatedOffsets[1] = GOxyz[1] = offsets[1];
+            lastApproximatedOffsets[2] = GOxyz[2] = offsets[2];
+        }
+        return true;
+    }
 
     const float constrainedTemperature = constrain(temperature,
         config.minTemperatureRange,

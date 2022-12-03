@@ -29,27 +29,29 @@
 #include "debug.h"
 #include "../logging/Logger.h"
 #include "../configuration/CalibrationConfig.h"
+#include "OnlinePolyfit.h"
 
-// Degrees C, set 5 degrees down to account for sensor error
+
+// Degrees C
 // default: 15.0f
 #define TEMP_CALIBRATION_MIN 15.0f
 
-// Degrees C, set 5 degrees up to account for sensor error
+// Degrees C
 // default: 45.0f
 #define TEMP_CALIBRATION_MAX 45.0f
 
-// Snap calibration to every 1/4th of degree: 20.00, 20.50, 21.00, etc
+// Snap calibration to every 1/2 of degree: 20.00, 20.50, 21.00, etc
 // default: 0.5f
 #define TEMP_CALIBRATION_STEP 0.5f
 
-// Calibrate only if current temperature is off by no more than this value;
-// if snapping point is 20.00 - calibration will only be ran in range of 19.80 - 20.20
+// Record debug samples if current temperature is off by no more than this value;
+// if snapping point is 20.00 - samples will be recorded in range of 19.80 - 20.20
 // default: 0.2f
 #define TEMP_CALIBRATION_MAX_DEVIATION_FROM_STEP 0.2f
 
 // How long to average gyro samples for before saving a data point
-// default: 3.0f
-#define TEMP_CALIBRATION_SECONDS_PER_STEP 3.0f
+// default: 0.2f
+#define TEMP_CALIBRATION_SECONDS_PER_STEP 0.2f
 
 #if IMU == IMU_ICM20948
     // 16 bit 333 lsb/K, ~0.00508 degrees per bit
@@ -108,6 +110,10 @@ struct GyroTemperatureCalibrationConfig {
     uint16_t maxCalibratedIdx = 0;
     GyroTemperatureOffsetSample samples[TEMP_CALIBRATION_BUFFER_SIZE];
     uint16_t samplesTotal = 0;
+    float cx[4] = {0.0};
+    float cy[4] = {0.0};
+    float cz[4] = {0.0};
+    bool hasCoeffs = false;
 
     GyroTemperatureCalibrationConfig(SlimeVR::Configuration::CalibrationConfigType _type, float _sensitivityLSB) :
         type(_type),
@@ -121,7 +127,7 @@ struct GyroTemperatureCalibrationConfig {
     }
 
     bool fullyCalibrated() {
-        return samplesTotal >= TEMP_CALIBRATION_BUFFER_SIZE;
+        return samplesTotal >= TEMP_CALIBRATION_BUFFER_SIZE && hasCoeffs;
     }
 
     float getCalibrationDonePercent() {
@@ -150,6 +156,7 @@ struct GyroTemperatureCalibrationConfig {
             samples[i].y = 0;
             samples[i].z = 0;
         }
+        hasCoeffs = false;
     }
 };
 
@@ -189,14 +196,26 @@ public:
         configSaveFailed = false;
     }
 
+    bool isCalibrating() {
+        return calibrationRunning;
+    }
+
 private:
     GyroTemperatureCalibrationState state;
     uint32_t samplesPerStep;
     SlimeVR::Logging::Logger m_Logger;
     
-    float lastApproximatedTemperature = 0;
-    float lastApproximatedOffset[3] = {0, 0, 0};
-    bool lastApproximatedOffsetReturned = false;
+    float lastApproximatedTemperature = 0.0f;
+    float lastApproximatedOffsets[3];
+
+    bool calibrationRunning = false;
+    OnlineVectorPolyfit<3, 3, (uint64_t)1e9> poly;
+    float bst = 0.0f;
+    int32_t bsx = 0;
+    int32_t bsy = 0;
+    int32_t bsz = 0;
+    int32_t bn = 0;
+    float lastTemp = 0;
 
     void resetCurrentTemperatureState();
 };

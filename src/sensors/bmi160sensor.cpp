@@ -168,6 +168,13 @@ void BMI160Sensor::motionSetup() {
 
     #if BMI160_USE_TEMPCAL
         gyroTempCalibrator->loadConfig(BMI160_GYRO_TYPICAL_SENSITIVITY_LSB);
+        if (gyroTempCalibrator->config.hasCoeffs) {
+            float GOxyzAtTemp[3];
+            gyroTempCalibrator->approximateOffset(m_Calibration.temperature, GOxyzAtTemp);
+            for (uint32_t i = 0; i < 3; i++) {
+                GOxyzStaticTempCompensated[i] = m_Calibration.G_off[i] - GOxyzAtTemp[i];
+            }
+        }
     #endif
 
     #if BMI160_USE_SENSCAL
@@ -309,7 +316,8 @@ void BMI160Sensor::motionLoop() {
         if (elapsed >= sendInterval) {
             lastTemperaturePacketSent = now - (elapsed - sendInterval);
             #if BMI160_TEMPCAL_DEBUG
-                Network::sendTemperature(100000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature, sensorId);
+                uint32_t isCalibrating = gyroTempCalibrator->isCalibrating() ? 1000 : 0;
+                Network::sendTemperature(isCalibrating + 1000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature, sensorId);
             #else
                 Network::sendTemperature(temperature, sensorId);
             #endif
@@ -511,9 +519,9 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
     #if BMI160_USE_TEMPCAL
     float GOxyz[3];
     if (gyroTempCalibrator->approximateOffset(temperature, GOxyz)) {
-        Gxyz[0] = (sensor_real_t)((((double)x - GOxyz[0]) * gscaleX));
-        Gxyz[1] = (sensor_real_t)((((double)y - GOxyz[1]) * gscaleY));
-        Gxyz[2] = (sensor_real_t)((((double)z - GOxyz[2]) * gscaleZ));
+        Gxyz[0] = (sensor_real_t)((((double)x - GOxyz[0] - GOxyzStaticTempCompensated[0]) * gscaleX));
+        Gxyz[1] = (sensor_real_t)((((double)y - GOxyz[1] - GOxyzStaticTempCompensated[1]) * gscaleY));
+        Gxyz[2] = (sensor_real_t)((((double)z - GOxyz[2] - GOxyzStaticTempCompensated[2]) * gscaleZ));
     }
     else
     #endif
@@ -624,6 +632,9 @@ void BMI160Sensor::printDebugTemperatureCalibrationState() {
         );
     }
     m_Logger.info("END %i", sensorId);
+    m_Logger.info("y = %f + (%fx) + (%fxx) + (%fxxx)", UNPACK_VECTOR_ARRAY(gyroTempCalibrator->config.cx), gyroTempCalibrator->config.cx[3]);
+    m_Logger.info("y = %f + (%fx) + (%fxx) + (%fxxx)", UNPACK_VECTOR_ARRAY(gyroTempCalibrator->config.cy), gyroTempCalibrator->config.cy[3]);
+    m_Logger.info("y = %f + (%fx) + (%fxx) + (%fxxx)", UNPACK_VECTOR_ARRAY(gyroTempCalibrator->config.cz), gyroTempCalibrator->config.cz[3]);
 }
 void BMI160Sensor::saveTemperatureCalibration() {
     gyroTempCalibrator->saveConfig();

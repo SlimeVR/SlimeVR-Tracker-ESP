@@ -260,6 +260,8 @@ class BMI160Sensor : public Sensor {
         double gscaleY = BMI160_GSCALE;
         double gscaleZ = BMI160_GSCALE;
 
+        double GOxyzStaticTempCompensated[3];
+
         SlimeVR::Configuration::BMI160CalibrationConfig m_Calibration;
 };
 
