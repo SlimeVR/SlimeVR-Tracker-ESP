@@ -46,7 +46,7 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
   * After a few blinks, the LED will light up again
   * Slowly rotate the tracker in an 8-motion facing different directions for about 30 seconds, while LED is blinking
   * LED will turn off when calibration is complete
-  * You don't have to calibrate next time you power it off, calibration values will be saved for the next use
+  * You don't have to calibrate next time you power it on, calibration values will be saved for the next use
 
 ## Infos about ESP32-C3 with direct connection to USB
 
