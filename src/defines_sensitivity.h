@@ -50,7 +50,7 @@
 #define SENSORID_PRIMARY 0
 #define SENSORID_AUX 1
 struct SensitivityOffsetXYZ { unsigned char sensorId; double spins; double x; double y; double z; };
-const std::map<String, SensitivityOffsetXYZ> sensitivityOffsets = {
+const std::map<const char*, SensitivityOffsetXYZ> sensitivityOffsets = {
     // example values
     { "A4:E5:7C:B6:00:01", { SENSORID_PRIMARY, .spins = 10, .x = 2.63, .y = 37.82, .z = 31.11 } },
     { "A4:E5:7C:B6:00:02", { SENSORID_PRIMARY, .spins = 10, .x = -2.38, .y = -26.8, .z = -42.78 } },
