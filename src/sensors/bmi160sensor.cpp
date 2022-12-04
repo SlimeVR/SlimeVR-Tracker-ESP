@@ -316,8 +316,8 @@ void BMI160Sensor::motionLoop() {
         if (elapsed >= sendInterval) {
             lastTemperaturePacketSent = now - (elapsed - sendInterval);
             #if BMI160_TEMPCAL_DEBUG
-                uint32_t isCalibrating = gyroTempCalibrator->isCalibrating() ? 1000 : 0;
-                Network::sendTemperature(isCalibrating + 1000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature, sensorId);
+                uint32_t isCalibrating = gyroTempCalibrator->isCalibrating() ? 10000 : 0;
+                Network::sendTemperature(isCalibrating + 10000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature, sensorId);
             #else
                 Network::sendTemperature(temperature, sensorId);
             #endif
