@@ -180,11 +180,8 @@ void BMI160Sensor::motionSetup() {
     #if BMI160_USE_SENSCAL
     {
         String localDevice = WiFi.macAddress();
-        for (auto const& kv : sensitivityOffsets) {
-            auto mac = kv.first;
-            if (!localDevice.equals(mac)) continue;
-
-            auto offsets = kv.second;
+        for (auto const& offsets : sensitivityOffsets) {
+            if (!localDevice.equals(offsets.mac)) continue;
             if (offsets.sensorId != sensorId) continue;
 
             #define BMI160_CALCULATE_SENSITIVTY_MUL(degrees) (1.0 / (1.0 - ((degrees)/(360.0 * offsets.spins))))
@@ -193,7 +190,7 @@ void BMI160Sensor::motionSetup() {
             gscaleY = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.y);
             gscaleZ = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.z);
             m_Logger.debug("Custom sensitivity offset enabled: %s %s",
-                mac,
+                offsets.mac,
                 offsets.sensorId == SENSORID_PRIMARY ? "primary" : "aux" 
             );
         }
