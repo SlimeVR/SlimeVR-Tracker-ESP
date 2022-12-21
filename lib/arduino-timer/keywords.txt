@@ -1,0 +1,34 @@
+#######################################
+# Syntax Coloring Map For Timer
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Timer	KEYWORD1
+Task	KEYWORD1
+handler_t	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+in	KEYWORD2
+at	KEYWORD2
+every	KEYWORD2
+tick	KEYWORD2
+ticks	KEYWORD2
+cancel	KEYWORD2
+size	KEYWORD2
+empty	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+TIMER_MAX_TASKS	LITERAL1

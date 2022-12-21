@@ -41,6 +41,8 @@
 #include <WProgram.h>
 #endif
 
+#include <limits.h>
+
 #ifndef TIMER_MAX_TASKS
     #define TIMER_MAX_TASKS 0x10
 #endif
@@ -94,13 +96,13 @@ class Timer {
         if (!task) return;
 
         timer_foreach_task(t) {
-            if (t->handler && (t->id ^ task) == (uintptr_t)t) {
+            if (t->handler && task_id(t) == task) {
                 remove(t);
                 break;
             }
         }
 
-        task = (Task)NULL;
+        task = static_cast<Task>(NULL);
     }
 
     /* Cancel all timer tasks */
@@ -142,7 +144,7 @@ class Timer {
     unsigned long
     ticks() const
     {
-        unsigned long ticks = (unsigned long)-1, elapsed;
+        unsigned long ticks = ULONG_MAX, elapsed;
         const unsigned long start = time_func();
 
         timer_foreach_const_task(task) {
@@ -162,7 +164,7 @@ class Timer {
 
         elapsed = time_func() - start;
 
-        if (elapsed >= ticks || ticks == (unsigned long)-1) ticks = 0;
+        if (elapsed >= ticks || ticks == ULONG_MAX) ticks = 0;
         else ticks -= elapsed;
 
         return ticks;
@@ -223,7 +225,7 @@ class Timer {
     Task
     task_id(const struct task * const t)
     {
-        const Task id = (Task)t;
+        const Task id = reinterpret_cast<Task>(t);
 
         return id ? id ^ t->id : id;
     }
