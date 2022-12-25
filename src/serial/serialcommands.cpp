@@ -121,7 +121,7 @@ namespace SerialCommands {
 
         if (parser->equalCmdParam(1, "TEST")) {
             logger.info(
-                "[TEST]Board: %d, hardware: %d, build: %d, firmware: %s, mac: %s",
+                "[TEST] Board: %d, hardware: %d, build: %d, firmware: %s, mac: %s",
                 BOARD,
                 HARDWARE_MCU,
                 FIRMWARE_BUILD_NUMBER,
@@ -129,6 +129,7 @@ namespace SerialCommands {
                 WiFi.macAddress()
             );
             Sensor* sensor1 = sensorManager.getFirst();
+            sensor1->motionLoop();
             logger.info(
                 "[TEST] Sensor 1: %s",
                 getIMUNameByType(sensor1->getSensorType())
