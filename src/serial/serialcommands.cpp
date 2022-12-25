@@ -67,7 +67,16 @@ namespace SerialCommands {
                 FIRMWARE_VERSION,
                 WiFiNetwork::getAddress().toString().c_str()
             );
-            // TODO Print sensors number and types
+            Sensor* sensor1 = sensorManager.getFirst();
+            Sensor* sensor2 = sensorManager.getSecond();
+            logger.info(
+                "Sensor 1: %s",
+                getIMUNameByType(sensor1->getSensorType())
+            );
+            logger.info(
+                "Sensor 2: %s",
+                getIMUNameByType(sensor2->getSensorType())
+            );
         }
 
         if (parser->equalCmdParam(1, "CONFIG")) {
@@ -108,6 +117,27 @@ namespace SerialCommands {
                 LED_PIN,
                 LED_INVERTED
             );
+        }
+
+        if (parser->equalCmdParam(1, "TEST")) {
+            logger.info(
+                "[TEST]Board: %d, hardware: %d, build: %d, firmware: %s, mac: %s",
+                BOARD,
+                HARDWARE_MCU,
+                FIRMWARE_BUILD_NUMBER,
+                FIRMWARE_VERSION,
+                WiFi.macAddress()
+            );
+            Sensor* sensor1 = sensorManager.getFirst();
+            logger.info(
+                "[TEST] Sensor 1: %s",
+                getIMUNameByType(sensor1->getSensorType())
+            );
+            if(!sensor1->hadData) {
+                logger.error("[TEST] Sensor 1 didn't send any data yet!");
+            } else {
+                logger.info("[TEST] Sensor 1 sent some data, looks working.");
+            }
         }
     }
 
@@ -151,6 +181,7 @@ namespace SerialCommands {
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REP", &cmdReport);
         cmdCallbacks.addCmd("REBOOT", &cmdReboot);
+        
     }
 
     void update() {
