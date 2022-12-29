@@ -256,7 +256,11 @@ void BNO080Sensor::startCalibration(int calibrationType)
     // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
     ledManager.pattern(20, 20, 10);
     ledManager.blink(2000);
+#if USE_6_AXIS
     imu.calibrateGyro();
+#else
+    imu.calibrateAll();
+#endif
     do
     {
         ledManager.on();
