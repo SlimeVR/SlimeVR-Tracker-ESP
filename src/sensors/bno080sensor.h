@@ -53,6 +53,9 @@ private:
     uint8_t lastReset = 0;
     BNO080Error lastError{};
 
+    uint8_t lastCalib = 0;
+    bool calibStopped = false;
+
     // Magnetometer specific members
     Quat magQuaternion{};
     uint8_t magCalibrationAccuracy = 0;

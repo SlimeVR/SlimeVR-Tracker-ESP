@@ -84,6 +84,8 @@ void BNO080Sensor::motionSetup()
     lastData = millis();
     working = true;
     configured = true;
+    lastCalib = millis();
+    calibStopped = false;
 }
 
 void BNO080Sensor::motionLoop()
@@ -207,6 +209,12 @@ void BNO080Sensor::motionLoop()
         m_Logger.error("Last error: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
                 lastError.severity, lastError.error_sequence_number, lastError.error_source, lastError.error, lastError.error_module, lastError.error_code);
     }
+    if(BNO_SELF_CALIBRATION_TIME > 0 && lastCalib + BNO_SELF_CALIBRATION_TIME < millis() && !calibStopped)
+    {
+        calibStopped = true;
+        
+        imu.endCalibration();
+    }
 }
 
 uint8_t BNO080Sensor::getSensorState() {
@@ -271,4 +279,6 @@ void BNO080Sensor::startCalibration(int calibrationType)
         delay(20);
     } while (!imu.calibrationComplete());
     imu.saveCalibration();
+
+    lastCalib = millis();
 }
