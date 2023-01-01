@@ -158,6 +158,19 @@ void BMI160Sensor::motionSetup() {
         ledManager.off();
     }
 
+    {
+        #define IS_INT16_CLIPPED(value) (value == INT16_MIN || value == INT16_MAX)
+        const bool anyClipped = IS_INT16_CLIPPED(ax) || IS_INT16_CLIPPED(ay) || IS_INT16_CLIPPED(az);
+        const bool anyZero = ax == 0 || ay == 0 || az == 0;
+        if (anyClipped || anyZero) {
+            m_Logger.warn("---------------- WARNING -----------------");
+            m_Logger.warn("One or more accelerometer axes may be dead");
+            m_Logger.warn("Acceleration: %i %i %i (Z = %f G)",
+                ax, ay, az, (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB);
+            m_Logger.warn("---------------- WARNING -----------------");
+        }
+    }
+
     // allocate temperature memory after calibration because OOM
     gyroTempCalibrator = new GyroTemperatureCalibrator(
         SlimeVR::Configuration::CalibrationConfigType::BMI160,
@@ -708,6 +721,11 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     #ifdef DEBUG_SENSOR
         m_Logger.trace("Calibration temperature: %f", temperature);
     #endif
+
+    if (!imu.getGyroDrdy()) {
+        m_Logger.error("Fatal error: gyroscope drdy = 0 (dead?)");
+        return;
+    }
 
     ledManager.pattern(100, 100, 3);
     ledManager.on();

@@ -795,6 +795,7 @@ class BMI160 {
         void setInterruptLatch(uint8_t latch);
         void resetInterrupt();
         
+        bool getGyroDrdy();
         void waitForGyroDrdy();
         void waitForAccelDrdy();
         void waitForMagDrdy();

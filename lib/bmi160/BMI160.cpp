@@ -2370,9 +2370,14 @@ void BMI160::setRegister(uint8_t reg, uint8_t data) {
     I2CdevMod::writeByte(devAddr, reg, data);
 }
 
+bool BMI160::getGyroDrdy() {
+    I2CdevMod::readBits(devAddr, BMI160_RA_STATUS, BMI160_STATUS_DRDY_GYR, 1, buffer);
+    return buffer[0];
+}
+
 void BMI160::waitForGyroDrdy() {
     do {
-        I2CdevMod::readBits(devAddr, BMI160_RA_STATUS, BMI160_STATUS_DRDY_GYR, 1, buffer);
+        getGyroDrdy();
         if (!buffer[0]) delayMicroseconds(150);
     } while (!buffer[0]);
 }
