@@ -213,7 +213,19 @@ void BNO080Sensor::motionLoop()
     {
         calibStopped = true;
         
+        do
+        {
+            ledManager.on();
+            imu.requestCalibrationStatus();
+            delay(20);
+            imu.getReadings();
+            ledManager.off();
+            delay(20);
+        } while (!imu.calibrationComplete());
+        imu.saveCalibration();
+
         imu.endCalibration();
+        m_Logger.error("Calibration ended");
     }
 }
 
@@ -261,7 +273,6 @@ void BNO080Sensor::sendData()
 
 void BNO080Sensor::startCalibration(int calibrationType)
 {
-    // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
     ledManager.pattern(20, 20, 10);
     ledManager.blink(2000);
 #if USE_6_AXIS
@@ -269,6 +280,10 @@ void BNO080Sensor::startCalibration(int calibrationType)
 #else
     imu.calibrateAll();
 #endif
+
+    // Wait for quick gyro calibration before saving
+    delay(5000);
+
     do
     {
         ledManager.on();
