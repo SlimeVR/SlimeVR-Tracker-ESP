@@ -13,7 +13,9 @@ namespace SlimeVR
         public:
             void setStatus(Status status, bool value);
             bool hasStatus(Status status);
-            String getStatusString();
+            uint32_t getStatus() {
+                return m_Status;
+            };
 
         private:
             uint32_t m_Status;
