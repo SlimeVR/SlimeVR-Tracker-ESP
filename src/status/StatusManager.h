@@ -13,6 +13,7 @@ namespace SlimeVR
         public:
             void setStatus(Status status, bool value);
             bool hasStatus(Status status);
+            String getStatusString();
 
         private:
             uint32_t m_Status;
