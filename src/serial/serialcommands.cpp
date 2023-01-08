@@ -27,6 +27,7 @@
 #include <CmdCallback.hpp>
 #include "GlobalVars.h"
 #include "batterymonitor.h"
+#include "utils.h"
 
 #if ESP32
     #include "nvs_flash.h"
@@ -53,21 +54,43 @@ namespace SerialCommands {
         }
     }
 
+    void printState() {
+        logger.info(
+            "SlimeVR Tracker, board: %d, hardware: %d, build: %d, firmware: %s, address: %s, mac: %s, status: %d, wifi state: %d",
+            BOARD,
+            HARDWARE_MCU,
+            FIRMWARE_BUILD_NUMBER,
+            FIRMWARE_VERSION,
+            WiFiNetwork::getAddress().toString().c_str(),
+            WiFi.macAddress().c_str(),
+            statusManager.getStatus(),
+            WiFiNetwork::getWiFiState()
+        );
+        Sensor* sensor1 = sensorManager.getFirst();
+        Sensor* sensor2 = sensorManager.getSecond();
+        logger.info(
+            "Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
+            getIMUNameByType(sensor1->getSensorType()),
+            UNPACK_QUATERNION(sensor1->getQuaternion()),
+            sensor1->isWorking() ? "true" : "false",
+            sensor1->hadData ? "true" : "false"
+        );
+        logger.info(
+            "Sensor 2: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
+            getIMUNameByType(sensor2->getSensorType()),
+            UNPACK_QUATERNION(sensor2->getQuaternion()),
+            sensor2->isWorking() ? "true" : "false",
+            sensor2->hadData ? "true" : "false"
+        );
+    }
+
     void cmdGet(CmdParser * parser) {
         if (parser->getParamCount() < 2) {
             return;
         }
         
         if (parser->equalCmdParam(1, "INFO")) {
-            logger.info(
-                "SlimeVR Tracker, board: %d, hardware: %d, build: %d, firmware: %s, address: %s",
-                BOARD,
-                HARDWARE_MCU,
-                FIRMWARE_BUILD_NUMBER,
-                FIRMWARE_VERSION,
-                WiFiNetwork::getAddress().toString().c_str()
-            );
-            // TODO Print sensors number and types
+            printState();
         }
 
         if (parser->equalCmdParam(1, "CONFIG")) {
@@ -109,10 +132,34 @@ namespace SerialCommands {
                 LED_INVERTED
             );
         }
-    }
 
-    void cmdReport(CmdParser * parser) {
-        // TODO Health and status report
+        if (parser->equalCmdParam(1, "TEST")) {
+            logger.info(
+                "[TEST] Board: %d, hardware: %d, build: %d, firmware: %s, address: %s, mac: %s, status: %d, wifi state: %d",
+                BOARD,
+                HARDWARE_MCU,
+                FIRMWARE_BUILD_NUMBER,
+                FIRMWARE_VERSION,
+                WiFiNetwork::getAddress().toString().c_str(),
+                WiFi.macAddress().c_str(),
+                statusManager.getStatus(),
+                WiFiNetwork::getWiFiState()
+            );
+            Sensor* sensor1 = sensorManager.getFirst();
+            sensor1->motionLoop();
+            logger.info(
+                "[TEST] Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
+                getIMUNameByType(sensor1->getSensorType()),
+                UNPACK_QUATERNION(sensor1->getQuaternion()),
+                sensor1->isWorking() ? "true" : "false",
+                sensor1->hadData ? "true" : "false"
+            );
+            if(!sensor1->hadData) {
+                logger.error("[TEST] Sensor 1 didn't send any data yet!");
+            } else {
+                logger.info("[TEST] Sensor 1 sent some data, looks working.");
+            }
+        }
     }
 
     void cmdReboot(CmdParser * parser) {
@@ -129,7 +176,7 @@ namespace SerialCommands {
         #if ESP8266
             ESP.eraseConfig(); // Clear ESP config
         #elif ESP32
-                nvs_flash_erase();
+            nvs_flash_erase();
         #else
             #warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED
             logger.info("FACTORY RESET NOT SUPPORTED");
@@ -149,8 +196,8 @@ namespace SerialCommands {
         cmdCallbacks.addCmd("SET", &cmdSet);
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
-        cmdCallbacks.addCmd("REP", &cmdReport);
         cmdCallbacks.addCmd("REBOOT", &cmdReboot);
+        
     }
 
     void update() {

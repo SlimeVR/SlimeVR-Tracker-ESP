@@ -35,6 +35,7 @@ namespace WiFiNetwork {
     void upkeep();
     void setWiFiCredentials(const char * SSID, const char * pass);
     IPAddress getAddress();
+    uint8_t getWiFiState();
 }
 
 /** Wifi Reconnection Statuses **/

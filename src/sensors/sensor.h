@@ -64,7 +64,11 @@ public:
     uint8_t getSensorType() {
         return sensorType;
     };
+    Quat& getQuaternion() {
+        return quaternion;
+    };
 
+    bool hadData = false;
 protected:
     uint8_t addr = 0;
     uint8_t sensorId = 0;

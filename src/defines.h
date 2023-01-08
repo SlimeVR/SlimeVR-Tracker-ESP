@@ -29,7 +29,7 @@
 #define IMU IMU_BNO085
 #define SECOND_IMU IMU
 #define BOARD BOARD_SLIMEVR
-#define IMU_ROTATION DEG_90
+#define IMU_ROTATION DEG_270
 #define SECOND_IMU_ROTATION DEG_270
 
 // Battery monitoring options (comment to disable):

@@ -127,6 +127,10 @@ void onConnected() {
     wifiHandlerLogger.info("Connected successfully to SSID '%s', ip address %s", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
 }
 
+uint8_t WiFiNetwork::getWiFiState() {
+    return wifiState;
+}
+
 void WiFiNetwork::upkeep() {
     upkeepProvisioning();
     if(WiFi.status() != WL_CONNECTED) {

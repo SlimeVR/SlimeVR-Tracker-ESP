@@ -46,7 +46,7 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
   * After a few blinks, the LED will light up again
   * Slowly rotate the tracker in an 8-motion facing different directions for about 30 seconds, while LED is blinking
   * LED will turn off when calibration is complete
-  * You don't have to calibrate next time you power it off, calibration values will be saved for the next use
+  * You don't have to calibrate next time you power it on, calibration values will be saved for the next use
 
 ## Infos about ESP32-C3 with direct connection to USB
 
@@ -59,8 +59,20 @@ There you have to enter the following: `SET WIFI "SSID" "PASSWORD"`
 
 Follow the instructions in this link [PlatformIO](https://docs.platformio.org/en/latest//faq.html#platformio-udev-rules), this should solve any permission denied errors
 
-## Contributions
 
-By contributing to this project you are placing all your code under MIT or less restricting licenses, and you certify that the code you have used is compatible with those licenses or is authored by you. If you're doing so on your work time, you certify that your employer is okay with this.
+## Contributions
+Any contributions submitted for inclusion in this repository will be dual-licensed under
+either:
+
+- MIT License ([LICENSE-MIT](/LICENSE-MIT))
+- Apache License, Version 2.0 ([LICENSE-APACHE](/LICENSE-APACHE))
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for
+inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual
+licensed as above, without any additional terms or conditions.
+
+You also certify that the code you have used is compatible with those licenses or is
+authored by you. If you're doing so on your work time, you certify that your employer is
+okay with this and that you are authorized to provide the above licenses.
 
 For an explanation on how to contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md)

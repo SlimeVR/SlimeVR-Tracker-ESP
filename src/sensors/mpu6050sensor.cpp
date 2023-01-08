@@ -45,7 +45,7 @@ void MPU6050Sensor::motionSetup()
     imu.initialize(addr);
     if (!imu.testConnection())
     {
-        m_Logger.fatal("Can't connect to %s (reported device ID 0x%02x) at address 0x%02x",getIMUNameByType(sensorType), imu.getDeviceID(), addr);
+        m_Logger.fatal("Can't connect to %s (reported device ID 0x%02x) at address 0x%02x", getIMUNameByType(sensorType), imu.getDeviceID(), addr);
         return;
     }
 
