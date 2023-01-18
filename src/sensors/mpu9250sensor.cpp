@@ -255,23 +255,23 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     // Blink calibrating led before user should rotate the sensor
     m_Logger.info("Gently rotate the device while it's gathering magnetometer data");
     ledManager.pattern(15, 300, 3000/310);
-    float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
+    MagnetoCalibration *magneto = new MagnetoCalibration();
     for (int i = 0; i < calibrationSamples; i++) {
         ledManager.on();
         int16_t mx,my,mz;
         imu.getMagnetometer(&mx, &my, &mz);
-        calibrationDataMag[i * 3 + 0] = my;
-        calibrationDataMag[i * 3 + 1] = mx;
-        calibrationDataMag[i * 3 + 2] = -mz;
-        Network::sendRawCalibrationData(calibrationDataMag, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
+        magneto->sample(mx, my, mz);
+
+        float rawMagFloat[3] = { (float)mx, (float)my, (float)mz};
+        Network::sendRawCalibrationData(rawMagFloat, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
         ledManager.off();
         delay(250);
     }
     m_Logger.debug("Calculating calibration data...");
 
     float M_BAinv[4][3];
-    CalculateCalibration(calibrationDataMag, calibrationSamples, M_BAinv);
-    free(calibrationDataMag);
+    magneto->current_calibration(M_BAinv);
+    delete magneto;
 
     m_Logger.debug("[INFO] Magnetometer calibration matrix:");
     m_Logger.debug("{");
@@ -325,34 +325,40 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     // Blink calibrating led before user should rotate the sensor
     m_Logger.info("Gently rotate the device while it's gathering accelerometer and magnetometer data");
     ledManager.pattern(15, 300, 3000/310);
-    float *calibrationDataAcc = (float*)malloc(calibrationSamples * 3 * sizeof(float));
-    float *calibrationDataMag = (float*)malloc(calibrationSamples * 3 * sizeof(float));
+
+    MagnetoCalibration *magneto_acc = new MagnetoCalibration();
+    MagnetoCalibration *magneto_mag = new MagnetoCalibration();
 
     // NOTE: we don't use the FIFO here on *purpose*. This makes the difference between a calibration that takes a second or three and a calibration that takes much longer.
     for (int i = 0; i < calibrationSamples; i++) {
         ledManager.on();
         int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-        calibrationDataAcc[i * 3 + 0] = ax;
-        calibrationDataAcc[i * 3 + 1] = ay;
-        calibrationDataAcc[i * 3 + 2] = az;
-        calibrationDataMag[i * 3 + 0] = my;
-        calibrationDataMag[i * 3 + 1] = mx;
-        calibrationDataMag[i * 3 + 2] = -mz;
-        // Thought: make the server run magneto for us, don't store samples in memory?
-        Network::sendRawCalibrationData(calibrationDataAcc + i * 3, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
-        Network::sendRawCalibrationData(calibrationDataMag + i * 3, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
+        magneto_acc->sample(ax, ay, az);
+        magneto_mag->sample(mx, my, -mz);
+
+        // Thought: since we're sending the samples to the server anyway,
+        // we could make the server run magneto for us.
+        // TODO: consider moving the sample reporting into magneto itself?
+        float rawAccFloat[3] = { (float)ax, (float)ay, (float)az };
+        Network::sendRawCalibrationData(rawAccFloat, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
+
+        float rawMagFloat[3] = { (float)mx, (float)my, (float)-mz };
+        Network::sendRawCalibrationData(rawMagFloat, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
+   
         ledManager.off();
         delay(250);
     }
     m_Logger.debug("Calculating calibration data...");
 
     float A_BAinv[4][3];
+    magneto_acc->current_calibration(A_BAinv);
+    delete magneto_acc;
+
     float M_BAinv[4][3];
-    CalculateCalibration(calibrationDataAcc, calibrationSamples, A_BAinv);
-    free(calibrationDataAcc);
-    CalculateCalibration(calibrationDataMag, calibrationSamples, M_BAinv);
-    free(calibrationDataMag);
+    magneto_mag->current_calibration(M_BAinv);
+    delete magneto_mag;
+
     m_Logger.debug("Finished Calculate Calibration data");
     m_Logger.debug("Accelerometer calibration matrix:");
     m_Logger.debug("{");
