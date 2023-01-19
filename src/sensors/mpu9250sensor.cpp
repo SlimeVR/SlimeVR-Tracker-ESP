@@ -402,9 +402,9 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 
 void MPU9250Sensor::parseMagData(int16_t data[3]) {
     // reading *little* endian int16
-    Mxyz[0] = (float)data[0];
-    Mxyz[1] = (float)data[1];
-    Mxyz[2] = -(float)data[2];
+    Mxyz[0] = (float)data[1]; // my
+    Mxyz[1] = (float)data[0]; // mx
+    Mxyz[2] = -(float)data[2]; // mz
 
     float temp[3];
 
