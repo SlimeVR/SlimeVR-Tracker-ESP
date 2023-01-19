@@ -163,7 +163,7 @@ void MPU9250Sensor::motionLoop() {
     Quat quat(-rawQuat.y,rawQuat.x,rawQuat.z,rawQuat.w);
 
     int16_t temp[3];
-    imu.getMagnetometer(temp + 0, temp + 1, temp + 2);
+    imu.getMagnetometer(&temp[0], &temp[1], &temp[2]);
     parseMagData(temp);
 
     if (Mxyz[0] == 0.0f && Mxyz[1] == 0.0f && Mxyz[2] == 0.0f) {
