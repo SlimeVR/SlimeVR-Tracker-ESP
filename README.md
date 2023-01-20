@@ -26,9 +26,11 @@ The following IMUs and their corresponding `IMU` values are supported by the fir
   * Specify `IMU_MPU6500` in your `defines.h` to use without magnetometer in 6DoF mode.
   * Experimental support!
 * BMI160 (IMU_BMI160)
-  * Using Mahony sensor fusion of Gyroscope and Accelerometer
-  * See *Sensor calibration* below for info on calibrating this sensor.
+  * Using sensor fusion of Gyroscope and Accelerometer.
+  * **See Sensor calibration** below for info on calibrating this sensor.
+  * Calibration file format is unstable and may not be able to load using newer firmware versions.
   * Experimental support!
+  * Support for the following magnetometers is implemented (even more experimental): HMC5883L, QMC5883L.
 * ICM-20948 (IMU_ICM20948)
   * Using fusion in internal DMP for 6Dof or 9DoF, 9DoF mode requires good magnetic environment.
   * Comment out `USE_6DOF` in `debug.h` for 9DoF mode.
@@ -41,12 +43,48 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
 *It is generally recommended to turn trackers on and let them lay down on a flat surface for a few seconds.** This will calibrate them better.
 
 **Some trackers require special calibration steps on startup:**
-* MPU-9250, BMI160
+### MPU-9250
   * Turn them on with chip facing down. Flip up and put on a surface for a couple of seconds, the LED will light up.
   * After a few blinks, the LED will light up again
   * Slowly rotate the tracker in an 8-motion facing different directions for about 30 seconds, while LED is blinking
   * LED will turn off when calibration is complete
   * You don't have to calibrate next time you power it on, calibration values will be saved for the next use
+
+### BMI160
+
+  If you have any problems with this procedure, connect the device via USB and open the serial console to check for any warnings or errors that may indicate hardware problems.
+
+  - **Step 0: Power up with the chip facing down.** Or press the reset/reboot button.
+
+    > The LED will be lit continuously. If you have the tracker connected via USB and open the serial console, you will see text prompts in addition to the LEDs. You can only calibrate 1 IMU at a time.
+
+    Flip it back up while the LED is still solid. Wait a few seconds, do not touch the device.
+    
+  - **Step 1: It will flash 3 times when gyroscope calibration begins.**
+
+    > If done incorrectly, this step is the most likely source of constant drift.
+
+    Make sure the tracker does not move or vibrate for 5 seconds - still do not touch it.
+
+  - **Step 2: It will flash 6 times when accelerometer calibration begins.**
+
+    > The accelerometer calibration process requires you to **hold the device in 6 unique orientations** (e.g. sides of a cube),
+    > keep it still, and not hold or touch for 3 seconds each. It uses gravity as a reference and automatically detects when it is stabilized - this process is not time-sensitive.
+
+    > If you are unable to keep it on a flat surface without touching, press the device against a wall, it does not have to be absolutely perfect.
+
+    **There will be two very short blinks when each position is recorded.**
+    
+    Rotate the device 90 or 180 degrees in any direction. It should be on a different side each time. Continue to rotate until all 6 sides have been recorded.
+    
+    The last position has a long flash when recorded, indicating exit from calibration mode.
+
+  #### Additional info for BMI160
+  - For best results, **calibrate when the trackers are warmed up** - put them on for a few minutes,
+    wait for the temperature to stabilize at 30-40 degrees C, then calibrate.
+
+  - There is a legacy accelerometer calibration method that collects data during in-place rotation by holding it in hand instead.
+    If you are absolutely unable to use the default 6-point calibration method, you can switch it in config file `defines_bmi160.h`.
 
 ## Infos about ESP32-C3 with direct connection to USB
 
