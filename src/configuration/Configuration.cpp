@@ -251,7 +251,6 @@ namespace SlimeVR {
 
         bool Configuration::loadTemperatureCalibration(uint8_t sensorId, GyroTemperatureCalibrationConfig& config) {
 #ifdef ESP32
-            static_assert(false, "loadTemperatureCalibration: untested on esp32, remove this line to proceed");
             {
                 File calibrations = LittleFS.open(DIR_TEMPERATURE_CALIBRATIONS);
                 if (!calibrations) {
