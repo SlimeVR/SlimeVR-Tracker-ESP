@@ -214,9 +214,9 @@ namespace SerialCommands {
         }
         logger.info("Usage:");
         logger.info("  TCAL PRINT: print current temperature calibration config");
-        logger.info("  TCAL DEBUG: print current temperature calibration matrix with raw values");
+        logger.info("  TCAL DEBUG: print debug values for the current temperature calibration profile");
         logger.info("  TCAL RESET: reset current temperature calibration in RAM (does not delete already saved)");
-        logger.info("  TCAL SAVE: save current temperature calibration to persistent flash (full or checkpoint)");
+        logger.info("  TCAL SAVE: save current temperature calibration to persistent flash");
         logger.info("Note:");
         logger.info("  Temperature calibration config saves automatically when calibration percent is at 100%");
     }
