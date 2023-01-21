@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Daniel Laidig <laidig@control.tu-berlin.de>
+// SPDX-FileCopyrightText: 2022 SlimeVR Contributors
 //
 // SPDX-License-Identifier: MIT
+
+// Separated and modified from VQF
 
 #ifndef REST_DETECTION_H
 #define REST_DETECTION_H

@@ -54,7 +54,6 @@ void Sensor::printDebugTemperatureCalibrationState() { printTemperatureCalibrati
 void Sensor::saveTemperatureCalibration() { printTemperatureCalibrationUnsupported(); };
 void Sensor::resetTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
 
-
 const char * getIMUNameByType(int imuType) {
     switch(imuType) {
         case IMU_MPU9250:
