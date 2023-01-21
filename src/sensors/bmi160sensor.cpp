@@ -24,7 +24,8 @@
 #include "bmi160sensor.h"
 #include "network/network.h"
 #include "GlobalVars.h"
-#include "WString.h"
+#include <hmc5883l.h>
+#include <qmc5883l.h>
 #include <map>
 
 void BMI160Sensor::initHMC(BMI160MagRate magRate) {
