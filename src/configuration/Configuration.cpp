@@ -231,19 +231,13 @@ namespace SlimeVR {
                         continue;
                     }
 
-                    uint8_t sensorId = strtoul(calibrations.fileName().c_str(), nullptr, 10);
-
                     CalibrationConfig calibrationConfig;
-                    if (f.size() == sizeof(CalibrationConfig)) {
-                        f.read((uint8_t*)&calibrationConfig, sizeof(CalibrationConfig));
-                        f.close();
+                    f.read((uint8_t*)&calibrationConfig, sizeof(CalibrationConfig));
 
-                        m_Logger.debug("Found sensor calibration for %s at index %d", calibrationConfigTypeToString(calibrationConfig.type), sensorId);
-                        
-                        setCalibration(sensorId, calibrationConfig);
-                    } else {
-                        m_Logger.debug("Found incompatible sensor calibration at index %d, skipping", sensorId);
-                    }
+                    uint8_t sensorId = strtoul(calibrations.fileName().c_str(), nullptr, 10);
+                    m_Logger.debug("Found sensor calibration for %s at index %d", calibrationConfigTypeToString(calibrationConfig.type), sensorId);
+
+                    setCalibration(sensorId, calibrationConfig);
                 }
             }
 #endif
