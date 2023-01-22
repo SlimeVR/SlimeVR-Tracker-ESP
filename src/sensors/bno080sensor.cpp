@@ -281,9 +281,10 @@ void BNO080Sensor::initCalibration()
     // Start calibration when device is not in motion
     // 0 - Unknown
     // 1 - On table
-    // 2 - Stable
-    // 3 - Motion
-    // 4 - Reserved
+    // 2 - Stationary
+    // 3 - Stable
+    // 4 - Motion
+    // 5 - Reserved
     do
     {
         ledManager.on();
