@@ -64,6 +64,9 @@ public:
     uint8_t getSensorType() {
         return sensorType;
     };
+    Quat& getQuaternion() {
+        return quaternion;
+    };
 
     bool hadData = false;
 protected:

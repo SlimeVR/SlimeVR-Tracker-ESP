@@ -72,7 +72,6 @@ void BNO080Sensor::motionSetup()
     #endif
 #endif
 
-    imu.enableTapDetector(100);
     imu.enableStabilityClassifier(100);
 
 #if ENABLE_INSPECTION
@@ -240,9 +239,7 @@ void BNO080Sensor::sendData()
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
 
 #if SEND_ACCELERATION
-        {
-            Network::sendAccel(this->acceleration, this->sensorId);
-        }
+        Network::sendAccel(this->acceleration, this->sensorId);
 #endif
 
 #if !USE_6_AXIS

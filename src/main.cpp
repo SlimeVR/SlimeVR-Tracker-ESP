@@ -45,6 +45,7 @@ int sensorToCalibrate = -1;
 bool blinking = false;
 unsigned long blinkStart = 0;
 unsigned long loopTime = 0;
+unsigned long lastStatePrint = 0;
 bool secondImuActive = false;
 BatteryMonitor battery;
 
@@ -113,7 +114,6 @@ void loop()
     sensorManager.update();
     battery.Loop();
     ledManager.update();
-
 #ifdef TARGET_LOOPTIME_MICROS
     long elapsed = (micros() - loopTime);
     if (elapsed < TARGET_LOOPTIME_MICROS)
@@ -132,4 +132,11 @@ void loop()
     }
     loopTime = micros();
 #endif
+    #if defined(PRINT_STATE_EVERY_MS) && PRINT_STATE_EVERY_MS > 0
+        unsigned long now = millis();
+        if(lastStatePrint + PRINT_STATE_EVERY_MS < now) {
+            lastStatePrint = now;
+            SerialCommands::printState();
+        }
+    #endif
 }

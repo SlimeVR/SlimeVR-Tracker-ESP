@@ -49,6 +49,7 @@
 #define serialDebug false // Set to true to get Serial output for debugging
 #define serialBaudRate 115200
 #define LED_INTERVAL_STANDBY 10000
+#define PRINT_STATE_EVERY_MS 60000
 
 // Determines how often we sample and send data
 #define samplingRateInMillis 10
@@ -79,7 +80,7 @@
 // Not recommended for production
 #define ENABLE_INSPECTION false
 
-#define FIRMWARE_BUILD_NUMBER 14
-#define FIRMWARE_VERSION "0.3.1"
+#define FIRMWARE_BUILD_NUMBER 15
+#define FIRMWARE_VERSION "0.3.2"
 
 #endif // SLIMEVR_DEBUG_H_
