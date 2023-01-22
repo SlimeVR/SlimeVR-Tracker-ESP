@@ -43,6 +43,9 @@ public:
     void startCalibration(int calibrationType) override final;
     uint8_t getSensorState() override final;
 
+    void initCalibration();
+    void saveCalibration();
+
 private:
     BNO080 imu{};
 

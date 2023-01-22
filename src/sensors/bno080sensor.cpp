@@ -52,7 +52,7 @@ void BNO080Sensor::motionSetup()
                   imu.swVersionPatch
                 );
 
-    this->imu.enableLinearAccelerometer(10);
+    imu.enableLinearAccelerometer(10);
 
 #if USE_6_AXIS
     #if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
@@ -73,6 +73,7 @@ void BNO080Sensor::motionSetup()
 #endif
 
     imu.enableTapDetector(100);
+    imu.enableStabilityClassifier(100);
 
 #if ENABLE_INSPECTION
     imu.enableRawGyro(10);
@@ -86,6 +87,9 @@ void BNO080Sensor::motionSetup()
     configured = true;
     lastCalib = millis();
     calibStopped = false;
+
+    // startCalibration() executes too soon before parameters have set
+    initCalibration();
 }
 
 void BNO080Sensor::motionLoop()
@@ -209,23 +213,18 @@ void BNO080Sensor::motionLoop()
         m_Logger.error("Last error: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
                 lastError.severity, lastError.error_sequence_number, lastError.error_source, lastError.error, lastError.error_module, lastError.error_code);
     }
+
+    // $TODO only save good accuracy
     if(BNO_SELF_CALIBRATION_TIME > 0 && lastCalib + BNO_SELF_CALIBRATION_TIME < millis() && !calibStopped)
     {
         calibStopped = true;
         
-        do
-        {
-            ledManager.on();
-            imu.requestCalibrationStatus();
-            delay(20);
-            imu.getReadings();
-            ledManager.off();
-            delay(20);
-        } while (!imu.calibrationComplete());
-        imu.saveCalibration();
+        saveCalibration();
 
         imu.endCalibration();
-        m_Logger.error("Calibration ended");
+
+        m_Logger.info("Calibration ended");
+        m_Logger.info("Calibration accuracy: %d", calibrationAccuracy);
     }
 }
 
@@ -272,9 +271,35 @@ void BNO080Sensor::sendData()
 }
 
 void BNO080Sensor::startCalibration(int calibrationType)
+{}
+
+void BNO080Sensor::initCalibration()
 {
     ledManager.pattern(20, 20, 10);
     ledManager.blink(2000);
+
+    // Start calibration when device is not in motion
+    // 0 - Unknown
+    // 1 - On table
+    // 2 - Stable
+    // 3 - Motion
+    // 4 - Reserved
+    do
+    {
+        ledManager.on();
+        delay(20);
+        imu.getReadings();
+        ledManager.off();
+        delay(20);
+
+        if(imu.getStabilityClassifier() == 4)
+        {
+            calibStopped = true;
+            return;
+        }
+    } while (imu.getStabilityClassifier() == 0);
+    
+    // Start calibration
 #if USE_6_AXIS
     imu.calibrateGyro();
 #else
@@ -282,8 +307,15 @@ void BNO080Sensor::startCalibration(int calibrationType)
 #endif
 
     // Wait for quick gyro calibration before saving
-    delay(5000);
+    ledManager.blink(10000);
 
+    saveCalibration();
+
+    lastCalib = millis();
+}
+
+void BNO080Sensor::saveCalibration()
+{
     do
     {
         ledManager.on();
@@ -294,6 +326,4 @@ void BNO080Sensor::startCalibration(int calibrationType)
         delay(20);
     } while (!imu.calibrationComplete());
     imu.saveCalibration();
-
-    lastCalib = millis();
 }
