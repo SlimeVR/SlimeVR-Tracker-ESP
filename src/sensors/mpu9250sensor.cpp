@@ -260,7 +260,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         ledManager.on();
         int16_t mx,my,mz;
         imu.getMagnetometer(&mx, &my, &mz);
-        magneto->sample(mx, my, mz);
+        magneto->sample(my, mx, -mz);
 
         float rawMagFloat[3] = { (float)mx, (float)my, (float)mz};
         Network::sendRawCalibrationData(rawMagFloat, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
@@ -335,7 +335,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         int16_t ax,ay,az,gx,gy,gz,mx,my,mz;
         imu.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
         magneto_acc->sample(ax, ay, az);
-        magneto_mag->sample(mx, my, -mz);
+        magneto_mag->sample(my, mx, -mz);
 
         // Thought: since we're sending the samples to the server anyway,
         // we could make the server run magneto for us.
