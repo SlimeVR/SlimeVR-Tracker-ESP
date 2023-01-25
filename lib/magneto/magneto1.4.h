@@ -1,80 +1,52 @@
 #ifndef __MAGENTO_1_4__
 #define __MAGENTO_1_4__
 
+/* Copyright (C) 2013 www.sailboatinstruments.blogspot.com
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 // In https://github.com/jremington/MPU-9250-AHRS
 // magneto 1.4 magnetometer/accelerometer calibration code
 // from http://sailboatinstruments.blogspot.com/2011/08/improved-magnetometer-calibration.html
-// tested and works with Code::Blocks 10.05 through 20.03
 
-// Command line version slightly modified from original, sjames_remington@gmail.com
-// Now includes option to reject outliers in units of sigma, deviation of data vector length
-// from mean values of the sample. Suggest using 2 as the rejection criterion
+/// @brief Accelerometer/Magnetometer calibration assistant
+class MagnetoCalibration {
+    public:
+        /// @brief Updates calibration with the sample (x, y, z)
+        void sample(double x, double y, double z);
 
-// comma separated ASCII input data file expected, three columns x, y, z
+        /// @brief Outputs the calibration matrix corresponding to all previous samples
+        /// 
+        /// This does not consume/destroy the calibration struct, allowing for the possibility of
+        /// continuously updating the calibration. That said, there may be limitations on how many
+        /// samples are useful to collect, due to the limitations of finite-storage numbers.
+        ///
+        /// @param BAinv 
+        void current_calibration(float BAinv[4][3]);
 
-#include <stdio.h>
-#include <math.h>
-#include <malloc.h>
-#include <string.h>
-#include <float.h>
-
-// Forward declarations of mymathlib.com routines
-void Multiply_Self_Transpose(double*, double*, int, int);
-void Get_Submatrix(double*, int, int, double*, int, int, int);
-int Choleski_LU_Decomposition(double*, int);
-int Choleski_LU_Inverse(double*, int);
-void Multiply_Matrices(double*, double*, int, int, double*, int);
-void Identity_Matrix(double*, int);
-
-int Hessenberg_Form_Elementary(double*, double*, int);
-void Hessenberg_Elementary_Transform(double*, double*, int[], int);
-
-void Copy_Vector(double*, double*, int);
-
-int QR_Hessenberg_Matrix(double*, double*, double[], double[], int, int);
-void One_Real_Eigenvalue(double[], double[], double[], int, double);
-void Two_Eigenvalues(double*, double*, double[], double[], int, int, double);
-void Update_Row(double*, double, double, int, int);
-void Update_Column(double*, double, double, int, int);
-void Update_Transformation(double*, double, double, int, int);
-void Double_QR_Iteration(double*, double*, int, int, int, double*, int);
-void Product_and_Sum_of_Shifts(double*, int, int, double*, double*, double*, int);
-int Two_Consecutive_Small_Subdiagonal(double*, int, int, int, double, double);
-void Double_QR_Step(double*, int, int, int, double, double, double*, int);
-void BackSubstitution(double*, double[], double[], int);
-void BackSubstitute_Real_Vector(double*, double[], double[], int, double, int);
-void BackSubstitute_Complex_Vector(double*, double[], double[], int, double, int);
-void Calculate_Eigenvectors(double*, double*, double[], double[], int);
-void Complex_Division(double, double, double, double, double*, double*);
-
-void Transpose_Square_Matrix(double*, int);
-
-int Lower_Triangular_Solve(double* L, double B[], double x[], int n);
-int Lower_Triangular_Inverse(double* L, int n);
-int Upper_Triangular_Solve(double* U, double B[], double x[], int n);
-
-void Interchange_Rows(double* A, int row1, int row2, int ncols);
-void Interchange_Columns(double* A, int col1, int col2, int nrows, int ncols);
-void Identity_Matrix(double* A, int n);
-void Copy_Vector(double* d, double* s, int n);
-
-void Hessenberg_Elementary_Transform(double* H, double* S, int perm[], int n);
-
-void One_Real_Eigenvalue(double Hrow[], double eigen_real[], double eigen_imag[], int row, double shift);
-void Two_Eigenvalues(double* H, double* S, double eigen_real[], double eigen_imag[], int n, int k, double t);
-void Update_Row(double* Hrow, double cos, double sin, int n, int k);
-void Update_Column(double* H, double cos, double sin, int n, int k);
-void Update_Transformation(double* S, double cos, double sin, int n, int k);
-void Double_QR_Iteration(double* H, double* S, int row, int min_row, int n, double* shift, int iteration);
-void Product_and_Sum_of_Shifts(double* H, int n, int max_row, double* shift, double* trace, double* det, int iteration);
-int Two_Consecutive_Small_Subdiagonal(double* H, int min_row, int max_row, int n, double trace, double det);
-void Double_QR_Step(double* H, int min_row, int max_row, int min_col, double trace, double det, double* S, int n);
-void Complex_Division(double x, double y, double u, double v, double* a, double* b);
-void BackSubstitution(double* H, double eigen_real[], double eigen_imag[], int n);
-void BackSubstitute_Real_Vector(double* H, double eigen_real[], double eigen_imag[], int row, double zero_tolerance, int n);
-void BackSubstitute_Complex_Vector(double* H, double eigen_real[], double eigen_imag[], int row, double zero_tolerance, int n);
-void Calculate_Eigenvectors(double* H, double* S, double eigen_real[], double eigen_imag[], int n);
-
-void CalculateCalibration(float *buf, int sampleCount, float BAinv[4][3]);
+    private:
+        // internal 10x10 matrix representing the 10x<sample count> matrix multiplied by its transpose,
+        // resulting in a 10x10 symmetric matrix
+        double ata[100] = {0.0};
+        double norm_sum = 0.0;
+        double sample_count = 0.0;
+};
 
 #endif // __MAGENTO_1_4__
