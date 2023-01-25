@@ -67,11 +67,14 @@ boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, uint8_t intPin)
 	//Transmit packet on channel 2, 2 bytes
 	sendPacket(CHANNEL_CONTROL, 2);
 
-	//Now we wait for response
-	if (receivePacket() == true)
-	{
-		if (shtpData[0] == SHTP_REPORT_PRODUCT_ID_RESPONSE)
-		{
+	uint32_t tInitialResetTimeMS = millis();
+	bool tBoardInfoReceived = false;
+
+	// Wait max 2.5s for the product_id_response and ignore other packets received during that time.
+	while (millis() - tInitialResetTimeMS < 2500 && (!tBoardInfoReceived)) {
+		receivePacket();
+		if (shtpHeader[2] == 2 && shtpData[0] == SHTP_REPORT_PRODUCT_ID_RESPONSE) {
+			tBoardInfoReceived = true;
 			swMajor = shtpData[2];
 			swMinor = shtpData[3];
 			swPartNumber = ((uint32_t)shtpData[7] << 24) | ((uint32_t)shtpData[6] << 16) | ((uint32_t)shtpData[5] << 8) | ((uint32_t)shtpData[4]);
@@ -90,11 +93,10 @@ boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, uint8_t intPin)
 				_debugPort->print(F(" SW Version Patch: 0x"));
 				_debugPort->println(swVersionPatch, HEX);
 			}
-			return (true);
 		}
 	}
 
-	return (false); //Something went wrong
+	return tBoardInfoReceived;
 }
 
 boolean BNO080::beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_INTPin, uint8_t user_RSTPin, uint32_t spiPortSpeed, SPIClass &spiPort)
@@ -1027,6 +1029,34 @@ bool BNO080::readFRSdata(uint16_t recordID, uint8_t startLocation, uint8_t words
 	}
 }
 
+// After power on or completed reset, the BNO will send two messages. One
+// reply and one unsolicited message.
+// 1) Reset message on SHTP channel 1
+// 2) Unsolicited initialization message on SHTP channel 2
+// See 5.2.1 on BNO08X datasheet.
+// Wait For both of these packets specifically up to a max time and exit
+// after both packets are read or max waiting time is reached.
+void BNO080::waitForCompletedReset(void)
+{
+	uint32_t tInitialResetTimeMS = millis();
+	bool tResetCompleteReceived = false;
+	bool tUnsolicitedResponseReceived = false;
+	shtpHeader[2] = 0; // Make sure we aren't reading old data.
+	shtpData[0] = 0;
+
+	// Wait max 5s for the two packets. OR Until we get both reset responses.
+	while (millis() - tInitialResetTimeMS < 5000 &&
+	       (!tResetCompleteReceived || !tUnsolicitedResponseReceived)) {
+		receivePacket();
+		if (shtpHeader[2] == 1 && shtpData[0] == 0x01) {
+			tResetCompleteReceived = true;
+		}
+		if (shtpHeader[2] == 2 && shtpData[0] == 0xF1) {
+			tUnsolicitedResponseReceived = true;
+		}
+	}
+}
+
 //Send command to reset IC
 //Read all advertisement packets from sensor
 //The sensor has been seen to reset twice if we attempt too much too quickly.
@@ -1038,13 +1068,8 @@ void BNO080::softReset(void)
 	//Attempt to start communication with sensor
 	sendPacket(CHANNEL_EXECUTABLE, 1); //Transmit packet on channel 1, 1 byte
 
-	//Read all incoming data and flush it
-	delay(50);
-	while (receivePacket() == true)
-		; //delay(1);
-	delay(50);
-	while (receivePacket() == true)
-		; //delay(1);
+	waitForCompletedReset();
+	waitForCompletedReset();
 }
 
 //Set the operating mode to "On"
