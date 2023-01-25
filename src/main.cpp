@@ -88,6 +88,9 @@ void setup()
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
 #endif
+#ifdef ESP32 // Counterpart on ESP32 to ClockStretchLimit
+    Wire.setTimeOut(150);
+#endif
     Wire.setClock(I2C_SPEED);
 
     // Wait for IMU to boot
