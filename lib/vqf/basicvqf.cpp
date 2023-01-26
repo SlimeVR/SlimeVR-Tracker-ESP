@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+// Modified to add timestamps in: updateGyr(const vqf_real_t gyr[3], double gyrTs)
+// Removed batch update functions
+
 #include "basicvqf.h"
 
 #include <algorithm>
@@ -42,11 +45,11 @@ BasicVQF::BasicVQF(const BasicVQFParams &params, vqf_real_t gyrTs, vqf_real_t ac
     setup();
 }
 
-void BasicVQF::updateGyr(const vqf_real_t gyr[3])
+void BasicVQF::updateGyr(const vqf_real_t gyr[3], double gyrTs)
 {
     // gyroscope prediction step
     vqf_real_t gyrNorm = norm(gyr, 3);
-    vqf_real_t angle = gyrNorm * coeffs.gyrTs;
+    vqf_real_t angle = gyrNorm * gyrTs;
     if (gyrNorm > EPS) {
         vqf_real_t c = cos(angle/2);
         vqf_real_t s = sin(angle/2)/gyrNorm;
@@ -142,40 +145,6 @@ void BasicVQF::updateMag(const vqf_real_t mag[3])
         state.delta -= vqf_real_t(2*M_PI);
     } else if (state.delta < vqf_real_t(-M_PI)) {
         state.delta += vqf_real_t(2*M_PI);
-    }
-}
-
-void BasicVQF::update(const vqf_real_t gyr[3], const vqf_real_t acc[3])
-{
-    updateGyr(gyr);
-    updateAcc(acc);
-}
-
-void BasicVQF::update(const vqf_real_t gyr[3], const vqf_real_t acc[3], const vqf_real_t mag[3])
-{
-    updateGyr(gyr);
-    updateAcc(acc);
-    updateMag(mag);
-}
-
-void BasicVQF::updateBatch(const vqf_real_t gyr[], const vqf_real_t acc[], const vqf_real_t mag[], size_t N,
-                           vqf_real_t out6D[], vqf_real_t out9D[], vqf_real_t outDelta[])
-{
-    for (size_t i = 0; i < N; i++) {
-        if (mag) {
-            update(gyr+3*i, acc+3*i, mag+3*i);
-        } else {
-            update(gyr+3*i, acc+3*i);
-        }
-        if (out6D) {
-            getQuat6D(out6D+4*i);
-        }
-        if (out9D) {
-            getQuat9D(out9D+4*i);
-        }
-        if (outDelta) {
-            outDelta[i] = state.delta;
-        }
     }
 }
 

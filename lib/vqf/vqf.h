@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+// Modified to add timestamps in: updateGyr(const vqf_real_t gyr[3], double gyrTs)
+// Removed batch update functions
+
 #ifndef VQF_HPP
 #define VQF_HPP
 

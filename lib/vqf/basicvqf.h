@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+// Modified to add timestamps in: updateGyr(const vqf_real_t gyr[3], double gyrTs)
+// Removed batch update functions
+
 #ifndef BASICVQF_HPP
 #define BASICVQF_HPP
 
@@ -246,7 +249,7 @@ public:
      *
      * @param gyr gyroscope measurement in rad/s
      */
-    void updateGyr(const vqf_real_t gyr[3]);
+    void updateGyr(const vqf_real_t gyr[3], double gyrTs);
     /**
      * @brief Performs accelerometer update step.
      *
@@ -269,52 +272,6 @@ public:
      * @param mag magnetometer measurement in arbitrary units
      */
     void updateMag(const vqf_real_t mag[3]);
-    /**
-     * @brief Performs filter update step for one sample (magnetometer-free).
-     * @param gyr gyroscope measurement in rad/s
-     * @param acc accelerometer measurement in m/s²
-     */
-    void update(const vqf_real_t gyr[3], const vqf_real_t acc[3]);
-    /**
-     * @brief Performs filter update step for one sample (with magnetometer measurement).
-     * @param gyr gyroscope measurement in rad/s
-     * @param acc accelerometer measurement in m/s²
-     * @param mag magnetometer measurement in arbitrary units
-     */
-    void update(const vqf_real_t gyr[3], const vqf_real_t acc[3], const vqf_real_t mag[3]);
-
-    /**
-     * @brief Performs batch update for multiple samples at once.
-     *
-     * In order to use this function, the input data must be available in an array in row-major order. A null pointer
-     * can be passed for mag in order to skip the magnetometer update. All data must have the same sampling rate.
-     *
-     * The output pointer arguments must be null pointers or point to sufficiently large data buffers.
-     *
-     * Example usage:
-     * \rst
-     * .. code-block:: c++
-     *
-     *     int N = 1000;
-     *     double gyr[N*3]; // fill with gyroscope measurements in rad/s
-     *     double acc[N*3]; // fill will accelerometer measurements in m/s²
-     *     double mag[N*3]; // fill with magnetometer measurements (arbitrary units)
-     *     double quat9D[N*4]; // output buffer
-     *
-     *     VQF vqf(0.01); // 0.01 s sampling time, i.e. 100 Hz
-     *     vqf.updateBatch(gyr, acc, mag, nullptr, quat9D);
-     * \endrst
-     *
-     * @param gyr gyroscope measurement in rad/s (N*3 elements, must not be null)
-     * @param acc accelerometer measurement in m/s² (N*3 elements, must not be null)
-     * @param mag magnetometer measurement in arbitrary units (N*3 elements, can be a null pointer)
-     * @param N number of samples
-     * @param out6D output buffer for the 6D quaternion (N*4 elements, can be a null pointer)
-     * @param out9D output buffer for the 9D quaternion (N*4 elements, can be a null pointer)
-     * @param outDelta output buffer for heading difference angle (N elements, can be a null pointer)
-     */
-    void updateBatch(const vqf_real_t gyr[], const vqf_real_t acc[], const vqf_real_t mag[], size_t N,
-                     vqf_real_t out6D[], vqf_real_t out9D[], vqf_real_t outDelta[]);
 
     /**
      * @brief Returns the angular velocity strapdown integration quaternion
