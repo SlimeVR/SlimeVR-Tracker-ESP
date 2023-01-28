@@ -183,7 +183,8 @@ bool GyroTemperatureCalibrator::loadConfig(float newSensitivity) {
         }
     } else {
         m_Logger.warn("No temperature calibration data found for sensor %d, ignoring...", sensorId);
-        m_Logger.info("Temperature calibration is advised");
+        // m_Logger.info("Temperature calibration is advised");
+        m_Logger.info("Temperature calibration is a work-in-progress feature; any changes to its parameters or updates will render the saved temperature curve invalid and unloadable.");
     }
     return configSaved;
 }
