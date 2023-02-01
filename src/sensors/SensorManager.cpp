@@ -42,10 +42,6 @@ namespace SlimeVR
             uint8_t firstIMUAddress = 0;
             uint8_t secondIMUAddress = 0;
 
-            //TODO check sensorID the 0 in (ErroneousSensor(0, IMU);) to sync with the address
-            //what is important is that is consitent, so having the sensorid 0 tied to all the default addresses will fix it
-            //create defines for all the address values set them to the address and then check if the
-
             {
                 firstIMUAddress = I2CSCAN::pickDevice(PRIMARY_IMU_ADDRESS, SECONDARY_IMU_ADDRESS, true);
                 uint8_t sensorID = 0;
