@@ -82,6 +82,7 @@ namespace SerialCommands {
             sensor2->isWorking() ? "true" : "false",
             sensor2->hadData ? "true" : "false"
         );
+        logger.info("GIT commit: %s", GIT_REV);
     }
 
     void cmdGet(CmdParser * parser) {
