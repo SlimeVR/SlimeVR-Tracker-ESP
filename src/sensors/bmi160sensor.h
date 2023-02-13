@@ -84,7 +84,7 @@ constexpr float BMI160_FIFO_AVG_DATA_FRAME_LENGTH = (
     BMI160_ODR_ACC_HZ * BMI160_FIFO_A_LEN +
     BMI160_ODR_MAG_HZ * BMI160_FIFO_M_LEN
 ) / BMI160_SETTINGS_MAX_ODR_HZ;
-constexpr float BMI160_FIFO_READ_BUFFER_SIZE_MICROS = 15000;
+constexpr float BMI160_FIFO_READ_BUFFER_SIZE_MICROS = 60000;
 constexpr float BMI160_FIFO_READ_BUFFER_SIZE_SAMPLES =
     BMI160_SETTINGS_MAX_ODR_HZ * BMI160_FIFO_READ_BUFFER_SIZE_MICROS / 1e6f;
 constexpr uint16_t BMI160_FIFO_MAX_LENGTH = 1024;
@@ -195,7 +195,7 @@ class BMI160Sensor : public Sensor {
         void getRemappedRotation(int16_t* x, int16_t* y, int16_t* z);
         void getRemappedAcceleration(int16_t* x, int16_t* y, int16_t* z);
 
-        float getTemperature();
+        bool getTemperature(float* out);
     private:
         BMI160 imu {};
 
@@ -239,6 +239,7 @@ class BMI160Sensor : public Sensor {
         uint32_t accReads = 0;
         uint32_t magReads = 0;
         uint16_t numFIFODropped = 0;
+        uint16_t numFIFOFailedReads = 0;
         #endif
 
         uint32_t lastRotationPacketSent = 0;

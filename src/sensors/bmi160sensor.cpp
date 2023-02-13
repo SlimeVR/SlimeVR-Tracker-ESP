@@ -246,27 +246,30 @@ void BMI160Sensor::motionLoop() {
             localTime0 = localTime1;
             localTime1 = micros();
             uint32_t rawSensorTime;
-            imu.getSensorTime(&rawSensorTime);
-            syncLatencyMicros = (micros() - localTime1) * 0.3;
-            sensorTime0 = sensorTime1;
-            sensorTime1 = rawSensorTime;
-            if ((sensorTime0 > 0 || localTime0 > 0) && (sensorTime1 > 0 || sensorTime1 > 0)) {
-                // handle 24 bit overflow
-                double remoteDt = 
-                    sensorTime1 >= sensorTime0 ?
-                    sensorTime1 - sensorTime0 :
-                    (sensorTime1 + 0xFFFFFF) - sensorTime0;
-                double localDt = localTime1 - localTime0;
-                sensorTimeRatio = localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
+            if (imu.getSensorTime(&rawSensorTime)) {
+                syncLatencyMicros = (micros() - localTime1) * 0.3;
+                sensorTime0 = sensorTime1;
+                sensorTime1 = rawSensorTime;
+                if ((sensorTime0 > 0 || localTime0 > 0) && (sensorTime1 > 0 || sensorTime1 > 0)) {
+                    // handle 24 bit overflow
+                    double remoteDt = 
+                        sensorTime1 >= sensorTime0 ?
+                        sensorTime1 - sensorTime0 :
+                        (sensorTime1 + 0xFFFFFF) - sensorTime0;
+                    double localDt = localTime1 - localTime0;
+                    sensorTimeRatio = localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
 
-                constexpr double EMA_APPROX_SECONDS = 1;
-                constexpr uint32_t EMA_SAMPLES = (EMA_APPROX_SECONDS / 3 * 1e6) / BMI160_TARGET_SYNC_INTERVAL_MICROS;
-                sensorTimeRatioEma -= (double)sensorTimeRatioEma / EMA_SAMPLES;
-                sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
+                    constexpr double EMA_APPROX_SECONDS = 1;
+                    constexpr uint32_t EMA_SAMPLES = (EMA_APPROX_SECONDS / 3 * 1e6) / BMI160_TARGET_SYNC_INTERVAL_MICROS;
+                    sensorTimeRatioEma -= (double)sensorTimeRatioEma / EMA_SAMPLES;
+                    sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
 
-                sampleDtMicros = BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
-                samplesSinceClockSync = 0;
+                    sampleDtMicros = BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
+                    samplesSinceClockSync = 0;
+                }
             }
+
+            getTemperature(&temperature);
         }
     }
     
@@ -275,8 +278,6 @@ void BMI160Sensor::motionLoop() {
         uint32_t elapsed = now - lastPollTime;
         if (elapsed >= BMI160_TARGET_POLL_INTERVAL_MICROS) {
             lastPollTime = now - (elapsed - BMI160_TARGET_POLL_INTERVAL_MICROS);
-
-            temperature = getTemperature();
 
             #if BMI160_DEBUG
                 uint32_t start = micros();
@@ -297,13 +298,14 @@ void BMI160Sensor::motionLoop() {
                     #else
                         #define BMI160_FUSION_TYPE "mahony"
                     #endif
-                    m_Logger.debug("readFIFO took %0.4f ms, read gyr %i acc %i mag %i rest %i resets %i type " BMI160_FUSION_TYPE,
+                    m_Logger.debug("readFIFO took %0.4f ms, read gyr %i acc %i mag %i rest %i resets %i readerrs %i type " BMI160_FUSION_TYPE,
                         ((float)cpuUsageMicros / 1e3f),
                         gyrReads,
                         accReads,
                         magReads,
                         restDetected,
-                        numFIFODropped
+                        numFIFODropped,
+                        numFIFOFailedReads
                     );
 
                     cpuUsageMicros = 0;
@@ -393,7 +395,13 @@ void BMI160Sensor::motionLoop() {
 }
 
 void BMI160Sensor::readFIFO() {
-    fifo.length = imu.getFIFOCount();
+    if (!imu.getFIFOCount(&fifo.length)) {
+        #if BMI160_DEBUG
+            numFIFOFailedReads++;
+        #endif
+        return;
+    }
+
     if (fifo.length <= 1) return;
     if (fifo.length > sizeof(fifo.data)) {
         #if BMI160_DEBUG
@@ -403,7 +411,12 @@ void BMI160Sensor::readFIFO() {
         return;
     }
     std::fill(fifo.data, fifo.data + fifo.length, 0);
-    imu.getFIFOBytes(fifo.data, fifo.length);
+    if (!imu.getFIFOBytes(fifo.data, fifo.length)) {
+        #if BMI160_DEBUG
+            numFIFOFailedReads++;
+        #endif
+        return;
+    }
 
     int16_t gx, gy, gz;
     int16_t ax, ay, az;
@@ -651,12 +664,17 @@ void BMI160Sensor::saveTemperatureCalibration() {
     gyroTempCalibrator->saveConfig();
 }
 
-float BMI160Sensor::getTemperature() {
+bool BMI160Sensor::getTemperature(float* out) {
     // Middle value is 23 degrees C (0x0000)
     #define BMI160_ZERO_TEMP_OFFSET 23
     // Temperature per step from -41 + 1/2^9 degrees C (0x8001) to 87 - 1/2^9 degrees C (0x7FFF)
     constexpr float TEMP_STEP = 128. / 65535;
-    return (imu.getTemperature() * TEMP_STEP) + BMI160_ZERO_TEMP_OFFSET;
+    int16_t temp;
+    if (imu.getTemperature(&temp)) {
+        *out = (temp * TEMP_STEP) + BMI160_ZERO_TEMP_OFFSET;
+        return true;
+    }
+    return false;
 }
 
 void BMI160Sensor::applyAccelCalibrationAndScale(sensor_real_t Axyz[3]) {
@@ -712,7 +730,9 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     }
     ledManager.off();
 
-    temperature = getTemperature();
+    if (!getTemperature(&temperature)) {
+        m_Logger.error("Error: can't read temperature");
+    }
     m_Calibration.temperature = temperature;
 
     constexpr uint16_t gyroCalibrationSamples =

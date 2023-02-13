@@ -1501,12 +1501,15 @@ void BMI160::setMagFIFOEnabled(bool enabled) {
  * samples available given the set of sensor data bound to be stored in the
  * FIFO. See @ref getFIFOHeaderModeEnabled().
  *
- * @return Current FIFO buffer size
+ * @param outCount Current FIFO buffer size
+ * @return Bool if value was read successfully
  * @see BMI160_RA_FIFO_LENGTH_0
  */
-uint16_t BMI160::getFIFOCount() {
-    I2CdevMod::readBytes(devAddr, BMI160_RA_FIFO_LENGTH_0, 2, buffer);
-    return (((int16_t)buffer[1]) << 8) | buffer[0];
+bool BMI160::getFIFOCount(uint16_t* outCount) {
+    bool ok = I2CdevMod::readBytes(devAddr, BMI160_RA_FIFO_LENGTH_0, 2, buffer) >= 0;
+    if (!ok) return false;
+    *outCount = (((int16_t)buffer[1]) << 8) | buffer[0];
+    return ok;
 }
 
 /** Reset the FIFO.
@@ -1584,12 +1587,14 @@ void BMI160::setFIFOHeaderModeEnabled(bool enabled) {
  * check FIFO_LENGTH to ensure that the FIFO buffer is not read when empty (see
  * @getFIFOCount()).
  *
- * @return Data frames from FIFO buffer
+ * @param data Data frames from FIFO buffer
+ * @param length Buffer length
+ * @return Bool if value was read successfully
  */
-void BMI160::getFIFOBytes(uint8_t *data, uint16_t length) {
-    if (length) {
-        I2CdevMod::readBytes(devAddr, BMI160_RA_FIFO_DATA, length, data);
-    }
+bool BMI160::getFIFOBytes(uint8_t *data, uint16_t length) {
+    if (!length) return true;
+    bool ok = I2CdevMod::readBytes(devAddr, BMI160_RA_FIFO_DATA, length, data) >= 0;
+    return ok;
 }
 
 /** Get full set of interrupt status bits from INT_STATUS[0] register.
@@ -2256,12 +2261,15 @@ int16_t BMI160::getAccelerationZ() {
  * 0x8001   | -41 + 1/2^9 degrees C
  * 0x8000   | Invalid
  *
- * @return Temperature reading in 16-bit 2's complement format
+ * @param out Temperature reading in 16-bit 2's complement format
+ * @return Bool if value was read successfully
  * @see BMI160_RA_TEMP_L
  */
-int16_t BMI160::getTemperature() {
-    I2CdevMod::readBytes(devAddr, BMI160_RA_TEMP_L, 2, buffer);
-    return (((int16_t)buffer[1]) << 8) | buffer[0];
+bool BMI160::getTemperature(int16_t* out) {
+    bool ok = I2CdevMod::readBytes(devAddr, BMI160_RA_TEMP_L, 2, buffer) >= 0;
+    if (!ok) return false;
+    *out = (((int16_t)buffer[1]) << 8) | buffer[0];
+    return ok;
 }
 
 /** Get 3-axis gyroscope readings.
@@ -2396,11 +2404,13 @@ void BMI160::waitForMagDrdy() {
     } while (!buffer[0]);
 }
 
-void BMI160::getSensorTime(uint32_t *v_sensor_time_u32) {
-    I2CdevMod::readBytes(devAddr, BMI160_RA_SENSORTIME, 3, buffer);
+bool BMI160::getSensorTime(uint32_t *v_sensor_time_u32) {
+    bool ok = I2CdevMod::readBytes(devAddr, BMI160_RA_SENSORTIME, 3, buffer) >= 0;
+    if (!ok) return false;
     *v_sensor_time_u32 = (uint32_t)(
         (((uint32_t)buffer[2]) << 16) |
         (((uint32_t)buffer[1]) << 8)  |
         ((uint32_t)buffer[0])
     );
+    return ok;
 }

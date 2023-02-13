@@ -692,7 +692,7 @@ class BMI160 {
         void getMagnetometer(int16_t* mx, int16_t* my, int16_t* mz);
         void getMagnetometerXYZBuffer(uint8_t* data);
 
-        int16_t getTemperature();
+        bool getTemperature(int16_t* out);
 
         void getRotation(int16_t* x, int16_t* y, int16_t* z);
         int16_t getRotationX();
@@ -724,8 +724,8 @@ class BMI160 {
         void setFIFOHeaderModeEnabled(bool enabled);
         void resetFIFO();
 
-        uint16_t getFIFOCount();
-        void getFIFOBytes(uint8_t *data, uint16_t length);
+        bool getFIFOCount(uint16_t* outCount);
+        bool getFIFOBytes(uint8_t *data, uint16_t length);
 
         uint8_t getDeviceID();
 
@@ -746,7 +746,7 @@ class BMI160 {
         void waitForGyroDrdy();
         void waitForAccelDrdy();
         void waitForMagDrdy();
-        void getSensorTime(uint32_t *v_sensor_time_u32);
+        bool getSensorTime(uint32_t *v_sensor_time_u32);
         void setMagDeviceAddress(uint8_t addr);
         bool setMagRegister(uint8_t addr, uint8_t value);
     private:
