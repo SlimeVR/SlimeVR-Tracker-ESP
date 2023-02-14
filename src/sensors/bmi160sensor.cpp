@@ -243,10 +243,11 @@ void BMI160Sensor::motionLoop() {
         if (elapsed >= BMI160_TARGET_SYNC_INTERVAL_MICROS) {
             lastClockPollTime = now - (elapsed - BMI160_TARGET_SYNC_INTERVAL_MICROS);
 
-            localTime0 = localTime1;
-            localTime1 = micros();
+            const uint32_t nextLocalTime1 = micros();
             uint32_t rawSensorTime;
             if (imu.getSensorTime(&rawSensorTime)) {
+                localTime0 = localTime1;
+                localTime1 = nextLocalTime1;
                 syncLatencyMicros = (micros() - localTime1) * 0.3;
                 sensorTime0 = sensorTime1;
                 sensorTime1 = rawSensorTime;
