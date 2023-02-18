@@ -200,16 +200,16 @@ void WiFiNetwork::upkeep() {
                 return;                
                 case SLIME_WIFI_HARDCODE_G_ATTEMPT: // Couldn't connect with second set of credentials with PHY Mode G.
                 case SLIME_WIFI_SERVER_CRED_G_ATTEMPT: // Or if couldn't connect with server-sent credentials
+                    // Return to the default PHY Mode N.
+                    #if ESP8266
+                        WiFi.setPhyMode(WIFI_PHY_MODE_11N);
+                    #endif
                     // Start smart config
                     if(!hadWifi && !WiFi.smartConfigDone() && wifiConnectionTimeout + 11000 < millis()) {
                         if(WiFi.status() != WL_IDLE_STATUS) {
                             wifiHandlerLogger.error("Can't connect from any credentials, status: %d.", WiFi.status());
                             wifiConnectionTimeout = millis();
                         }
-                        // Return to the default PHY Mode N.
-                        #if ESP8266
-                            WiFi.setPhyMode(WIFI_PHY_MODE_11N);
-                        #endif
                         startProvisioning();
                     }
                 return;
