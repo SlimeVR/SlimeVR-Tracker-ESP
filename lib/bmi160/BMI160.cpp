@@ -108,6 +108,14 @@ void BMI160::initialize(uint8_t addr,
     // I2CdevMod::writeByte(devAddr, BMI160_RA_INT_MAP_2, 0x00);
 }
 
+bool BMI160::getErrReg(uint8_t* out) {
+    bool ok = I2CdevMod::readByte(devAddr, BMI160_RA_ERR, buffer) >= 0;
+    if (!ok) return false;
+    *out = buffer[0];
+    return true;
+}
+
+
 void BMI160::setMagDeviceAddress(uint8_t addr) {
     setRegister(BMI160_RA_MAG_IF_0_DEVADDR, addr << 1); // 0 bit of address is reserved and needs to be shifted
 }
@@ -116,8 +124,8 @@ bool BMI160::setMagRegister(uint8_t addr, uint8_t value) {
     setRegister(BMI160_RA_MAG_IF_4_WRITE_VALUE, value);
     setRegister(BMI160_RA_MAG_IF_3_WRITE_RA, addr);
     delay(3);
-    I2CdevMod::readByte(devAddr, 0x02, buffer);
-    if (buffer[0] & (1 << 5)) {
+    I2CdevMod::readByte(devAddr, BMI160_RA_ERR, buffer);
+    if (buffer[0] & BMI160_ERR_MASK_I2C_FAIL) {
         printf("BMI160: mag register proxy write error\n");
         return false;
     }

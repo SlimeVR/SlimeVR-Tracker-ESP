@@ -221,6 +221,20 @@ void BMI160Sensor::motionSetup() {
     imu.resetFIFO();
     delay(2);
 
+    uint8_t err;
+    if (imu.getErrReg(&err)) {
+        if (err & BMI160_ERR_MASK_CHIP_NOT_OPERABLE) {
+            m_Logger.fatal("Fatal error: chip not operable");
+            return;
+        } else if (err & BMI160_ERR_MASK_ERROR_CODE) {
+            m_Logger.error("Error code 0x%02x", err);
+        } else {
+            m_Logger.info("Initialized");
+        }
+    } else {
+        m_Logger.error("Failed to get error register value");
+    }
+
     working = true;
 }
 
@@ -258,15 +272,24 @@ void BMI160Sensor::motionLoop() {
                         sensorTime1 - sensorTime0 :
                         (sensorTime1 + 0xFFFFFF) - sensorTime0;
                     double localDt = localTime1 - localTime0;
-                    sensorTimeRatio = localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
+                    const double nextSensorTimeRatio = localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
+                    
+                    // handle sdk lags and time travel
+                    if (round(nextSensorTimeRatio) == 1.0) {
+                        sensorTimeRatio = nextSensorTimeRatio;
 
-                    constexpr double EMA_APPROX_SECONDS = 1;
-                    constexpr uint32_t EMA_SAMPLES = (EMA_APPROX_SECONDS / 3 * 1e6) / BMI160_TARGET_SYNC_INTERVAL_MICROS;
-                    sensorTimeRatioEma -= (double)sensorTimeRatioEma / EMA_SAMPLES;
-                    sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
+                        if (round(sensorTimeRatioEma) != 1.0) {
+                            sensorTimeRatioEma = sensorTimeRatio;
+                        }
 
-                    sampleDtMicros = BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
-                    samplesSinceClockSync = 0;
+                        constexpr double EMA_APPROX_SECONDS = 1.0;
+                        constexpr uint32_t EMA_SAMPLES = (EMA_APPROX_SECONDS / 3 * 1e6) / BMI160_TARGET_SYNC_INTERVAL_MICROS;
+                        sensorTimeRatioEma -= sensorTimeRatioEma / EMA_SAMPLES;
+                        sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
+
+                        sampleDtMicros = BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
+                        samplesSinceClockSync = 0;
+                    }
                 }
             }
 
