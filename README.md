@@ -86,12 +86,11 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
   - There is a legacy accelerometer calibration method that collects data during in-place rotation by holding it in hand instead.
     If you are absolutely unable to use the default 6-point calibration method, you can switch it in config file `defines_bmi160.h`.
 
-  - For faster recalibration, you enable gyroscope-only calibration by uncommenting `BMI160_CALIBRATION_GYRO_ONLY` option in `defines_bmi160.h`.
-    Accelerometer calibration can be safely skipped if you are sure you've calibrated it correctly.
-    You can check it by enabling developer mode in SlimeVR settings (*General / Interface*) and enabling the *"More info"* toggle in developer mode
-    options in the *"Home"* tab. Acceleration column should be close to `(0, 0, 0)` in all 6 positions.
-    If it shows gravity (as +-9.8, in m/s^2) or values that are not in range of 0 - 0.5 m/s^2 when the tracker is not moving,
-    it means the accelerometer is uncalibrated or calibrated incorrectly.
+  - For faster recalibration, you disable accelerometer calibration by setting `BMI160_ACCEL_CALIBRATION_METHOD` option to `ACCEL_CALIBRATION_METHOD_SKIP` in `defines_bmi160.h`.
+    Accelerometer calibration can be safely skipped if you don't have issues with pitch and roll.
+    You can check it by enabling developer mode in SlimeVR settings (*General / Interface*) and going back to the *"Home"* tab.
+    Press *"Preview"* button inside the tracker settings (of each tracker) to show the IMU visualizer.
+    Check if pitch/roll resembles its real orientation.
 
 ## Infos about ESP32-C3 with direct connection to USB
 

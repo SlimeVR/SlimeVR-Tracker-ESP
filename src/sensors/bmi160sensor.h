@@ -171,6 +171,9 @@ class BMI160Sensor : public Sensor {
         void motionSetup() override final;
         void motionLoop() override final;
         void startCalibration(int calibrationType) override final;
+        void maybeCalibrateGyro();
+        void maybeCalibrateAccel();
+        void maybeCalibrateMag();
         
         void printTemperatureCalibrationState() override final;
         void printDebugTemperatureCalibrationState() override final;
@@ -182,6 +185,10 @@ class BMI160Sensor : public Sensor {
 
         void applyAccelCalibrationAndScale(sensor_real_t Axyz[3]);
         void applyMagCalibrationAndScale(sensor_real_t Mxyz[3]);
+
+        bool hasGyroCalibration();
+        bool hasAccelCalibration();
+        bool hasMagCalibration();
 
         void onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z);
         void onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z);
@@ -262,6 +269,10 @@ class BMI160Sensor : public Sensor {
         double gscaleZ = BMI160_GSCALE;
 
         double GOxyzStaticTempCompensated[3];
+
+        bool isGyroCalibrated = false;
+        bool isAccelCalibrated = false;
+        bool isMagCalibrated = false;
 
         SlimeVR::Configuration::BMI160CalibrationConfig m_Calibration;
 };
