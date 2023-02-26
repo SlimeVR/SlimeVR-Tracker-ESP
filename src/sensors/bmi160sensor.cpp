@@ -565,9 +565,6 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
             restDetected = restDetection.getRestDetected();
         #endif
         gyroTempCalibrator->updateGyroTemperatureCalibration(temperature, restDetected, x, y, z);
-        if (gyroTempCalibrator->shouldSaveConfig()) {
-            gyroTempCalibrator->saveConfig();
-        }
     #endif
 
     sensor_real_t gyroCalibratedStatic[3];

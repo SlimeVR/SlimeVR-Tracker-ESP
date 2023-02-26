@@ -59,6 +59,9 @@ void GyroTemperatureCalibrator::updateGyroTemperatureCalibration(const float tem
         bn = 0;
         lastTemp = 0;
         calibrationRunning = false;
+        if (!configSaveFailed && !configSaved) {
+            saveConfig();
+        }
     }
     if (calibrationRunning) {
         if (fabs(lastTemp - temperature) > 0.03f) {

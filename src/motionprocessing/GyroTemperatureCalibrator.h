@@ -186,10 +186,6 @@ public:
     bool loadConfig(float newSensitivity);
     bool saveConfig();
 
-    bool shouldSaveConfig() {
-        return !configSaveFailed && !configSaved && config.fullyCalibrated();
-    }
-
     void reset() {
         config.reset();
         configSaved = false;
