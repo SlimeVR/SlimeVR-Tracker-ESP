@@ -82,6 +82,7 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
   #### Additional info for BMI160
   - For best results, **calibrate when the trackers are warmed up** - put them on for a few minutes,
     wait for the temperature to stabilize at 30-40 degrees C, then calibrate.
+    Enable developer mode in SlimeVR settings to see tracker temperature.
 
   - There is a legacy accelerometer calibration method that collects data during in-place rotation by holding it in hand instead.
     If you are absolutely unable to use the default 6-point calibration method, you can switch it in config file `defines_bmi160.h`.
@@ -91,6 +92,8 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
     You can check it by enabling developer mode in SlimeVR settings (*General / Interface*) and going back to the *"Home"* tab.
     Press *"Preview"* button inside the tracker settings (of each tracker) to show the IMU visualizer.
     Check if pitch/roll resembles its real orientation.
+
+  - Calibration data is written to the flash of your MCU and is unique for each BMI160, keep that in mind if you have detachable aux trackers.
 
 ## Infos about ESP32-C3 with direct connection to USB
 

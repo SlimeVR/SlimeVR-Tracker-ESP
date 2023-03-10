@@ -260,9 +260,8 @@ void BMI160Sensor::motionLoop() {
     }
     #endif
 
-    uint32_t now = micros();
-
     {
+        uint32_t now = micros();
         constexpr uint32_t BMI160_TARGET_SYNC_INTERVAL_MICROS = 25000;
         uint32_t elapsed = now - lastClockPollTime;
         if (elapsed >= BMI160_TARGET_SYNC_INTERVAL_MICROS) {
@@ -305,11 +304,13 @@ void BMI160Sensor::motionLoop() {
             }
 
             getTemperature(&temperature);
+            optimistic_yield(100);
         }
     }
     
     {
-        constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 3000;
+        uint32_t now = micros();
+        constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
         uint32_t elapsed = now - lastPollTime;
         if (elapsed >= BMI160_TARGET_POLL_INTERVAL_MICROS) {
             lastPollTime = now - (elapsed - BMI160_TARGET_POLL_INTERVAL_MICROS);
@@ -352,12 +353,14 @@ void BMI160Sensor::motionLoop() {
             #else
                 readFIFO();
             #endif
+            optimistic_yield(100);
             if (!fusionUpdated) return;
             fusionUpdated = false;
         }
     }
 
     {
+        uint32_t now = micros();
         constexpr float maxSendRateHz = 2.0f;
         constexpr uint32_t sendInterval = 1.0f/maxSendRateHz * 1e6;
         uint32_t elapsed = now - lastTemperaturePacketSent;
@@ -369,10 +372,12 @@ void BMI160Sensor::motionLoop() {
             #else
                 Network::sendTemperature(temperature, sensorId);
             #endif
+            optimistic_yield(100);
         }
     }
 
     {
+        uint32_t now = micros();
         constexpr float maxSendRateHz = 120.0f;
         constexpr uint32_t sendInterval = 1.0f/maxSendRateHz * 1e6;
         uint32_t elapsed = now - lastRotationPacketSent;
@@ -425,6 +430,8 @@ void BMI160Sensor::motionLoop() {
                 newData = true;
                 lastQuatSent = quaternion;
             }
+
+            optimistic_yield(100);
         }
     }
 }
@@ -452,6 +459,8 @@ void BMI160Sensor::readFIFO() {
         #endif
         return;
     }
+
+    optimistic_yield(100);
 
     int16_t gx, gy, gz;
     int16_t ax, ay, az;
@@ -609,6 +618,7 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
     Axyz[2] = 0;
 
     fusionUpdated = true;
+    optimistic_yield(100);
 }
 void BMI160Sensor::onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z) {
     #if BMI160_DEBUG
@@ -629,6 +639,7 @@ void BMI160Sensor::onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int
     #if BMI160_USE_VQF
         vqf.updateAcc(Axyz);
     #endif
+    optimistic_yield(100);
 }
 void BMI160Sensor::onMagRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z) {
     #if BMI160_DEBUG
