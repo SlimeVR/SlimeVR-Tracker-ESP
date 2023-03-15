@@ -216,10 +216,10 @@ void BMI160Sensor::motionSetup() {
     #if !USE_6_AXIS
     isMagCalibrated = hasMagCalibration();
     #endif
-    m_Logger.info("Calibration: gyro: %s", isGyroCalibrated ? "found" : "not found");
-    m_Logger.info("Calibration: accel: %s", isAccelCalibrated ? "found" : "not found");
+    m_Logger.info("Calibration data for gyro: %s", isGyroCalibrated ? "found" : "not found");
+    m_Logger.info("Calibration data for accel: %s", isAccelCalibrated ? "found" : "not found");
     #if !USE_6_AXIS
-    m_Logger.info("Calibration: mag: %s", isMagCalibrated ? "found" : "not found");
+    m_Logger.info("Calibration data for mag: %s", isMagCalibrated ? "found" : "not found");
     #endif
 
     imu.setFIFOHeaderModeEnabled(true);
