@@ -665,9 +665,10 @@ void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
                     udpClientLogger.warn("Wrong sensor info packet");
                     break;
                 }
-                if(incomingPacket[4] == 0) {
+                if(incomingPacket[4] == sensor->getSensorId()) {
                     sensorStateNotified1 = incomingPacket[5];
-                } else if(incomingPacket[4] == 1) {
+                }
+                else if(incomingPacket[4] == sensor2->getSensorId()) {
                     sensorStateNotified2 = incomingPacket[5];
                 }
                 break;
