@@ -78,6 +78,16 @@ void BNO080Sensor::motionSetup()
     imu.enableRawMagnetometer(10);
 #endif
 
+    globalTimer.in(
+        30000,
+        [](void* arg) -> bool {
+            // Disable accelerometer calibration 30 seconds after startup
+            // This prevents "stomping" issue when tracker will flip when periodically stomped
+            ((BNO080*) arg)->sendCalibrateCommand(SH2_CAL_MAG | SH2_CAL_ON_TABLE); // Unset the SH2_CAL_ACCEL
+            return false;
+        },
+        &imu);
+
     lastReset = 0;
     lastData = millis();
     working = true;
@@ -249,18 +259,7 @@ void BNO080Sensor::sendData()
 
 void BNO080Sensor::startCalibration(int calibrationType)
 {
-    // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
-    ledManager.pattern(20, 20, 10);
-    ledManager.blink(2000);
-    imu.calibrateGyro();
-    do
-    {
-        ledManager.on();
-        imu.requestCalibrationStatus();
-        delay(20);
-        imu.getReadings();
-        ledManager.off();
-        delay(20);
-    } while (!imu.calibrationComplete());
-    imu.saveCalibration();
+    // BNO does automatic calibration,
+    // it's always enabled except accelerometer
+    // that is disabled 30 seconds after startup
 }

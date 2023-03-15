@@ -34,12 +34,14 @@
 #include "status/StatusManager.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
+#include <arduino-timer.h>
 
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
 SlimeVR::LEDManager ledManager(LED_PIN);
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
+Timer<> globalTimer;
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -52,6 +54,7 @@ BatteryMonitor battery;
 void setup()
 {
     Serial.begin(serialBaudRate);
+    globalTimer = timer_create_default();
 
 #ifdef ESP32C3 
     // Wait for the Computer to be able to connect.
@@ -111,6 +114,7 @@ void setup()
 
 void loop()
 {
+    globalTimer.tick();
     SerialCommands::update();
     OTA::otaUpdate();
     Network::update(sensorManager.getFirst(), sensorManager.getSecond());

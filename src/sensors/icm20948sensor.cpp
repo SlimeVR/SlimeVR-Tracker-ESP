@@ -65,8 +65,6 @@ void ICM20948Sensor::motionLoop()
     }
 #endif
 
-    timer.tick();
-
     readFIFOToEnd();
     readRotation();
     checkSensorTimeout();
@@ -123,7 +121,7 @@ void ICM20948Sensor::startCalibration(int calibrationType)
 void ICM20948Sensor::startCalibrationAutoSave()
 {
     #if SAVE_BIAS
-    timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->saveCalibration(true); return false; }, this);
+    globalTimer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->saveCalibration(true); return false; }, this);
     #endif
 }
 
@@ -419,7 +417,7 @@ void ICM20948Sensor::saveCalibration(bool repeat)
         bias_save_counter++;
         // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
         if (sizeof(bias_save_periods) != bias_save_counter) {
-            timer.in(
+            globalTimer.in(
                 bias_save_periods[bias_save_counter] * 1000,
                 [](void* arg) -> bool {
                     ((ICM20948Sensor*)arg)->saveCalibration(true);
