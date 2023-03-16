@@ -42,10 +42,11 @@ namespace SlimeVR
             uint8_t firstIMUAddress = 0;
             uint8_t secondIMUAddress = 0;
 
+            bool sharedIMUAddresses = (PRIMARY_IMU_ADDRESS_ONE == SECONDARY_IMU_ADDRESS_ONE && PRIMARY_IMU_ADDRESS_TWO == SECONDARY_IMU_ADDRESS_TWO);
             {
-                firstIMUAddress = I2CSCAN::pickDevice(PRIMARY_IMU_ADDRESS, SECONDARY_IMU_ADDRESS, true);
+                firstIMUAddress = I2CSCAN::pickDevice(PRIMARY_IMU_ADDRESS_ONE, PRIMARY_IMU_ADDRESS_TWO, true);
                 uint8_t sensorID = 0;
-                if(firstIMUAddress != PRIMARY_IMU_ADDRESS)
+                if(sharedIMUAddresses && firstIMUAddress != PRIMARY_IMU_ADDRESS_ONE)
                 {
                     sensorID = 1;
                 }
@@ -77,9 +78,9 @@ namespace SlimeVR
             }
 
             {
-                secondIMUAddress = I2CSCAN::pickDevice(SECONDARY_IMU_ADDRESS, PRIMARY_IMU_ADDRESS, false);
+                secondIMUAddress = I2CSCAN::pickDevice(SECONDARY_IMU_ADDRESS_TWO, SECONDARY_IMU_ADDRESS_ONE, false);
                 uint8_t sensorID = 1;
-                if(secondIMUAddress != SECONDARY_IMU_ADDRESS)
+                if(sharedIMUAddresses && secondIMUAddress != SECONDARY_IMU_ADDRESS_TWO)
                 {
                     sensorID = 0;
                 }
