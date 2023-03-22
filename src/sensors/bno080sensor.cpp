@@ -115,16 +115,10 @@ void BNO080Sensor::motionLoop()
         lastData = millis();
 
 #if USE_6_AXIS
-        if (imu.hasNewGameQuat())
+        if (imu.hasNewGameQuat()) // New quaternion if context
         {
             imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
             quaternion *= sensorOffset;
-    #if SEND_ACCELERATION
-            {
-                uint8_t acc;
-                this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
-            }
-    #endif // SEND_ACCELERATION
 
     #if ENABLE_INSPECTION
             {
@@ -137,26 +131,11 @@ void BNO080Sensor::motionLoop()
                 newData = true;
                 lastQuatSent = quaternion;
             }
-        }
+            // Leave new quaternion if context open, it's closed later
 
-    #if BNO_USE_MAGNETOMETER_CORRECTION
-        if (imu.hasNewMagQuat())
-        {
-            imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
-            magQuaternion *= sensorOffset;
-
-        #if ENABLE_INSPECTION
-            {
-                Network::sendInspectionCorrectionData(sensorId, quaternion);
-            }
-        #endif // ENABLE_INSPECTION
-
-            newMagData = true;
-        }
-    #endif // BNO_USE_MAGNETOMETER_CORRECTION
 #else // USE_6_AXIS
 
-        if (imu.hasNewQuat())
+        if (imu.hasNewQuat()) // New quaternion if context
         {
             imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
             quaternion *= sensorOffset;
@@ -172,8 +151,33 @@ void BNO080Sensor::motionLoop()
                 newData = true;
                 lastQuatSent = quaternion;
             }
-        }
+            // Leave new quaternion if context open, it's closed later
 #endif // USE_6_AXIS
+
+            // Continuation of the new quaternion if context, used for both 6 and 9 axis
+#if SEND_ACCELERATION
+            {
+                uint8_t acc;
+                this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
+            }
+#endif // SEND_ACCELERATION
+        } // Closing new quaternion if context
+
+#if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
+        if (imu.hasNewMagQuat())
+        {
+            imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
+            magQuaternion *= sensorOffset;
+
+    #if ENABLE_INSPECTION
+            {
+                Network::sendInspectionCorrectionData(sensorId, quaternion);
+            }
+    #endif // ENABLE_INSPECTION
+
+            newMagData = true;
+        }
+#endif // USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
 
         if (imu.getTapDetected())
         {
