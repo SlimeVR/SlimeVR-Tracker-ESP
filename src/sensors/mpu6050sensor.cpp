@@ -38,7 +38,7 @@
 #define ACCEL_SENSITIVITY_2G 16384.0f
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
-constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * EARTH_GRAVITY;
+constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * CONST_EARTH_GRAVITY;
 
 void MPU6050Sensor::motionSetup()
 {
@@ -156,9 +156,9 @@ void MPU6050Sensor::motionLoop()
             this->imu.dmpGetLinearAccel(&this->rawAccel, &this->rawAccel, &gravity);
 
             // convert acceleration to m/s^2 (implicitly casts to float)
-            this->acceleration[0] = this->rawAccel.x * ASCALE_2G;
-            this->acceleration[1] = this->rawAccel.y * ASCALE_2G;
-            this->acceleration[2] = this->rawAccel.z * ASCALE_2G;
+            this->linearAcceleration[0] = this->rawAccel.x * ASCALE_2G;
+            this->linearAcceleration[1] = this->rawAccel.y * ASCALE_2G;
+            this->linearAcceleration[2] = this->rawAccel.z * ASCALE_2G;
         }
     #endif
         

@@ -33,6 +33,10 @@ namespace SlimeVR {
             float A_B[3];
             float A_Ainv[3][3];
 
+            // magnetometer offsets and correction matrix
+            float M_B[3];
+            float M_Ainv[3][3];
+
             // raw offsets, determined from gyro at rest
             float G_off[3];
 

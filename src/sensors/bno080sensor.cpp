@@ -158,7 +158,7 @@ void BNO080Sensor::motionLoop()
 #if SEND_ACCELERATION
             {
                 uint8_t acc;
-                this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
+                this->imu.getLinAccel(this->linearAcceleration[0], this->linearAcceleration[1], this->linearAcceleration[2], acc);
             }
 #endif // SEND_ACCELERATION
         } // Closing new quaternion if context
@@ -223,7 +223,7 @@ void BNO080Sensor::sendData()
         Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
 
 #if SEND_ACCELERATION
-        Network::sendAccel(this->acceleration, this->sensorId);
+        Network::sendAccel(this->linearAcceleration, this->sensorId);
 #endif
 
 #if !USE_6_AXIS

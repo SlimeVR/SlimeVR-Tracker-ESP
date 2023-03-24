@@ -36,7 +36,7 @@ void Sensor::sendData() {
 
 #if SEND_ACCELERATION
         {
-            Network::sendAccel(acceleration, sensorId);
+            Network::sendAccel(linearAcceleration, sensorId);
         }
 #endif
 
@@ -45,6 +45,14 @@ void Sensor::sendData() {
 #endif
     }
 }
+
+void Sensor::printTemperatureCalibrationUnsupported() {
+    m_Logger.error("Temperature calibration not supported for IMU %s", getIMUNameByType(sensorType));
+}
+void Sensor::printTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
+void Sensor::printDebugTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
+void Sensor::saveTemperatureCalibration() { printTemperatureCalibrationUnsupported(); };
+void Sensor::resetTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
 
 const char * getIMUNameByType(int imuType) {
     switch(imuType) {

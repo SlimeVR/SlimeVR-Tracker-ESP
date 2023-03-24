@@ -32,7 +32,6 @@
 #include "logging/Logger.h"
 #include "utils.h"
 
-#define EARTH_GRAVITY 9.80665
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
 
@@ -54,6 +53,10 @@ public:
     virtual void sendData();
     virtual void startCalibration(int calibrationType){};
     virtual uint8_t getSensorState();
+    virtual void printTemperatureCalibrationState();
+    virtual void printDebugTemperatureCalibrationState();
+    virtual void resetTemperatureCalibrationState();
+    virtual void saveTemperatureCalibration();
     bool isWorking()
     {
         return working;
@@ -82,9 +85,12 @@ protected:
     Quat quaternion{};
     Quat lastQuatSent{};
 
-    float acceleration[3]{};
+    float linearAcceleration[3]{};
 
     SlimeVR::Logging::Logger m_Logger;
+
+private:
+    void printTemperatureCalibrationUnsupported();
 };
 
 const char * getIMUNameByType(int imuType);
