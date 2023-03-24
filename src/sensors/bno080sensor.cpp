@@ -158,7 +158,7 @@ void BNO080Sensor::motionLoop()
 #if SEND_ACCELERATION
             {
                 uint8_t acc;
-                this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
+                this->imu.getLinAccel(this->linearAcceleration[0], this->linearAcceleration[1], this->linearAcceleration[2], acc);
             }
 #endif // SEND_ACCELERATION
         } // Closing new quaternion if context
