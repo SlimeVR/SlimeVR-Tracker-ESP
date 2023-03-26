@@ -574,7 +574,7 @@ void ServerConnection::connect()
         if (packetSize)
         {
             // receive incoming UDP packets
-            int len = Udp.read(incomingPacket, sizeof(incomingPacket));
+            [[maybe_unused]] int len = Udp.read(incomingPacket, sizeof(incomingPacket));
             
 #ifdef DEBUG_NETWORK
             udpClientLogger.trace("Received %d bytes from %s, port %d", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
