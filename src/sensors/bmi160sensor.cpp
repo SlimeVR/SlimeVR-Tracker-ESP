@@ -858,11 +858,11 @@ void BMI160Sensor::maybeCalibrateGyro() {
     for (int i = 0; i < gyroCalibrationSamples; i++) {
         imu.waitForGyroDrdy();
 
-        int16_t gx, gy, gz;
-        imu.getRotation(&gx, &gy, &gz);
-        rawGxyz[0] += gx;
-        rawGxyz[1] += gy;
-        rawGxyz[2] += gz;
+        int16_t* gyroData;
+        imu.getSensorData(imu.onlyGyro, gyroData);
+        rawGxyz[0] += gyroData[0];
+        rawGxyz[1] += gyroData[1];
+        rawGxyz[2] += gyroData[2];
     }
     ledManager.off();
     m_Calibration.G_off[0] = ((double)rawGxyz[0]) / gyroCalibrationSamples;
@@ -939,12 +939,12 @@ void BMI160Sensor::maybeCalibrateAccel() {
         m_Logger.info("Gathering accelerometer data...");
         m_Logger.info("Waiting for position %i, you can leave the device as is...", numPositionsRecorded + 1);
         while (true) {
-            int16_t ax, ay, az;
-            imu.getAcceleration(&ax, &ay, &az);
+            int16_t* accelData;
+            imu.getSensorData(imu.onlyAccel, accelData);
             sensor_real_t scaled[3];
-            scaled[0] = ax * BMI160_ASCALE;
-            scaled[1] = ay * BMI160_ASCALE;
-            scaled[2] = az * BMI160_ASCALE;
+            scaled[0] = accelData[0] * BMI160_ASCALE;
+            scaled[1] = accelData[1] * BMI160_ASCALE;
+            scaled[2] = accelData[2] * BMI160_ASCALE;
 
             calibrationRestDetection.updateAcc(BMI160_ODR_ACC_MICROS, scaled);
 
@@ -958,9 +958,9 @@ void BMI160Sensor::maybeCalibrateAccel() {
             
             if (calibrationRestDetection.getRestDetected()) {
                 const uint16_t i = numCurrentPositionSamples * 3;
-                accelCalibrationChunk[i + 0] = ax;
-                accelCalibrationChunk[i + 1] = ay;
-                accelCalibrationChunk[i + 2] = az;
+                accelCalibrationChunk[i + 0] = accelData[0];
+                accelCalibrationChunk[i + 1] = accelData[0];
+                accelCalibrationChunk[i + 2] = accelData[0];
                 numCurrentPositionSamples++;
 
                 if (numCurrentPositionSamples >= numSamplesPerPosition) {
@@ -1085,15 +1085,21 @@ void BMI160Sensor::remapMagnetometer(sensor_real_t* x, sensor_real_t* y, sensor_
 }
 
 void BMI160Sensor::getRemappedRotation(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t gx, gy, gz;
-    imu.getRotation(&gx, &gy, &gz);
+    int16_t* gyroData;
+    imu.getSensorData(imu.onlyGyro, gyroData);
+    int16_t gx = gyroData[0];
+    int16_t gy = gyroData[1];
+    int16_t gz = gyroData[2];
     *x = BMI160_REMAP_AXIS_X(gx, gy, gz);
     *y = BMI160_REMAP_AXIS_Y(gx, gy, gz);
     *z = BMI160_REMAP_AXIS_Z(gx, gy, gz);
 }
 void BMI160Sensor::getRemappedAcceleration(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t ax, ay, az;
-    imu.getAcceleration(&ax, &ay, &az);
+    int16_t* accelData;
+    imu.getSensorData(imu.onlyAccel, accelData);
+    int16_t ax = accelData[0];
+    int16_t ay = accelData[1];
+    int16_t az = accelData[2];
     *x = BMI160_REMAP_AXIS_X(ax, ay, az);
     *y = BMI160_REMAP_AXIS_Y(ax, ay, az);
     *z = BMI160_REMAP_AXIS_Z(ax, ay, az);
