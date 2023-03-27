@@ -31,22 +31,22 @@
 void BMI160Sensor::initHMC(BMI160MagRate magRate) {
     /* Configure MAG interface and setup mode */
     /* Set MAG interface normal power mode */
-    imu.setRegister(BMI160_RA_CMD, BMI160_CMD_MAG_MODE_NORMAL);
+    imu.setRegister(BMI160_COMMAND_REG_ADDR, BMI160_AUX_NORMAL_MODE);
     delay(60);
 
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_1);
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_2);
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_3);
-    imu.setRegister(BMI160_7F, BMI160_EN_PULL_UP_REG_4);
-    imu.setRegister(BMI160_7F, BMI160_EN_PULL_UP_REG_5);
+    imu.setRegister(BMI160_COMMAND_REG_ADDR, BMI160_EN_PULL_UP_REG_1);
+    imu.setRegister(BMI160_COMMAND_REG_ADDR, BMI160_EN_PULL_UP_REG_2);
+    imu.setRegister(BMI160_COMMAND_REG_ADDR, BMI160_EN_PULL_UP_REG_3);
+    imu.setRegister(BMI160_SPI_COMM_TEST_ADDR, BMI160_EN_PULL_UP_REG_4);
+    imu.setRegister(BMI160_SPI_COMM_TEST_ADDR, BMI160_EN_PULL_UP_REG_5);
 
     /* Enable MAG interface */
-    imu.setRegister(BMI160_RA_IF_CONF, BMI160_IF_CONF_MODE_PRI_AUTO_SEC_MAG);
+    imu.setRegister(BMI160_IF_CONF_ADDR, BMI160_IF_CONF_MODE_PRI_AUTO_SEC_MAG);
     delay(1);
 
     imu.setMagDeviceAddress(HMC_DEVADDR);
     delay(3);
-    imu.setRegister(BMI160_RA_MAG_IF_1_MODE, BMI160_MAG_SETUP_MODE);
+    imu.setRegister(BMI160_AUX_IF_1_ADDR, BMI160_MAG_SETUP_MODE);
     delay(3);
 
     /* Configure HMC5883L Sensor */
@@ -54,31 +54,31 @@ void BMI160Sensor::initHMC(BMI160MagRate magRate) {
     imu.setMagRegister(HMC_RA_CFGB, HMC_CFGB_GAIN_1_30);
     imu.setMagRegister(HMC_RA_MODE, HMC_MODE_HIGHSPEED | HMC_MODE_READ_CONTINUOUS);
 
-    imu.setRegister(BMI160_RA_MAG_IF_2_READ_RA, HMC_RA_DATA);
-    imu.setRegister(BMI160_RA_MAG_CONF, magRate);
+    imu.setRegister(BMI160_AUX_IF_2_ADDR, HMC_RA_DATA);
+    imu.setRegister(BMI160_AUX_ODR_ADDR, magRate);
     delay(3);
-    imu.setRegister(BMI160_RA_MAG_IF_1_MODE, BMI160_MAG_DATA_MODE_6);
+    imu.setRegister(BMI160_AUX_IF_1_ADDR, BMI160_MAG_DATA_MODE_6);
 }
 
 void BMI160Sensor::initQMC(BMI160MagRate magRate) {
     /* Configure MAG interface and setup mode */
     /* Set MAG interface normal power mode */
-    imu.setRegister(BMI160_RA_CMD, BMI160_CMD_MAG_MODE_NORMAL);
+    imu.setRegister(BMI160_COMMAND_REG_ADDR, BMI160_AUX_NORMAL_MODE);
     delay(60);
 
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_1);
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_2);
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_3);
-    imu.setRegister(BMI160_7F, BMI160_EN_PULL_UP_REG_4);
-    imu.setRegister(BMI160_7F, BMI160_EN_PULL_UP_REG_5);
+    imu.setRegister(BMI160_COMMAND_REG_ADDR, BMI160_EN_PULL_UP_REG_1);
+    imu.setRegister(BMI160_COMMAND_REG_ADDR, BMI160_EN_PULL_UP_REG_2);
+    imu.setRegister(BMI160_COMMAND_REG_ADDR, BMI160_EN_PULL_UP_REG_3);
+    imu.setRegister(BMI160_SPI_COMM_TEST_ADDR, BMI160_EN_PULL_UP_REG_4);
+    imu.setRegister(BMI160_SPI_COMM_TEST_ADDR, BMI160_EN_PULL_UP_REG_5);
 
     /* Enable MAG interface */
-    imu.setRegister(BMI160_RA_IF_CONF, BMI160_IF_CONF_MODE_PRI_AUTO_SEC_MAG);
+    imu.setRegister(BMI160_IF_CONF_ADDR, BMI160_IF_CONF_MODE_PRI_AUTO_SEC_MAG);
     delay(1);
 
     imu.setMagDeviceAddress(QMC_DEVADDR);
     delay(3);
-    imu.setRegister(BMI160_RA_MAG_IF_1_MODE, BMI160_MAG_SETUP_MODE);
+    imu.setRegister(BMI160_AUX_IF_1_ADDR, BMI160_MAG_SETUP_MODE);
     delay(3);
 
     /* Configure QMC5883L Sensor */
@@ -86,10 +86,10 @@ void BMI160Sensor::initQMC(BMI160MagRate magRate) {
     delay(3);
     imu.setMagRegister(QMC_RA_CONTROL, QMC_CFG_MODE_CONTINUOUS | QMC_CFG_ODR_200HZ | QMC_CFG_RNG_8G | QMC_CFG_OSR_512);
 
-    imu.setRegister(BMI160_RA_MAG_IF_2_READ_RA, QMC_RA_DATA);
-    imu.setRegister(BMI160_RA_MAG_CONF, magRate);
+    imu.setRegister(BMI160_AUX_IF_2_ADDR, QMC_RA_DATA);
+    imu.setRegister(BMI160_AUX_ODR_ADDR, magRate);
     delay(3);
-    imu.setRegister(BMI160_RA_MAG_IF_1_MODE, BMI160_MAG_DATA_MODE_6);
+    imu.setRegister(BMI160_AUX_IF_1_ADDR, BMI160_MAG_DATA_MODE_6);
 }
 
 void BMI160Sensor::motionSetup() {
@@ -479,16 +479,16 @@ void BMI160Sensor::readFIFO() {
         header = fifo.data[i] & 0b11111100;
         i++;
         
-        if (header == BMI160_FIFO_HEADER_CTL_SKIP_FRAME) {
-            BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_SKIP_FRAME_LEN);
+        if (header == BMI160_FIFO_HEAD_SKIP_FRAME) {
+            BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_SKIP_FRAME_LENGTH);
             break;
-        } else if (header == BMI160_FIFO_HEADER_CTL_SENSOR_TIME) {
-            BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_SENSOR_TIME_LEN);
-            i += BMI160_FIFO_SENSOR_TIME_LEN;
-        } else if (header == BMI160_FIFO_HEADER_CTL_INPUT_CONFIG) {
-            BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_INPUT_CONFIG_LEN);
-            i += BMI160_FIFO_INPUT_CONFIG_LEN;
-        } else if (header & BMI160_FIFO_HEADER_DATA_FRAME_BASE) {
+        } else if (header == BMI160_FIFO_HEAD_SENSOR_TIME) {
+            BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_SENSOR_TIME_LENGTH);
+            i += BMI160_FIFO_SENSOR_TIME_LENGTH;
+        } else if (header == BMI160_FIFO_HEAD_INPUT_CONFIG) {
+            BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_INPUT_CONFIG_LENGTH);
+            i += BMI160_FIFO_INPUT_CONFIG_LENGTH;
+        } else if (header & BMI160_FIFO_HEAD_OVER_READ) {
             if (!(header & BMI160_FIFO_HEADER_DATA_FRAME_MASK_HAS_DATA)) {
                 break;
             }
@@ -500,34 +500,34 @@ void BMI160Sensor::readFIFO() {
 
             // mag
             if (header & BMI160_FIFO_HEADER_DATA_FRAME_FLAG_M) {
-                BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_M_LEN);
+                BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_M_LENGTH);
                 #if !USE_6_AXIS
                     getMagnetometerXYZFromBuffer(&fifo.data[i], &mx, &my, &mz);
                     mnew = true;
                 #endif
-                i += BMI160_FIFO_M_LEN;
+                i += BMI160_FIFO_M_LENGTH;
             }
             
             // bmi160 -> 0 lsb 1 msb
             // gyro
             if (header & BMI160_FIFO_HEADER_DATA_FRAME_FLAG_G) {
-                BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_G_LEN);
+                BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_G_LENGTH);
                 gx = ((int16_t)fifo.data[i + 1] << 8) | fifo.data[i + 0];
                 gy = ((int16_t)fifo.data[i + 3] << 8) | fifo.data[i + 2];
                 gz = ((int16_t)fifo.data[i + 5] << 8) | fifo.data[i + 4];
                 gnew = true;
-                i += BMI160_FIFO_G_LEN;
+                i += BMI160_FIFO_G_LENGTH;
             }
 
             // bmi160 -> 0 lsb 1 msb
             // accel
             if (header & BMI160_FIFO_HEADER_DATA_FRAME_FLAG_A) {
-                BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_A_LEN);
+                BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_A_LENGTH);
                 ax = ((int16_t)fifo.data[i + 1] << 8) | fifo.data[i + 0];
                 ay = ((int16_t)fifo.data[i + 3] << 8) | fifo.data[i + 2];
                 az = ((int16_t)fifo.data[i + 5] << 8) | fifo.data[i + 4];
                 anew = true;
-                i += BMI160_FIFO_A_LEN;
+                i += BMI160_FIFO_A_LENGTH;
             }
 
             // gyro callback updates fusion and must be last
