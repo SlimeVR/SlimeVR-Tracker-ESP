@@ -94,7 +94,7 @@ void BMI160Sensor::initQMC(BMI160MagRate magRate) {
 
 void BMI160Sensor::motionSetup() {
     // initialize device
-    imu.initialize(
+    int8_t result = imu.setSensorConfig(
         addr,
         BMI160_GYRO_RATE,
         BMI160_GYRO_RANGE,
@@ -113,13 +113,13 @@ void BMI160Sensor::motionSetup() {
         #endif
     #endif
 
-    if (!imu.testConnection()) {
-        m_Logger.fatal("Can't connect to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+    if (!(result == BMI160_OK)) {
+        m_Logger.fatal("Can't connect to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getChipID(), addr);
         ledManager.pattern(50, 50, 200);
         return;
     }
 
-    m_Logger.info("Connected to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
+    m_Logger.info("Connected to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getChipID(), addr);
 
     // Initialize the configuration
     {

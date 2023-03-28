@@ -204,7 +204,7 @@ class BMI160Sensor : public Sensor {
 
         bool getTemperature(float* out);
     private:
-        DFRobot_BMI160 imu {};
+        DFRobot_BMI160 imu;
 
         Mahony<sensor_real_t> mahony;
 #if !BMI160_VQF_REST_DETECTION_AVAILABLE
