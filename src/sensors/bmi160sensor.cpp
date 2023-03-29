@@ -269,7 +269,8 @@ void BMI160Sensor::motionLoop() {
 
             const uint32_t nextLocalTime1 = micros();
             uint32_t rawSensorTime;
-            if (imu.getSensorTime(&rawSensorTime)) {
+            int8_t result = imu.getSensorTime(&rawSensorTime);
+            if (result == BMI160_OK) {
                 localTime0 = localTime1;
                 localTime1 = nextLocalTime1;
                 syncLatencyMicros = (micros() - localTime1) * 0.3;
@@ -713,7 +714,8 @@ bool BMI160Sensor::getTemperature(float* out) {
     // Temperature per step from -41 + 1/2^9 degrees C (0x8001) to 87 - 1/2^9 degrees C (0x7FFF)
     constexpr float TEMP_STEP = 128. / 65535;
     int16_t temp;
-    if (imu.getTemperature(&temp)) {
+    int8_t result = imu.getTemperature(&temp);
+    if (result == BMI160_OK) {
         *out = (temp * TEMP_STEP) + BMI160_ZERO_TEMP_OFFSET;
         return true;
     }
