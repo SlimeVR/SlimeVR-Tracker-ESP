@@ -233,7 +233,8 @@ void BMI160Sensor::motionSetup() {
     delay(2);
 
     uint8_t err;
-    if (imu.getErrReg(&err)) {
+    int8_t result = imu.getErrorRegister(&err);
+    if (result == BMI160_OK) {
         if (err & BMI160_ERR_MASK_CHIP_NOT_OPERABLE) {
             m_Logger.fatal("Fatal error: chip not operable");
             return;
@@ -438,7 +439,7 @@ void BMI160Sensor::motionLoop() {
 }
 
 void BMI160Sensor::readFIFO() {
-    if (!imu.getFIFOCount(&fifo.length)) {
+    if (!(imu.getFIFOLength(&fifo.length) == BMI160_OK)) {
         #if BMI160_DEBUG
             numFIFOFailedReads++;
         #endif
@@ -454,7 +455,7 @@ void BMI160Sensor::readFIFO() {
         return;
     }
     std::fill(fifo.data, fifo.data + fifo.length, 0);
-    if (!imu.getFIFOBytes(fifo.data, fifo.length)) {
+    if (!(imu.getFIFOBytes(fifo.data, fifo.length) == BMI160_OK)) {
         #if BMI160_DEBUG
             numFIFOFailedReads++;
         #endif
