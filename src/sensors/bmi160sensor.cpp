@@ -233,7 +233,7 @@ void BMI160Sensor::motionSetup() {
     delay(2);
 
     uint8_t err;
-    int8_t result = imu.getErrorRegister(&err);
+    result = imu.getErrorRegister(&err);
     if (result == BMI160_OK) {
         if (err & BMI160_ERR_MASK_CHIP_NOT_OPERABLE) {
             m_Logger.fatal("Fatal error: chip not operable");
@@ -846,7 +846,7 @@ void BMI160Sensor::maybeCalibrateGyro() {
         m_Logger.trace("Calibration temperature: %f", temperature);
     #endif
 
-    if (!imu.getGyroDrdy()) {
+    if (!imu.getGyroDirty()) {
         m_Logger.error("Fatal error: gyroscope drdy = 0 (dead?)");
         return;
     }
@@ -859,9 +859,9 @@ void BMI160Sensor::maybeCalibrateGyro() {
         GYRO_CALIBRATION_DURATION_SEC / (BMI160_ODR_GYR_MICROS / 1e6);
     int32_t rawGxyz[3] = {0};
     for (int i = 0; i < gyroCalibrationSamples; i++) {
-        imu.waitForGyroDrdy();
+        imu.waitForGyroDirty();
 
-        int16_t* gyroData;
+        int16_t* gyroData = {0};
         imu.getSensorData(imu.onlyGyro, gyroData);
         rawGxyz[0] += gyroData[0];
         rawGxyz[1] += gyroData[1];
@@ -942,7 +942,7 @@ void BMI160Sensor::maybeCalibrateAccel() {
         m_Logger.info("Gathering accelerometer data...");
         m_Logger.info("Waiting for position %i, you can leave the device as is...", numPositionsRecorded + 1);
         while (true) {
-            int16_t* accelData;
+            int16_t* accelData = {0};
             imu.getSensorData(imu.onlyAccel, accelData);
             sensor_real_t scaled[3];
             scaled[0] = accelData[0] * BMI160_ASCALE;
@@ -1088,7 +1088,7 @@ void BMI160Sensor::remapMagnetometer(sensor_real_t* x, sensor_real_t* y, sensor_
 }
 
 void BMI160Sensor::getRemappedRotation(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t* gyroData;
+    int16_t* gyroData {0};
     imu.getSensorData(imu.onlyGyro, gyroData);
     int16_t gx = gyroData[0];
     int16_t gy = gyroData[1];
@@ -1098,7 +1098,7 @@ void BMI160Sensor::getRemappedRotation(int16_t* x, int16_t* y, int16_t* z) {
     *z = BMI160_REMAP_AXIS_Z(gx, gy, gz);
 }
 void BMI160Sensor::getRemappedAcceleration(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t* accelData;
+    int16_t* accelData {0};
     imu.getSensorData(imu.onlyAccel, accelData);
     int16_t ax = accelData[0];
     int16_t ay = accelData[1];
