@@ -96,12 +96,12 @@ void BMI160Sensor::motionSetup() {
     // initialize device
     int8_t result = imu.setSensorConfig(
         addr,
-        BMI160_GYRO_RATE,
-        BMI160_GYRO_RANGE,
-        BMI160_GYRO_FILTER_MODE,
         BMI160_ACCEL_RATE,
         BMI160_ACCEL_RANGE,
-        BMI160_ACCEL_FILTER_MODE
+        BMI160_ACCEL_FILTER_MODE,
+        BMI160_GYRO_RATE,
+        BMI160_GYRO_RANGE,
+        BMI160_GYRO_FILTER_MODE
     );
     #if !USE_6_AXIS
         #if BMI160_MAG_TYPE == BMI160_MAG_TYPE_HMC
@@ -1088,7 +1088,7 @@ void BMI160Sensor::remapMagnetometer(sensor_real_t* x, sensor_real_t* y, sensor_
 }
 
 void BMI160Sensor::getRemappedRotation(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t* gyroData {0};
+    int16_t* gyroData = new int16_t[3];
     imu.getSensorData(imu.onlyGyro, gyroData);
     int16_t gx = gyroData[0];
     int16_t gy = gyroData[1];
@@ -1098,8 +1098,9 @@ void BMI160Sensor::getRemappedRotation(int16_t* x, int16_t* y, int16_t* z) {
     *z = BMI160_REMAP_AXIS_Z(gx, gy, gz);
 }
 void BMI160Sensor::getRemappedAcceleration(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t* accelData {0};
+    int16_t* accelData = new int16_t[3];
     imu.getSensorData(imu.onlyAccel, accelData);
+    Serial.print("after get sensor data\n");
     int16_t ax = accelData[0];
     int16_t ay = accelData[1];
     int16_t az = accelData[2];
