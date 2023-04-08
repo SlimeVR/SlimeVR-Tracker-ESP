@@ -62,8 +62,8 @@ void BNO055Sensor::motionLoop() {
 
     // TODO Optimize a bit with setting rawQuat directly
     Quat quat = imu.getQuat();
-    quaternion.set(quat.x, quat.y, quat.z, quat.w);
-    quaternion *= sensorOffset;
+    fusedRotation.set(quat.x, quat.y, quat.z, quat.w);
+    fusedRotation *= sensorOffset;
 
 #if SEND_ACCELERATION
     {
@@ -74,15 +74,9 @@ void BNO055Sensor::motionLoop() {
     }
 #endif
 
-#if ENABLE_INSPECTION
-    {
-        Network::sendInspectionFusedIMUData(sensorId, quaternion);
-    }
-#endif
-
-    if(!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion)) {
-        newData = true;
-        lastQuatSent = quaternion;
+    if(!OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
+        newFusedRotation = true;
+        lastFusedRotationSent = fusedRotation;
     }
 }
 

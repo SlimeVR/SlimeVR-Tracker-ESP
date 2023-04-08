@@ -133,7 +133,7 @@ void BMI160Sensor::motionLoop() {
     getScaledValues(Gxyz, Axyz);
 
     mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], deltat * 1.0e-6f);
-    quaternion.set(-q[2], q[1], q[3], q[0]);
+    fusedRotation.set(-q[2], q[1], q[3], q[0]);
 
 #if SEND_ACCELERATION
     {
@@ -144,9 +144,9 @@ void BMI160Sensor::motionLoop() {
 
         // get the component of the acceleration that is gravity
         VectorFloat gravity;
-        gravity.x = 2 * (this->quaternion.x * this->quaternion.z - this->quaternion.w * this->quaternion.y);
-        gravity.y = 2 * (this->quaternion.w * this->quaternion.x + this->quaternion.y * this->quaternion.z);
-        gravity.z = this->quaternion.w * this->quaternion.w - this->quaternion.x * this->quaternion.x - this->quaternion.y * this->quaternion.y + this->quaternion.z * this->quaternion.z;
+        gravity.x = 2 * (this->fusedRotation.x * this->fusedRotation.z - this->fusedRotation.w * this->fusedRotation.y);
+        gravity.y = 2 * (this->fusedRotation.w * this->fusedRotation.x + this->fusedRotation.y * this->fusedRotation.z);
+        gravity.z = this->fusedRotation.w * this->fusedRotation.w - this->fusedRotation.x * this->fusedRotation.x - this->fusedRotation.y * this->fusedRotation.y + this->fusedRotation.z * this->fusedRotation.z;
         
         // subtract gravity from the acceleration vector
         this->acceleration[0] -= gravity.x * ACCEL_SENSITIVITY_4G;
@@ -160,18 +160,12 @@ void BMI160Sensor::motionLoop() {
     }
 #endif
 
-    quaternion *= sensorOffset;
+    fusedRotation *= sensorOffset;
 
-#if ENABLE_INSPECTION
+    if (!OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
     {
-        Network::sendInspectionFusedIMUData(sensorId, quaternion);
-    }
-#endif
-
-    if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
-    {
-        newData = true;
-        lastQuatSent = quaternion;
+        newFusedRotation = true;
+        lastFusedRotationSent = fusedRotation;
     }
 }
 

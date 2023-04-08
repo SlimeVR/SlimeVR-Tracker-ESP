@@ -89,18 +89,18 @@ void ICM20948Sensor::readFIFOToEnd()
 
 void ICM20948Sensor::sendData()
 {
-    if(newData && lastDataSent + 7 < millis())
+    if(newFusedRotation && lastDataSent + 7 < millis())
     {
         lastDataSent = millis();
-        newData = false;
+        newFusedRotation = false;
 
         #if(USE_6_AXIS)
         {
-            Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId);
+            Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, 0, sensorId);
         }
         #else
         {
-            Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
+            Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
         #endif
 
@@ -317,24 +317,18 @@ void ICM20948Sensor::readRotation()
             double q2 = ((double)dmpData.Quat6.Data.Q2) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q3 = ((double)dmpData.Quat6.Data.Q3) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-            quaternion.w = q0;
-            quaternion.x = q1;
-            quaternion.y = q2;
-            quaternion.z = q3;
+            fusedRotation.w = q0;
+            fusedRotation.x = q1;
+            fusedRotation.y = q2;
+            fusedRotation.z = q3;
 
             #if SEND_ACCELERATION
-            calculateAccelerationWithoutGravity(&quaternion);
+            calculateAccelerationWithoutGravity(&fusedRotation);
             #endif
 
-            quaternion *= sensorOffset; //imu rotation
+            fusedRotation *= sensorOffset; //imu rotation
 
-            #if ENABLE_INSPECTION
-            {
-                Network::sendInspectionFusedIMUData(sensorId, quaternion);
-            }
-            #endif
-
-            newData = true;
+            newFusedRotation = true;
             lastData = millis();
         }
     }
@@ -360,12 +354,6 @@ void ICM20948Sensor::readRotation()
             #endif
 
             quaternion *= sensorOffset; //imu rotation
-
-            #if ENABLE_INSPECTION
-            {
-                Network::sendInspectionFusedIMUData(sensorId, quaternion);
-            }
-            #endif
 
             newData = true;
             lastData = millis();

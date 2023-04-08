@@ -64,8 +64,8 @@ public:
     uint8_t getSensorType() {
         return sensorType;
     };
-    Quat& getQuaternion() {
-        return quaternion;
+    Quat& getFusedRotation() {
+        return fusedRotation;
     };
 
     bool hadData = false;
@@ -74,14 +74,15 @@ protected:
     uint8_t sensorId = 0;
     uint8_t sensorType = 0;
     bool configured = false;
-    bool newData = false;
     bool working = false;
     uint8_t calibrationAccuracy = 0;
     Quat sensorOffset;
 
-    Quat quaternion{};
-    Quat lastQuatSent{};
+    bool newFusedRotation = false;
+    Quat fusedRotation{};
+    Quat lastFusedRotationSent{};
 
+    bool newAcceleration = false;
     float acceleration[3]{};
 
     SlimeVR::Logging::Logger m_Logger;

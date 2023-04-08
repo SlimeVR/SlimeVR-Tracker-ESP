@@ -204,7 +204,7 @@ void MPU9250Sensor::motionLoop() {
     }
 #endif
 
-    quaternion = correction * quat;
+    fusedRotation = correction * quat;
 #else
 
     union fifo_sample_raw buf;
@@ -232,17 +232,11 @@ void MPU9250Sensor::motionLoop() {
     quaternion.set(-q[2], q[1], q[3], q[0]);
 
 #endif
-    quaternion *= sensorOffset;
+    fusedRotation *= sensorOffset;
 
-#if ENABLE_INSPECTION
-    {
-        Network::sendInspectionFusedIMUData(sensorId, quaternion);
-    }
-#endif
-
-    if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
-        newData = true;
-        lastQuatSent = quaternion;
+    if(!lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
+        newFusedRotation = true;
+        lastFusedRotationSent = fusedRotation;
     }
 }
 
