@@ -40,6 +40,56 @@ THE SOFTWARE.
 
 #define BMI160_RA_CHIP_ID           0x00
 
+#define BMI160_MAG_PMU_STATUS_BIT   0
+#define BMI160_MAG_PMU_STATUS_LEN   2
+
+#define BMI160_STATUS_DRDY_MAG      5
+#define BMI160_STATUS_MAG_MAN_OP    2
+#define BMI160_MAG_RATE_SEL_BIT     0
+#define BMI160_MAG_RATE_SEL_LEN     4
+#define BMI160_FIFO_MAG_EN_BIT      5
+
+#define BMI160_RA_MAG_CONF             0x44
+#define BMI160_RA_MAG_IF_0_DEVADDR     0x4B
+#define BMI160_RA_MAG_IF_1_MODE        0x4C
+#define BMI160_RA_MAG_IF_2_READ_RA    0x4D
+#define BMI160_RA_MAG_IF_3_WRITE_RA    0x4E
+#define BMI160_RA_MAG_IF_4_WRITE_VALUE 0x4F
+#define BMI160_RA_IF_CONF              0x6B
+
+#define BMI160_IF_CONF_MODE_PRI_AUTO_SEC_OFF 0 << 4
+#define BMI160_IF_CONF_MODE_PRI_I2C_SEC_OIS  1 << 4
+#define BMI160_IF_CONF_MODE_PRI_AUTO_SEC_MAG 2 << 4
+
+#define BMI160_MAG_SETUP_MODE       0x80
+#define BMI160_MAG_DATA_MODE_2      0x01
+#define BMI160_MAG_DATA_MODE_6      0x02
+#define BMI160_MAG_DATA_MODE_8      0x03
+
+typedef enum {
+    BMI160_MAG_RATE_25_32thHZ = 1,  /**< 25/32 Hz */
+    BMI160_MAG_RATE_25_16thHZ,      /**< 25/16 Hz */
+    BMI160_MAG_RATE_25_8thHZ,       /**< 25/8  Hz */
+    BMI160_MAG_RATE_25_4thHZ,       /**< 25/4  Hz */
+    BMI160_MAG_RATE_25_2thHZ,       /**< 25/2  Hz */
+    BMI160_MAG_RATE_25HZ,           /**< 25    Hz */
+    BMI160_MAG_RATE_50HZ,           /**< 50    Hz */
+    BMI160_MAG_RATE_100HZ,          /**< 100   Hz */
+    BMI160_MAG_RATE_200HZ,          /**< 200   Hz */
+    BMI160_MAG_RATE_400HZ,          /**< 400   Hz */
+    BMI160_MAG_RATE_800HZ,          /**< 800   Hz */
+} BMI160MagRate;
+
+#define BMI160_CMD_MAG_MODE_NORMAL  0x19
+
+#define BMI160_EN_PULL_UP_REG_1     0x37
+#define BMI160_EN_PULL_UP_REG_2     0x9A
+#define BMI160_EN_PULL_UP_REG_3     0xC0
+#define BMI160_EN_PULL_UP_REG_4     0x90
+#define BMI160_EN_PULL_UP_REG_5     0x80
+
+#define BMI160_7F                   0x7F
+
 #define BMI160_ACC_PMU_STATUS_BIT   4
 #define BMI160_ACC_PMU_STATUS_LEN   2
 #define BMI160_GYR_PMU_STATUS_BIT   2
@@ -47,6 +97,12 @@ THE SOFTWARE.
 
 #define BMI160_RA_PMU_STATUS        0x03
 
+#define BMI160_RA_MAG_X_L           0x04
+#define BMI160_RA_MAG_X_H           0x05
+#define BMI160_RA_MAG_Y_L           0x06
+#define BMI160_RA_MAG_Y_H           0x07
+#define BMI160_RA_MAG_Z_L           0x08
+#define BMI160_RA_MAG_Z_H           0x09
 #define BMI160_RA_GYRO_X_L          0x0C
 #define BMI160_RA_GYRO_X_H          0x0D
 #define BMI160_RA_GYRO_Y_L          0x0E
@@ -60,8 +116,11 @@ THE SOFTWARE.
 #define BMI160_RA_ACCEL_Z_L         0x16
 #define BMI160_RA_ACCEL_Z_H         0x17
 
+#define BMI160_RA_SENSORTIME        0x18
+
 #define BMI160_STATUS_FOC_RDY       3
 #define BMI160_STATUS_NVM_RDY       4
+#define BMI160_STATUS_DRDY_MAG      5
 #define BMI160_STATUS_DRDY_GYR      6
 #define BMI160_STATUS_DRDY_ACC      7
 
@@ -116,6 +175,7 @@ THE SOFTWARE.
 #define BMI160_RA_GYRO_RANGE        0x43
 
 #define BMI160_FIFO_HEADER_EN_BIT   4
+#define BMI160_FIFO_MAG_EN_BIT      5
 #define BMI160_FIFO_ACC_EN_BIT      6
 #define BMI160_FIFO_GYR_EN_BIT      7
 
@@ -261,6 +321,33 @@ THE SOFTWARE.
 #define BMI160_CMD_SOFT_RESET       0xB6
 
 #define BMI160_RA_CMD               0x7E
+
+                                                               // mode   parm ext
+#define BMI160_FIFO_HEADER_CTL_SKIP_FRAME               0x40   // 0b01 0 000  00
+#define BMI160_FIFO_HEADER_CTL_SENSOR_TIME              0x44   // 0b01 0 001  00
+#define BMI160_FIFO_HEADER_CTL_INPUT_CONFIG             0x48   // 0b01 0 010  00
+#define BMI160_FIFO_HEADER_DATA_FRAME_BASE              0x80   // 0b10 0 000  00
+#define BMI160_FIFO_HEADER_DATA_FRAME_FLAG_M            1 << 4 // 0b00 0 100  00
+#define BMI160_FIFO_HEADER_DATA_FRAME_FLAG_G            1 << 3 // 0b00 0 010  00
+#define BMI160_FIFO_HEADER_DATA_FRAME_FLAG_A            1 << 2 // 0b00 0 001  00
+#define BMI160_FIFO_HEADER_DATA_FRAME_MASK_HAS_DATA \
+    (BMI160_FIFO_HEADER_DATA_FRAME_FLAG_M |\
+    BMI160_FIFO_HEADER_DATA_FRAME_FLAG_G |\
+    BMI160_FIFO_HEADER_DATA_FRAME_FLAG_A)
+
+#define BMI160_FIFO_SKIP_FRAME_LEN 1
+#define BMI160_FIFO_INPUT_CONFIG_LEN 1
+#define BMI160_FIFO_SENSOR_TIME_LEN 3
+#define BMI160_FIFO_M_LEN 8
+#define BMI160_FIFO_G_LEN 6
+#define BMI160_FIFO_A_LEN 6
+
+#define BMI160_RA_ERR                        0x02
+#define BMI160_ERR_MASK_MAG_DRDY_ERR         0x10000000
+#define BMI160_ERR_MASK_DROP_CMD_ERR         0x01000000
+#define BMI160_ERR_MASK_I2C_FAIL             0x00100000
+#define BMI160_ERR_MASK_ERROR_CODE           0x00011110
+#define BMI160_ERR_MASK_CHIP_NOT_OPERABLE    0x00000001
 
 /**
  * Interrupt Latch Mode options
@@ -467,7 +554,15 @@ typedef enum {
 class BMI160 {
     public:
         BMI160();
-        void initialize(uint8_t addr);
+        void initialize(
+            uint8_t addr,
+            BMI160GyroRate gyroRate = BMI160_GYRO_RATE_800HZ,
+            BMI160GyroRange gyroRange = BMI160_GYRO_RANGE_500,
+            BMI160DLPFMode gyroFilterMode = BMI160_DLPF_MODE_NORM,
+            BMI160AccelRate accelRate = BMI160_ACCEL_RATE_800HZ,
+            BMI160AccelRange accelRange = BMI160_ACCEL_RANGE_4G,
+            BMI160DLPFMode accelFilterMode = BMI160_DLPF_MODE_OSR4
+        );
         bool testConnection();
 
         uint8_t getGyroRate();
@@ -573,6 +668,8 @@ class BMI160 {
         void setGyroFIFOEnabled(bool enabled);
         bool getAccelFIFOEnabled();
         void setAccelFIFOEnabled(bool enabled);
+        bool getMagFIFOEnabled();
+        void setMagFIFOEnabled(bool enabled);
 
         bool getIntFIFOBufferFullEnabled();
         void setIntFIFOBufferFullEnabled(bool enabled);
@@ -599,7 +696,10 @@ class BMI160 {
         int16_t getAccelerationY();
         int16_t getAccelerationZ();
 
-        int16_t getTemperature();
+        void getMagnetometer(int16_t* mx, int16_t* my, int16_t* mz);
+        void getMagnetometerXYZBuffer(uint8_t* data);
+
+        bool getTemperature(int16_t* out);
 
         void getRotation(int16_t* x, int16_t* y, int16_t* z);
         int16_t getRotationX();
@@ -631,8 +731,8 @@ class BMI160 {
         void setFIFOHeaderModeEnabled(bool enabled);
         void resetFIFO();
 
-        uint16_t getFIFOCount();
-        void getFIFOBytes(uint8_t *data, uint16_t length);
+        bool getFIFOCount(uint16_t* outCount);
+        bool getFIFOBytes(uint8_t *data, uint16_t length);
 
         uint8_t getDeviceID();
 
@@ -648,6 +748,16 @@ class BMI160 {
         uint8_t getInterruptLatch();
         void setInterruptLatch(uint8_t latch);
         void resetInterrupt();
+        
+        bool getGyroDrdy();
+        void waitForGyroDrdy();
+        void waitForAccelDrdy();
+        void waitForMagDrdy();
+        bool getSensorTime(uint32_t *v_sensor_time_u32);
+        void setMagDeviceAddress(uint8_t addr);
+        bool setMagRegister(uint8_t addr, uint8_t value);
+
+        bool getErrReg(uint8_t* out);
     private:
         uint8_t buffer[14];
         uint8_t devAddr;

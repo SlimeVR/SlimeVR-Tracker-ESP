@@ -71,6 +71,7 @@ void BNO055Sensor::motionLoop() {
         this->acceleration[0] = accel.x;
         this->acceleration[1] = accel.y;
         this->acceleration[2] = accel.z;
+        this->newAcceleration = true;
     }
 #endif
 

@@ -32,7 +32,7 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 #define ACCEL_SENSITIVITY_4G 8192.0f
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
-constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * EARTH_GRAVITY;
+constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * CONST_EARTH_GRAVITY;
 
 void ICM20948Sensor::motionSetup()
 {
@@ -103,13 +103,14 @@ void ICM20948Sensor::sendData()
             Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
         #endif
-
-        #if SEND_ACCELERATION
-        {
-            Network::sendAccel(acceleration, sensorId);
-        }
-        #endif
     }
+
+#if SEND_ACCELERATION
+    if(newAcceleration) {
+        newAcceleration = false;
+        Network::sendAccel(acceleration, sensorId);
+    }
+#endif
 }
 
 void ICM20948Sensor::startCalibration(int calibrationType)
@@ -489,6 +490,7 @@ void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
             this->acceleration[0] *= ASCALE_4G;
             this->acceleration[1] *= ASCALE_4G;
             this->acceleration[2] *= ASCALE_4G;
+            this->newAcceleration = true;
         }
     }
     #endif

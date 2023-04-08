@@ -34,17 +34,26 @@ void Sensor::sendData() {
         newFusedRotation = false;
         Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
 
-#if SEND_ACCELERATION
-        {
-            Network::sendAccel(acceleration, sensorId);
-        }
-#endif
-
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
 #endif
     }
+
+#if SEND_ACCELERATION
+    if(newAcceleration) {
+        newAcceleration = false;
+        Network::sendAccel(acceleration, sensorId);
+    }
+#endif
 }
+
+void Sensor::printTemperatureCalibrationUnsupported() {
+    m_Logger.error("Temperature calibration not supported for IMU %s", getIMUNameByType(sensorType));
+}
+void Sensor::printTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
+void Sensor::printDebugTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
+void Sensor::saveTemperatureCalibration() { printTemperatureCalibrationUnsupported(); };
+void Sensor::resetTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
 
 const char * getIMUNameByType(int imuType) {
     switch(imuType) {

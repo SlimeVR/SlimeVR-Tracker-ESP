@@ -72,38 +72,64 @@ BMI160::BMI160() {};
  * This will activate the device and take it out of sleep mode (which must be done
  * after start-up).
  */
-void BMI160::initialize(uint8_t addr)
-{
+void BMI160::initialize(uint8_t addr,
+    BMI160GyroRate gyroRate, BMI160GyroRange gyroRange, BMI160DLPFMode gyroFilterMode,
+    BMI160AccelRate accelRate, BMI160AccelRange accelRange, BMI160DLPFMode accelFilterMode
+) {
     devAddr = addr;
     /* Issue a soft-reset to bring the device into a clean state */
-    I2CdevMod::writeByte(devAddr, BMI160_RA_CMD, BMI160_CMD_SOFT_RESET);
+    setRegister(BMI160_RA_CMD, BMI160_CMD_SOFT_RESET);
+    delay(12);
+
+    setGyroRate(gyroRate);
+    delay(1);
+    setAccelRate(accelRate);
+    delay(1);
+    setFullScaleGyroRange(gyroRange);
+    delay(1);
+    setFullScaleAccelRange(accelRange);
+    delay(1);
+    setGyroDLPFMode(gyroFilterMode);
+    delay(1);
+    setAccelDLPFMode(accelFilterMode);
     delay(1);
 
     /* Power up the accelerometer */
-    I2CdevMod::writeByte(devAddr, BMI160_RA_CMD, BMI160_CMD_ACC_MODE_NORMAL);
+    setRegister(BMI160_RA_CMD, BMI160_CMD_ACC_MODE_NORMAL);
     delay(BMI160_ACCEL_POWERUP_DELAY_MS);
 
     /* Power up the gyroscope */
-    I2CdevMod::writeByte(devAddr, BMI160_RA_CMD, BMI160_CMD_GYR_MODE_NORMAL);
+    setRegister(BMI160_RA_CMD, BMI160_CMD_GYR_MODE_NORMAL);
     delay(BMI160_GYRO_POWERUP_DELAY_MS);
 
-    setGyroRate(BMI160_GYRO_RATE_800HZ);
-    delay(1);
-    setAccelRate(BMI160_ACCEL_RATE_800HZ);
-    delay(1);
-    setFullScaleGyroRange(BMI160_GYRO_RANGE_500);
-    delay(1);
-    setFullScaleAccelRange(BMI160_ACCEL_RANGE_4G);
-    delay(1);
-    setGyroDLPFMode(BMI160_DLPF_MODE_OSR4);
-    delay(1);
-    setAccelDLPFMode(BMI160_DLPF_MODE_OSR4);
-    delay(1);
-
     /* Only PIN1 interrupts currently supported - map all interrupts to PIN1 */
-    I2CdevMod::writeByte(devAddr, BMI160_RA_INT_MAP_0, 0xFF);
-    I2CdevMod::writeByte(devAddr, BMI160_RA_INT_MAP_1, 0xF0);
-    I2CdevMod::writeByte(devAddr, BMI160_RA_INT_MAP_2, 0x00);
+    // I2CdevMod::writeByte(devAddr, BMI160_RA_INT_MAP_0, 0xFF);
+    // I2CdevMod::writeByte(devAddr, BMI160_RA_INT_MAP_1, 0xF0);
+    // I2CdevMod::writeByte(devAddr, BMI160_RA_INT_MAP_2, 0x00);
+}
+
+bool BMI160::getErrReg(uint8_t* out) {
+    bool ok = I2CdevMod::readByte(devAddr, BMI160_RA_ERR, buffer) >= 0;
+    if (!ok) return false;
+    *out = buffer[0];
+    return true;
+}
+
+
+void BMI160::setMagDeviceAddress(uint8_t addr) {
+    setRegister(BMI160_RA_MAG_IF_0_DEVADDR, addr << 1); // 0 bit of address is reserved and needs to be shifted
+}
+
+bool BMI160::setMagRegister(uint8_t addr, uint8_t value) {
+    setRegister(BMI160_RA_MAG_IF_4_WRITE_VALUE, value);
+    setRegister(BMI160_RA_MAG_IF_3_WRITE_RA, addr);
+    delay(3);
+    I2CdevMod::readByte(devAddr, BMI160_RA_ERR, buffer);
+    if (buffer[0] & BMI160_ERR_MASK_I2C_FAIL) {
+        printf("BMI160: mag register proxy write error\n");
+        return false;
+    }
+    return true;
 }
 
 /** Get Device ID.
@@ -1450,6 +1476,31 @@ void BMI160::setGyroFIFOEnabled(bool enabled) {
                    1, enabled ? 0x1 : 0);
 }
 
+
+/** Get magnetometer FIFO enabled value.
+ * When set to 1, this bit enables magnetometer data samples to be
+ * written into the FIFO buffer.
+ * @return Current magnetometer FIFO enabled value
+ * @see BMI160_RA_FIFO_CONFIG_1
+ */
+bool BMI160::getMagFIFOEnabled() {
+    I2CdevMod::readBits(devAddr, BMI160_RA_FIFO_CONFIG_1,
+                     BMI160_FIFO_MAG_EN_BIT,
+                     1, buffer);
+    return !!buffer[0];
+}
+
+/** Set magnetometer FIFO enabled value.
+ * @param enabled New magnetometer FIFO enabled value
+ * @see getMagFIFOEnabled()
+ * @see BMI160_RA_FIFO_CONFIG_1
+ */
+void BMI160::setMagFIFOEnabled(bool enabled) {
+    I2CdevMod::writeBits(devAddr, BMI160_RA_FIFO_CONFIG_1,
+                   BMI160_FIFO_MAG_EN_BIT,
+                   1, enabled ? 0x1 : 0);
+}
+
 /** Get current FIFO buffer size.
  * This value indicates the number of bytes stored in the FIFO buffer. This
  * number is in turn the number of bytes that can be read from the FIFO buffer.
@@ -1458,12 +1509,15 @@ void BMI160::setGyroFIFOEnabled(bool enabled) {
  * samples available given the set of sensor data bound to be stored in the
  * FIFO. See @ref getFIFOHeaderModeEnabled().
  *
- * @return Current FIFO buffer size
+ * @param outCount Current FIFO buffer size
+ * @return Bool if value was read successfully
  * @see BMI160_RA_FIFO_LENGTH_0
  */
-uint16_t BMI160::getFIFOCount() {
-    I2CdevMod::readBytes(devAddr, BMI160_RA_FIFO_LENGTH_0, 2, buffer);
-    return (((int16_t)buffer[1]) << 8) | buffer[0];
+bool BMI160::getFIFOCount(uint16_t* outCount) {
+    bool ok = I2CdevMod::readBytes(devAddr, BMI160_RA_FIFO_LENGTH_0, 2, buffer) >= 0;
+    if (!ok) return false;
+    *outCount = (((int16_t)buffer[1]) << 8) | buffer[0];
+    return ok;
 }
 
 /** Reset the FIFO.
@@ -1541,12 +1595,14 @@ void BMI160::setFIFOHeaderModeEnabled(bool enabled) {
  * check FIFO_LENGTH to ensure that the FIFO buffer is not read when empty (see
  * @getFIFOCount()).
  *
- * @return Data frames from FIFO buffer
+ * @param data Data frames from FIFO buffer
+ * @param length Buffer length
+ * @return Bool if value was read successfully
  */
-void BMI160::getFIFOBytes(uint8_t *data, uint16_t length) {
-    if (length) {
-        I2CdevMod::readBytes(devAddr, BMI160_RA_FIFO_DATA, length, data);
-    }
+bool BMI160::getFIFOBytes(uint8_t *data, uint16_t length) {
+    if (!length) return true;
+    bool ok = I2CdevMod::readBytes(devAddr, BMI160_RA_FIFO_DATA, length, data) >= 0;
+    return ok;
 }
 
 /** Get full set of interrupt status bits from INT_STATUS[0] register.
@@ -2213,12 +2269,15 @@ int16_t BMI160::getAccelerationZ() {
  * 0x8001   | -41 + 1/2^9 degrees C
  * 0x8000   | Invalid
  *
- * @return Temperature reading in 16-bit 2's complement format
+ * @param out Temperature reading in 16-bit 2's complement format
+ * @return Bool if value was read successfully
  * @see BMI160_RA_TEMP_L
  */
-int16_t BMI160::getTemperature() {
-    I2CdevMod::readBytes(devAddr, BMI160_RA_TEMP_L, 2, buffer);
-    return (((int16_t)buffer[1]) << 8) | buffer[0];
+bool BMI160::getTemperature(int16_t* out) {
+    bool ok = I2CdevMod::readBytes(devAddr, BMI160_RA_TEMP_L, 2, buffer) >= 0;
+    if (!ok) return false;
+    *out = (((int16_t)buffer[1]) << 8) | buffer[0];
+    return ok;
 }
 
 /** Get 3-axis gyroscope readings.
@@ -2291,6 +2350,25 @@ int16_t BMI160::getRotationZ() {
     return (((int16_t)buffer[1]) << 8) | buffer[0];
 }
 
+/** Get magnetometer readings
+ * @return Z-axis rotation measurement in 16-bit 2's complement format
+ * @see getMotion6()
+ * @see BMI160_RA_GYRO_Z_L
+ */
+void BMI160::getMagnetometer(int16_t* mx, int16_t* my, int16_t* mz) {
+    I2CdevMod::readBytes(devAddr, BMI160_RA_MAG_X_L, 6, buffer);
+    // *mx = (((int16_t)buffer[1])  << 8) | buffer[0];
+    // *my = (((int16_t)buffer[3])  << 8) | buffer[2];
+    // *mz = (((int16_t)buffer[5])  << 8) | buffer[4];
+    *mx = ((int16_t)buffer[0] << 8) | buffer[1];
+    *mz = ((int16_t)buffer[2] << 8) | buffer[3];
+    *my = ((int16_t)buffer[4] << 8) | buffer[5];
+}
+
+void BMI160::getMagnetometerXYZBuffer(uint8_t* data) {
+    I2CdevMod::readBytes(devAddr, BMI160_RA_MAG_X_L, 6, data);
+}
+
 /** Read a BMI160 register directly.
  * @param reg register address
  * @return 8-bit register value
@@ -2306,4 +2384,41 @@ uint8_t BMI160::getRegister(uint8_t reg) {
  */
 void BMI160::setRegister(uint8_t reg, uint8_t data) {
     I2CdevMod::writeByte(devAddr, reg, data);
+}
+
+bool BMI160::getGyroDrdy() {
+    I2CdevMod::readBits(devAddr, BMI160_RA_STATUS, BMI160_STATUS_DRDY_GYR, 1, buffer);
+    return buffer[0];
+}
+
+void BMI160::waitForGyroDrdy() {
+    do {
+        getGyroDrdy();
+        if (!buffer[0]) delayMicroseconds(150);
+    } while (!buffer[0]);
+}
+
+void BMI160::waitForAccelDrdy() {
+    do {
+        I2CdevMod::readBits(devAddr, BMI160_RA_STATUS, BMI160_STATUS_DRDY_ACC, 1, buffer);
+        if (!buffer[0]) delayMicroseconds(150);
+    } while (!buffer[0]);
+}
+
+void BMI160::waitForMagDrdy() {
+    do {
+        I2CdevMod::readBits(devAddr, BMI160_RA_STATUS, BMI160_STATUS_DRDY_MAG, 1, buffer);
+        if (!buffer[0]) delay(5);
+    } while (!buffer[0]);
+}
+
+bool BMI160::getSensorTime(uint32_t *v_sensor_time_u32) {
+    bool ok = I2CdevMod::readBytes(devAddr, BMI160_RA_SENSORTIME, 3, buffer) >= 0;
+    if (!ok) return false;
+    *v_sensor_time_u32 = (uint32_t)(
+        (((uint32_t)buffer[2]) << 16) |
+        (((uint32_t)buffer[1]) << 8)  |
+        ((uint32_t)buffer[0])
+    );
+    return ok;
 }

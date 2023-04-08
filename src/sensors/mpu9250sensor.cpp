@@ -42,7 +42,7 @@ constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB
 #define ACCEL_SENSITIVITY_2G 16384.0f
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
-constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * EARTH_GRAVITY;
+constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * CONST_EARTH_GRAVITY;
 
 void MPU9250Sensor::motionSetup() {
     // initialize device
@@ -201,6 +201,7 @@ void MPU9250Sensor::motionLoop() {
         this->acceleration[0] = this->rawAccel.x * ASCALE_2G;
         this->acceleration[1] = this->rawAccel.y * ASCALE_2G;
         this->acceleration[2] = this->rawAccel.z * ASCALE_2G;
+        this->newAcceleration = true;
     }
 #endif
 

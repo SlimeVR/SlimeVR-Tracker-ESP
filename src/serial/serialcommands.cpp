@@ -36,7 +36,7 @@
 namespace SerialCommands {
     SlimeVR::Logging::Logger logger("SerialCommands");
 
-    CmdCallback<5> cmdCallbacks;
+    CmdCallback<6> cmdCallbacks;
     CmdParser cmdParser;
     CmdBuffer<64> cmdBuffer;
 
@@ -71,14 +71,14 @@ namespace SerialCommands {
         logger.info(
             "Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
             getIMUNameByType(sensor1->getSensorType()),
-            UNPACK_QUATERNION(sensor1->getQuaternion()),
+            UNPACK_QUATERNION(sensor1->getFusedRotation()),
             sensor1->isWorking() ? "true" : "false",
             sensor1->hadData ? "true" : "false"
         );
         logger.info(
             "Sensor 2: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
             getIMUNameByType(sensor2->getSensorType()),
-            UNPACK_QUATERNION(sensor2->getQuaternion()),
+            UNPACK_QUATERNION(sensor2->getFusedRotation()),
             sensor2->isWorking() ? "true" : "false",
             sensor2->hadData ? "true" : "false"
         );
@@ -150,7 +150,7 @@ namespace SerialCommands {
             logger.info(
                 "[TEST] Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
                 getIMUNameByType(sensor1->getSensorType()),
-                UNPACK_QUATERNION(sensor1->getQuaternion()),
+                UNPACK_QUATERNION(sensor1->getFusedRotation()),
                 sensor1->isWorking() ? "true" : "false",
                 sensor1->hadData ? "true" : "false"
             );
@@ -192,12 +192,41 @@ namespace SerialCommands {
         ESP.restart();
     }
 
+    void cmdTemperatureCalibration(CmdParser* parser) {
+        if (parser->getParamCount() > 1) {
+            if (parser->equalCmdParam(1, "PRINT")) {
+                sensorManager.getFirst()->printTemperatureCalibrationState();
+                sensorManager.getSecond()->printTemperatureCalibrationState();
+                return;
+            } else if (parser->equalCmdParam(1, "DEBUG")) {
+                sensorManager.getFirst()->printDebugTemperatureCalibrationState();
+                sensorManager.getSecond()->printDebugTemperatureCalibrationState();
+                return;
+            } else if (parser->equalCmdParam(1, "RESET")) {
+                sensorManager.getFirst()->resetTemperatureCalibrationState();
+                sensorManager.getSecond()->resetTemperatureCalibrationState();
+                return;
+            } else if (parser->equalCmdParam(1, "SAVE")) {
+                sensorManager.getFirst()->saveTemperatureCalibration();
+                sensorManager.getSecond()->saveTemperatureCalibration();
+                return;
+            }
+        }
+        logger.info("Usage:");
+        logger.info("  TCAL PRINT: print current temperature calibration config");
+        logger.info("  TCAL DEBUG: print debug values for the current temperature calibration profile");
+        logger.info("  TCAL RESET: reset current temperature calibration in RAM (does not delete already saved)");
+        logger.info("  TCAL SAVE: save current temperature calibration to persistent flash");
+        logger.info("Note:");
+        logger.info("  Temperature calibration config saves automatically when calibration percent is at 100%");
+    }
+    
     void setUp() {
         cmdCallbacks.addCmd("SET", &cmdSet);
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REBOOT", &cmdReboot);
-        
+        cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
     }
 
     void update() {
