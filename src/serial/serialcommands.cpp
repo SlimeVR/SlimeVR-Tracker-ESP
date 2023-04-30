@@ -91,7 +91,9 @@ namespace SerialCommands {
         
         if (parser->equalCmdParam(1, "INFO")) {
             printState();
-            logger.info("GIT commit: %s", GIT_REV); // we dont want to print that on every update
+
+            // We don't want to print this on every timed state output
+            logger.info("Git commit: %s", GIT_REV);
         }
 
         if (parser->equalCmdParam(1, "CONFIG")) {
