@@ -31,6 +31,12 @@ The following IMUs and their corresponding `IMU` values are supported by the fir
   * Calibration file format is unstable and may not be able to load using newer firmware versions.
   * Experimental support!
   * Support for the following magnetometers is implemented (even more experimental): HMC5883L, QMC5883L.
+* BMI270 (IMU_BMI270)
+  * Based on BMI160 code.
+  * Using sensor fusion of Gyroscope and Accelerometer.
+  * Manual calibration is currently unsupported, however BMI270 gyroscope auto-calibration is used.
+  * Support for magnetometers is currently not implemented.
+  * VERY experimental support!
 * ICM-20948 (IMU_ICM20948)
   * Using fusion in internal DMP for 6Dof or 9DoF, 9DoF mode requires good magnetic environment.
   * Comment out `USE_6DOF` in `debug.h` for 9DoF mode.
