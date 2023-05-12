@@ -40,8 +40,12 @@
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * CONST_EARTH_GRAVITY;
 
-void MPU6050Sensor::motionSetup()
+void MPU6050Sensor::motionSetup(bool invokeCalibration)
 {
+    if (working) {
+        imu.reset();
+        delay(50);
+    }
     imu.initialize(addr);
     if (!imu.testConnection())
     {
@@ -80,6 +84,7 @@ void MPU6050Sensor::motionSetup()
 #ifdef IMU_MPU6050_RUNTIME_CALIBRATION
         // We don't have to manually calibrate if we are using the dmp's automatic calibration
 #else  // IMU_MPU6050_RUNTIME_CALIBRATION
+        // calibration will run anyway so nothing to do with calibration invoke
 
         m_Logger.debug("Performing startup calibration of accel and gyro...");
         // Do a quick and dirty calibration. As the imu warms up the offsets will change a bit, but this will be good-enough

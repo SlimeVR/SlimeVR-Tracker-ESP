@@ -34,13 +34,17 @@ int bias_save_periods[] = { 120, 180, 300, 600, 600 }; // 2min + 3min + 5min + 1
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_4G = ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * CONST_EARTH_GRAVITY;
 
-void ICM20948Sensor::motionSetup()
+void ICM20948Sensor::motionSetup(bool invokeCalibration)
 {
+    if (working) {
+        imu.swReset(); // sensor is reset later, but perform reset anyway
+        delay(50);
+    }
     connectSensor();
     startDMP();
     loadCalibration();
     startMotionLoop();
-    startCalibrationAutoSave();
+    startCalibrationAutoSave(); // calibration will run anyway so nothing to do with calibration invoke
 }
 
 void ICM20948Sensor::motionLoop()
@@ -281,7 +285,7 @@ void ICM20948Sensor::connectSensor()
         return;
     }
 
-    ICM_20948_Status_e imu_err = imu.begin(Wire, isOnSecondAddress);
+    ICM_20948_Status_e imu_err = imu.begin(Wire, isOnSecondAddress); // also resets sensor
     if (imu_err != ICM_20948_Stat_Ok) {
         m_Logger.fatal("Can't connect to ICM20948 at address 0x%02x, error code: 0x%02x", addr, imu_err);
         ledManager.pattern(50, 50, 200);

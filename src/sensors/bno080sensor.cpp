@@ -26,12 +26,13 @@
 #include "utils.h"
 #include "GlobalVars.h"
 
-void BNO080Sensor::motionSetup()
+void BNO080Sensor::motionSetup(bool invokeCalibration)
 {
+    // no calibration, nothing to do with calibration invoke
 #ifdef DEBUG_SENSOR
     imu.enableDebugging(Serial);
 #endif
-    if(!imu.begin(addr, Wire, m_IntPin)) {
+    if(!imu.begin(addr, Wire, m_IntPin)) { // also resets sensor
         m_Logger.fatal("Can't connect to %s at address 0x%02x", getIMUNameByType(sensorType), addr);
         ledManager.pattern(50, 50, 200);
         return;

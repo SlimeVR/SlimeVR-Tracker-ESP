@@ -25,11 +25,12 @@
 #include "globals.h"
 #include "GlobalVars.h"
 
-void BNO055Sensor::motionSetup() {
+void BNO055Sensor::motionSetup(bool invokeCalibration) {
+    // no calibration, nothing to do with calibration invoke
     imu = Adafruit_BNO055(sensorId, addr);
     delay(3000);
 #if USE_6_AXIS
-    if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS))
+    if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_IMUPLUS)) // also resets sensor
 #else
     if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_NDOF))
 #endif

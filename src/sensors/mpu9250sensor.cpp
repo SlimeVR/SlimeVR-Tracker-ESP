@@ -44,7 +44,11 @@ constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
 constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * CONST_EARTH_GRAVITY;
 
-void MPU9250Sensor::motionSetup() {
+void MPU9250Sensor::motionSetup(bool invokeCalibration) {
+    if (working) {
+        imu.reset();
+        delay(50);
+    }
     // initialize device
     imu.initialize(addr);
     if(!imu.testConnection()) {
@@ -58,20 +62,26 @@ void MPU9250Sensor::motionSetup() {
 
     // turn on while flip back to calibrate. then, flip again after 5 seconds.
     // TODO: Move calibration invoke after calibrate button on slimeVR server available
-    imu.getAcceleration(&ax, &ay, &az);
-    float g_az = (float)az / 16384; // For 2G sensitivity
-    if(g_az < -0.75f) {
-        ledManager.on();
-        m_Logger.info("Flip front to confirm start calibration");
-        delay(5000);
-        ledManager.off();
-
+    if (!invokeCalibration) {
         imu.getAcceleration(&ax, &ay, &az);
-        g_az = (float)az / 16384;
-        if(g_az > 0.75f) {
-            m_Logger.debug("Starting calibration...");
-            startCalibration(0);
+        float g_az = (float)az / 16384; // For 2G sensitivity
+        if(g_az < -0.75f) {
+            ledManager.on();
+            m_Logger.info("Flip front to confirm start calibration");
+            delay(5000);
+            ledManager.off();
+
+            imu.getAcceleration(&ax, &ay, &az);
+            g_az = (float)az / 16384;
+            if(g_az > 0.75f) {
+                invokeCalibration = true;
+            }
         }
+    }
+
+    if (invokeCalibration) {
+        m_Logger.debug("Starting calibration...");
+        startCalibration(0);
     }
 
     // Initialize the configuration

@@ -168,7 +168,7 @@ class BMI160Sensor : public Sensor {
         void initHMC(BMI160MagRate magRate);
         void initQMC(BMI160MagRate magRate);
 
-        void motionSetup() override final;
+        void motionSetup(bool invokeCalibration = false) override final;
         void motionLoop() override final;
         void startCalibration(int calibrationType) override final;
         void maybeCalibrateGyro();

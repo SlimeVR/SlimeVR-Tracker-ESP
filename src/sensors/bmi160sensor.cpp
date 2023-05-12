@@ -92,9 +92,9 @@ void BMI160Sensor::initQMC(BMI160MagRate magRate) {
     imu.setRegister(BMI160_RA_MAG_IF_1_MODE, BMI160_MAG_DATA_MODE_6);
 }
 
-void BMI160Sensor::motionSetup() {
+void BMI160Sensor::motionSetup(bool invokeCalibration) {
     // initialize device
-    imu.initialize(
+    imu.initialize( // also resets sensor
         addr,
         BMI160_GYRO_RATE,
         BMI160_GYRO_RANGE,
@@ -143,20 +143,26 @@ void BMI160Sensor::motionSetup() {
 
     int16_t ax, ay, az;
     getRemappedAcceleration(&ax, &ay, &az);
-    float g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
-    if (g_az < -0.75f) {
-        ledManager.on();
+    if (!invokeCalibration) {
+        float g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
+        if (g_az < -0.75f) {
+            ledManager.on();
 
-        m_Logger.info("Flip front to confirm start calibration");
-        delay(5000);
-        getRemappedAcceleration(&ax, &ay, &az);
-        g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
-        if (g_az > 0.75f) {
-            m_Logger.debug("Starting calibration...");
-            startCalibration(0);
+            m_Logger.info("Flip front to confirm start calibration");
+            delay(5000);
+            getRemappedAcceleration(&ax, &ay, &az);
+            g_az = (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB;
+            if (g_az > 0.75f) {
+                invokeCalibration = true;
+            }
+
+            ledManager.off();
         }
+    }
 
-        ledManager.off();
+    if (invokeCalibration) {
+        m_Logger.debug("Starting calibration...");
+        startCalibration(0);
     }
 
     {

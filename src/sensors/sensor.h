@@ -47,7 +47,7 @@ public:
     }
 
     virtual ~Sensor(){};
-    virtual void motionSetup(){};
+    virtual void motionSetup(bool invokeCalibration = false){};
     virtual void postSetup(){};
     virtual void motionLoop(){};
     virtual void sendData();

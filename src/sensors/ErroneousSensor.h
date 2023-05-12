@@ -36,7 +36,7 @@ namespace SlimeVR
             ErroneousSensor(uint8_t id, uint8_t type) : Sensor("ErroneousSensor", type, id, 0, 0.0), m_ExpectedType(type){};
             ~ErroneousSensor(){};
 
-            void motionSetup() override;
+            void motionSetup(bool invokeCalibration = false) override;
             void motionLoop() override final{};
             void sendData() override{};
             void startCalibration(int calibrationType) override final{};

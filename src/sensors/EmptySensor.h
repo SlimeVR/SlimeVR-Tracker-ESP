@@ -36,7 +36,7 @@ namespace SlimeVR
             EmptySensor(uint8_t id) : Sensor("EmptySensor", 255, id, 0, 0.0){};
             ~EmptySensor(){};
 
-            void motionSetup() override final{};
+            void motionSetup(bool invokeCalibration = false) override final{};
             void motionLoop() override final{};
             void sendData() override final{};
             void startCalibration(int calibrationType) override final{};
