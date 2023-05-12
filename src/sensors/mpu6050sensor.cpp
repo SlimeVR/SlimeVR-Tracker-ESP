@@ -86,13 +86,17 @@ void MPU6050Sensor::motionSetup(bool invokeCalibration)
 #else  // IMU_MPU6050_RUNTIME_CALIBRATION
         // calibration will run anyway so nothing to do with calibration invoke
 
+        Network::sendCalibrationStep(CAL_REST, 1, 2, -1, sensorId);
         m_Logger.debug("Performing startup calibration of accel and gyro...");
         // Do a quick and dirty calibration. As the imu warms up the offsets will change a bit, but this will be good-enough
         delay(1000); // A small sleep to give the users a chance to stop it from moving
 
+        Network::sendCalibrationStep(CAL_REST_ACTIVE, 2, 2, -1, sensorId);
         imu.CalibrateGyro(6);
         imu.CalibrateAccel(6);
         imu.PrintActiveOffsets();
+
+        Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, sensorId);
 #endif // IMU_MPU6050_RUNTIME_CALIBRATION
 
         ledManager.pattern(50, 50, 5);

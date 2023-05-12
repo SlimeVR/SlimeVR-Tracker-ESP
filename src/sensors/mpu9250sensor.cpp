@@ -264,6 +264,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 
     // Blink calibrating led before user should rotate the sensor
     m_Logger.info("Gently rotate the device while it's gathering magnetometer data");
+    Network::sendCalibrationStatus(CAL_MOVE, 1, 2, -1, sensorId);
     ledManager.pattern(15, 300, 3000/310);
     MagnetoCalibration *magneto = new MagnetoCalibration();
     for (int i = 0; i < calibrationSamples; i++) {
@@ -273,6 +274,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         magneto->sample(my, mx, -mz);
 
         float rawMagFloat[3] = { (float)mx, (float)my, (float)mz};
+        Network::sendCalibrationStatus(CAL_MOVE_ACTIVE, 2, 2, (float)(i+1)/(float)calibrationSamples, sensorId);
         Network::sendRawCalibrationData(rawMagFloat, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
         ledManager.off();
         delay(250);
@@ -304,6 +306,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     Gxyz[2] = 0;
 
     // Wait for sensor to calm down before calibration
+    Network::sendCalibrationStatus(CAL_REST, 1, 4, -1, sensorId);
     m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
     delay(2000);
 
@@ -317,6 +320,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         Gxyz[0] += float(buf.sample.gyro[0]);
         Gxyz[1] += float(buf.sample.gyro[1]);
         Gxyz[2] += float(buf.sample.gyro[2]);
+        Network::sendCalibrationStatus(CAL_REST_ACTIVE, 2, 4, (float)(i+1)/(float)calibrationSamples, sensorId);
     }
     Gxyz[0] /= calibrationSamples;
     Gxyz[1] /= calibrationSamples;
@@ -333,6 +337,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     m_Calibration.G_off[2] = Gxyz[2];
 
     // Blink calibrating led before user should rotate the sensor
+    Network::sendCalibrationStatus(CAL_MOVE_ACTIVE, 3, 4, -1, sensorId);
     m_Logger.info("Gently rotate the device while it's gathering accelerometer and magnetometer data");
     ledManager.pattern(15, 300, 3000/310);
 
@@ -350,6 +355,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         // Thought: since we're sending the samples to the server anyway,
         // we could make the server run magneto for us.
         // TODO: consider moving the sample reporting into magneto itself?
+        Network::sendCalibrationStatus(CAL_MOVE_ACTIVE, 4, 4, (float)(i+1)/(float)calibrationSamples, sensorId);
         float rawAccFloat[3] = { (float)ax, (float)ay, (float)az };
         Network::sendRawCalibrationData(rawAccFloat, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
 
@@ -402,7 +408,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     configuration.save();
 
     ledManager.off();
-    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0);
+    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, sensorId);
     m_Logger.debug("Saved the calibration data");
 
     m_Logger.info("Calibration data gathered");

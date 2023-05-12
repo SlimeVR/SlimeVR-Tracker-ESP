@@ -127,7 +127,9 @@ void ICM20948Sensor::startCalibration(int calibrationType)
 void ICM20948Sensor::startCalibrationAutoSave()
 {
     #if SAVE_BIAS
+    Network::sendCalibrationStatus(CAL_REST_ACTIVE, 1, 1, -1, sensorId);
     timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->saveCalibration(true); return false; }, this);
+    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, sensorId);
     #endif
 }
 

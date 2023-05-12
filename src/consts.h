@@ -76,20 +76,17 @@
 
 #define CAL_RESET 0 // Resetting sensor, either for calibration or because the device can only reset
 #define CAL_REST 1 // Let user know to rest the sensor
-#define CAL_MOVE 2 // Let user know to move the sensor
-#define CAL_ACCEL 3 // Actively calibrating accelerometer
-#define CAL_GYRO 4 // Actively calibrating gyrometer
-#define CAL_MAG 5 // Actively calibrating magnetometer
-#define CAL_IMU 6 // Actively calibrating accel and gyro
-#define CAL_AOS 7 // Actively calibrating accel, gyro, and mag
+#define CAL_MOVE 2 // Let user know to move the sensor (this will always be gentle rotation)
+#define CAL_REST_ACTIVE 3 // Sensor is calibrating at rest
+#define CAL_MOVE_ACTIVE 4 // Sensor is calibrating at movement (this will always be gentle rotation)
 
 // Extra directions to rest
-#define CAL_REST_TOP 8
-#define CAL_REST_BOTTOM 9
-#define CAL_REST_LEFT 10
-#define CAL_REST_RIGHT 11
-#define CAL_REST_FRONT 12
-#define CAL_REST_BACK 12
+#define CAL_REST_TOP 5
+#define CAL_REST_BOTTOM 6
+#define CAL_REST_LEFT 7
+#define CAL_REST_RIGHT 8
+#define CAL_REST_FRONT 9
+#define CAL_REST_BACK 10
 
 #ifdef ESP8266
   #define HARDWARE_MCU 1

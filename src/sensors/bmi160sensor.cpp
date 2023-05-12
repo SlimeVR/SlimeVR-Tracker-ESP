@@ -22,6 +22,7 @@
 */
 
 #include "bmi160sensor.h"
+#include "calibration.h"
 #include "network/network.h"
 #include "GlobalVars.h"
 #include <hmc5883l.h>
@@ -800,6 +801,8 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     maybeCalibrateAccel();
     maybeCalibrateMag();
     
+    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, sensorId);
+
     m_Logger.debug("Saving the calibration data");
 
     SlimeVR::Configuration::CalibrationConfig calibration;
@@ -833,10 +836,12 @@ void BMI160Sensor::maybeCalibrateGyro() {
     constexpr uint8_t GYRO_CALIBRATION_DELAY_SEC = 3;
     constexpr float GYRO_CALIBRATION_DURATION_SEC = BMI160_CALIBRATION_GYRO_SECONDS;
     m_Logger.info("Put down the device and wait for baseline gyro reading calibration (%.1f seconds)", GYRO_CALIBRATION_DURATION_SEC);
+    Network::sendCalibrationStatus(CAL_REST, 1, 6, 0, sensorId);
     ledManager.on();
     for (uint8_t i = GYRO_CALIBRATION_DELAY_SEC; i > 0; i--) {
         m_Logger.info("%i...", i);
         delay(1000);
+        Network::sendCalibrationStatus(CAL_REST, 1, 6, (float)(GYRO_CALIBRATION_DELAY_SEC - 1 - i)/(float)GYRO_CALIBRATION_DELAY_SEC, sensorId);
     }
     ledManager.off();
 
@@ -869,6 +874,7 @@ void BMI160Sensor::maybeCalibrateGyro() {
         rawGxyz[0] += gx;
         rawGxyz[1] += gy;
         rawGxyz[2] += gz;
+        Network::sendCalibrationStatus(CAL_REST_ACTIVE, 2, 6, (float)(i+1)/(float)gyroCalibrationSamples, sensorId);
     }
     ledManager.off();
     m_Calibration.G_off[0] = ((double)rawGxyz[0]) / gyroCalibrationSamples;
@@ -895,14 +901,18 @@ void BMI160Sensor::maybeCalibrateAccel() {
     // Blink calibrating led before user should rotate the sensor
     #if BMI160_ACCEL_CALIBRATION_METHOD == ACCEL_CALIBRATION_METHOD_ROTATION
         m_Logger.info("After 3 seconds, Gently rotate the device while it's gathering data");
+        uint8_t caltype = CAL_MOVE;
     #elif BMI160_ACCEL_CALIBRATION_METHOD == ACCEL_CALIBRATION_METHOD_6POINT
         m_Logger.info("Put the device into 6 unique orientations (all sides), leave it still and do not hold/touch for 3 seconds each");
+        uint8_t caltype = CAL_REST_TOP;
     #endif
+    Network::sendCalibrationStatus(caltype, 3, 6, 0, sensorId);
     constexpr uint8_t ACCEL_CALIBRATION_DELAY_SEC = 3;
     ledManager.on();
     for (uint8_t i = ACCEL_CALIBRATION_DELAY_SEC; i > 0; i--) {
         m_Logger.info("%i...", i);
         delay(1000);
+        Network::sendCalibrationStatus(caltype, 3, 6, (float)(ACCEL_CALIBRATION_DELAY_SEC - 1 - i)/(float)ACCEL_CALIBRATION_DELAY_SEC, sensorId);
     }
     ledManager.off();
 
@@ -919,6 +929,7 @@ void BMI160Sensor::maybeCalibrateAccel() {
             magneto->sample(ax, ay, az);
 
             delay(100);
+            Network::sendCalibrationStatus(CAL_MOVE_ACTIVE, 4, 6, (float)(i+1)/(float)/accelCalibrationSamples, sensorId);
         }
         ledManager.off();
         m_Logger.debug("Calculating accelerometer calibration data...");
@@ -993,6 +1004,7 @@ void BMI160Sensor::maybeCalibrateAccel() {
             if (numPositionsRecorded >= expectedPositions) break;
 
             delayMicroseconds(BMI160_ODR_ACC_MICROS);
+            Network::sendCalibrationStatus(CAL_REST_TOP + numPositionsRecorded, 5, 6, -1, sensorId);
         }
         ledManager.off();
         m_Logger.debug("Calculating accelerometer calibration data...");
@@ -1032,9 +1044,11 @@ void BMI160Sensor::maybeCalibrateMag() {
     constexpr uint8_t MAG_CALIBRATION_DELAY_SEC = 3;
     constexpr float MAG_CALIBRATION_DURATION_SEC = BMI160_CALIBRATION_MAG_SECONDS;
     m_Logger.info("After 3 seconds, rotate the device in figure 8 pattern while it's gathering data (%.1f seconds)", MAG_CALIBRATION_DURATION_SEC);
+    Network::sendCalibrationStatus(CAL_MOVE, 5, 6, 0, sensorId);
     for (uint8_t i = MAG_CALIBRATION_DELAY_SEC; i > 0; i--) {
         m_Logger.info("%i...", i);
         delay(1000);
+        Network::sendCalibrationStatus(CAL_MOVE, 5, 6, (float)(MAG_CALIBRATION_DELAY_SEC - 1 - i)/(float)MAG_CALIBRATION_DELAY_SEC, sensorId);
     }
     ledManager.pattern(100, 100, 9);
     delay(100);
@@ -1056,6 +1070,7 @@ void BMI160Sensor::maybeCalibrateMag() {
 
         ledManager.off();
         delay(SAMPLE_DELAY_MS);
+        Network::sendCalibrationStatus(CAL_MOVE_ACTIVE, 6, 6, (float)(i+1)/(float)/magCalibrationSamples, sensorId);
     }
     ledManager.off();
     m_Logger.debug("Calculating magnetometer calibration data...");
