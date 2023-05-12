@@ -369,6 +369,25 @@ void Network::sendTemperature(float temperature, uint8_t sensorId) {
     }
 }
 
+// PACKET_CALIBRATION_STATUS 21
+void Network::sendCalibrationStatus(uint8_t calibrationStepType, uint8_t calibrationStep, uint8_t calibrationSteps, float stepProgress, uint8_t sensorId) {
+    if(!connected)
+    {
+        return;
+    }
+
+    if(DataTransfer::beginPacket()) {
+        DataTransfer::sendPacketType(PACKET_CALIBRATION_STATUS);
+        DataTransfer::sendPacketNumber();
+        DataTransfer::sendByte(sensorId);
+        DataTransfer::sendByte(calibrationStepType);
+        DataTransfer::sendByte(calibrationStep);
+        DataTransfer::sendByte(calibrationSteps);
+        DataTransfer::sendFloat(stepProgress);
+        DataTransfer::endPacket();
+    }
+}
+
 void Network::sendHandshake() {
     if(DataTransfer::beginPacket()) {
         DataTransfer::sendPacketType(PACKET_HANDSHAKE);
@@ -652,7 +671,8 @@ void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
                 udpClientLogger.warn("Handshake received again, ignoring");
                 break;
             case PACKET_RECEIVE_COMMAND:
-                
+                // sensorManager.getFirst()->motionSetup(true);
+                // sensorManager.getSecond()->motionSetup(true);
                 break;
             case PACKET_CONFIG:
                 
