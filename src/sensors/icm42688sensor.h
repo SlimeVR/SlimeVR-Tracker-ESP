@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2022 TheDevMinerTV
+    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -21,27 +21,44 @@
     THE SOFTWARE.
 */
 
-#include "CalibrationConfig.h"
+#ifndef SENSORS_ICM42688SENSOR_H
+#define SENSORS_ICM42688SENSOR_H
 
-namespace SlimeVR {
-    namespace Configuration {
-        const char* calibrationConfigTypeToString(CalibrationConfigType type) {
-            switch (type) {
-            case NONE:
-                return "NONE";
-            case BMI160:
-                return "BMI160";
-            case MPU6050:
-                return "MPU6050";
-            case MPU9250:
-                return "MPU9250";
-            case ICM20948:
-                return "ICM20948";
-            case ICM42688:
-                return "ICM42688";
-            default:
-                return "UNKNOWN";
-            }
-        }
-    }
-}
+#include "sensor.h"
+#include "logging/Logger.h"
+
+#include <ICM42688.h>
+#include "I2Cdev.h"
+
+class ICM42688Sensor : public Sensor
+{
+public:
+    ICM42688Sensor(uint8_t id, uint8_t address, float rotation) : Sensor("ICM42688Sensor", IMU_ICM42688, id, address, rotation){};
+    ~ICM42688Sensor(){};
+    void motionSetup() override final;
+    void motionLoop() override final;
+    void startCalibration(int calibrationType) override final;
+
+private:
+    uint8_t addr;
+
+    // raw data and scaled as vector
+    float q[4]{1.0f, 0.0f, 0.0f, 0.0f}; // for raw filter
+    float Axyz[3]{};
+    float Gxyz[3]{};
+    float Mxyz[3]{};
+    Quat correction{0, 0, 0, 0};
+    // Loop timing globals
+    float deltat = 0;                // sample time in seconds
+
+    SlimeVR::Configuration::ICM42688CalibrationConfig m_Calibration;
+
+    void accel_read();
+    void gyro_read();
+
+    void parseAccelData();
+    void parseGyroData();
+    void parseMagData();
+};
+
+#endif
