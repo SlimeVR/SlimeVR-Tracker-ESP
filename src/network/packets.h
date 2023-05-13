@@ -47,7 +47,7 @@
 #define PACKET_MAGNETOMETER_ACCURACY 18
 #define PACKET_SIGNAL_STRENGTH 19
 #define PACKET_TEMPERATURE 20
-#define PACKET_CALIBRATION_STATUS 21
+#define PACKET_CALIBRATION_STATUS 22
 
 #define PACKET_INSPECTION 105 // 0x69
 
@@ -103,7 +103,7 @@ namespace Network {
     // PACKET_TEMPERATURE 20
     void sendTemperature(float temperature, uint8_t sensorId);
 
-    // PACKET_CALIBRATION_STATUS 21
+    // PACKET_CALIBRATION_STATUS 22
     void sendCalibrationStatus(uint8_t calibrationStepType, uint8_t calibrationStep, uint8_t calibrationSteps, float stepProgress, uint8_t sensorId);
 
 #if ENABLE_INSPECTION

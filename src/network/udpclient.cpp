@@ -369,7 +369,7 @@ void Network::sendTemperature(float temperature, uint8_t sensorId) {
     }
 }
 
-// PACKET_CALIBRATION_STATUS 21
+// PACKET_CALIBRATION_STATUS 22
 void Network::sendCalibrationStatus(uint8_t calibrationStepType, uint8_t calibrationStep, uint8_t calibrationSteps, float stepProgress, uint8_t sensorId) {
     if(!connected)
     {
