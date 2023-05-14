@@ -28,6 +28,7 @@
 #include "logging/Logger.h"
 
 #include <ICM42688.h>
+#include <MMC5983MA.h>
 #include "I2Cdev.h"
 
 class ICM42688Sensor : public Sensor
@@ -41,6 +42,8 @@ public:
 
 private:
     uint8_t addr;
+    uint8_t addr_mag = 0x30;
+    bool magExists = false;
 
     // raw data and scaled as vector
     float q[4]{1.0f, 0.0f, 0.0f, 0.0f}; // for raw filter
@@ -55,6 +58,7 @@ private:
 
     void accel_read();
     void gyro_read();
+    void mag_read();
 
     void parseAccelData();
     void parseGyroData();

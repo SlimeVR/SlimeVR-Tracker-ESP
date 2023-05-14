@@ -30,20 +30,8 @@
 #include "mahony.h"
 // #include "madgwick.h"
 
-// >>>> Ascale = AFS_8G, Gscale = GFS_2000DPS, AODR = AODR_200Hz, GODR = GODR_1kHz, aMode = aMode_LN, gMode = gMode_LN;
-
-//#if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
-constexpr float gscale = (2000. / 32768.0) * (PI / 180.0); //gyro 2000 LSB per d/s -> rad/s
-//#endif
-
-#define MAG_CORR_RATIO 0.02
-
-//#define ACCEL_SENSITIVITY_2G 16384.0f
-#define ACCEL_SENSITIVITY_8G 4096.0f
-
-// Accel scale conversion steps: LSB/G -> G -> m/s^2
-//constexpr float ASCALE_2G = ((32768. / ACCEL_SENSITIVITY_2G) / 32768.) * CONST_EARTH_GRAVITY;
-constexpr float ASCALE_8G = (8. / 32768.) * CONST_EARTH_GRAVITY;
+constexpr float gscale = (2000. / 32768.0) * (PI / 180.0); // gyro LSB/d/s -> rad/s
+constexpr float ascale = (8. / 32768.) * CONST_EARTH_GRAVITY; // accel LSB/G -> m/s^2
 
 void ICM42688Sensor::motionSetup() {
     // initialize device
@@ -56,6 +44,24 @@ void ICM42688Sensor::motionSetup() {
 
     m_Logger.info("Connected to ICM42688 (reported device ID 0x%02x) at address 0x%02x", temp, addr);
 
+    if (I2CSCAN::isI2CExist(addr_mag)) {
+        I2Cdev::readByte(addr_mag, MMC5983MA_PRODUCT_ID, &temp);
+        if(!(temp == 0x30)) {
+            m_Logger.fatal("Can't connect to MMC5983MA (reported device ID 0x%02x) at address 0x%02x", temp, addr_mag);
+            m_Logger.info("Magnetometer unavailable!");
+            magExists = false;
+        } else {
+            m_Logger.info("Connected to MMC5983MA (reported device ID 0x%02x) at address 0x%02x", temp, addr_mag);
+            magExists = true;
+        }
+    }
+
+    deltat = 1.0 / 1000.0; // gyro fifo 1khz
+
+    if (magExists) {
+        I2Cdev::writeByte(addr_mag, MMC5983MA_CONTROL_1, 0x80); // Reset MMC now
+    }
+
     I2Cdev::writeByte(addr, ICM42688_DEVICE_CONFIG, 1); // reset
     delay(2); // wait 1ms for reset
     I2Cdev::readByte(addr, ICM42688_INT_STATUS, &temp); // clear reset done int flag
@@ -67,6 +73,14 @@ void ICM42688Sensor::motionSetup() {
     I2Cdev::writeByte(addr, ICM42688_GYRO_CONFIG0, GFS_2000DPS << 5 | GODR_1kHz); // set gyro ODR and FS (1khz, 2000dps)
     I2Cdev::writeByte(addr, ICM42688_GYRO_ACCEL_CONFIG0, 0x44); // set gyro and accel bandwidth to ODR/10
 	delay(50); // 10ms Accel, 30ms Gyro startup
+
+    if (magExists) {
+        I2Cdev::writeByte(addr_mag, MMC5983MA_CONTROL_0, 0x08); // SET
+        delayMicroseconds(1); // auto clear after 500ns
+        I2Cdev::writeByte(addr_mag, MMC5983MA_CONTROL_0, 0x20); // auto SET/RESET
+        I2Cdev::writeByte(addr_mag, MMC5983MA_CONTROL_1, MBW_400Hz); // set mag BW (400Hz or ~50% duty cycle with 200Hz ODR)
+        I2Cdev::writeByte(addr_mag, MMC5983MA_CONTROL_2, 0x80 | (MSET_2000 << 4) | 0x08 | MODR_200Hz); // continuous measurement mode, set sample rate, auto SET/RESET, set SET/RESET rate (200Hz ODR, 2000 samples between SET/RESET)
+    }
 
     // turn on while flip back to calibrate. then, flip again after 5 seconds.
     // TODO: Move calibration invoke after calibrate button on slimeVR server available
@@ -104,8 +118,6 @@ void ICM42688Sensor::motionSetup() {
         }
     }
 
-    deltat = 1.0 / 1000.0; // gyro fifo 1khz
-
     I2Cdev::writeByte(addr, ICM42688_FIFO_CONFIG, 0x00); // FIFO bypass mode
     I2Cdev::writeByte(addr, ICM42688_FSYNC_CONFIG, 0x00); // disable FSYNC
     I2Cdev::readByte(addr, ICM42688_TMST_CONFIG, &temp); // disable FSYNC
@@ -129,6 +141,11 @@ void ICM42688Sensor::motionLoop() {
 
     accel_read();
     parseAccelData();
+
+    if (magExists) {
+        mag_read();
+        parseMagData();
+    }
 
 	for (uint16_t i = 0; i < packets; i++) {
 		uint16_t index = i * 8; // Packet size 8 bytes
@@ -170,9 +187,9 @@ void ICM42688Sensor::accel_read() {
 	float raw0 = (int16_t)((((int16_t)rawAccel[0]) << 8) | rawAccel[1]);
 	float raw1 = (int16_t)((((int16_t)rawAccel[2]) << 8) | rawAccel[3]);
 	float raw2 = (int16_t)((((int16_t)rawAccel[4]) << 8) | rawAccel[5]);
-	Axyz[0] = raw0 * ASCALE_8G;
-	Axyz[1] = raw1 * ASCALE_8G;
-	Axyz[2] = raw2 * ASCALE_8G;
+	Axyz[0] = raw0 * ascale;
+	Axyz[1] = raw1 * ascale;
+	Axyz[2] = raw2 * ascale;
 }
 
 void ICM42688Sensor::gyro_read() {
@@ -184,6 +201,18 @@ void ICM42688Sensor::gyro_read() {
 	Gxyz[0] = raw0 * gscale;
 	Gxyz[1] = raw1 * gscale;
 	Gxyz[2] = raw2 * gscale;
+}
+
+void ICM42688Sensor::mag_read() {
+    if (!magExists) return;
+    uint8_t rawMag[7];
+    I2Cdev::readBytes(addr_mag, MMC5983MA_XOUT_0, 7, &rawMag[0]);
+    double raw0 = (uint32_t)(rawMag[0] << 10 | rawMag[1] << 2 | (rawMag[6] & 0xC0) >> 6);
+    double raw1 = (uint32_t)(rawMag[2] << 10 | rawMag[3] << 2 | (rawMag[6] & 0x30) >> 4);
+    double raw2 = (uint32_t)(rawMag[4] << 10 | rawMag[5] << 2 | (rawMag[6] & 0x0C) >> 2);
+	Mxyz[0] = (raw0 - MMC5983MA_offset) * MMC5983MA_mRes;
+	Mxyz[1] = (raw1 - MMC5983MA_offset) * MMC5983MA_mRes;
+	Mxyz[2] = (raw2 - MMC5983MA_offset) * MMC5983MA_mRes;
 }
 
 void ICM42688Sensor::startCalibration(int calibrationType) {
@@ -228,6 +257,8 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
         ledManager.on();
         accel_read();
         magneto_acc->sample(Axyz[0], Axyz[1], Axyz[2]);
+        mag_read();
+        magneto_mag->sample(Mxyz[0], Mxyz[1], Mxyz[2]);
 
         ledManager.off();
         delay(50);
@@ -239,7 +270,9 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
     delete magneto_acc;
 
     float M_BAinv[4][3];
-    magneto_mag->current_calibration(M_BAinv);
+    if (magExists) {
+        magneto_mag->current_calibration(M_BAinv);
+    }
     delete magneto_mag;
 
     m_Logger.debug("Finished Calculate Calibration data");
@@ -254,16 +287,18 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
         m_Logger.debug("  %f, %f, %f, %f", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
     m_Logger.debug("}");
-    m_Logger.debug("[INFO] Magnetometer calibration matrix:");
-    m_Logger.debug("{");
-    for (int i = 0; i < 3; i++) {
-        m_Calibration.M_B[i] = M_BAinv[0][i];
-        m_Calibration.M_Ainv[0][i] = M_BAinv[1][i];
-        m_Calibration.M_Ainv[1][i] = M_BAinv[2][i];
-        m_Calibration.M_Ainv[2][i] = M_BAinv[3][i];
-        m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
+    if (magExists) {
+        m_Logger.debug("[INFO] Magnetometer calibration matrix:");
+        m_Logger.debug("{");
+        for (int i = 0; i < 3; i++) {
+            m_Calibration.M_B[i] = M_BAinv[0][i];
+            m_Calibration.M_Ainv[0][i] = M_BAinv[1][i];
+            m_Calibration.M_Ainv[1][i] = M_BAinv[2][i];
+            m_Calibration.M_Ainv[2][i] = M_BAinv[3][i];
+            m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
+        }
+        m_Logger.debug("}");
     }
-    m_Logger.debug("}");
 
     m_Logger.debug("Saving the calibration data");
 
@@ -278,6 +313,7 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
     m_Logger.debug("Saved the calibration data");
 
     m_Logger.info("Calibration data gathered");
+    I2Cdev::writeByte(addr, ICM42688_SIGNAL_PATH_RESET, 0x02); // flush FIFO before return
 }
 
 void ICM42688Sensor::parseMagData() {
@@ -309,7 +345,6 @@ void ICM42688Sensor::parseAccelData() {
 }
 
 void ICM42688Sensor::parseGyroData() {
-    // reading big endian int16
     Gxyz[0] = (Gxyz[0] - m_Calibration.G_off[0]);
     Gxyz[1] = (Gxyz[1] - m_Calibration.G_off[1]);
     Gxyz[2] = (Gxyz[2] - m_Calibration.G_off[2]);
