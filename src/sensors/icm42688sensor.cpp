@@ -164,6 +164,7 @@ void ICM42688Sensor::motionLoop() {
 		Gxyz[2] = raw2 * gscale; //gres
         parseGyroData();
 
+        // TODO: mag axes will be different, make sure to change them here
         #if defined(_MAHONY_H_)
         mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
         #elif defined(_MADGWICK_H_)
