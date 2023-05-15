@@ -41,7 +41,6 @@ public:
     void startCalibration(int calibrationType) override final;
 
 private:
-    uint8_t addr;
     uint8_t addr_mag = 0x30;
     bool magExists = false;
 
