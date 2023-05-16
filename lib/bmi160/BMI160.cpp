@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "I2Cdev.h"
 
 #define BMI160_CHIP_ID 0xD1
+#define BMI160C3_CHIP_ID 0xD3
 
 #define BMI160_ACCEL_POWERUP_DELAY_MS 10
 #define BMI160_GYRO_POWERUP_DELAY_MS 100
@@ -148,7 +149,8 @@ uint8_t BMI160::getDeviceID() {
  */
 bool BMI160::testConnection()
 {
-    return (BMI160_CHIP_ID == getDeviceID());
+    uint8_t device_id = getDeviceID();
+    return (BMI160_CHIP_ID == device_id || BMI160C3_CHIP_ID == device_id);
 }
 
 /** Set gyroscope output data rate.
