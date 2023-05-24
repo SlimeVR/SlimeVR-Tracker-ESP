@@ -398,8 +398,10 @@ void MPU9250Sensor::parseMagData(int16_t data[3]) {
     float temp[3];
 
     //apply offsets and scale factors from Magneto
-    for (unsigned i = 0; i < 3; i++) {
+    for (unsigned i = 0; i < 3; i++)
         temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+    
+    for (unsigned i = 0; i < 3; i++) {
         #if useFullCalibrationMatrix == true
             Mxyz[i] = m_Calibration.M_Ainv[i][0] * temp[0] + m_Calibration.M_Ainv[i][1] * temp[1] + m_Calibration.M_Ainv[i][2] * temp[2];
         #else
@@ -417,8 +419,10 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
     float temp[3];
 
     //apply offsets (bias) and scale factors from Magneto
-    for (unsigned i = 0; i < 3; i++) {
+    for (unsigned i = 0; i < 3; i++)
         temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
+    
+    for (unsigned i = 0; i < 3; i++) {
         #if useFullCalibrationMatrix == true
             Axyz[i] = m_Calibration.A_Ainv[i][0] * temp[0] + m_Calibration.A_Ainv[i][1] * temp[1] + m_Calibration.A_Ainv[i][2] * temp[2];
         #else
