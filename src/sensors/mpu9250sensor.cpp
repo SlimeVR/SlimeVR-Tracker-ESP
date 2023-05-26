@@ -19,6 +19,11 @@
     THE SOFTWARE.
 */
 
+// #include "Fusion\Fusion.h"
+#if not (defined(FUSION_H))
+#include "dmpmag.h"
+#endif
+
 #include "mpu9250sensor.h"
 #include "network/network.h"
 #include "globals.h"
@@ -27,10 +32,6 @@
 #include "calibration.h"
 #include "magneto1.4.h"
 #include "GlobalVars.h"
-// #include "Fusion\Fusion.h"
-#if not (defined(FUSION_H))
-#include "dmpmag.h"
-#endif
 
 //#if (defined(FUSION_H))
 constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
