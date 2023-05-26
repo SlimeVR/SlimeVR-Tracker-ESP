@@ -27,7 +27,7 @@
 #include "calibration.h"
 #include "magneto1.4.h"
 #include "GlobalVars.h"
-#include "Fusion\Fusion.h"
+// #include "Fusion\Fusion.h"
 #if not (defined(FUSION_H))
 #include "dmpmag.h"
 #endif
