@@ -46,8 +46,10 @@ private:
     // uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
     uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
 
+#if (defined(FUSION_H))
     FusionOffset offset;
     FusionAhrs ahrs;
+#endif
 
     // raw data and scaled as vector
     float Axyz[3]{};
