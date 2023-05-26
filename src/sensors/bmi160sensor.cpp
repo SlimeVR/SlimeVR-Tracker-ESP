@@ -222,6 +222,18 @@ void BMI160Sensor::motionSetup() {
     m_Logger.info("Calibration data for mag: %s", isMagCalibrated ? "found" : "not found");
     #endif
 
+    // Setup Fusion
+    FusionOffsetInitialise(&offset, 400);
+    FusionAhrsInitialise(&ahrs);
+    const FusionAhrsSettings settings = {
+            .convention = FusionConventionNwu,
+            .gain = 0.5f,
+            .accelerationRejection = 10.0f,
+            .magneticRejection = 20.0f,
+            .rejectionTimeout = 5 * 400, /* 5 seconds */
+    };
+    FusionAhrsSetSettings(&ahrs, &settings);
+
     imu.setFIFOHeaderModeEnabled(true);
     imu.setGyroFIFOEnabled(true);
     imu.setAccelFIFOEnabled(true);
@@ -390,33 +402,38 @@ void BMI160Sensor::motionLoop() {
                 #else
                     vqf.getQuat9D(qwxyz);
                 #endif
+                
+                if (isnan(qwxyz[0]) || isnan(qwxyz[1]) || isnan(qwxyz[2]) || isnan(qwxyz[3])) {
+                    qwxyz[0] = 1;
+                    qwxyz[1] = 0;
+                    qwxyz[2] = 0;
+                    qwxyz[3] = 0;
+                    return;
+                }
+
+                quaternion.set(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]);
+
+                const Quat q = quaternion;
+                sensor_real_t vecGravity[3];
+                vecGravity[0] = 2 * (q.x * q.z - q.w * q.y);
+                vecGravity[1] = 2 * (q.w * q.x + q.y * q.z);
+                vecGravity[2] = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
+
+                linearAcceleration[0] = lastAxyz[0] - vecGravity[0] * CONST_EARTH_GRAVITY;
+                linearAcceleration[1] = lastAxyz[1] - vecGravity[1] * CONST_EARTH_GRAVITY;
+                linearAcceleration[2] = lastAxyz[2] - vecGravity[2] * CONST_EARTH_GRAVITY;
+            #else
+            	FusionQuaternion quat = FusionAhrsGetQuaternion(&ahrs);
+
+                quaternion.set(quat.array[1], quat.array[2], quat.array[3], quat.array[0]);
+
+                const FusionVector earth = FusionAhrsGetEarthAcceleration(&ahrs);
+
+                linearAcceleration[0] = earth.array[0];
+                linearAcceleration[1] = earth.array[1];
+                linearAcceleration[2] = earth.array[2];
             #endif
             
-            if (isnan(qwxyz[0]) || isnan(qwxyz[1]) || isnan(qwxyz[2]) || isnan(qwxyz[3])) {
-                qwxyz[0] = 1;
-                qwxyz[1] = 0;
-                qwxyz[2] = 0;
-                qwxyz[3] = 0;
-                return;
-            }
-
-            quaternion.set(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]);
-
-            const Quat q = quaternion;
-            sensor_real_t vecGravity[3];
-            vecGravity[0] = 2 * (q.x * q.z - q.w * q.y);
-            vecGravity[1] = 2 * (q.w * q.x + q.y * q.z);
-            vecGravity[2] = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
-
-            VectorFloat linAccel;
-            linAccel.x = lastAxyz[0] - vecGravity[0] * CONST_EARTH_GRAVITY;
-            linAccel.y = lastAxyz[1] - vecGravity[1] * CONST_EARTH_GRAVITY;
-            linAccel.z = lastAxyz[2] - vecGravity[2] * CONST_EARTH_GRAVITY;
-
-            linearAcceleration[0] = linAccel.x;
-            linearAcceleration[1] = linAccel.y;
-            linearAcceleration[2] = linAccel.z;
-
             quaternion *= sensorOffset;
 
             #if ENABLE_INSPECTION
@@ -604,13 +621,21 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
         #if BMI160_USE_VQF
             vqf.updateGyr(Gxyz, (double)dtMicros * 1.0e-6);
         #else
-            mahony.updateInto(qwxyz, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], ((float)dtMicros) * 1.0e-6);
+            FusionVector g = {.array = {Gxyz[0]/(PI/180.0), Gxyz[1]/(PI/180.0), Gxyz[2]/(PI/180.0)}}; // Fusion expects d/s not rad/s
+            FusionVector a = {.array = {Axyz[0], Axyz[1], Axyz[2]}};
+            g = FusionOffsetUpdate(&offset, g);
+            FusionVector m = {.array = {0, 0, 0}};
+            FusionAhrsUpdate(&ahrs, g, a, m, (float)dtMicros);
         #endif
     #else
         #if BMI160_USE_VQF
             vqf.updateGyr(Gxyz, (double)dtMicros * 1.0e-6);
         #else
-            mahonyQuaternionUpdate(qwxyz, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], ((float)dtMicros) * 1.0e-6f);
+            FusionVector g = {.array = {Gxyz[0]/(PI/180.0), Gxyz[1]/(PI/180.0), Gxyz[2]/(PI/180.0)}}; // Fusion expects d/s not rad/s
+            FusionVector a = {.array = {Axyz[0], Axyz[1], Axyz[2]}};
+            g = FusionOffsetUpdate(&offset, g);
+            FusionVector m = {.array = {Mxyz[0], Mxyz[1], Mxyz[2]}};
+            FusionAhrsUpdate(&ahrs, g, a, m, (float)dtMicros);
         #endif
     #endif
     Axyz[0] = 0;

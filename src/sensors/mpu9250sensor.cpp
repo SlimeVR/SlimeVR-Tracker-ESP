@@ -27,13 +27,12 @@
 #include "calibration.h"
 #include "magneto1.4.h"
 #include "GlobalVars.h"
-// #include "mahony.h"
-// #include "madgwick.h"
-#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
+#include "Fusion\Fusion.h"
+#if not (defined(FUSION_H))
 #include "dmpmag.h"
 #endif
 
-//#if defined(_MAHONY_H_) || defined(_MADGWICK_H_)
+//#if (defined(FUSION_H))
 constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
 //#endif
 
@@ -94,7 +93,7 @@ void MPU9250Sensor::motionSetup() {
         }
     }
 
-#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
+#if not (defined(FUSION_H))
     uint8_t devStatus = imu.dmpInitialize();
     if(devStatus == 0){
         ledManager.pattern(50, 50, 5);
@@ -132,6 +131,18 @@ void MPU9250Sensor::motionSetup() {
     deltat = 1.0 / 1000.0 * (1 + imu.getRate());
     //imu.setRate(blah);
 
+    // Setup Fusion
+    FusionOffsetInitialise(&offset, 1/deltat);
+    FusionAhrsInitialise(&ahrs);
+    const FusionAhrsSettings settings = {
+            .convention = FusionConventionNwu,
+            .gain = 0.5f,
+            .accelerationRejection = 10.0f,
+            .magneticRejection = 20.0f,
+            .rejectionTimeout = 5 * 1/deltat, /* 5 seconds */
+    };
+    FusionAhrsSetSettings(&ahrs, &settings);
+
     imu.resetFIFO();
     imu.setFIFOEnabled(true);
 
@@ -152,7 +163,7 @@ void MPU9250Sensor::motionLoop() {
     }
 #endif
 
-#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
+#if not (defined(FUSION_H))
     // Update quaternion
     if(!dmpReady)
         return;
@@ -222,14 +233,22 @@ void MPU9250Sensor::motionLoop() {
         // TODO: monitor remaining_samples to ensure that the number is going down, not up.
         // remaining_samples
 
-        #if defined(_MAHONY_H_)
-        mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
-        #elif defined(_MADGWICK_H_)
-        madgwickQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
-        #endif
+        FusionVector g = {.array = {Gxyz[0]/(PI/180.0), Gxyz[1]/(PI/180.0), Gxyz[2]/(PI/180.0)}}; // Fusion expects d/s not rad/s
+        FusionVector a = {.array = {Axyz[0], Axyz[1], Axyz[2]}};
+        g = FusionOffsetUpdate(&offset, g);
+        FusionVector m = {.array = {Mxyz[0], Mxyz[1], Mxyz[2]}};
+        FusionAhrsUpdate(&ahrs, g, a, m, deltat);
     }
     
-    quaternion.set(-q[2], q[1], q[3], q[0]);
+	FusionQuaternion quat = FusionAhrsGetQuaternion(&ahrs);
+
+    quaternion.set(-quat.array[2], quat.array[1], quat.array[3], quat.array[0]);
+
+    const FusionVector earth = FusionAhrsGetEarthAcceleration(&ahrs);
+
+    linearAcceleration[0] = earth.array[0];
+    linearAcceleration[1] = earth.array[1];
+    linearAcceleration[2] = earth.array[2];
 
 #endif
     quaternion *= sensorOffset;
@@ -248,7 +267,7 @@ void MPU9250Sensor::motionLoop() {
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
     ledManager.on();
-#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
+#if not (defined(FUSION_H))
     // with DMP, we just need mag data
     constexpr int calibrationSamples = 300;
 
@@ -441,7 +460,7 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
 // TODO: refactor so that calibration/conversion to float is only done in one place.
 void MPU9250Sensor::parseGyroData(int16_t data[3]) {
     // reading big endian int16
-    Gxyz[0] = ((float)data[0] - m_Calibration.G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
+    Gxyz[0] = ((float)data[0] - m_Calibration.G_off[0]) * gscale; //250 LSB(d/s) default to d/s
     Gxyz[1] = ((float)data[1] - m_Calibration.G_off[1]) * gscale;
     Gxyz[2] = ((float)data[2] - m_Calibration.G_off[2]) * gscale;
 }

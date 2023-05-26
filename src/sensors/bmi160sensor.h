@@ -25,7 +25,7 @@
 #define SENSORS_BMI160SENSOR_H
 
 #include "sensor.h"
-#include "mahony.h"
+#include "Fusion\Fusion.h"
 #include "magneto1.4.h"
 
 #include <BMI160.h>
@@ -206,7 +206,8 @@ class BMI160Sensor : public Sensor {
     private:
         BMI160 imu {};
 
-        Mahony<sensor_real_t> mahony;
+        FusionOffset offset;
+        FusionAhrs ahrs;
 #if !BMI160_VQF_REST_DETECTION_AVAILABLE
         BMI160RestDetectionParams restDetectionParams {};
         RestDetection restDetection;
@@ -221,7 +222,6 @@ class BMI160Sensor : public Sensor {
 #endif
 
         sensor_real_t qwxyz[4] {1.0f, 0.0f, 0.0f, 0.0f};
-        Quaternion quat{};
 
         // clock sync and sample timestamping
         uint32_t sensorTime0 = 0;
