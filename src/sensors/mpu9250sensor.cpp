@@ -240,7 +240,7 @@ void MPU9250Sensor::motionLoop() {
         FusionAhrsUpdate(&ahrs, g, a, m, deltat);
     }
     
-	FusionQuaternion quat = FusionAhrsGetQuaternion(&ahrs);
+    FusionQuaternion quat = FusionAhrsGetQuaternion(&ahrs);
 
     quaternion.set(-quat.array[2], quat.array[1], quat.array[3], quat.array[0]);
 
@@ -460,7 +460,7 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
 // TODO: refactor so that calibration/conversion to float is only done in one place.
 void MPU9250Sensor::parseGyroData(int16_t data[3]) {
     // reading big endian int16
-    Gxyz[0] = ((float)data[0] - m_Calibration.G_off[0]) * gscale; //250 LSB(d/s) default to d/s
+    Gxyz[0] = ((float)data[0] - m_Calibration.G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
     Gxyz[1] = ((float)data[1] - m_Calibration.G_off[1]) * gscale;
     Gxyz[2] = ((float)data[2] - m_Calibration.G_off[2]) * gscale;
 }

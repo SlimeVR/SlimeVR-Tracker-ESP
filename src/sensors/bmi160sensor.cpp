@@ -344,7 +344,7 @@ void BMI160Sensor::motionLoop() {
                     #if BMI160_USE_VQF
                         #define BMI160_FUSION_TYPE "vqf"
                     #else
-                        #define BMI160_FUSION_TYPE "mahony"
+                        #define BMI160_FUSION_TYPE "fusion"
                     #endif
                     m_Logger.debug("readFIFO took %0.4f ms, read gyr %i acc %i mag %i rest %i resets %i readerrs %i type " BMI160_FUSION_TYPE,
                         ((float)cpuUsageMicros / 1e3f),
