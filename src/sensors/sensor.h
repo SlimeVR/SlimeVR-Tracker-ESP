@@ -81,8 +81,6 @@ public:
     };
 
     bool hadData = false;
-    uint8_t sclPin = 0;
-    uint8_t sdaPin = 0;
 protected:
     uint8_t addr = 0;
     uint8_t sensorId = 0;
@@ -100,6 +98,10 @@ protected:
     float acceleration[3]{};
 
     SlimeVR::Logging::Logger m_Logger;
+    
+public:
+    uint8_t sclPin = 0;
+    uint8_t sdaPin = 0;
 
 private:
     void printTemperatureCalibrationUnsupported();

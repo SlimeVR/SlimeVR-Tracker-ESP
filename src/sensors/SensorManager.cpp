@@ -35,7 +35,7 @@
 #include "GlobalVars.h"
 
 #if ESP32
-#include "driver/i2c.h"
+    #include "driver/i2c.h"
 #endif
 
 namespace SlimeVR
