@@ -42,47 +42,14 @@ namespace SlimeVR
 {
     namespace Sensors
     {
-        #define STR_WRAP(STR) #STR
-        #define STR_WRAP2(STR) STR_WRAP(STR)
-        #define IMU_DESC_STR_VAL STR_WRAP2(IMU_DESC_STR)
-
-        // Sensor descriptor string format:
-        // imuType(address,rotation,sclpin,sdapin,intpin);
-
-        int SensorManager::getIMUParamCount(int imu_type)
+        Sensor* SensorManager::buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
         {
-            switch (imu_type) {
-            case IMU_BNO080: case IMU_BNO085: case IMU_BNO086:
-                return 6;
-            default: case IMU_BNO055: case IMU_MPU9250: case IMU_BMI160: case IMU_MPU6500: case IMU_MPU6050: case IMU_ICM20948:
-                return 5;
-            }
-        }
-
-        Sensor* SensorManager::buildSensor(String &desc, uint8_t sensorID)
-        {
-            // First parse descritor and check variables
-            uint8_t imuType = 0;
-            uint8_t address = 0;
-            float rotation = 0.0f;
-            uint8_t sclPin = 0;
-            uint8_t sdaPin = 0;
-            uint8_t intPin = 0;
-
-            int nparam = sscanf(desc.c_str(), "%hhu(0x%hhx,%f,%hhu,%hhu,%hhu)",
-                                            &imuType, &address, &rotation, &sclPin, &sdaPin, &intPin);
-
-            m_Logger.trace("Building IMU with: id=%d, nparam=%d,\n\
+            m_Logger.trace("Building IMU with: id=%d,\n\
                             imuType=0x%02X, address=%d, rotation=%f,\n\
                             sclPin=%d, sdaPin=%d, intPin=%d",
-                            sensorID, nparam,
+                            sensorID,
                             imuType, address, rotation,
                             sclPin, sdaPin, intPin);
-
-            if (nparam < 1 || nparam < getIMUParamCount(imuType)) {
-                m_Logger.error("IMU %d have only %d parameters (expect %d) from desc %s",
-                                sensorID, nparam, getIMUParamCount(imuType), desc.c_str() );
-            }
 
             // Convert degrees to angle
             rotation *= PI / 180.0f;
@@ -164,22 +131,15 @@ namespace SlimeVR
             activeSCL = PIN_IMU_SCL;
             activeSDA = PIN_IMU_SDA;
 
-            // Divide sensor from descriptor string by semicolon
-            StreamString mstr;
-            mstr.print(IMU_DESC_STR_VAL);
-
-            String desc;
             uint8_t sensorID = 0;
-            while (mstr.available() && sensorID < MAX_IMU_COUNT) {
-                desc = mstr.readStringUntil(';');
-                if (desc.endsWith(")")) { // Verify the end of descriptor
-                    Sensor* sensor = buildSensor(desc, sensorID);
-                    m_Sensors[sensorID] = sensor;
-                    sensorID++;
-                } else {
-                    m_Logger.error("Bad sensor descriptor %s\n", desc.c_str());
-                }
+#define IMU_DESC_ENTRY(...)                                          \
+            {                                                        \
+                Sensor* sensor = buildSensor(sensorID, __VA_ARGS__); \
+                m_Sensors[sensorID] = sensor;                        \
+                sensorID++;                                          \
             }
+            IMU_DESC_LIST;
+#undef IMU_DESC_ENTRY
         }
 
         void SensorManager::postSetup()

@@ -64,8 +64,7 @@ namespace SlimeVR
             SlimeVR::Logging::Logger m_Logger;
 
             Sensor *m_Sensors[MAX_IMU_COUNT];
-			int getIMUParamCount(int imu_type);
-			Sensor* buildSensor(String& desc, uint8_t sensorID);
+            Sensor* buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin = 0);
             
             uint8_t activeSCL = 0;
             uint8_t activeSDA = 0;
