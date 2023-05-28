@@ -32,6 +32,8 @@
 #define IMU_ROTATION DEG_270
 #define SECOND_IMU_ROTATION DEG_270
 
+#define MAX_IMU_COUNT 2
+
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin, 
 //   BAT_INTERNAL for internal - can detect only low battery, 
@@ -161,4 +163,12 @@
   #define PIN_BATTERY_LEVEL 3
   #define LED_PIN LED_OFF  // RGB LED Protocol would need to be implementetet did not brother for the test, because the board ideal for tracker ifself
 //  #define LED_INVERTED false
+#elif BOARD == BOARD_LOLIN_S2_MINI
+  #define PIN_IMU_SDA 18
+  #define PIN_IMU_SCL 19
+  #define PIN_IMU_INT 16
+  #define PIN_IMU_INT_2 5
+  #define PIN_BATTERY_LEVEL 17
+  #define LED_PIN 2
+  #define LED_INVERTED false
 #endif

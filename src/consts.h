@@ -60,10 +60,10 @@
 #define POWER_SAVING_MODERATE 3 // Sleeping and better PS => might miss broadcasts, use at own risk
 #define POWER_SAVING_MAXIMUM 4 // Actual CPU sleeping, currently has issues with disconnecting
 
-#define DEG_0 0.f
-#define DEG_90 -PI / 2
-#define DEG_180 PI
-#define DEG_270 PI / 2
+#define DEG_0 0
+#define DEG_90 -90
+#define DEG_180 180
+#define DEG_270 90
 
 #define CONST_EARTH_GRAVITY 9.80665
 
