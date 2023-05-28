@@ -34,21 +34,30 @@
 #include "sensoraddresses.h"
 #include "GlobalVars.h"
 
+#if ESP32
+#include "driver/i2c.h"
+#endif
+
 namespace SlimeVR
 {
     namespace Sensors
     {
-        #ifndef IMU_DESC_STR
-        #define IMU_DESC_STR IMU(PRIMARY_IMU_ADDRESS_ONE,IMU_ROTATION,PIN_IMU_SCL,PIN_IMU_SDA,PIN_IMU_INT);\
-                             SECOND_IMU(SECONDARY_IMU_ADDRESS_TWO,IMU_ROTATION,PIN_IMU_SCL,PIN_IMU_SDA,PIN_IMU_INT);
-        #endif
-
         #define STR_WRAP(STR) #STR
         #define STR_WRAP2(STR) STR_WRAP(STR)
         #define IMU_DESC_STR_VAL STR_WRAP2(IMU_DESC_STR)
 
         // Sensor descriptor string format:
         // imuType(address,rotation,sclpin,sdapin,intpin);
+
+        int SensorManager::getIMUParamCount(int imu_type)
+        {
+            switch (imu_type) {
+            case IMU_BNO080: case IMU_BNO085: case IMU_BNO086:
+                return 6;
+            default: case IMU_BNO055: case IMU_MPU9250: case IMU_BMI160: case IMU_MPU6500: case IMU_MPU6050: case IMU_ICM20948:
+                return 5;
+            }
+        }
 
         Sensor* SensorManager::buildSensor(String &desc, uint8_t sensorID)
         {
@@ -62,6 +71,19 @@ namespace SlimeVR
             int nparam = sscanf(desc.c_str(), "%hhu(0x%hhx,%f,%hhu,%hhu,%hhu)",
                                             &imuType, &address, &rotation, &sclpin, &sdapin, &intpin);
 
+            // Print all variables using Serial
+            m_Logger.trace("Build IMU with: id=%d, nparam=%d,\n\
+                            imuType=0x%02X, address=%d, rotation=%f,\n\
+                            sclpin=%d, sdapin=%d, intpin=%d",
+                            sensorID, nparam,
+                            imuType, address, rotation,
+                            sclpin, sdapin, intpin);
+
+            if (nparam < 1 || nparam < getIMUParamCount(imuType)) {
+                m_Logger.error("IMU %d have only %d parameters (expect %d) from desc %s",
+                                sensorID, nparam, getIMUParamCount(imuType), desc.c_str() );
+            }
+
             // Convert degrees to angle
             rotation *= PI / 180.0f;
 
@@ -72,6 +94,10 @@ namespace SlimeVR
         Sensor* SensorManager::buildSensor(uint8_t sensorID, uint8_t address, uint8_t imuType, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
         {
             Sensor* sensor = NULL;
+
+            // Clear and reset I2C bus for each sensor upon startup
+            I2CSCAN::clearBus(sdaPin, sclPin);
+            swapI2C(sclPin, sdaPin);
 
             // Check IMU address to match previous behavior
             // where if the first IMU addr is absent, the second IMU address will be parsed
@@ -88,22 +114,22 @@ namespace SlimeVR
             switch (imuType)
             {
             case IMU_BNO080: case IMU_BNO085: case IMU_BNO086:
-                sensor = new BNO080Sensor(sensorID, imuType, address, rotation, intPin);
+                sensor = new BNO080Sensor(sensorID, imuType, address, rotation, sclPin, sdaPin, intPin);
                 break;
             case IMU_BNO055:
-                sensor = new BNO055Sensor(sensorID, address, rotation);
+                sensor = new BNO055Sensor(sensorID, address, rotation, sclPin, sdaPin);
                 break;
             case IMU_MPU9250:
-                sensor = new MPU9250Sensor(sensorID, address, rotation);
+                sensor = new MPU9250Sensor(sensorID, address, rotation, sclPin, sdaPin);
                 break;
             case IMU_BMI160:
-                sensor = new BMI160Sensor(sensorID, address, rotation);
+                sensor = new BMI160Sensor(sensorID, address, rotation, sclPin, sdaPin);
                 break;
             case IMU_MPU6500: case IMU_MPU6050:
-                sensor = new MPU6050Sensor(sensorID, imuType, address, rotation);
+                sensor = new MPU6050Sensor(sensorID, imuType, address, rotation, sclPin, sdaPin);
                 break;
             case IMU_ICM20948:
-                sensor = new ICM20948Sensor(sensorID, address, rotation);
+                sensor = new ICM20948Sensor(sensorID, address, rotation, sclPin, sdaPin);
                 break;
             default:
                 sensor = new ErroneousSensor(sensorID, imuType);
@@ -114,8 +140,41 @@ namespace SlimeVR
             return sensor;
         }
 
+        void SensorManager::swapI2C(uint8_t sclPin, uint8_t sdaPin)
+        {
+            if (sclPin != activeSCL || sdaPin != activeSDA || !running) {
+                Wire.flush();
+                #if ESP32
+                    if (running) {}
+                    else {
+                        // Reset HWI2C to avoid being affected by I2CBUS reset
+                        Wire.end();
+                    }
+                    // Disconnect pins from HWI2C
+                    pinMode(activeSCL, INPUT);
+                    pinMode(activeSDA, INPUT);
+
+                    if (running) {
+                        i2c_set_pin(I2C_NUM_0, sdaPin, sclPin, false, false, I2C_MODE_MASTER);
+                    } else {
+                        Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin), I2C_SPEED);
+                        Wire.setTimeOut(150);
+                    }
+                #else
+                    Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin));
+                #endif
+
+                activeSCL = sclPin;
+                activeSDA = sdaPin;
+            }
+        }
+
         void SensorManager::setup()
         {
+            running = false;
+            activeSCL = PIN_IMU_SCL;
+            activeSDA = PIN_IMU_SDA;
+
             // Divide sensor from descriptor string by semicolon
             StreamString mstr;
             mstr.print(IMU_DESC_STR_VAL);
@@ -133,17 +192,19 @@ namespace SlimeVR
                 }
                 else
                 {
-                    Serial.printf("Bad sensor descriptor %s\n", desc.c_str());
+                    m_Logger.error("Bad sensor descriptor %s\n", desc.c_str());
                 }
             }
         }
 
         void SensorManager::postSetup()
         {
+            running = true;
             for (auto sensor : m_Sensors)
             {
-                if (sensor != NULL)
+                if (sensor->isWorking())
                 {
+                    swapI2C(sensor->sclPin, sensor->sdaPin);
                     sensor->postSetup();
                 }
             }
@@ -154,8 +215,9 @@ namespace SlimeVR
             // Gather IMU data
             for (auto sensor : m_Sensors)
             {
-                if (sensor != NULL)
+                if (sensor->isWorking())
                 {
+                    swapI2C(sensor->sclPin, sensor->sdaPin);
                     sensor->motionLoop();
                 }
             }
@@ -168,7 +230,7 @@ namespace SlimeVR
             // Send updates
             for (auto sensor : m_Sensors)
             {
-                if (sensor != NULL)
+                if (sensor->isWorking())
                 {
                     sensor->sendData();
                 }

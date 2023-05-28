@@ -34,6 +34,11 @@
 
 #define MAX_IMU_COUNT 2
 
+#ifndef IMU_DESC_STR
+#define IMU_DESC_STR IMU(PRIMARY_IMU_ADDRESS_ONE,IMU_ROTATION,PIN_IMU_SCL,PIN_IMU_SDA,PIN_IMU_INT);\
+                      SECOND_IMU(SECONDARY_IMU_ADDRESS_TWO,IMU_ROTATION,PIN_IMU_SCL,PIN_IMU_SDA,PIN_IMU_INT_2);
+#endif
+
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin, 
 //   BAT_INTERNAL for internal - can detect only low battery, 

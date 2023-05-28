@@ -427,19 +427,17 @@ void Connection::returnLastPacket(int len) {
 	MUST(endPacket());
 }
 
-void Connection::updateSensorState(Sensor* const sensor1, Sensor* const sensor2) {
+void Connection::updateSensorState(Sensor** const sensors) {
 	if (millis() - m_LastSensorInfoPacketTimestamp <= 1000) {
 		return;
 	}
 
 	m_LastSensorInfoPacketTimestamp = millis();
 
-	if (m_AckedSensorState1 != sensor1->getSensorState()) {
-		sendSensorInfo(sensor1);
-	}
-
-	if (m_AckedSensorState2 != sensor2->getSensorState()) {
-		sendSensorInfo(sensor2);
+	for (int i = 0; i < MAX_IMU_COUNT; i++) {
+		if (m_AckedSensorState[i] != sensors[i]->getSensorState()) {
+			sendSensorInfo(sensors[i]);
+		}
 	}
 }
 
@@ -504,8 +502,7 @@ void Connection::searchForServer() {
 
 void Connection::reset() {
 	m_Connected = false;
-	m_AckedSensorState1 = SensorStatus::SENSOR_OFFLINE;
-	m_AckedSensorState2 = SensorStatus::SENSOR_OFFLINE;
+	std::fill(m_AckedSensorState, m_AckedSensorState+MAX_IMU_COUNT, SensorStatus::SENSOR_OFFLINE);
 
 	m_UDP.begin(m_ServerPort);
 
@@ -513,10 +510,9 @@ void Connection::reset() {
 }
 
 void Connection::update() {
-	auto sensor1 = sensorManager.getFirst();
-	auto sensor2 = sensorManager.getSecond();
+	Sensor ** const sensors = sensorManager.getSensors();
 
-	updateSensorState(sensor1, sensor2);
+	updateSensorState(sensors);
 
 	if (!m_Connected) {
 		searchForServer();
@@ -527,8 +523,7 @@ void Connection::update() {
 		statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 
 		m_Connected = false;
-		m_AckedSensorState1 = SensorStatus::SENSOR_OFFLINE;
-		m_AckedSensorState2 = SensorStatus::SENSOR_OFFLINE;
+		std::fill(m_AckedSensorState, m_AckedSensorState+MAX_IMU_COUNT, SensorStatus::SENSOR_OFFLINE);
 		m_Logger.warn("Connection to server timed out");
 
 		return;
@@ -583,10 +578,11 @@ void Connection::update() {
 				break;
 			}
 
-			if (m_Packet[4] == sensor1->getSensorId()) {
-				m_AckedSensorState1 = (SensorStatus)m_Packet[5];
-			} else if (m_Packet[4] == sensor2->getSensorId()) {
-				m_AckedSensorState2 = (SensorStatus)m_Packet[5];
+			for (int i = 0; i < MAX_IMU_COUNT; i++) {
+				if (m_Packet[4] == sensors[i]->getSensorId()) {
+					m_AckedSensorState[i] = (SensorStatus)m_Packet[5];
+					break;
+				}
 			}
 
 			break;

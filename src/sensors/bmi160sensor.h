@@ -149,8 +149,8 @@ struct BMI160RestDetectionParams: RestDetectionParams {
 
 class BMI160Sensor : public Sensor {
     public:
-        BMI160Sensor(uint8_t id, uint8_t address, float rotation) :
-            Sensor("BMI160Sensor", IMU_BMI160, id, address, rotation)
+        BMI160Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin) :
+            Sensor("BMI160Sensor", IMU_BMI160, id, address, rotation, sclPin, sdaPin)
 #if !BMI160_VQF_REST_DETECTION_AVAILABLE
             , restDetection(restDetectionParams, BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f)
 #endif
