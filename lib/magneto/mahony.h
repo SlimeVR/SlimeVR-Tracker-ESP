@@ -26,84 +26,25 @@
 
 #include "helper_3dmath.h"
 
-void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float deltat);
-void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
-
 template<typename T>
 class Mahony {
+
+    // These are the free parameters in the Mahony filter and fusion scheme,
+    // Kp for proportional feedback, Ki for integral
+    // with MPU-9250, angles start oscillating at Kp=40. Ki does not seem to help and is not required.
+    static constexpr float Kp = 10.0f;
+    static constexpr float Ki = 0.0f;
+
 public:
-    void updateInto(T q[4], T ax, T ay, T az, T gx, T gy, T gz, T deltat)
-    {
-        constexpr double Kp = 10.0;
-        constexpr double Ki = 0.0;
-        // short name local variable for readability
-        T q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];
-        T norm;
-        T vx, vy, vz;
-        T ex, ey, ez;  //error terms
-        T qa, qb, qc;
-
-        // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-        T tmp = ax * ax + ay * ay + az * az;
-        if (tmp > 0.0f)
-        {
-            // Normalise accelerometer (assumed to measure the direction of gravity in body frame)
-            norm = invSqrt(tmp);
-            ax *= norm;
-            ay *= norm;
-            az *= norm;
-
-            // Estimated direction of gravity in the body frame (factor of two divided out)
-            vx = q2 * q4 - q1 * q3;
-            vy = q1 * q2 + q3 * q4;
-            vz = q1 * q1 - 0.5f + q4 * q4;
-
-            // Error is cross product between estimated and measured direction of gravity in body frame
-            // (half the actual magnitude)
-            ex = (ay * vz - az * vy);
-            ey = (az * vx - ax * vz);
-            ez = (ax * vy - ay * vx);
-
-            // Compute and apply to gyro term the integral feedback, if enabled
-            if (Ki > 0.0f) {
-                ix += Ki * ex * deltat;  // integral error scaled by Ki
-                iy += Ki * ey * deltat;
-                iz += Ki * ez * deltat;
-                gx += ix;  // apply integral feedback
-                gy += iy;
-                gz += iz;
-            }
-
-            // Apply proportional feedback to gyro term
-            gx += Kp * ex;
-            gy += Kp * ey;
-            gz += Kp * ez;
-        }
-
-        // Integrate rate of change of quaternion, q cross gyro term
-        deltat *= 0.5f;
-        gx *= deltat;   // pre-multiply common factors
-        gy *= deltat;
-        gz *= deltat;
-        qa = q1;
-        qb = q2;
-        qc = q3;
-        q1 += (-qb * gx - qc * gy - q4 * gz);
-        q2 += (qa * gx + qc * gz - q4 * gy);
-        q3 += (qa * gy - qb * gz + q4 * gx);
-        q4 += (qa * gz + qb * gy - qc * gx);
-
-        // normalise quaternion
-        norm = invSqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);
-        q[0] = q1 * norm;
-        q[1] = q2 * norm;
-        q[2] = q3 * norm;
-        q[3] = q4 * norm;
-    }
+    void update(T q[4], T ax, T ay, T az, T gx, T gy, T gz, T mx, T my, T mz, T deltat);
+    void update(T q[4], T ax, T ay, T az, T gx, T gy, T gz, T deltat);
+    
 private:
     T ix = 0.0;
     T iy = 0.0;
     T iz = 0.0;
 };
+
+#include "mahony.hpp"
 
 #endif /* _MAHONY_H_ */

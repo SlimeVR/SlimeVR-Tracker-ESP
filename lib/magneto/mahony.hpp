@@ -23,45 +23,38 @@
 
 #include "mahony.h"
 
-// These are the free parameters in the Mahony filter and fusion scheme,
-// Kp for proportional feedback, Ki for integral
-// with MPU-9250, angles start oscillating at Kp=40. Ki does not seem to help and is not required.
-#define Kp 10.0f
-#define Ki 0.0f
-
-static float ix = 0.0f, iy = 0.0f, iz = 0.0f;  //integral feedback terms
-
 // Mahony orientation filter, assumed World Frame NWU (xNorth, yWest, zUp)
 // Modified from Madgwick version to remove Z component of magnetometer:
 // reference vectors are Up (Acc) and West (Acc cross Mag)
 // sjr 12/2020
 // gx, gy, gz must be in units of radians/second
-void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat)
+template<typename T>
+void Mahony<T>::update(T q[4], T ax, T ay, T az, T gx, T gy, T gz, T mx, T my, T mz, T deltat)
 {
     // short name local variable for readability
-    float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];
-    float norm;
-    float hx, hy, hz;  //observed West vector W = AxM
-    float ux, uy, uz, wx, wy, wz; //calculated A (Up) and W in body frame
-    float ex, ey, ez;
-    float qa, qb, qc;
+    T q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];
+    T norm;
+    T hx, hy, hz;  //observed West vector W = AxM
+    T ux, uy, uz, wx, wy, wz; //calculated A (Up) and W in body frame
+    T ex, ey, ez;
+    T qa, qb, qc;
 
     // Auxiliary variables to avoid repeated arithmetic
-    float q1q1 = q1 * q1;
-    float q1q2 = q1 * q2;
-    float q1q3 = q1 * q3;
-    float q1q4 = q1 * q4;
-    float q2q2 = q2 * q2;
-    float q2q3 = q2 * q3;
-    float q2q4 = q2 * q4;
-    float q3q3 = q3 * q3;
-    float q3q4 = q3 * q4;
-    float q4q4 = q4 * q4;
+    T q1q1 = q1 * q1;
+    T q1q2 = q1 * q2;
+    T q1q3 = q1 * q3;
+    T q1q4 = q1 * q4;
+    T q2q2 = q2 * q2;
+    T q2q3 = q2 * q3;
+    T q2q4 = q2 * q4;
+    T q3q3 = q3 * q3;
+    T q3q4 = q3 * q4;
+    T q4q4 = q4 * q4;
 
     // Compute feedback only if magnetometer measurement valid (avoids NaN in magnetometer normalisation)
-    float tmp = mx * mx + my * my + mz * mz;
+    T tmp = mx * mx + my * my + mz * mz;
     if (tmp == 0.0f) {
-        mahonyQuaternionUpdate(q, ax, ay, az, gx, gy, gz, deltat);
+        update(q, ax, ay, az, gx, gy, gz, deltat);
         return;
     }
     // Normalise magnetometer
@@ -144,17 +137,18 @@ void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, 
     q[3] = q4 * norm;
 }
 
-void mahonyQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float deltat)
+template<typename T>
+void Mahony<T>::update(T q[4], T ax, T ay, T az, T gx, T gy, T gz, T deltat)
 {
     // short name local variable for readability
-    float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];
-    float norm;
-    float vx, vy, vz;
-    float ex, ey, ez;  //error terms
-    float qa, qb, qc;
+    T q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];
+    T norm;
+    T vx, vy, vz;
+    T ex, ey, ez;  //error terms
+    T qa, qb, qc;
 
     // Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
-    float tmp = ax * ax + ay * ay + az * az;
+    T tmp = ax * ax + ay * ay + az * az;
     if (tmp > 0.0f)
     {
         // Normalise accelerometer (assumed to measure the direction of gravity in body frame)

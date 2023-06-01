@@ -29,8 +29,7 @@
 #include "magneto1.4.h"
 
 #include <BMI160.h>
-#include <vqf.h>
-#include <basicvqf.h>
+#include "SensorFusionRestDetect.h"
 #include "../motionprocessing/types.h"
 
 #include "../motionprocessing/GyroTemperatureCalibrator.h"
@@ -150,18 +149,8 @@ struct BMI160RestDetectionParams: RestDetectionParams {
 class BMI160Sensor : public Sensor {
     public:
         BMI160Sensor(uint8_t id, uint8_t address, float rotation) :
-            Sensor("BMI160Sensor", IMU_BMI160, id, address, rotation)
-#if !BMI160_VQF_REST_DETECTION_AVAILABLE
-            , restDetection(restDetectionParams, BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f)
-#endif
-
-#if BMI160_USE_VQF
-#if !BMI160_USE_BASIC_VQF
-            , vqf(vqfParams, BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f, BMI160_ODR_MAG_MICROS / 1e6f)
-#else
-            , vqf(BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f, BMI160_ODR_MAG_MICROS / 1e6f)
-#endif
-#endif
+            Sensor("BMI160Sensor", IMU_BMI160, id, address, rotation),
+            sfusion(BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f, BMI160_ODR_MAG_MICROS / 1e6f)
         {
         };
         ~BMI160Sensor(){};
@@ -206,22 +195,7 @@ class BMI160Sensor : public Sensor {
     private:
         BMI160 imu {};
 
-        Mahony<sensor_real_t> mahony;
-#if !BMI160_VQF_REST_DETECTION_AVAILABLE
-        BMI160RestDetectionParams restDetectionParams {};
-        RestDetection restDetection;
-#endif
-#if BMI160_USE_VQF
-#if !BMI160_USE_BASIC_VQF
-        BMI160VQFParams vqfParams {};
-        VQF vqf;
-#else
-        BasicVQF vqf;
-#endif
-#endif
-
-        sensor_real_t qwxyz[4] {1.0f, 0.0f, 0.0f, 0.0f};
-        Quaternion quat{};
+        SlimeVR::Sensors::SensorFusionRestDetect sfusion;
 
         // clock sync and sample timestamping
         uint32_t sensorTime0 = 0;
@@ -262,7 +236,6 @@ class BMI160Sensor : public Sensor {
         sensor_real_t Axyz[3] = {0};
         sensor_real_t Mxyz[3] = {0};
         sensor_real_t lastAxyz[3] = {0};
-        bool fusionUpdated = false;
 
         double gscaleX = BMI160_GSCALE;
         double gscaleY = BMI160_GSCALE;

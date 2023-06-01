@@ -26,9 +26,7 @@
 #include "calibration.h"
 #include "magneto1.4.h"
 #include "GlobalVars.h"
-// #include "mahony.h"
-// #include "madgwick.h"
-#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
+#if MPU_USE_DMPMAG
 #include "dmpmag.h"
 #endif
 
@@ -93,7 +91,7 @@ void MPU9250Sensor::motionSetup() {
         }
     }
 
-#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
+#if MPU_USE_DMPMAG
     uint8_t devStatus = imu.dmpInitialize();
     if(devStatus == 0){
         ledManager.pattern(50, 50, 5);
@@ -127,9 +125,8 @@ void MPU9250Sensor::motionSetup() {
     imu.setZGyroFIFOEnabled(true);
     imu.setSlave0FIFOEnabled(true);
 
-    // TODO: set a rate we prefer instead of getting the current rate from the device.
-    deltat = 1.0 / 1000.0 * (1 + imu.getRate());
-    //imu.setRate(blah);
+    // Set a rate we prefer
+    imu.setRate(MPU9250_SAMPLE_DIV); // 8khz / (1 + MPU9250_SAMPLE_DIV)
 
     imu.resetFIFO();
     imu.setFIFOEnabled(true);
@@ -151,7 +148,7 @@ void MPU9250Sensor::motionLoop() {
     }
 #endif
 
-#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
+#if MPU_USE_DMPMAG
     // Update quaternion
     if(!dmpReady)
         return;
@@ -222,15 +219,11 @@ void MPU9250Sensor::motionLoop() {
         // TODO: monitor remaining_samples to ensure that the number is going down, not up.
         // remaining_samples
 
-        #if defined(_MAHONY_H_)
-        mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
-        #elif defined(_MADGWICK_H_)
-        madgwickQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
-        #endif
+        sfusion.update9D(Axyz, Gxyz, Mxyz);
     }
 
-    quaternion.set(-q[2], q[1], q[3], q[0]);
-
+    sensor_real_t const *qwxyz = sfusion.getQuaternion();
+    quaternion.set(-qwxyz[2], qwxyz[1], qwxyz[3], qwxyz[0]);
 #endif
     fusedRotation *= sensorOffset;
 
@@ -242,7 +235,7 @@ void MPU9250Sensor::motionLoop() {
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
     ledManager.on();
-#if not (defined(_MAHONY_H_) || defined(_MADGWICK_H_))
+#if MPU_USE_DMPMAG
     // with DMP, we just need mag data
     constexpr int calibrationSamples = 300;
 
