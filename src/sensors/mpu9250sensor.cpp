@@ -224,6 +224,11 @@ void MPU9250Sensor::motionLoop() {
 
     sensor_real_t const *qwxyz = sfusion.getQuaternion();
     quaternion.set(-qwxyz[2], qwxyz[1], qwxyz[3], qwxyz[0]);
+
+    #if SEND_ACCELERATION
+    sensor_real_t const * linAccel = sfusion.getLinearAcc();
+    std::copy(linAccel, linAccel+3, linearAcceleration);
+    #endif
 #endif
     fusedRotation *= sensorOffset;
 
@@ -417,6 +422,7 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
         #else
             Axyz[i] = temp[i];
         #endif
+        Axyz[i] *= ASCALE_2G;
     }
 }
 

@@ -383,21 +383,9 @@ void BMI160Sensor::motionLoop() {
 
             fusedRotation.set(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]);
 
-            const Quat q = fusedRotation;
-            sensor_real_t vecGravity[3];
-            vecGravity[0] = 2 * (q.x * q.z - q.w * q.y);
-            vecGravity[1] = 2 * (q.w * q.x + q.y * q.z);
-            vecGravity[2] = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
-
-            VectorFloat linAccel;
-            linAccel.x = lastAxyz[0] - vecGravity[0] * CONST_EARTH_GRAVITY;
-            linAccel.y = lastAxyz[1] - vecGravity[1] * CONST_EARTH_GRAVITY;
-            linAccel.z = lastAxyz[2] - vecGravity[2] * CONST_EARTH_GRAVITY;
-
-            acceleration[0] = linAccel.x;
-            acceleration[1] = linAccel.y;
-            acceleration[2] = linAccel.z;
-            newAcceleration = true;
+            sensor_real_t const * linAccel = sfusion.getLinearAcc();
+            std::copy(linAccel, linAccel+3, this->acceleration);
+			this->newAcceleration = true;
 
             fusedRotation *= sensorOffset;
 

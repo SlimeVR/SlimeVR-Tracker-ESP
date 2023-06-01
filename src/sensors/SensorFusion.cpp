@@ -22,8 +22,8 @@ namespace SlimeVR
         {
             if (deltat < 0) deltat = accTs;
 
+            std::copy(Axyz, Axyz+3, bAxyz);
             #if SENSOR_USE_MAHONY || SENSOR_USE_MADGWICK
-                std::copy(Axyz, Axyz+3, bAxyz);
                 accelUpdated = true;
             #elif SENSOR_USE_BASICVQF
                 basicvqf.updateAcc(Axyz);
@@ -92,6 +92,8 @@ namespace SlimeVR
             #endif
 
             updated = true;
+            gravityReady = false;
+            linaccelReady = false;
         }
 
         bool SensorFusion::isUpdated()
@@ -121,6 +123,31 @@ namespace SlimeVR
             #endif
 
             return qwxyz;
+        }
+
+        sensor_real_t const * SensorFusion::getGravityVec()
+        {
+            if (!gravityReady) {
+                vecGravity[0] = 2 * (qwxyz[1] * qwxyz[3] - qwxyz[0] * qwxyz[2]);
+                vecGravity[1] = 2 * (qwxyz[0] * qwxyz[1] + qwxyz[2] * qwxyz[3]);
+                vecGravity[2] = qwxyz[0]*qwxyz[0] - qwxyz[1]*qwxyz[1] - qwxyz[2]*qwxyz[2] + qwxyz[3]*qwxyz[3];
+                gravityReady = true;
+            }
+
+            return vecGravity;
+        }
+
+        sensor_real_t const * SensorFusion::getLinearAcc()
+        {
+            if (!linaccelReady) {
+                getGravityVec();
+                linAccel[0] = bAxyz[0] - vecGravity[0] * CONST_EARTH_GRAVITY;
+                linAccel[1] = bAxyz[1] - vecGravity[1] * CONST_EARTH_GRAVITY;
+                linAccel[2] = bAxyz[2] - vecGravity[2] * CONST_EARTH_GRAVITY;
+                linaccelReady = true;
+            }
+
+            return linAccel;
         }
 
     }

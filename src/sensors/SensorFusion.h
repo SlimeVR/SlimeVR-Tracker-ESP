@@ -78,6 +78,8 @@ namespace SlimeVR
             bool isUpdated();
             void clearUpdated();
             sensor_real_t const * getQuaternion();
+            sensor_real_t const * getGravityVec();
+            sensor_real_t const * getLinearAcc();
 
         protected:
             sensor_real_t gyrTs;
@@ -95,9 +97,11 @@ namespace SlimeVR
                 VQF vqf;
             #endif
 
+            // A also used for linear acceleration extraction
+            sensor_real_t bAxyz[3]{0.0f, 0.0f, 0.0f};
+
             #if SENSOR_USE_MAHONY || SENSOR_USE_MADGWICK
-                // Buffer A, M here to keep the behavior of BMI160
-                sensor_real_t bAxyz[3]{0.0f, 0.0f, 0.0f};
+                // Buffer M here to keep the behavior of BMI160
                 sensor_real_t bMxyz[3]{0.0f, 0.0f, 0.0f};
                 bool accelUpdated = false;
             #endif
@@ -105,6 +109,11 @@ namespace SlimeVR
             bool magExist = false;
             sensor_real_t qwxyz[4]{1.0f, 0.0f, 0.0f, 0.0f};
             bool updated = false;
+
+            bool gravityReady = false;
+            sensor_real_t vecGravity[3]{0.0f, 0.0f, 0.0f};
+            bool linaccelReady = false;
+            sensor_real_t linAccel[3]{0.0f, 0.0f, 0.0f};
         };
     }
 }
