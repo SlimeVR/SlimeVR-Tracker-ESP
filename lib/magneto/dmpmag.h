@@ -18,4 +18,3 @@ private:
 #include "dmpmag.hpp"
 
 #endif /* _DMPMAG_H_ */
-

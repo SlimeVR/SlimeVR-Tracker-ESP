@@ -48,8 +48,8 @@ namespace SlimeVR
                 RestDetection restDetection;
             #endif
             
-		};
-	}
+        };
+    }
 }
 
 #endif // SLIMEVR_SENSORFUSIONRESTDETECT_H_
