@@ -25,7 +25,6 @@
 #define SENSORS_BMI160SENSOR_H
 
 #include "sensor.h"
-#include "mahony.h"
 #include "magneto1.4.h"
 
 #include <BMI160.h>
@@ -119,32 +118,6 @@ constexpr uint32_t targetSampleRateMicros = (uint32_t)targetSampleRateMs * 1e3;
 constexpr uint32_t BMI160_TEMP_CALIBRATION_REQUIRED_SAMPLES_PER_STEP =
     TEMP_CALIBRATION_SECONDS_PER_STEP / (BMI160_ODR_GYR_MICROS / 1e6);
 static_assert(0x7FFF * BMI160_TEMP_CALIBRATION_REQUIRED_SAMPLES_PER_STEP < 0x7FFFFFFF, "Temperature calibration sum overflow");
-
-#define BMI160_VQF_REST_DETECTION_AVAILABLE (BMI160_USE_VQF && !BMI160_USE_BASIC_VQF)
-
-#if BMI160_USE_VQF
-#if !BMI160_USE_BASIC_VQF
-struct BMI160VQFParams: VQFParams {
-    BMI160VQFParams() : VQFParams() {
-        #ifndef VQF_NO_MOTION_BIAS_ESTIMATION
-        motionBiasEstEnabled = false;
-        #endif
-        tauAcc = 2.0f;
-        restMinT = 2.0f;
-        restThGyr = 0.6f; // 400 norm
-        restThAcc = 0.06f; // 100 norm
-    }
-};
-#endif
-#endif
-
-struct BMI160RestDetectionParams: RestDetectionParams {
-    BMI160RestDetectionParams() : RestDetectionParams() {
-        restMinTimeMicros = 2.0f * 1e6;
-        restThGyr = 0.6f; // 400 norm
-        restThAcc = 0.06f; // 100 norm
-    }
-};
 
 class BMI160Sensor : public Sensor {
     public:
