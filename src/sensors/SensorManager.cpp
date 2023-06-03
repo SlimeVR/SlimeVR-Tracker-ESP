@@ -23,7 +23,7 @@
 
 #include "SensorManager.h"
 #include <i2cscan.h>
-#include <StreamString.h>
+#include "network/network.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
 #include "mpu9250sensor.h"
@@ -45,14 +45,11 @@ namespace SlimeVR
         Sensor* SensorManager::buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, int extraParam)
         {
             m_Logger.trace("Building IMU with: id=%d,\n\
-                            imuType=0x%02X, address=%d, rotation=%f,\n\
+                            imuType=0x%02X, address=0x%02X, rotation=%f,\n\
                             sclPin=%d, sdaPin=%d, extraParam=%d",
                             sensorID,
                             imuType, address, rotation,
                             sclPin, sdaPin, extraParam);
-
-            // Convert degrees to angle
-            rotation *= PI / 180.0f;
 
             // Now start detecting and building the IMU
             Sensor* sensor = NULL;

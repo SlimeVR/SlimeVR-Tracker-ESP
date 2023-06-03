@@ -51,8 +51,8 @@ namespace SlimeVR
                 }
             }
 
-			void setup();
-			void postSetup();
+            void setup();
+            void postSetup();
 
             void update();
             
