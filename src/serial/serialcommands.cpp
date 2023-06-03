@@ -139,16 +139,16 @@ namespace SerialCommands {
                 statusManager.getStatus(),
                 WiFiNetwork::getWiFiState()
             );
-            Sensor* sensor1 = sensorManager.getFirst();
-            sensor1->motionLoop();
+            Sensor* sensor0 = sensorManager.getSensors()[0];
+            sensor0->motionLoop();
             logger.info(
-                "[TEST] Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
-                getIMUNameByType(sensor1->getSensorType()),
-                UNPACK_QUATERNION(sensor1->getFusedRotation()),
-                sensor1->isWorking() ? "true" : "false",
-                sensor1->hadData ? "true" : "false"
+                "[TEST] Sensor[0]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
+                getIMUNameByType(sensor0->getSensorType()),
+                UNPACK_QUATERNION(sensor0->getFusedRotation()),
+                sensor0->isWorking() ? "true" : "false",
+                sensor0->hadData ? "true" : "false"
             );
-            if(!sensor1->hadData) {
+            if(!sensor0->hadData) {
                 logger.error("[TEST] Sensor 1 didn't send any data yet!");
             } else {
                 logger.info("[TEST] Sensor 1 sent some data, looks working.");

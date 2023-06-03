@@ -55,9 +55,7 @@ namespace SlimeVR
 			void postSetup();
 
             void update();
-
-            Sensor *getFirst() { return m_Sensors[0]; };
-            Sensor *getSecond() { return m_Sensors[1]; };
+            
             Sensor  ** const getSensors() { return m_Sensors; };
 
         private:
