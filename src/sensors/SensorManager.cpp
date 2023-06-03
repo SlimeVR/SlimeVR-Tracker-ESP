@@ -42,14 +42,14 @@ namespace SlimeVR
 {
     namespace Sensors
     {
-        Sensor* SensorManager::buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
+        Sensor* SensorManager::buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, int extraParam)
         {
             m_Logger.trace("Building IMU with: id=%d,\n\
                             imuType=0x%02X, address=%d, rotation=%f,\n\
-                            sclPin=%d, sdaPin=%d, intPin=%d",
+                            sclPin=%d, sdaPin=%d, extraParam=%d",
                             sensorID,
                             imuType, address, rotation,
-                            sclPin, sdaPin, intPin);
+                            sclPin, sdaPin, extraParam);
 
             // Convert degrees to angle
             rotation *= PI / 180.0f;
@@ -70,7 +70,11 @@ namespace SlimeVR
 
             switch (imuType) {
             case IMU_BNO080: case IMU_BNO085: case IMU_BNO086:
+                // Extra param used as interrupt pin
+                {
+                uint8_t intPin = extraParam;
                 sensor = new BNO080Sensor(sensorID, imuType, address, rotation, sclPin, sdaPin, intPin);
+                }
                 break;
             case IMU_BNO055:
                 sensor = new BNO055Sensor(sensorID, address, rotation, sclPin, sdaPin);
@@ -79,7 +83,17 @@ namespace SlimeVR
                 sensor = new MPU9250Sensor(sensorID, address, rotation, sclPin, sdaPin);
                 break;
             case IMU_BMI160:
-                sensor = new BMI160Sensor(sensorID, address, rotation, sclPin, sdaPin);
+                // Extra param used as axis remap descriptor
+                {
+                int axisRemap = extraParam;
+                // Valid remap will use all axes, so there will be non-zero term in upper 9 mag bits
+                // Used to avoid default INT_PIN misinterpreted as axis mapping
+                if (axisRemap < 256) {
+                    sensor = new BMI160Sensor(sensorID, address, rotation, sclPin, sdaPin);
+                } else {
+                    sensor = new BMI160Sensor(sensorID, address, rotation, sclPin, sdaPin, axisRemap);
+                }
+                }
                 break;
             case IMU_MPU6500: case IMU_MPU6050:
                 sensor = new MPU6050Sensor(sensorID, imuType, address, rotation, sclPin, sdaPin);
@@ -138,7 +152,9 @@ namespace SlimeVR
                 m_Sensors[sensorID] = sensor;                        \
                 sensorID++;                                          \
             }
+            // Apply descriptor list and expand to entrys
             IMU_DESC_LIST;
+
 #undef IMU_DESC_ENTRY
         }
 

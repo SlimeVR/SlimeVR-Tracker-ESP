@@ -1066,31 +1066,20 @@ void BMI160Sensor::maybeCalibrateMag() {
 }
 
 void BMI160Sensor::remapGyroAccel(sensor_real_t* x, sensor_real_t* y, sensor_real_t* z) {
-    sensor_real_t gx = *x, gy = *y, gz = *z;
-    *x = BMI160_REMAP_AXIS_X(gx, gy, gz);
-    *y = BMI160_REMAP_AXIS_Y(gx, gy, gz);
-    *z = BMI160_REMAP_AXIS_Z(gx, gy, gz);
+    remapAllAxis(AXIS_REMAP_GET_ALL_IMU(axisRemap), x, y, z);
 }
+
 void BMI160Sensor::remapMagnetometer(sensor_real_t* x, sensor_real_t* y, sensor_real_t* z) {
-    sensor_real_t mx = *x, my = *y, mz = *z;
-    *x = BMI160_MAG_REMAP_AXIS_X(mx, my, mz);
-    *y = BMI160_MAG_REMAP_AXIS_Y(mx, my, mz);
-    *z = BMI160_MAG_REMAP_AXIS_Z(mx, my, mz);
+    remapAllAxis(AXIS_REMAP_GET_ALL_MAG(axisRemap), x, y, z);
 }
 
 void BMI160Sensor::getRemappedRotation(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t gx, gy, gz;
-    imu.getRotation(&gx, &gy, &gz);
-    *x = BMI160_REMAP_AXIS_X(gx, gy, gz);
-    *y = BMI160_REMAP_AXIS_Y(gx, gy, gz);
-    *z = BMI160_REMAP_AXIS_Z(gx, gy, gz);
+    imu.getRotation(x, y, z);
+    remapAllAxis(AXIS_REMAP_GET_ALL_IMU(axisRemap), x, y, z);
 }
 void BMI160Sensor::getRemappedAcceleration(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t ax, ay, az;
-    imu.getAcceleration(&ax, &ay, &az);
-    *x = BMI160_REMAP_AXIS_X(ax, ay, az);
-    *y = BMI160_REMAP_AXIS_Y(ax, ay, az);
-    *z = BMI160_REMAP_AXIS_Z(ax, ay, az);
+    imu.getAcceleration(x, y, z);
+    remapAllAxis(AXIS_REMAP_GET_ALL_IMU(axisRemap), x, y, z);
 }
 
 void BMI160Sensor::getMagnetometerXYZFromBuffer(uint8_t* data, int16_t* x, int16_t* y, int16_t* z) {
