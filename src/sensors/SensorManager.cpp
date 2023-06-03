@@ -146,16 +146,27 @@ namespace SlimeVR
             activeSDA = PIN_IMU_SDA;
 
             uint8_t sensorID = 0;
+            uint8_t activeSensorCount = 0;
 #define IMU_DESC_ENTRY(...)                                          \
             {                                                        \
                 Sensor* sensor = buildSensor(sensorID, __VA_ARGS__); \
                 m_Sensors[sensorID] = sensor;                        \
                 sensorID++;                                          \
+                if (sensor->isWorking()) {                           \
+                    m_Logger.info("Sensor %d configured", sensorID); \
+                    activeSensorCount++;                             \
+                }                                                    \
             }
             // Apply descriptor list and expand to entrys
             IMU_DESC_LIST;
 
 #undef IMU_DESC_ENTRY
+            m_Logger.info("%d sensor(s) configured", activeSensorCount);
+            // Check and scan i2c if no sensors active
+            if (activeSensorCount == 0) {
+                m_Logger.error("Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
+                I2CSCAN::scani2cports();
+            }
         }
 
         void SensorManager::postSetup()
