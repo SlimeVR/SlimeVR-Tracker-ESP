@@ -18,7 +18,7 @@ namespace SlimeVR
             bool isUpdated();
             void clearUpdated();
             sensor_real_t const * getQuaternion();
-            sensor_real_t const * getGravityVec(sensor_real_t const nqwxyz[4]=NULL);
+            sensor_real_t const * getGravityVec();
             sensor_real_t const * getLinearAcc();
 
         protected:

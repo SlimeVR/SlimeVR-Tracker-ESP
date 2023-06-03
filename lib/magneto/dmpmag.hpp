@@ -33,7 +33,7 @@ Quat DMPMag<T>::getCorrection(const T acc[3], const T mag[3], Quat quat)
 template<typename T>
 void DMPMag<T>::update(T oqwxyz[4], const T iqwxyz[4], const T Grav[3], const T Mxyz[3])
 {
-    //Quat quat(iqwxyz[1], iqwxyz[2], iqwxyz[3], iqwxyz[0]);
+    // Map DMP axis to sensor axis
     Quat quat(-iqwxyz[2], iqwxyz[1], iqwxyz[3], iqwxyz[0]);
     if (correction.length_squared() == 0.0f) {
         correction = getCorrection(Grav, Mxyz, quat);

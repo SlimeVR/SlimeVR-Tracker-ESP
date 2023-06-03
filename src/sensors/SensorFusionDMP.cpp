@@ -45,25 +45,20 @@ namespace SlimeVR
         sensor_real_t const * SensorFusionDMP::getQuaternion()
         {
             if (!magExist) {
+                // remap axis from DMP space to sensor space
                 qwxyz[0] = bqwxyz[0];
                 qwxyz[1] = -bqwxyz[2];
                 qwxyz[2] = bqwxyz[1];
                 qwxyz[3] = bqwxyz[3];
             }
+            // dmpmag remaps axis during Mag update
             return qwxyz;
         }
 
-        sensor_real_t const * SensorFusionDMP::getGravityVec(sensor_real_t const nqwxyz[4])
+        sensor_real_t const * SensorFusionDMP::getGravityVec()
         {
-            if (nqwxyz == NULL) {
-                nqwxyz = bqwxyz;
-            } else {
-                // Use raw quaternion instead of the one after remap
-                gravityReady = false;
-            }
-
             if (!gravityReady) {
-                SensorFusion::calcGravityVec(nqwxyz, vecGravity);
+                SensorFusion::calcGravityVec(bqwxyz, vecGravity);
                 gravityReady = true;
             }
             return vecGravity;

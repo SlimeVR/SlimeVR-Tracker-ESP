@@ -470,26 +470,18 @@ void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
     {
         if((dmpData.header & DMP_header_bitmap_Accel) > 0)
         {
-            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
-            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
-            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
+            float qwxyz[4] = {quaternion->w, quaternion->x, quaternion->y, quaternion->z};
+            sfusion.updateQuaternion(qwxyz);
 
-            // get the component of the acceleration that is gravity
-            float gravity[3];
-            gravity[0] = 2 * ((-quaternion->x) * (-quaternion->z) - quaternion->w * quaternion->y);
-            gravity[1] = -2 * (quaternion->w * (-quaternion->x) + quaternion->y * (-quaternion->z));
-            gravity[2] = quaternion->w * quaternion->w - quaternion->x * quaternion->x - quaternion->y * quaternion->y + quaternion->z * quaternion->z;
+            float Axyz[3] = {(float)this->dmpData.Raw_Accel.Data.X * ASCALE_4G,
+                             (float)this->dmpData.Raw_Accel.Data.Y * ASCALE_4G,
+                             (float)this->dmpData.Raw_Accel.Data.Z * ASCALE_4G
+                            };
+            sfusion.updateAcc(Axyz);
 
-            // subtract gravity from the acceleration vector
-            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
-
-            // finally scale the acceleration values to mps2
-            this->acceleration[0] *= ASCALE_4G;
-            this->acceleration[1] *= ASCALE_4G;
-            this->acceleration[2] *= ASCALE_4G;
-            this->newAcceleration = true;
+            sensor_real_t const * linAccel = sfusion.getLinearAcc();
+            std::copy(linAccel, linAccel+3, this->acceleration);
+			this->newAcceleration = true;
         }
     }
     #endif
