@@ -35,7 +35,9 @@ constexpr float MPU9250_ODR_TS = ( 1.0f / MPU9250_DEFAULT_ODR_HZ) * (1+MPU9250_S
 
 #define MPU_USE_DMPMAG 1
 
-#if !MPU_USE_DMPMAG
+#if MPU_USE_DMPMAG
+#include "SensorFusionDMP.h"
+#else
 #include "SensorFusion.h"
 #endif
 
@@ -61,7 +63,9 @@ private:
     // uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
     uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
 
-    #if !MPU_USE_DMPMAG
+    #if MPU_USE_DMPMAG
+        SlimeVR::Sensors::SensorFusionDMP sfusion;
+    #else
         SlimeVR::Sensors::SensorFusion sfusion;
     #endif
 

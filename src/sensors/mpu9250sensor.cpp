@@ -34,8 +34,6 @@
 constexpr float gscale = (250. / 32768.0) * (PI / 180.0); //gyro default 250 LSB per d/s -> rad/s
 //#endif
 
-#define MAG_CORR_RATIO 0.02
-
 #define ACCEL_SENSITIVITY_2G 16384.0f
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
@@ -156,54 +154,37 @@ void MPU9250Sensor::motionLoop() {
     uint8_t dmpPacket[packetSize];
     if(!imu.GetCurrentFIFOPacket(dmpPacket, packetSize)) return;
     if(imu.dmpGetQuaternion(&rawQuat, dmpPacket)) return; // FIFO CORRUPTED
-    Quat quat(-rawQuat.y,rawQuat.x,rawQuat.z,rawQuat.w);
+
+    float rawQwxyz[4] = {rawQuat.w, rawQuat.x, rawQuat.y, rawQuat.z};
+    /// float rawQwxyz[4] = {rawQuat.w, -rawQuat.y, rawQuat.x, rawQuat.z};
+    sfusion.updateQuaternion(rawQwxyz);
+    sfusion.getGravityVec();
 
     int16_t temp[3];
     imu.getMagnetometer(&temp[0], &temp[1], &temp[2]);
     parseMagData(temp);
 
-    if (Mxyz[0] == 0.0f && Mxyz[1] == 0.0f && Mxyz[2] == 0.0f) {
-        return;
-    }
+    sfusion.updateMag(Mxyz);
 
-    VectorFloat grav;
-    imu.dmpGetGravity(&grav, &rawQuat);
+    sensor_real_t const * qwxyz = sfusion.getQuaternion();
 
-    float Grav[] = {grav.x, grav.y, grav.z};
-
-    if (correction.length_squared() == 0.0f) {
-        correction = getCorrection(Grav, Mxyz, quat);
-    } else {
-        Quat newCorr = getCorrection(Grav, Mxyz, quat);
-
-        if(!__isnanf(newCorr.w)) {
-            correction = correction.slerp(newCorr, MAG_CORR_RATIO);
-        }
-    }
+    fusedRotation.set(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]);
 
 #if SEND_ACCELERATION
     {
-        // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
-        // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
-        // we need to multiply by the gravity scale by two to convert to 2g mode ()
-        grav.x *= 2;
-        grav.y *= 2;
-        grav.z *= 2;
+        int16_t atemp[3];
+        this->imu.dmpGetAccel(atemp, dmpPacket);
+        parseAccelData(atemp);
 
-        this->imu.dmpGetAccel(&this->rawAccel, dmpPacket);
-        this->imu.dmpGetLinearAccel(&this->rawAccel, &this->rawAccel, &grav);
+        sfusion.updateAcc(Axyz);
 
-        // convert acceleration to m/s^2 (implicitly casts to float)
-        this->acceleration[0] = this->rawAccel.x * ASCALE_2G;
-        this->acceleration[1] = this->rawAccel.y * ASCALE_2G;
-        this->acceleration[2] = this->rawAccel.z * ASCALE_2G;
-        this->newAcceleration = true;
+        sensor_real_t const * linAccel = sfusion.getLinearAcc();
+        std::copy(linAccel, linAccel+3, this->acceleration);
+		this->newAcceleration = true;
     }
 #endif
 
-    fusedRotation = correction * quat;
 #else
-
     union fifo_sample_raw buf;
     uint16_t remaining_samples;
     // TODO: would it be faster to read multiple samples at once
@@ -223,11 +204,12 @@ void MPU9250Sensor::motionLoop() {
     }
 
     sensor_real_t const *qwxyz = sfusion.getQuaternion();
-    quaternion.set(-qwxyz[2], qwxyz[1], qwxyz[3], qwxyz[0]);
+    fusedRotation.set(-qwxyz[2], qwxyz[1], qwxyz[3], qwxyz[0]);
 
     #if SEND_ACCELERATION
     sensor_real_t const * linAccel = sfusion.getLinearAcc();
-    std::copy(linAccel, linAccel+3, linearAcceleration);
+    std::copy(linAccel, linAccel+3, this->acceleration);
+	this->newAcceleration = true;
     #endif
 #endif
     fusedRotation *= sensorOffset;
@@ -412,15 +394,19 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
     Axyz[1] = (float)data[1];
     Axyz[2] = (float)data[2];
 
+    #if !MPU_USE_DMPMAG
     float temp[3];
+    #endif
 
     //apply offsets (bias) and scale factors from Magneto
     for (unsigned i = 0; i < 3; i++) {
+        #if !MPU_USE_DMPMAG
         temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
         #if useFullCalibrationMatrix == true
             Axyz[i] = m_Calibration.A_Ainv[i][0] * temp[0] + m_Calibration.A_Ainv[i][1] * temp[1] + m_Calibration.A_Ainv[i][2] * temp[2];
         #else
             Axyz[i] = temp[i];
+        #endif
         #endif
         Axyz[i] *= ASCALE_2G;
     }

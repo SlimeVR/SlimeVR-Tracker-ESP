@@ -1,19 +1,10 @@
-#ifndef SLIMEVR_SENSORFUSION
-#define SLIMEVR_SENSORFUSION
+#ifndef SLIMEVR_SENSORFUSION_H
+#define SLIMEVR_SENSORFUSION_H
 
 #include "globals.h"
 #include "sensor.h"
-#include "mahony.h"
-#include "madgwick.h"
-#include "magneto1.4.h"
 
-#include <BMI160.h>
-#include <vqf.h>
-#include <basicvqf.h>
-#include "../motionprocessing/types.h"
-
-#include "../motionprocessing/GyroTemperatureCalibrator.h"
-#include "../motionprocessing/RestDetection.h"
+#define SENSOR_DOUBLE_PRECISION 0
 
 #define SENSOR_FUSION_TYPE SENSOR_FUSION_VQF
 
@@ -27,11 +18,13 @@
 #define SENSOR_USE_BASICVQF (SENSOR_FUSION_TYPE == SENSOR_FUSION_BASICVQF)
 #define SENSOR_USE_VQF (SENSOR_FUSION_TYPE == SENSOR_FUSION_VQF)
 
-#if SENSOR_USE_VQF
-    #define SENSOR_FUSION_WITH_RESTDETECT 1
-#else
-    #define SENSOR_FUSION_WITH_RESTDETECT 0
-#endif
+
+#include "../motionprocessing/types.h"
+
+#include "mahony.h"
+#include "madgwick.h"
+#include <vqf.h>
+#include <basicvqf.h>
 
 namespace SlimeVR
 {
@@ -81,6 +74,9 @@ namespace SlimeVR
             sensor_real_t const * getGravityVec();
             sensor_real_t const * getLinearAcc();
 
+            static void calcGravityVec(const sensor_real_t qwxyz[4], sensor_real_t gravVec[3]);
+            static void calcLinearAcc(const sensor_real_t accin[3], const sensor_real_t gravVec[3], sensor_real_t accout[3]);
+
         protected:
             sensor_real_t gyrTs;
             sensor_real_t accTs;
@@ -118,4 +114,4 @@ namespace SlimeVR
     }
 }
 
-#endif // SLIMEVR_SENSORFACTORY_H_
+#endif // SLIMEVR_SENSORFUSION_H

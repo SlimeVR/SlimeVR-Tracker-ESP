@@ -1,20 +1,15 @@
-#ifndef SLIMEVR_SENSORFUSIONRESTDETECT
-#define SLIMEVR_SENSORFUSIONRESTDETECT
-
-#include "globals.h"
-#include "sensor.h"
-#include "mahony.h"
-#include "madgwick.h"
-#include "magneto1.4.h"
-
-#include <vqf.h>
-#include <basicvqf.h>
-#include "../motionprocessing/types.h"
-
-#include "../motionprocessing/RestDetection.h"
+#ifndef SLIMEVR_SENSORFUSIONRESTDETECT_H_
+#define SLIMEVR_SENSORFUSIONRESTDETECT_H_
 
 #include "SensorFusion.h"
 
+#include "../motionprocessing/RestDetection.h"
+
+#if SENSOR_USE_VQF
+    #define SENSOR_FUSION_WITH_RESTDETECT 1
+#else
+    #define SENSOR_FUSION_WITH_RESTDETECT 0
+#endif
 
 namespace SlimeVR
 {
@@ -57,4 +52,4 @@ namespace SlimeVR
 	}
 }
 
-#endif // SLIMEVR_SENSORFACTORY_H_
+#endif // SLIMEVR_SENSORFUSIONRESTDETECT_H_

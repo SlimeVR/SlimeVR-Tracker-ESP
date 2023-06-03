@@ -128,12 +128,9 @@ namespace SlimeVR
         sensor_real_t const * SensorFusion::getGravityVec()
         {
             if (!gravityReady) {
-                vecGravity[0] = 2 * (qwxyz[1] * qwxyz[3] - qwxyz[0] * qwxyz[2]);
-                vecGravity[1] = 2 * (qwxyz[0] * qwxyz[1] + qwxyz[2] * qwxyz[3]);
-                vecGravity[2] = qwxyz[0]*qwxyz[0] - qwxyz[1]*qwxyz[1] - qwxyz[2]*qwxyz[2] + qwxyz[3]*qwxyz[3];
+                calcGravityVec(qwxyz, vecGravity);
                 gravityReady = true;
             }
-
             return vecGravity;
         }
 
@@ -141,14 +138,24 @@ namespace SlimeVR
         {
             if (!linaccelReady) {
                 getGravityVec();
-                linAccel[0] = bAxyz[0] - vecGravity[0] * CONST_EARTH_GRAVITY;
-                linAccel[1] = bAxyz[1] - vecGravity[1] * CONST_EARTH_GRAVITY;
-                linAccel[2] = bAxyz[2] - vecGravity[2] * CONST_EARTH_GRAVITY;
+                calcLinearAcc(bAxyz, vecGravity, linAccel);
                 linaccelReady = true;
             }
-
             return linAccel;
         }
 
+        void SensorFusion::calcGravityVec(const sensor_real_t qwxyz[4], sensor_real_t gravVec[3])
+        {
+            gravVec[0] = 2 * (qwxyz[1] * qwxyz[3] - qwxyz[0] * qwxyz[2]);
+            gravVec[1] = 2 * (qwxyz[0] * qwxyz[1] + qwxyz[2] * qwxyz[3]);
+            gravVec[2] = qwxyz[0]*qwxyz[0] - qwxyz[1]*qwxyz[1] - qwxyz[2]*qwxyz[2] + qwxyz[3]*qwxyz[3];
+        }
+        
+        void SensorFusion::calcLinearAcc(const sensor_real_t accin[3], const sensor_real_t gravVec[3], sensor_real_t accout[3])
+        {
+            accout[0] = accin[0] - gravVec[0] * CONST_EARTH_GRAVITY;
+            accout[1] = accin[1] - gravVec[1] * CONST_EARTH_GRAVITY;
+            accout[2] = accin[2] - gravVec[2] * CONST_EARTH_GRAVITY;
+        }
     }
 }
