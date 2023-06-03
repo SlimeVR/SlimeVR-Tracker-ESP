@@ -5,7 +5,7 @@ namespace SlimeVR
     namespace Sensors
     {
         void SensorFusionRestDetect::updateAcc(sensor_real_t Axyz[3], sensor_real_t deltat)
-        {            
+        {
             #if !SENSOR_WITH_REST_DETECT
                 if (deltat < 0) deltat = accTs;
                 restDetection.updateAcc(deltat, Axyz);
