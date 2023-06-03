@@ -32,7 +32,7 @@ namespace SlimeVR
                 : SensorFusion(gyrTs, accTs, magTs)
             #if !SENSOR_WITH_REST_DETECT
                 , restDetection(restDetectionParams, gyrTs,
-                                ((accTs<0) ? gyrTs : accTs) )
+                                (accTs<0) ? gyrTs : accTs)
             #endif
             {}
 
