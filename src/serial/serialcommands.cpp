@@ -66,7 +66,7 @@ namespace SerialCommands {
             WiFiNetwork::getWiFiState()
         );
         Sensor** const sensors = sensorManager.getSensors();
-        std::for_each_n(sensors, MAX_IMU_COUNT, [](Sensor* sensor) {
+        std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
             logger.info(
                 "Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
                 sensor->getSensorId(),
@@ -190,25 +190,25 @@ namespace SerialCommands {
         if (parser->getParamCount() > 1) {
             if (parser->equalCmdParam(1, "PRINT")) {
                 Sensor ** const sensors = sensorManager.getSensors();
-                std::for_each_n(sensors, MAX_IMU_COUNT, [](Sensor* sensor) {
+                std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
                     sensor->printTemperatureCalibrationState();
                 });
                 return;
             } else if (parser->equalCmdParam(1, "DEBUG")) {
                 Sensor ** const sensors = sensorManager.getSensors();
-                std::for_each_n(sensors, MAX_IMU_COUNT, [](Sensor* sensor) {
+                std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
                     sensor->printDebugTemperatureCalibrationState();
                 });
                 return;
             } else if (parser->equalCmdParam(1, "RESET")) {
                 Sensor ** const sensors = sensorManager.getSensors();
-                std::for_each_n(sensors, MAX_IMU_COUNT, [](Sensor* sensor) {
+                std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
                     sensor->resetTemperatureCalibrationState();
                 });
                 return;
             } else if (parser->equalCmdParam(1, "SAVE")) {
                 Sensor ** const sensors = sensorManager.getSensors();
-                std::for_each_n(sensors, MAX_IMU_COUNT, [](Sensor* sensor) {
+                std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
                     sensor->saveTemperatureCalibration();
                 });
                 return;
