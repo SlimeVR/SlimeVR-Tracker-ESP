@@ -137,11 +137,9 @@ void MPU6050Sensor::motionLoop()
     {
         imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
 
-        float rawQwxyz[4] = {rawQuat.w, rawQuat.x, rawQuat.y, rawQuat.z};
-        sfusion.updateQuaternion(rawQwxyz);
-        sfusion.getGravityVec();
+        sfusion.updateQuaternion(rawQuat);
 
-        fusedRotation.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
+        fusedRotation = sfusion.getQuaternionQuat();
         fusedRotation *= sensorOffset;
 
     #if SEND_ACCELERATION
@@ -154,8 +152,7 @@ void MPU6050Sensor::motionLoop()
 
             sfusion.updateAcc(Axyz);
 
-            sensor_real_t const * linAccel = sfusion.getLinearAcc();
-            std::copy(linAccel, linAccel+3, this->acceleration);
+            sfusion.getLinearAcc(this->acceleration);
 			this->newAcceleration = true;
         }
     #endif

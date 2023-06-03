@@ -125,6 +125,12 @@ namespace SlimeVR
             return qwxyz;
         }
 
+        Quat SensorFusion::getQuaternionQuat()
+        {
+            getQuaternion();
+            return Quat(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]);
+        }
+
         sensor_real_t const * SensorFusion::getGravityVec()
         {
             if (!gravityReady) {
@@ -142,6 +148,12 @@ namespace SlimeVR
                 linaccelReady = true;
             }
             return linAccel;
+        }
+
+        void SensorFusion::getLinearAcc(sensor_real_t outLinAccel[3])
+        {
+            getLinearAcc();
+            std::copy(linAccel, linAccel+3, outLinAccel);
         }
 
         void SensorFusion::calcGravityVec(const sensor_real_t qwxyz[4], sensor_real_t gravVec[3])

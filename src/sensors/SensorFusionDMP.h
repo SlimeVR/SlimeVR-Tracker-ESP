@@ -12,14 +12,18 @@ namespace SlimeVR
         {
         public:
             void updateQuaternion(sensor_real_t nqwxyz[4]);
+            void updateQuaternion(Quaternion const & nq);
+            void updateQuaternion(Quat const & nq);
             void updateAcc(sensor_real_t Axyz[3]);
             void updateMag(sensor_real_t Mxyz[3]);
 
             bool isUpdated();
             void clearUpdated();
             sensor_real_t const * getQuaternion();
+            Quat getQuaternionQuat();
             sensor_real_t const * getGravityVec();
             sensor_real_t const * getLinearAcc();
+            void getLinearAcc(sensor_real_t outLinAccel[3]);
 
         protected:
             DMPMag<sensor_real_t> dmpmag;

@@ -32,6 +32,24 @@ namespace SlimeVR
             linaccelReady = false;
         }
 
+        void SensorFusionDMP::updateQuaternion(Quaternion const & nq)
+        {
+            bqwxyz[0] = nq.w; bqwxyz[1] = nq.x; bqwxyz[2] = nq.y; bqwxyz[3] = nq.z;
+
+            updated = true;
+            gravityReady = false;
+            linaccelReady = false;
+        }
+
+        void SensorFusionDMP::updateQuaternion(Quat const & nq)
+        {
+            bqwxyz[0] = nq.w; bqwxyz[1] = nq.x; bqwxyz[2] = nq.y; bqwxyz[3] = nq.z;
+
+            updated = true;
+            gravityReady = false;
+            linaccelReady = false;
+        }
+
         bool SensorFusionDMP::isUpdated()
         {
             return updated;
@@ -55,6 +73,12 @@ namespace SlimeVR
             return qwxyz;
         }
 
+        Quat SensorFusionDMP::getQuaternionQuat()
+        {
+            getQuaternion();
+            return Quat(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]);
+        }
+
         sensor_real_t const * SensorFusionDMP::getGravityVec()
         {
             if (!gravityReady) {
@@ -74,5 +98,11 @@ namespace SlimeVR
             return linAccel;
         }
 
+        void SensorFusionDMP::getLinearAcc(sensor_real_t outLinAccel[3])
+        {
+            getLinearAcc();
+            std::copy(linAccel, linAccel+3, outLinAccel);
+        }
+        
     }
 }
