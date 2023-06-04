@@ -148,9 +148,9 @@ namespace SerialCommands {
                 sensor0->hadData ? "true" : "false"
             );
             if(!sensor0->hadData) {
-                logger.error("[TEST] Sensor 1 didn't send any data yet!");
+                logger.error("[TEST] Sensor[0] didn't send any data yet!");
             } else {
-                logger.info("[TEST] Sensor 1 sent some data, looks working.");
+                logger.info("[TEST] Sensor[0] sent some data, looks working.");
             }
         }
     }
