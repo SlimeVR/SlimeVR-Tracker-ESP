@@ -78,18 +78,6 @@ void BNO080Sensor::motionSetup()
     imu.enableRawMagnetometer(10);
 #endif
 
-/* // TODO: This is left here for future reference and should be removed
-   // used past 2023-06-1 
-    globalTimer.in(
-        30000,
-        [](void* arg) -> bool {
-            // Disable accelerometer calibration 30 seconds after startup
-            // This prevents "stomping" issue when tracker will flip when periodically stomped
-            ((BNO080*) arg)->sendCalibrateCommand(SH2_CAL_MAG | SH2_CAL_ON_TABLE); // Unset the SH2_CAL_ACCEL
-            return false;
-        },
-        &imu);
-//*/
     lastReset = 0;
     lastData = millis();
     working = true;
