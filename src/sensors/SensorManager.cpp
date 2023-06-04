@@ -107,6 +107,7 @@ namespace SlimeVR
             return sensor;
         }
 
+        // TODO Make it more generic in the future and move another place (abstract sensor interface)
         void SensorManager::swapI2C(uint8_t sclPin, uint8_t sdaPin)
         {
             if (sclPin != activeSCL || sdaPin != activeSDA || !running) {
