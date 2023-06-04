@@ -39,6 +39,9 @@ namespace SlimeVR
             sensor_real_t vecGravity[3]{0.0f, 0.0f, 0.0f};
             bool linaccelReady = false;
             sensor_real_t linAccel[3]{0.0f, 0.0f, 0.0f};
+            #if ESP32
+            sensor_real_t linAccel_guard;   // Temporary patch for some weird ESP32 bug
+            #endif
         };
     }
 }
