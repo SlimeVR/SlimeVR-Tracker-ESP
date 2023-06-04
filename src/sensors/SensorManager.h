@@ -37,7 +37,8 @@ namespace SlimeVR
         {
         public:
             SensorManager()
-                : m_Logger(SlimeVR::Logging::Logger("SensorManager")) {
+                : m_Logger(SlimeVR::Logging::Logger("SensorManager"))
+                , m_Sensors(MAX_IMU_COUNT, nullptr) {
                     for (auto & u : m_Sensors) {
                         u = new EmptySensor(0);
                     }
@@ -45,7 +46,7 @@ namespace SlimeVR
             ~SensorManager()
             {
                 for (auto u : m_Sensors) {
-                    if (u != NULL) {
+                    if (u != nullptr) {
                         delete u;
                     }
                 }
@@ -56,12 +57,12 @@ namespace SlimeVR
 
             void update();
             
-            Sensor  ** const getSensors() { return m_Sensors; };
+            std::vector<Sensor *> & getSensors() { return m_Sensors; };
 
         private:
             SlimeVR::Logging::Logger m_Logger;
 
-            Sensor *m_Sensors[MAX_IMU_COUNT];
+            std::vector<Sensor *> m_Sensors;
             Sensor* buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, int extraParam = 0);
             
             uint8_t activeSCL = 0;

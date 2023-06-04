@@ -104,7 +104,7 @@ public:
 #endif
 
 private:
-	void updateSensorState(Sensor** const sensors);
+	void updateSensorState(std::vector<Sensor *> & sensors);
 
 	bool beginPacket();
 	bool endPacket();

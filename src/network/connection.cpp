@@ -427,14 +427,14 @@ void Connection::returnLastPacket(int len) {
 	MUST(endPacket());
 }
 
-void Connection::updateSensorState(Sensor** const sensors) {
+void Connection::updateSensorState(std::vector<Sensor *> & sensors) {
 	if (millis() - m_LastSensorInfoPacketTimestamp <= 1000) {
 		return;
 	}
 
 	m_LastSensorInfoPacketTimestamp = millis();
 
-	for (int i = 0; i < MAX_IMU_COUNT; i++) {
+	for (int i = 0; i < (int)sensors.size(); i++) {
 		if (m_AckedSensorState[i] != sensors[i]->getSensorState()) {
 			sendSensorInfo(sensors[i]);
 		}
@@ -510,7 +510,7 @@ void Connection::reset() {
 }
 
 void Connection::update() {
-	Sensor ** const sensors = sensorManager.getSensors();
+	std::vector<Sensor *> & sensors = sensorManager.getSensors();
 
 	updateSensorState(sensors);
 
@@ -578,7 +578,7 @@ void Connection::update() {
 				break;
 			}
 
-			for (int i = 0; i < MAX_IMU_COUNT; i++) {
+			for (int i = 0; i < (int)sensors.size(); i++) {
 				if (m_Packet[4] == sensors[i]->getSensorId()) {
 					m_AckedSensorState[i] = (SensorStatus)m_Packet[5];
 					break;

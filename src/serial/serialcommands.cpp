@@ -65,8 +65,7 @@ namespace SerialCommands {
             statusManager.getStatus(),
             WiFiNetwork::getWiFiState()
         );
-        Sensor** const sensors = sensorManager.getSensors();
-        std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
+        for (auto sensor : sensorManager.getSensors()) {
             logger.info(
                 "Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
                 sensor->getSensorId(),
@@ -75,7 +74,7 @@ namespace SerialCommands {
                 sensor->isWorking() ? "true" : "false",
                 sensor->hadData ? "true" : "false"
             );
-        });
+        }
     }
 
     void cmdGet(CmdParser * parser) {
@@ -189,28 +188,24 @@ namespace SerialCommands {
     void cmdTemperatureCalibration(CmdParser* parser) {
         if (parser->getParamCount() > 1) {
             if (parser->equalCmdParam(1, "PRINT")) {
-                Sensor ** const sensors = sensorManager.getSensors();
-                std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
+                for (auto sensor : sensorManager.getSensors()) {
                     sensor->printTemperatureCalibrationState();
-                });
+                }
                 return;
             } else if (parser->equalCmdParam(1, "DEBUG")) {
-                Sensor ** const sensors = sensorManager.getSensors();
-                std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
+                for (auto sensor : sensorManager.getSensors()) {
                     sensor->printDebugTemperatureCalibrationState();
-                });
+                }
                 return;
             } else if (parser->equalCmdParam(1, "RESET")) {
-                Sensor ** const sensors = sensorManager.getSensors();
-                std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
+                for (auto sensor : sensorManager.getSensors()) {
                     sensor->resetTemperatureCalibrationState();
-                });
+                }
                 return;
             } else if (parser->equalCmdParam(1, "SAVE")) {
-                Sensor ** const sensors = sensorManager.getSensors();
-                std::for_each(sensors, sensors+MAX_IMU_COUNT, [](Sensor* sensor) {
+                for (auto sensor : sensorManager.getSensors()) {
                     sensor->saveTemperatureCalibration();
-                });
+                }
                 return;
             }
         }
