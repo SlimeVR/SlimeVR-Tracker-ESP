@@ -52,7 +52,7 @@ namespace SlimeVR
                             sclPin, sdaPin, extraParam);
 
             // Now start detecting and building the IMU
-            Sensor* sensor = NULL;
+            Sensor* sensor = nullptr;
 
             // Clear and reset I2C bus for each sensor upon startup
             I2CSCAN::clearBus(sdaPin, sclPin);
