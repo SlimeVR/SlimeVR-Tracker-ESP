@@ -23,18 +23,14 @@
 
 #include "Wire.h"
 #include "ota.h"
-#include "sensors/SensorManager.h"
-#include "configuration/Configuration.h"
+#include "GlobalVars.h"
 #include "network/network.h"
 #include "globals.h"
 #include "credentials.h"
 #include <i2cscan.h>
 #include "serial/serialcommands.h"
-#include "LEDManager.h"
-#include "status/StatusManager.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
-#include <arduino-timer.h>
 
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
