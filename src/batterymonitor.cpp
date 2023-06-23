@@ -98,19 +98,43 @@ void BatteryMonitor::Loop()
             #endif
             if (voltage > 0) //valid measurement
             {
-                // Estimate battery level, 3.2V is 0%, 4.17V is 100% (1.0)
-                if (voltage > 3.975f)
-                    level = (voltage - 2.920f) * 0.8f;
-                else if (voltage > 3.678f)
-                    level = (voltage - 3.300f) * 1.25f;
-                else if (voltage > 3.489f)
-                    level = (voltage - 3.400f) * 1.7f;
-                else if (voltage > 3.360f)
-                    level = (voltage - 3.300f) * 0.8f;
+#if BATTERY_REGULATOR == REG_BUCK
+                // Estimate battery level, 3.2V is 0%, 3.87V is 50%, 4.15V is 100% (1.0)
+                // Mapped from battery discharge with buck regulating to 2.8V
+                if (voltage > 4.075)
+                    level = map(voltage, 4.075, 4.15, 0.95, 1);
+                else if (voltage > 3.775)
+                    level = map(voltage, 3.775, 4.075, 0.3, 0.95);
+                else if (voltage > 3.45)
+                    level = map(voltage, 3.45, 3.775, 0.05, 0.3);
                 else
-                    level = (voltage - 3.200f) * 0.3f;
-
+                    level = map(voltage, 3.2, 3.45, 0, 0.05);
+#elif BATTERY_REGULATOR == REG_LDO
+                // Estimate battery level, 3.2V is 0%, 3.77V is 50%, 4.15V is 100% (1.0)
+                // Mapped from battery discharge with ldo
+                if (voltage > 4.025)
+                    level = map(voltage, 4.025, 4.15, 0.95, 1);
+                else if (voltage > 3.65)
+                    level = map(voltage, 3.65, 4.025, 0.3, 0.95);
+                else if (voltage > 3.4)
+                    level = map(voltage, 3.4, 3.65, 0.05, 0.3);
+                else
+                    level = map(voltage, 3.2, 3.4, 0, 0.05);
+#elif BATTERY_REGULATOR == REG_LEGACY
+                // Estimate battery level, 3.2V is 0%, 3.7V is 50%, 4.17V is 100% (1.0)
+                // Mapped from unknown data?
+                if (voltage > 3.975)
+                    level = map(voltage, 3.975, 4.17, 0.84375, 1);
+                else if (voltage > 3.677)
+                    level = map(voltage, 3.677, 3.975, 0.4709, 0.84375);
+                else if (voltage > 3.489)
+                    level = map(voltage, 3.489, 3.677, 0.1512, 0.4709);
+                else if (voltage > 3.36)
+                    level = map(voltage, 3.36, 3.489, 0.048, 0.1512);
+                else
+                    level = map(voltage, 3.2, 3.36, 0, 0.048);
                 level = (level - 0.05f) / 0.95f; // Cut off the last 5% (3.36V)
+#endif
 
                 if (level > 1)
                     level = 1;

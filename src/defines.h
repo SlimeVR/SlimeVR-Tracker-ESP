@@ -58,6 +58,12 @@ IMU_DESC_ENTRY(IMU_BMP160, PRIMARY_IMU_ADDRESS_ONE, IMU_ROTATION, PIN_IMU_SCL, P
 //   BAT_MCP3021 for external ADC connected over I2C
 #define BATTERY_MONITOR BAT_EXTERNAL
 
+// Battery voltage mapping options
+//   REG_BUCK if the board uses step-down or buck regulator (2.8V)
+//   REG_LDO if the board uses ldo linear regulator
+//   REG_LEGACY to use the old conversion behavior
+// #define BATTERY_REGULATOR REG_LDO
+
 // BAT_EXTERNAL definition override
 // D1 Mini boards with ESP8266 have internal resistors. For these boards you only have to adjust BATTERY_SHIELD_RESISTANCE.
 // For other boards you can now adjust the other resistor values.
@@ -96,6 +102,9 @@ IMU_DESC_ENTRY(IMU_BMP160, PRIMARY_IMU_ADDRESS_ONE, IMU_ROTATION, PIN_IMU_SCL, P
   #endif
   #ifndef BATTERY_SHIELD_R2
     #define BATTERY_SHIELD_R2 40.2
+  #endif
+  #ifndef BATTERY_REGULATOR
+    #define BATTERY_REGULATOR REG_BUCK
   #endif
 #elif BOARD == BOARD_SLIMEVR_LEGACY || BOARD == BOARD_SLIMEVR_DEV
   #define PIN_IMU_SDA 4

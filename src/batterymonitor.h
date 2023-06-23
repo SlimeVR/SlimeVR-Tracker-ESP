@@ -54,6 +54,10 @@
     #define BATTERY_SHIELD_R2 220.0
 #endif
 
+#ifndef BATTERY_REGULATOR
+    #define BATTERY_REGULATOR REG_LDO
+#endif
+
 #if BATTERY_MONITOR == BAT_EXTERNAL
     #ifndef PIN_BATTERY_LEVEL
         #error Internal ADC enabled without pin! Please select a pin.
