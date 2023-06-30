@@ -22,7 +22,6 @@
 */
 
 #include "bmi160sensor.h"
-#include "network/packets.h"
 #include "GlobalVars.h"
 #include <hmc5883l.h>
 #include <qmc5883l.h>
@@ -256,7 +255,7 @@ void BMI160Sensor::motionLoop() {
         getRemappedRotation(&rX, &rY, &rZ);
         getRemappedAcceleration(&aX, &aY, &aZ);
 
-        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+        networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
     }
     #endif
 
@@ -368,9 +367,9 @@ void BMI160Sensor::motionLoop() {
             lastTemperaturePacketSent = now - (elapsed - sendInterval);
             #if BMI160_TEMPCAL_DEBUG
                 uint32_t isCalibrating = gyroTempCalibrator->isCalibrating() ? 10000 : 0;
-                Network::sendTemperature(isCalibrating + 10000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature, sensorId);
+                networkConnection.sendTemperature(sensorId, isCalibrating + 10000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature);
             #else
-                Network::sendTemperature(temperature, sensorId);
+                networkConnection.sendTemperature(sensorId, temperature);
             #endif
             optimistic_yield(100);
         }

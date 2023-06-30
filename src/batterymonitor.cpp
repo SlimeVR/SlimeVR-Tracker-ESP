@@ -21,7 +21,6 @@
     THE SOFTWARE.
 */
 #include "batterymonitor.h"
-#include "network/udpclient.h"
 #include "GlobalVars.h"
 
 #if ESP8266 && (BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021)
@@ -117,7 +116,7 @@ void BatteryMonitor::Loop()
                     level = 1;
                 else if (level < 0)
                     level = 0;
-                Network::sendBatteryLevel(voltage, level);
+                networkConnection.sendBatteryLevel(voltage, level);
                 #ifdef BATTERY_LOW_POWER_VOLTAGE
                     if (voltage < BATTERY_LOW_POWER_VOLTAGE)
                     {

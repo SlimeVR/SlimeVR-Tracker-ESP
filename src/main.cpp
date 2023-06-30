@@ -24,9 +24,6 @@
 #include "Wire.h"
 #include "ota.h"
 #include "GlobalVars.h"
-#include "sensors/SensorManager.h"
-#include "configuration/Configuration.h"
-#include "network/manager.h"
 #include "globals.h"
 #include "credentials.h"
 #include <i2cscan.h>
@@ -41,6 +38,7 @@ SlimeVR::LEDManager ledManager(LED_PIN);
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
 SlimeVR::Network::Manager networkManager;
+SlimeVR::Network::Connection networkConnection;
 
 int sensorToCalibrate = -1;
 bool blinking = false;

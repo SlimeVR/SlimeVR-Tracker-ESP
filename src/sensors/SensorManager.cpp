@@ -31,7 +31,7 @@
 #include "icm20948sensor.h"
 #include "ErroneousSensor.h"
 #include "sensoraddresses.h"
-#include "network/udpclient.h"
+#include "GlobalVars.h"
 
 namespace SlimeVR
 {
@@ -128,7 +128,7 @@ namespace SlimeVR
             m_Sensor1->motionLoop();
             m_Sensor2->motionLoop();
 
-            if (!ServerConnection::isConnected())
+            if (!networkConnection.isConnected())
             {
                 return;
             }

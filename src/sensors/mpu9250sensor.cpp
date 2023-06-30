@@ -20,7 +20,6 @@
 */
 
 #include "mpu9250sensor.h"
-#include "network/packets.h"
 #include "globals.h"
 #include "helper_3dmath.h"
 #include <i2cscan.h>
@@ -148,7 +147,7 @@ void MPU9250Sensor::motionLoop() {
         imu.getAcceleration(&aX, &aY, &aZ);
         imu.getMagnetometer(&mX, &mY, &mZ);
 
-        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
+        networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
     }
 #endif
 
@@ -258,7 +257,6 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         magneto->sample(my, mx, -mz);
 
         float rawMagFloat[3] = { (float)mx, (float)my, (float)mz};
-        Network::sendRawCalibrationData(rawMagFloat, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
         ledManager.off();
         delay(250);
     }
@@ -311,7 +309,6 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     m_Logger.trace("Gyro calibration results: %f %f %f", Gxyz[0], Gxyz[1], Gxyz[2]);
 #endif
 
-    Network::sendRawCalibrationData(Gxyz, CALIBRATION_TYPE_EXTERNAL_GYRO, 0);
     // TODO: use offset registers?
     m_Calibration.G_off[0] = Gxyz[0];
     m_Calibration.G_off[1] = Gxyz[1];
@@ -336,10 +333,8 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
         // we could make the server run magneto for us.
         // TODO: consider moving the sample reporting into magneto itself?
         float rawAccFloat[3] = { (float)ax, (float)ay, (float)az };
-        Network::sendRawCalibrationData(rawAccFloat, CALIBRATION_TYPE_EXTERNAL_ACCEL, 0);
 
         float rawMagFloat[3] = { (float)mx, (float)my, (float)-mz };
-        Network::sendRawCalibrationData(rawMagFloat, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
 
         ledManager.off();
         delay(250);
@@ -387,7 +382,6 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     configuration.save();
 
     ledManager.off();
-    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0);
     m_Logger.debug("Saved the calibration data");
 
     m_Logger.info("Calibration data gathered");

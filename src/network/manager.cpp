@@ -23,7 +23,6 @@
 #include "manager.h"
 
 #include "GlobalVars.h"
-#include "network/udpclient.h"
 
 namespace SlimeVR {
 namespace Network {
@@ -43,13 +42,10 @@ void Manager::update() {
 
 	if (!wasConnected) {
 		// WiFi was reconnected, rediscover the server and reconnect
-		ServerConnection::resetConnection();
+		networkConnection.reset();
 	}
 
-	auto sensor1 = sensorManager.getFirst();
-	auto sensor2 = sensorManager.getSecond();
-
-	ServerConnection::update(sensor1, sensor2);
+	networkConnection.update();
 }
 
 }  // namespace Network

@@ -21,7 +21,6 @@
     THE SOFTWARE.
 */
 #include "globals.h"
-#include "network/packets.h"
 #include "logging/Logger.h"
 #include "GlobalVars.h"
 #if !ESP8266
@@ -224,7 +223,7 @@ void WiFiNetwork::upkeep() {
         if(millis() - last_rssi_sample >= 2000) {
             last_rssi_sample = millis();
             uint8_t signalStrength = WiFi.RSSI();
-            Network::sendSignalStrength(signalStrength);
+            networkConnection.sendSignalStrength(signalStrength);
         }
     }
     return;
