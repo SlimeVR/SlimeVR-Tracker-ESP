@@ -23,7 +23,6 @@
 
 #include "SensorManager.h"
 #include <i2cscan.h>
-#include "network/network.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
 #include "mpu9250sensor.h"
@@ -32,6 +31,7 @@
 #include "icm20948sensor.h"
 #include "ErroneousSensor.h"
 #include "sensoraddresses.h"
+#include "network/udpclient.h"
 
 namespace SlimeVR
 {

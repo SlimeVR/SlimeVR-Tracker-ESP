@@ -23,7 +23,7 @@
 #include "icm20948sensor.h"
 #include "calibration.h"
 #include <i2cscan.h>
-#include "network/network.h"
+#include "network/packets.h"
 #include "GlobalVars.h"
 
 // seconds after previous save (from start) when calibration (DMP Bias) data will be saved to NVS. Increments through the list then stops; to prevent unwelcome eeprom wear.

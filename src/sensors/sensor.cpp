@@ -21,7 +21,7 @@
     THE SOFTWARE.
 */
 #include "sensor.h"
-#include "network/network.h"
+#include "network/packets.h"
 #include <i2cscan.h>
 #include "calibration.h"
 

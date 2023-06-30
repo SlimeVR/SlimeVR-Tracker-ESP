@@ -30,7 +30,7 @@
 #endif
 
 #include "mpu6050sensor.h"
-#include "network/network.h"
+#include "network/packets.h"
 #include <i2cscan.h>
 #include "calibration.h"
 #include "GlobalVars.h"
@@ -162,6 +162,12 @@ void MPU6050Sensor::motionLoop()
             this->newAcceleration = true;
         }
     #endif
+
+#if ENABLE_INSPECTION
+        {
+            Network::sendInspectionFusedIMUData(sensorId, quaternion);
+        }
+#endif
 
         if (!OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
         {

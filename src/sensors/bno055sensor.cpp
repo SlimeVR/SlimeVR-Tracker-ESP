@@ -21,7 +21,7 @@
     THE SOFTWARE.
 */
 #include "bno055sensor.h"
-#include "network/network.h"
+#include "network/packets.h"
 #include "globals.h"
 #include "GlobalVars.h"
 

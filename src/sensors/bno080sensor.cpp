@@ -22,7 +22,7 @@
 */
 
 #include "sensors/bno080sensor.h"
-#include "network/network.h"
+#include "network/packets.h"
 #include "utils.h"
 #include "GlobalVars.h"
 
@@ -42,13 +42,13 @@ void BNO080Sensor::motionSetup()
                   "SW Version Minor: 0x%02x "
                   "SW Part Number: 0x%02x "
                   "SW Build Number: 0x%02x "
-                  "SW Version Patch: 0x%02x", 
-                  getIMUNameByType(sensorType), 
-                  addr, 
-                  imu.swMajor, 
-                  imu.swMinor, 
-                  imu.swPartNumber, 
-                  imu.swBuildNumber, 
+                  "SW Version Patch: 0x%02x",
+                  getIMUNameByType(sensorType),
+                  addr,
+                  imu.swMajor,
+                  imu.swMinor,
+                  imu.swPartNumber,
+                  imu.swBuildNumber,
                   imu.swVersionPatch
                 );
 

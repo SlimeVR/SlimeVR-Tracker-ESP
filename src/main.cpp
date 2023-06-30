@@ -24,7 +24,9 @@
 #include "Wire.h"
 #include "ota.h"
 #include "GlobalVars.h"
-#include "network/network.h"
+#include "sensors/SensorManager.h"
+#include "configuration/Configuration.h"
+#include "network/manager.h"
 #include "globals.h"
 #include "credentials.h"
 #include <i2cscan.h>
@@ -32,12 +34,13 @@
 #include "batterymonitor.h"
 #include "logging/Logger.h"
 
+Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
 SlimeVR::LEDManager ledManager(LED_PIN);
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
-Timer<> globalTimer;
+SlimeVR::Network::Manager networkManager;
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -97,7 +100,7 @@ void setup()
 
     sensorManager.setup();
 
-    Network::setUp();
+    networkManager.setup();
     OTA::otaSetup(otaPassword);
     battery.Setup();
 
@@ -113,7 +116,7 @@ void loop()
     globalTimer.tick();
     SerialCommands::update();
     OTA::otaUpdate();
-    Network::update(sensorManager.getFirst(), sensorManager.getSecond());
+    networkManager.update();
     sensorManager.update();
     battery.Loop();
     ledManager.update();

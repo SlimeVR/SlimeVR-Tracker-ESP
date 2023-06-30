@@ -21,7 +21,7 @@
     THE SOFTWARE.
 */
 #include "batterymonitor.h"
-#include "network/network.h"
+#include "network/udpclient.h"
 #include "GlobalVars.h"
 
 #if ESP8266 && (BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021)
@@ -56,9 +56,9 @@ void BatteryMonitor::Loop()
             voltage = -1;
             #if ESP8266 && (BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021)
                 // Find out what your max measurement is (voltage_3_3).
-                // Take the max measurement and check if it was less than 50mV 
+                // Take the max measurement and check if it was less than 50mV
                 // if yes output 5.0V
-                // if no output 3.3V - dropvoltage + 0.1V 
+                // if no output 3.3V - dropvoltage + 0.1V
                 auto ESPmV = ESP.getVcc();
                 if (ESPmV > voltage_3_3)
                 {

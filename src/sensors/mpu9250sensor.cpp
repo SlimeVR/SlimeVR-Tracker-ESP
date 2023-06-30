@@ -20,7 +20,7 @@
 */
 
 #include "mpu9250sensor.h"
-#include "network/network.h"
+#include "network/packets.h"
 #include "globals.h"
 #include "helper_3dmath.h"
 #include <i2cscan.h>
@@ -229,7 +229,7 @@ void MPU9250Sensor::motionLoop() {
         madgwickQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
         #endif
     }
-    
+
     quaternion.set(-q[2], q[1], q[3], q[0]);
 
 #endif
@@ -293,7 +293,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     delay(2000);
 
     union fifo_sample_raw buf;
-    
+
     imu.resetFIFO(); // fifo is sure to have filled up in the seconds of delay, don't try reading it.
     for (int i = 0; i < calibrationSamples; i++) {
         // wait for new sample
@@ -340,7 +340,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 
         float rawMagFloat[3] = { (float)mx, (float)my, (float)-mz };
         Network::sendRawCalibrationData(rawMagFloat, CALIBRATION_TYPE_EXTERNAL_MAG, 0);
-   
+
         ledManager.off();
         delay(250);
     }
