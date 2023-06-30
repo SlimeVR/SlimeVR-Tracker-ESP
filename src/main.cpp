@@ -52,7 +52,7 @@ void setup()
     Serial.begin(serialBaudRate);
     globalTimer = timer_create_default();
 
-#ifdef ESP32C3 
+#ifdef ESP32C3
     // Wait for the Computer to be able to connect.
     delay(2000);
 #endif
@@ -82,7 +82,7 @@ void setup()
 #endif
 
     // using `static_cast` here seems to be better, because there are 2 similar function signatures
-    Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL)); 
+    Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
 
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
@@ -94,9 +94,9 @@ void setup()
 
     // Wait for IMU to boot
     delay(500);
-    
+
     sensorManager.setup();
-    
+
     Network::setUp();
     OTA::otaSetup(otaPassword);
     battery.Setup();
