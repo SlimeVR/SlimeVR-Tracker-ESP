@@ -21,6 +21,7 @@
     THE SOFTWARE.
 */
 #include "batterymonitor.h"
+#include "network/network.h"
 #include "GlobalVars.h"
 
 #if ESP8266 && (BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021)
