@@ -23,15 +23,12 @@
 
 #include "Wire.h"
 #include "ota.h"
-#include "sensors/SensorManager.h"
-#include "configuration/Configuration.h"
+#include "GlobalVars.h"
 #include "network/network.h"
 #include "globals.h"
 #include "credentials.h"
 #include <i2cscan.h>
 #include "serial/serialcommands.h"
-#include "LEDManager.h"
-#include "status/StatusManager.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
 
@@ -40,6 +37,7 @@ SlimeVR::Sensors::SensorManager sensorManager;
 SlimeVR::LEDManager ledManager(LED_PIN);
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
+Timer<> globalTimer;
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -52,6 +50,7 @@ BatteryMonitor battery;
 void setup()
 {
     Serial.begin(serialBaudRate);
+    globalTimer = timer_create_default();
 
 #ifdef ESP32C3 
     // Wait for the Computer to be able to connect.
@@ -111,6 +110,7 @@ void setup()
 
 void loop()
 {
+    globalTimer.tick();
     SerialCommands::update();
     OTA::otaUpdate();
     Network::update(sensorManager.getFirst(), sensorManager.getSecond());

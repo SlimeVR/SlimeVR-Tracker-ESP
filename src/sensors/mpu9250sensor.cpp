@@ -198,13 +198,14 @@ void MPU9250Sensor::motionLoop() {
         this->imu.dmpGetLinearAccel(&this->rawAccel, &this->rawAccel, &grav);
 
         // convert acceleration to m/s^2 (implicitly casts to float)
-        this->linearAcceleration[0] = this->rawAccel.x * ASCALE_2G;
-        this->linearAcceleration[1] = this->rawAccel.y * ASCALE_2G;
-        this->linearAcceleration[2] = this->rawAccel.z * ASCALE_2G;
+        this->acceleration[0] = this->rawAccel.x * ASCALE_2G;
+        this->acceleration[1] = this->rawAccel.y * ASCALE_2G;
+        this->acceleration[2] = this->rawAccel.z * ASCALE_2G;
+        this->newAcceleration = true;
     }
 #endif
 
-    quaternion = correction * quat;
+    fusedRotation = correction * quat;
 #else
 
     union fifo_sample_raw buf;
@@ -232,17 +233,11 @@ void MPU9250Sensor::motionLoop() {
     quaternion.set(-q[2], q[1], q[3], q[0]);
 
 #endif
-    quaternion *= sensorOffset;
+    fusedRotation *= sensorOffset;
 
-#if ENABLE_INSPECTION
-    {
-        Network::sendInspectionFusedIMUData(sensorId, quaternion);
-    }
-#endif
-
-    if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
-        newData = true;
-        lastQuatSent = quaternion;
+    if(!lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
+        newFusedRotation = true;
+        lastFusedRotationSent = fusedRotation;
     }
 }
 

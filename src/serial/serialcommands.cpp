@@ -71,14 +71,14 @@ namespace SerialCommands {
         logger.info(
             "Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
             getIMUNameByType(sensor1->getSensorType()),
-            UNPACK_QUATERNION(sensor1->getQuaternion()),
+            UNPACK_QUATERNION(sensor1->getFusedRotation()),
             sensor1->isWorking() ? "true" : "false",
             sensor1->hadData ? "true" : "false"
         );
         logger.info(
             "Sensor 2: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
             getIMUNameByType(sensor2->getSensorType()),
-            UNPACK_QUATERNION(sensor2->getQuaternion()),
+            UNPACK_QUATERNION(sensor2->getFusedRotation()),
             sensor2->isWorking() ? "true" : "false",
             sensor2->hadData ? "true" : "false"
         );
@@ -150,7 +150,7 @@ namespace SerialCommands {
             logger.info(
                 "[TEST] Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
                 getIMUNameByType(sensor1->getSensorType()),
-                UNPACK_QUATERNION(sensor1->getQuaternion()),
+                UNPACK_QUATERNION(sensor1->getFusedRotation()),
                 sensor1->isWorking() ? "true" : "false",
                 sensor1->hadData ? "true" : "false"
             );

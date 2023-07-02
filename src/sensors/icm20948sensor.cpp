@@ -65,8 +65,6 @@ void ICM20948Sensor::motionLoop()
     }
 #endif
 
-    timer.tick();
-
     readFIFOToEnd();
     readRotation();
     checkSensorTimeout();
@@ -91,27 +89,28 @@ void ICM20948Sensor::readFIFOToEnd()
 
 void ICM20948Sensor::sendData()
 {
-    if(newData && lastDataSent + 7 < millis())
+    if(newFusedRotation && lastDataSent + 7 < millis())
     {
         lastDataSent = millis();
-        newData = false;
+        newFusedRotation = false;
 
         #if(USE_6_AXIS)
         {
-            Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, 0, sensorId);
+            Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, 0, sensorId);
         }
         #else
         {
-            Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
-        }
-        #endif
-
-        #if SEND_ACCELERATION
-        {
-            Network::sendAccel(linearAcceleration, sensorId);
+            Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
         }
         #endif
     }
+
+#if SEND_ACCELERATION
+    if(newAcceleration) {
+        newAcceleration = false;
+        Network::sendAccel(acceleration, sensorId);
+    }
+#endif
 }
 
 void ICM20948Sensor::startCalibration(int calibrationType)
@@ -123,7 +122,7 @@ void ICM20948Sensor::startCalibration(int calibrationType)
 void ICM20948Sensor::startCalibrationAutoSave()
 {
     #if SAVE_BIAS
-    timer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->saveCalibration(true); return false; }, this);
+    globalTimer.in(bias_save_periods[0] * 1000, [](void *arg) -> bool { ((ICM20948Sensor*)arg)->saveCalibration(true); return false; }, this);
     #endif
 }
 
@@ -319,24 +318,18 @@ void ICM20948Sensor::readRotation()
             double q2 = ((double)dmpData.Quat6.Data.Q2) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q3 = ((double)dmpData.Quat6.Data.Q3) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-            quaternion.w = q0;
-            quaternion.x = q1;
-            quaternion.y = q2;
-            quaternion.z = q3;
+            fusedRotation.w = q0;
+            fusedRotation.x = q1;
+            fusedRotation.y = q2;
+            fusedRotation.z = q3;
 
             #if SEND_ACCELERATION
-            calculateAccelerationWithoutGravity(&quaternion);
+            calculateAccelerationWithoutGravity(&fusedRotation);
             #endif
 
-            quaternion *= sensorOffset; //imu rotation
+            fusedRotation *= sensorOffset; //imu rotation
 
-            #if ENABLE_INSPECTION
-            {
-                Network::sendInspectionFusedIMUData(sensorId, quaternion);
-            }
-            #endif
-
-            newData = true;
+            newFusedRotation = true;
             lastData = millis();
         }
     }
@@ -362,12 +355,6 @@ void ICM20948Sensor::readRotation()
             #endif
 
             quaternion *= sensorOffset; //imu rotation
-
-            #if ENABLE_INSPECTION
-            {
-                Network::sendInspectionFusedIMUData(sensorId, quaternion);
-            }
-            #endif
 
             newData = true;
             lastData = millis();
@@ -419,7 +406,7 @@ void ICM20948Sensor::saveCalibration(bool repeat)
         bias_save_counter++;
         // Possible: Could make it repeat the final timer value if any of the biases are still 0. Save strategy could be improved.
         if (sizeof(bias_save_periods) != bias_save_counter) {
-            timer.in(
+            globalTimer.in(
                 bias_save_periods[bias_save_counter] * 1000,
                 [](void* arg) -> bool {
                     ((ICM20948Sensor*)arg)->saveCalibration(true);
@@ -484,9 +471,9 @@ void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
     {
         if((dmpData.header & DMP_header_bitmap_Accel) > 0)
         {
-            this->linearAcceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
-            this->linearAcceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
-            this->linearAcceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
+            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
+            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
+            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
 
             // get the component of the acceleration that is gravity
             float gravity[3];
@@ -495,14 +482,15 @@ void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
             gravity[2] = quaternion->w * quaternion->w - quaternion->x * quaternion->x - quaternion->y * quaternion->y + quaternion->z * quaternion->z;
 
             // subtract gravity from the acceleration vector
-            this->linearAcceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
-            this->linearAcceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
-            this->linearAcceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
+            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
 
             // finally scale the acceleration values to mps2
-            this->linearAcceleration[0] *= ASCALE_4G;
-            this->linearAcceleration[1] *= ASCALE_4G;
-            this->linearAcceleration[2] *= ASCALE_4G;
+            this->acceleration[0] *= ASCALE_4G;
+            this->acceleration[1] *= ASCALE_4G;
+            this->acceleration[2] *= ASCALE_4G;
+            this->newAcceleration = true;
         }
     }
     #endif

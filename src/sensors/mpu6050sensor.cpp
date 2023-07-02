@@ -137,8 +137,8 @@ void MPU6050Sensor::motionLoop()
     if (imu.dmpGetCurrentFIFOPacket(fifoBuffer))
     {
         imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
-        quaternion.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
-        quaternion *= sensorOffset;
+        fusedRotation.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
+        fusedRotation *= sensorOffset;
 
     #if SEND_ACCELERATION
         {
@@ -156,22 +156,17 @@ void MPU6050Sensor::motionLoop()
             this->imu.dmpGetLinearAccel(&this->rawAccel, &this->rawAccel, &gravity);
 
             // convert acceleration to m/s^2 (implicitly casts to float)
-            this->linearAcceleration[0] = this->rawAccel.x * ASCALE_2G;
-            this->linearAcceleration[1] = this->rawAccel.y * ASCALE_2G;
-            this->linearAcceleration[2] = this->rawAccel.z * ASCALE_2G;
+            this->acceleration[0] = this->rawAccel.x * ASCALE_2G;
+            this->acceleration[1] = this->rawAccel.y * ASCALE_2G;
+            this->acceleration[2] = this->rawAccel.z * ASCALE_2G;
+            this->newAcceleration = true;
         }
     #endif
-        
-#if ENABLE_INSPECTION
-        {
-            Network::sendInspectionFusedIMUData(sensorId, quaternion);
-        }
-#endif
 
-        if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
+        if (!OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
         {
-            newData = true;
-            lastQuatSent = quaternion;
+            newFusedRotation = true;
+            lastFusedRotationSent = fusedRotation;
         }
     }
 }

@@ -24,8 +24,7 @@
 #define SLIMEVR_ICM20948SENSOR_H_
 
 #include <ICM_20948.h>
-#include "sensor.h"
-#include <arduino-timer.h> // Used for periodically saving bias
+#include "sensor.h" // Used for periodically saving bias
 
 class ICM20948Sensor : public Sensor
 {
@@ -69,8 +68,6 @@ private:
     void readFIFOToEnd();
 
 #define OVERRIDEDMPSETUP true
-
-    Timer<> timer = timer_create_default();
     // TapDetector tapDetector;
 };
 

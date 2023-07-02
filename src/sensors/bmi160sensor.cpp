@@ -400,9 +400,9 @@ void BMI160Sensor::motionLoop() {
                 return;
             }
 
-            quaternion.set(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]);
+            fusedRotation.set(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]);
 
-            const Quat q = quaternion;
+            const Quat q = fusedRotation;
             sensor_real_t vecGravity[3];
             vecGravity[0] = 2 * (q.x * q.z - q.w * q.y);
             vecGravity[1] = 2 * (q.w * q.x + q.y * q.z);
@@ -413,22 +413,17 @@ void BMI160Sensor::motionLoop() {
             linAccel.y = lastAxyz[1] - vecGravity[1] * CONST_EARTH_GRAVITY;
             linAccel.z = lastAxyz[2] - vecGravity[2] * CONST_EARTH_GRAVITY;
 
-            linearAcceleration[0] = linAccel.x;
-            linearAcceleration[1] = linAccel.y;
-            linearAcceleration[2] = linAccel.z;
+            acceleration[0] = linAccel.x;
+            acceleration[1] = linAccel.y;
+            acceleration[2] = linAccel.z;
+            newAcceleration = true;
 
-            quaternion *= sensorOffset;
+            fusedRotation *= sensorOffset;
 
-            #if ENABLE_INSPECTION
+            if (!OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
             {
-                Network::sendInspectionFusedIMUData(sensorId, quaternion);
-            }
-            #endif
-
-            if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
-            {
-                newData = true;
-                lastQuatSent = quaternion;
+                newFusedRotation = true;
+                lastFusedRotationSent = fusedRotation;
             }
 
             optimistic_yield(100);

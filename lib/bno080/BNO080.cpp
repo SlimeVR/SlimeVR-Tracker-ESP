@@ -1270,39 +1270,9 @@ void BNO080::enableActivityClassifier(uint16_t timeBetweenReports, uint32_t acti
 	setFeatureCommand(SENSOR_REPORTID_PERSONAL_ACTIVITY_CLASSIFIER, timeBetweenReports, activitiesToEnable);
 }
 
-//Sends the commands to begin calibration of the accelerometer
-void BNO080::calibrateAccelerometer()
-{
-	sendCalibrateCommand(CALIBRATE_ACCEL);
-}
-
-//Sends the commands to begin calibration of the gyro
-void BNO080::calibrateGyro()
-{
-	sendCalibrateCommand(CALIBRATE_GYRO);
-}
-
-//Sends the commands to begin calibration of the magnetometer
-void BNO080::calibrateMagnetometer()
-{
-	sendCalibrateCommand(CALIBRATE_MAG);
-}
-
-//Sends the commands to begin calibration of the planar accelerometer
-void BNO080::calibratePlanarAccelerometer()
-{
-	sendCalibrateCommand(CALIBRATE_PLANAR_ACCEL);
-}
-
-//See 2.2 of the Calibration Procedure document 1000-4044
-void BNO080::calibrateAll()
-{
-	sendCalibrateCommand(CALIBRATE_ACCEL_GYRO_MAG);
-}
-
 void BNO080::endCalibration()
 {
-	sendCalibrateCommand(CALIBRATE_STOP); //Disables all calibrations
+	sendCalibrateCommand(0); //Disables all calibrations
 }
 
 //See page 51 of reference manual - ME Calibration Response
@@ -1374,37 +1344,34 @@ void BNO080::sendCommand(uint8_t command)
 
 //This tells the BNO080 to begin calibrating
 //See page 50 of reference manual and the 1000-4044 calibration doc
+//The argument is a set of binary flags see SH2_CAL_ACCEL
 void BNO080::sendCalibrateCommand(uint8_t thingToCalibrate)
 {
-	/*shtpData[3] = 0; //P0 - Accel Cal Enable
-	shtpData[4] = 0; //P1 - Gyro Cal Enable
+	/*
+	shtpData[3] = 0; //P0 - Accel Cal Enable
+	shtpData[4] = 0; //P1 - Gyro In-Hand Cal Enable
 	shtpData[5] = 0; //P2 - Mag Cal Enable
 	shtpData[6] = 0; //P3 - Subcommand 0x00
 	shtpData[7] = 0; //P4 - Planar Accel Cal Enable
-	shtpData[8] = 0; //P5 - Reserved
+	shtpData[8] = 0; //P5 - Gyro On-Table Cal Enable
 	shtpData[9] = 0; //P6 - Reserved
 	shtpData[10] = 0; //P7 - Reserved
-	shtpData[11] = 0; //P8 - Reserved*/
+	shtpData[11] = 0; //P8 - Reserved
+	*/
 
 	for (uint8_t x = 3; x < 12; x++) //Clear this section of the shtpData array
 		shtpData[x] = 0;
 
-	if (thingToCalibrate == CALIBRATE_ACCEL)
+	if ((thingToCalibrate & SH2_CAL_ACCEL) > 1)
 		shtpData[3] = 1;
-	else if (thingToCalibrate == CALIBRATE_GYRO)
+	if ((thingToCalibrate & SH2_CAL_GYRO_IN_HAND) > 1)
 		shtpData[4] = 1;
-	else if (thingToCalibrate == CALIBRATE_MAG)
+	if ((thingToCalibrate & SH2_CAL_MAG) > 1)
 		shtpData[5] = 1;
-	else if (thingToCalibrate == CALIBRATE_PLANAR_ACCEL)
+	if ((thingToCalibrate & SH2_CAL_PLANAR) > 1)
 		shtpData[7] = 1;
-	else if (thingToCalibrate == CALIBRATE_ACCEL_GYRO_MAG)
-	{
-		shtpData[3] = 1;
-		shtpData[4] = 1;
-		shtpData[5] = 1;
-	}
-	else if (thingToCalibrate == CALIBRATE_STOP)
-		; //Do nothing, bytes are set to zero
+	if ((thingToCalibrate & SH2_CAL_ON_TABLE) > 1)
+		shtpData[8] = 1;
 
 	//Make the internal calStatus variable non-zero (operation failed) so that user can test while we wait
 	calibrationStatus = 1;

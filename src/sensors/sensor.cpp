@@ -30,20 +30,21 @@ uint8_t Sensor::getSensorState() {
 }
 
 void Sensor::sendData() {
-    if(newData) {
-        newData = false;
-        Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
-
-#if SEND_ACCELERATION
-        {
-            Network::sendAccel(linearAcceleration, sensorId);
-        }
-#endif
+    if(newFusedRotation) {
+        newFusedRotation = false;
+        Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
 
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
 #endif
     }
+
+#if SEND_ACCELERATION
+    if(newAcceleration) {
+        newAcceleration = false;
+        Network::sendAccel(acceleration, sensorId);
+    }
+#endif
 }
 
 void Sensor::printTemperatureCalibrationUnsupported() {
