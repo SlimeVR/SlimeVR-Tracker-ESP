@@ -14,9 +14,6 @@ try:
         .decode("utf-8")
     )
 except Exception:
-    print("==========================================================================")
-    print("  WARNING: You are not in a Git repository or do not have Git installed.")
-    print("           The version string will be incorrect.")
-    print("==========================================================================")
+    revision = "NOT_GIT"
 
 print(f"'-DGIT_REV=\"{revision}\"'")
