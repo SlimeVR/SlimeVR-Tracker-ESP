@@ -43,9 +43,11 @@ void Manager::update() {
 	if (!wasConnected) {
 		// WiFi was reconnected, rediscover the server and reconnect
 		networkConnection.reset();
+		networkRemoteCmd.reset();
 	}
 
 	networkConnection.update();
+	networkRemoteCmd.update();
 }
 
 }  // namespace Network

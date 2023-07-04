@@ -77,6 +77,10 @@ namespace SlimeVR
       }
 
       Serial.printf("[%-5s] [%s] %s\n", levelToString(level), buf, buffer);
+
+      if (getRemoteCmdConncted()) {
+        getRemoteCmdStream().printf("[%-5s] [%s] %s\n", levelToString(level), buf, buffer);
+      }
     }
   }
 }

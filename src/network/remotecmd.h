@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2023 SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,27 +20,33 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#ifndef SLIMEVR_NETWORK_REMOTECMD_H_
+#define SLIMEVR_NETWORK_REMOTECMD_H_
 
-#ifndef GLOBALVARS_H
-#define GLOBALVARS_H
+#include "globals.h"
+#include "logging/Logger.h"
+#include <WiFiServer.h>
+#include <WiFiClient.h>
 
-#include <arduino-timer.h>
+namespace SlimeVR {
+namespace Network {
 
-#include "LEDManager.h"
-#include "configuration/Configuration.h"
-#include "network/connection.h"
-#include "network/manager.h"
-#include "network/remotecmd.h"
-#include "sensors/SensorManager.h"
-#include "status/StatusManager.h"
+class RemoteCmd {
+public:
+	void reset();
+	void update();
 
-extern Timer<> globalTimer;
-extern SlimeVR::LEDManager ledManager;
-extern SlimeVR::Status::StatusManager statusManager;
-extern SlimeVR::Configuration::Configuration configuration;
-extern SlimeVR::Sensors::SensorManager sensorManager;
-extern SlimeVR::Network::Manager networkManager;
-extern SlimeVR::Network::Connection networkConnection;
-extern SlimeVR::Network::RemoteCmd networkRemoteCmd;
+	bool isConnected();
+	Stream & getStream();
 
-#endif
+private:
+	SlimeVR::Logging::Logger r_Logger = SlimeVR::Logging::Logger("RemoteCmd");
+
+    WiFiServer rcmdServer = WiFiServer(23);
+    WiFiClient rcmdClient;
+};
+
+}  // namespace Network
+}  // namespace SlimeVR
+
+#endif  // SLIMEVR_NETWORK_REMOTECMD_H_
