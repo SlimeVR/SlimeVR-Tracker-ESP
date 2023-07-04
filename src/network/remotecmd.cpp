@@ -3,14 +3,12 @@
 namespace SlimeVR {
 namespace Network {
 
-void RemoteCmd::reset()
-{
+void RemoteCmd::reset() {
 	rcmdClient = WiFiClient();
 	rcmdServer.begin();
 }
 
-void RemoteCmd::update()
-{
+void RemoteCmd::update() {
 	// Check for new connections to remote command
 	if (rcmdServer.hasClient()) {
 		if (rcmdClient.connected()) {
@@ -19,20 +17,17 @@ void RemoteCmd::update()
 			r_Logger.info("Remote command multi-connection dropped");
 		} else {
 			rcmdClient = rcmdServer.accept();
-			r_Logger.info("Remote command from %s connected", rcmdClient.remoteIP().toString().c_str());
+			r_Logger.info(
+				"Remote command from %s connected",
+				rcmdClient.remoteIP().toString().c_str()
+			);
 		}
 	}
 }
 
-bool RemoteCmd::isConnected()
-{
-	return rcmdClient.connected();
-}
+bool RemoteCmd::isConnected() { return rcmdClient.connected(); }
 
-Stream & RemoteCmd::getStream()
-{
-	return rcmdClient;
-}
+Stream& RemoteCmd::getStream() { return rcmdClient; }
 
 }  // namespace Network
 }  // namespace SlimeVR

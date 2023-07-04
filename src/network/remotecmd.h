@@ -23,10 +23,11 @@
 #ifndef SLIMEVR_NETWORK_REMOTECMD_H_
 #define SLIMEVR_NETWORK_REMOTECMD_H_
 
+#include <WiFiClient.h>
+#include <WiFiServer.h>
+
 #include "globals.h"
 #include "logging/Logger.h"
-#include <WiFiServer.h>
-#include <WiFiClient.h>
 
 namespace SlimeVR {
 namespace Network {
@@ -37,13 +38,13 @@ public:
 	void update();
 
 	bool isConnected();
-	Stream & getStream();
+	Stream& getStream();
 
 private:
 	SlimeVR::Logging::Logger r_Logger = SlimeVR::Logging::Logger("RemoteCmd");
 
-    WiFiServer rcmdServer = WiFiServer(23);
-    WiFiClient rcmdClient;
+	WiFiServer rcmdServer = WiFiServer(23);
+	WiFiClient rcmdClient;
 };
 
 }  // namespace Network

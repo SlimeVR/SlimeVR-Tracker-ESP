@@ -3,13 +3,11 @@
 
 #include <Arduino.h>
 
-namespace SlimeVR
-{
-  namespace Logging
-  {
-	bool getRemoteCmdConncted();
-	Stream & getRemoteCmdStream();
-  }
-}
+namespace SlimeVR {
+namespace Logging {
+bool getRemoteCmdConncted();
+Stream& getRemoteCmdStream();
+}  // namespace Logging
+}  // namespace SlimeVR
 
-#endif // LOGGING_RETOMELOGHELPER_H
+#endif  // LOGGING_RETOMELOGHELPER_H
