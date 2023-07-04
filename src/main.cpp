@@ -39,7 +39,9 @@ SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
 SlimeVR::Network::Manager networkManager;
 SlimeVR::Network::Connection networkConnection;
+#if USE_REMOTE_COMMAND
 SlimeVR::Network::RemoteCmd networkRemoteCmd;
+#endif
 
 int sensorToCalibrate = -1;
 bool blinking = false;

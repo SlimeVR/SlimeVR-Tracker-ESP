@@ -312,11 +312,13 @@ namespace SerialCommands {
 
     void update() {
         cmdCallbacks.updateCmdProcessing(&cmdParser, &cmdBuffer, &Serial);
+        #if USE_REMOTE_COMMAND
         if (networkRemoteCmd.isConnected()) {
 			Stream & networkStream = networkRemoteCmd.getStream();
 			while (networkStream.available()) {
 				cmdCallbacks.updateCmdProcessing(&cmdParser, &cmdBuffer, &networkStream);
 			}
 		}
+        #endif
     }
 }

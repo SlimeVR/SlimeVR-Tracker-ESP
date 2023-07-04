@@ -100,6 +100,7 @@ namespace SlimeVR
 
         Serial.println();
 
+        #if USE_REMOTE_COMMAND
         if (getRemoteCmdConncted())
 		{
 		  Stream & networkStream = getRemoteCmdStream();
@@ -112,6 +113,7 @@ namespace SlimeVR
 
           networkStream.println();
         }
+        #endif
       }
 
       const char *const m_Prefix;

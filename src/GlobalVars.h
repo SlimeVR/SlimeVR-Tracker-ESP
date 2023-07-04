@@ -41,6 +41,8 @@ extern SlimeVR::Configuration::Configuration configuration;
 extern SlimeVR::Sensors::SensorManager sensorManager;
 extern SlimeVR::Network::Manager networkManager;
 extern SlimeVR::Network::Connection networkConnection;
+#if USE_REMOTE_COMMAND
 extern SlimeVR::Network::RemoteCmd networkRemoteCmd;
+#endif
 
 #endif
