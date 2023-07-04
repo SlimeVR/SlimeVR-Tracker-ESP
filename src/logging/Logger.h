@@ -100,7 +100,8 @@ namespace SlimeVR
 
         Serial.println();
 
-        if (getRemoteCmdConncted()) {
+        if (getRemoteCmdConncted())
+		{
 		  Stream & networkStream = getRemoteCmdStream();
           networkStream.printf("[%-5s] [%s] %s", levelToString(level), buf, str);
 
