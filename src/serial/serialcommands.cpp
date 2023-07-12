@@ -24,6 +24,7 @@
 #include "serialcommands.h"
 #include "logging/Logger.h"
 #include <CmdCallback.hpp>
+#include <libb64/cdecode.h>
 #include "GlobalVars.h"
 #include "batterymonitor.h"
 #include "utils.h"
@@ -37,19 +38,37 @@ namespace SerialCommands {
 
     CmdCallback<6> cmdCallbacks;
     CmdParser cmdParser;
-    CmdBuffer<64> cmdBuffer;
+    CmdBuffer<256> cmdBuffer;
 
     void cmdSet(CmdParser * parser) {
-        if(parser->getParamCount() != 1 && parser->equalCmdParam(1, "WIFI")  ) {
-            if(parser->getParamCount() < 3) {
-                logger.error("CMD SET WIFI ERROR: Too few arguments");
-                logger.info("Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
-            } else {
-                WiFiNetwork::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
-                logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
-            }
+        if(parser->getParamCount() != 1) {
+			if (parser->equalCmdParam(1, "WIFI")) {
+				if(parser->getParamCount() < 3) {
+					logger.error("CMD SET WIFI ERROR: Too few arguments");
+					logger.info("Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
+				} else {
+					WiFiNetwork::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
+					logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
+				}
+			} else if (parser->equalCmdParam(1, "BWIFI")) {
+				if(parser->getParamCount() < 3) {
+					logger.error("CMD SET BWIFI ERROR: Too few arguments");
+					logger.info("Syntax: SET BWIFI <B64SSID> <B64PASSWORD>");
+				} else {
+					char ssid[33];
+					char pass[65];
+					const char * b64ssid = parser->getCmdParam(2);
+					const char * b64pass = parser->getCmdParam(3);
+					base64_decode_chars(b64ssid, strlen_P(b64ssid), ssid);
+					base64_decode_chars(b64pass, strlen_P(b64pass), pass);
+					WiFiNetwork::setWiFiCredentials(ssid, pass);
+					logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
+				}
+			} else {
+            	logger.error("CMD SET ERROR: Unrecognized variable to set");
+			}
         } else {
-            logger.error("CMD SET ERROR: Unrecognized variable to set");
+            logger.error("CMD SET ERROR: No variable to set");
         }
     }
 
