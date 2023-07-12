@@ -31,6 +31,7 @@
 #include "sensors/sensor.h"
 #include "wifihandler.h"
 #include "featureflags.h"
+#include "remotecmd.h"
 
 namespace SlimeVR {
 namespace Network {

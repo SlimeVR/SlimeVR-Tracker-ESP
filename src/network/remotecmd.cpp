@@ -18,15 +18,18 @@ void RemoteCmd::update() {
 			rcmdServer.accept().stop();
 			r_Logger.info("Remote command multi-connection dropped");
 		} else {
+			IPAddress rejectedIP;
 			rcmdClient = rcmdServer.accept();
 			if (networkConnection.isConnected()) {
 				// Only accept if rcmdClient have the same remote IP as udpmanager
-				if (rcmdClient.remoteIP() = networkConnection.m_ServerHost) {
+				if (rcmdClient.remoteIP() != networkConnection.m_ServerHost) {
+					rejectedIP = rcmdClient.remoteIP();
 					rcmdClient.stop();
 				}
 			}
 #if !ALLOW_REMOTE_WIFI_PROV
 			else {
+				rejectedIP = rcmdClient.remoteIP();
 				rcmdClient.stop();
 			}
 #endif
@@ -38,7 +41,7 @@ void RemoteCmd::update() {
 			} else {
 				r_Logger.info(
 					"Remote command from %s dropped",
-					rcmdClient.remoteIP().toString().c_str()
+					rejectedIP.toString().c_str()
 				);
 			}
 		}

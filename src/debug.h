@@ -48,7 +48,7 @@
 #define serialDebug false // Set to true to get Serial output for debugging
 #define serialBaudRate 115200
 #define USE_REMOTE_COMMAND true
-#define ALLOW_REMOTE_WIFI_PROV false
+#define ALLOW_REMOTE_WIFI_PROV true
 #define LED_INTERVAL_STANDBY 10000
 #define PRINT_STATE_EVERY_MS 60000
 

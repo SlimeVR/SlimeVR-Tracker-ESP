@@ -4,7 +4,7 @@
 
 namespace SlimeVR {
 namespace Logging {
-bool getRemoteCmdConncted() { return networkRemoteCmd.isConnected(); }
+bool getRemoteCmdConncted() { return networkRemoteCmd.isConnected() && networkConnection.isConnected(); }
 
 Stream& getRemoteCmdStream() { return networkRemoteCmd.getStream(); }
 }  // namespace Logging
