@@ -124,6 +124,8 @@ public:
 	bool beginBundle();
 	bool endBundle();
 
+	friend RemoteCmd;
+
 private:
 	void updateSensorState(std::vector<Sensor *> & sensors);
 	void maybeRequestFeatureFlags();

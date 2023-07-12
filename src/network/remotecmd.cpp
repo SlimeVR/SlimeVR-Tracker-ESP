@@ -1,5 +1,7 @@
 #include "remotecmd.h"
 
+#include "GlobalVars.h"
+
 namespace SlimeVR {
 namespace Network {
 
@@ -17,10 +19,28 @@ void RemoteCmd::update() {
 			r_Logger.info("Remote command multi-connection dropped");
 		} else {
 			rcmdClient = rcmdServer.accept();
-			r_Logger.info(
-				"Remote command from %s connected",
-				rcmdClient.remoteIP().toString().c_str()
-			);
+			if (networkConnection.isConnected()) {
+				// Only accept if rcmdClient have the same remote IP as udpmanager
+				if (rcmdClient.remoteIP() = networkConnection.m_ServerHost) {
+					rcmdClient.stop();
+				}
+			}
+#if !ALLOW_REMOTE_WIFI_PROV
+			else {
+				rcmdClient.stop();
+			}
+#endif
+			if (rcmdClient.connected()) {
+				r_Logger.info(
+					"Remote command from %s connected",
+					rcmdClient.remoteIP().toString().c_str()
+				);
+			} else {
+				r_Logger.info(
+					"Remote command from %s dropped",
+					rcmdClient.remoteIP().toString().c_str()
+				);
+			}
 		}
 	}
 }
