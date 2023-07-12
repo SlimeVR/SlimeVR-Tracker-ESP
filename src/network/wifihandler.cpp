@@ -124,6 +124,7 @@ void WiFiNetwork::setUp() {
 void onConnected() {
     WiFiNetwork::stopProvisioning();
     statusManager.setStatus(SlimeVR::Status::WIFI_CONNECTING, false);
+	networkRemoteCmd.reset();
     isWifiConnected = true;
     hadWifi = true;
     wifiHandlerLogger.info("Connected successfully to SSID '%s', ip address %s", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
