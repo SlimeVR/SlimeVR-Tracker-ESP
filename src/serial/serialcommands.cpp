@@ -39,8 +39,6 @@ namespace SerialCommands {
     CmdParser cmdParser;
     CmdBuffer<64> cmdBuffer;
 
-    int wifiScanIndex = -1;
-
     void cmdSet(CmdParser * parser) {
         if(parser->getParamCount() != 1 && parser->equalCmdParam(1, "WIFI")  ) {
             if(parser->getParamCount() < 3) {
@@ -163,11 +161,29 @@ namespace SerialCommands {
         }
 
         if (parser->equalCmdParam(1, "WIFISCAN")) {
-            if (wifiScanIndex < 0) {
-                WiFi.scanNetworks(true);
-                wifiScanIndex = 0;
-                logger.info("[WIFISCAN] Scanning for WiFi networks...");
-            }
+			logger.info("[WSCAN] Scanning for WiFi networks...");
+
+			// Scan would fail if connecting, stop connecting before scan
+			if (WiFi.status() != WL_CONNECTED) WiFi.disconnect();
+
+			WiFi.scanNetworks();
+
+			int scanRes = WiFi.scanComplete();
+			if (scanRes >= 0) {
+				logger.info("[WSCAN] Found %d networks:", scanRes);
+				for (int i = 0; i < scanRes; i++) {
+					logger.info("[WSCAN] %d:\t%s\t(%d)\t%s",
+						i, WiFi.SSID(i).c_str(), WiFi.RSSI(i),
+						((WiFi.encryptionType(i) == 0) ? "OPEN" : "PASS")
+					);
+				}
+				WiFi.scanDelete();
+			} else {
+				logger.info("[WSCAN] Scan failed!");
+			}
+
+			// Restore conencting state
+			if (WiFi.status() != WL_CONNECTED) WiFi.begin();
         }
     }
 
@@ -230,32 +246,6 @@ namespace SerialCommands {
         logger.info("  Temperature calibration config saves automatically when calibration percent is at 100%");
     }
 
-    void updateWiFiScan() {
-        int scanRes = WiFi.scanComplete();
-        if (scanRes == WIFI_SCAN_FAILED) {
-            wifiScanIndex = -1;
-            logger.info("[WIFISCAN] Scan failed!");
-        } else if (scanRes >= 0) {
-            if (wifiScanIndex == 0) {
-                logger.info("[WIFISCAN] Found %d networks:", scanRes);
-            }
-
-            logger.info("[WIFISCAN] %d: %s (%d) %s",
-                wifiScanIndex,
-                WiFi.SSID(wifiScanIndex).c_str(),
-                WiFi.RSSI(wifiScanIndex),
-                ((WiFi.encryptionType(wifiScanIndex) == 0) ? "OPEN" : "PASS")
-            );
-
-            wifiScanIndex++;
-            if (wifiScanIndex >= scanRes) {
-                wifiScanIndex = -1;
-                WiFi.scanDelete();
-                logger.info("[WIFISCAN] Scan finished!");
-            }
-        }
-    }
-
     void setUp() {
         cmdCallbacks.addCmd("SET", &cmdSet);
         cmdCallbacks.addCmd("GET", &cmdGet);
@@ -265,9 +255,6 @@ namespace SerialCommands {
     }
 
     void update() {
-        if (wifiScanIndex >= 0) {
-            updateWiFiScan();
-        }
         cmdCallbacks.updateCmdProcessing(&cmdParser, &cmdBuffer, &Serial);
     }
 }
