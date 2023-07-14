@@ -41,7 +41,7 @@ public:
     void motionLoop() override final;
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
-    uint8_t getSensorState() override final;
+    SensorStatus getSensorState() override final;
 
 private:
     BNO080 imu{};

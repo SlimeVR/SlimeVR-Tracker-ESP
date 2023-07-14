@@ -21,18 +21,18 @@
     THE SOFTWARE.
 */
 #include "sensor.h"
-#include "network/network.h"
+#include "GlobalVars.h"
 #include <i2cscan.h>
 #include "calibration.h"
 
-uint8_t Sensor::getSensorState() {
+SensorStatus Sensor::getSensorState() {
     return isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
 void Sensor::sendData() {
     if(newFusedRotation) {
         newFusedRotation = false;
-        Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
+        networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
 
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
@@ -42,7 +42,7 @@ void Sensor::sendData() {
 #if SEND_ACCELERATION
     if(newAcceleration) {
         newAcceleration = false;
-        Network::sendAccel(acceleration, sensorId);
+        networkConnection.sendSensorAcceleration(sensorId, acceleration);
     }
 #endif
 }

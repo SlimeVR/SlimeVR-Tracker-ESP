@@ -23,7 +23,6 @@
 #include "icm20948sensor.h"
 #include "calibration.h"
 #include <i2cscan.h>
-#include "network/network.h"
 #include "GlobalVars.h"
 
 // seconds after previous save (from start) when calibration (DMP Bias) data will be saved to NVS. Increments through the list then stops; to prevent unwelcome eeprom wear.
@@ -61,7 +60,7 @@ void ICM20948Sensor::motionLoop()
         float mY = imu.magY();
         float mZ = imu.magZ();
 
-        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
+        networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
     }
 #endif
 
@@ -96,11 +95,11 @@ void ICM20948Sensor::sendData()
 
         #if(USE_6_AXIS)
         {
-            Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, 0, sensorId);
+            networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, 0);
         }
         #else
         {
-            Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
+            Network::sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy);
         }
         #endif
     }
@@ -108,7 +107,7 @@ void ICM20948Sensor::sendData()
 #if SEND_ACCELERATION
     if(newAcceleration) {
         newAcceleration = false;
-        Network::sendAccel(acceleration, sensorId);
+        networkConnection.sendSensorAcceleration(sensorId, acceleration);
     }
 #endif
 }
@@ -300,7 +299,7 @@ void ICM20948Sensor::checkSensorTimeout()
         working = false;
         lastData = millis();
         m_Logger.error("Sensor timeout I2C Address 0x%02x", addr);
-        Network::sendError(1, this->sensorId);
+        networkConnection.sendSensorError(this->sensorId, 1);
     }
 }
 

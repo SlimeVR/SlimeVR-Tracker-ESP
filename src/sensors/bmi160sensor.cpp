@@ -22,7 +22,6 @@
 */
 
 #include "bmi160sensor.h"
-#include "network/network.h"
 #include "GlobalVars.h"
 #include <hmc5883l.h>
 #include <qmc5883l.h>
@@ -205,7 +204,7 @@ void BMI160Sensor::motionSetup() {
             gscaleZ = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.z);
             m_Logger.debug("Custom sensitivity offset enabled: %s %s",
                 offsets.mac,
-                offsets.sensorId == SENSORID_PRIMARY ? "primary" : "aux" 
+                offsets.sensorId == SENSORID_PRIMARY ? "primary" : "aux"
             );
         }
     }
@@ -256,7 +255,7 @@ void BMI160Sensor::motionLoop() {
         getRemappedRotation(&rX, &rY, &rZ);
         getRemappedAcceleration(&aX, &aY, &aZ);
 
-        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+        networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
     }
     #endif
 
@@ -277,13 +276,13 @@ void BMI160Sensor::motionLoop() {
                 sensorTime1 = rawSensorTime;
                 if ((sensorTime0 > 0 || localTime0 > 0) && (sensorTime1 > 0 || sensorTime1 > 0)) {
                     // handle 24 bit overflow
-                    double remoteDt = 
+                    double remoteDt =
                         sensorTime1 >= sensorTime0 ?
                         sensorTime1 - sensorTime0 :
                         (sensorTime1 + 0xFFFFFF) - sensorTime0;
                     double localDt = localTime1 - localTime0;
                     const double nextSensorTimeRatio = localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
-                    
+
                     // handle sdk lags and time travel
                     if (round(nextSensorTimeRatio) == 1.0) {
                         sensorTimeRatio = nextSensorTimeRatio;
@@ -307,7 +306,7 @@ void BMI160Sensor::motionLoop() {
             optimistic_yield(100);
         }
     }
-    
+
     {
         uint32_t now = micros();
         constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
@@ -368,9 +367,9 @@ void BMI160Sensor::motionLoop() {
             lastTemperaturePacketSent = now - (elapsed - sendInterval);
             #if BMI160_TEMPCAL_DEBUG
                 uint32_t isCalibrating = gyroTempCalibrator->isCalibrating() ? 10000 : 0;
-                Network::sendTemperature(isCalibrating + 10000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature, sensorId);
+                networkConnection.sendTemperature(sensorId, isCalibrating + 10000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature);
             #else
-                Network::sendTemperature(temperature, sensorId);
+                networkConnection.sendTemperature(sensorId, temperature);
             #endif
             optimistic_yield(100);
         }
@@ -391,7 +390,7 @@ void BMI160Sensor::motionLoop() {
                     vqf.getQuat9D(qwxyz);
                 #endif
             #endif
-            
+
             if (isnan(qwxyz[0]) || isnan(qwxyz[1]) || isnan(qwxyz[2]) || isnan(qwxyz[3])) {
                 qwxyz[0] = 1;
                 qwxyz[1] = 0;
@@ -469,11 +468,11 @@ void BMI160Sensor::readFIFO() {
     for (uint32_t i = 0; i < fifo.length;) {
         #define BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(len) { if (i + len > fifo.length) break; }
         BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(1);
-        
+
         // ignore interrupt tags in header
         header = fifo.data[i] & 0b11111100;
         i++;
-        
+
         if (header == BMI160_FIFO_HEADER_CTL_SKIP_FRAME) {
             BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_SKIP_FRAME_LEN);
             break;
@@ -502,7 +501,7 @@ void BMI160Sensor::readFIFO() {
                 #endif
                 i += BMI160_FIFO_M_LEN;
             }
-            
+
             // bmi160 -> 0 lsb 1 msb
             // gyro
             if (header & BMI160_FIFO_HEADER_DATA_FRAME_FLAG_G) {
@@ -539,7 +538,7 @@ void BMI160Sensor::readFIFO() {
                 timestamp1 = (localTime1 - alignmentOffset - syncLatencyMicros) +
                     (++samplesSinceClockSync) * sampleDtMicros;
                 int32_t dtMicros = timestamp1 - timestamp0;
-                
+
                 constexpr float invPeriod = 1.0f / BMI160_ODR_GYR_MICROS;
                 int32_t sampleOffset = round((float)dtMicros * invPeriod) - 1;
                 if (abs(sampleOffset) > 3) {
@@ -788,7 +787,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     maybeCalibrateGyro();
     maybeCalibrateAccel();
     maybeCalibrateMag();
-    
+
     m_Logger.debug("Saving the calibration data");
 
     SlimeVR::Configuration::CalibrationConfig calibration;
@@ -950,7 +949,7 @@ void BMI160Sensor::maybeCalibrateAccel() {
                 delayMicroseconds(BMI160_ODR_ACC_MICROS);
                 continue;
             }
-            
+
             if (calibrationRestDetection.getRestDetected()) {
                 const uint16_t i = numCurrentPositionSamples * 3;
                 accelCalibrationChunk[i + 0] = ax;
@@ -1029,7 +1028,7 @@ void BMI160Sensor::maybeCalibrateMag() {
     delay(100);
     ledManager.on();
     m_Logger.debug("Gathering magnetometer data...");
-    
+
     constexpr float SAMPLE_DELAY_MS = 100.0f;
     constexpr uint16_t magCalibrationSamples =
         MAG_CALIBRATION_DURATION_SEC / (SAMPLE_DELAY_MS / 1e3f);

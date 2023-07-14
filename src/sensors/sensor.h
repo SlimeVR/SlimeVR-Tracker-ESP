@@ -35,6 +35,12 @@
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
 
+enum class SensorStatus : uint8_t {
+    SENSOR_OFFLINE = 0,
+    SENSOR_OK = 1,
+    SENSOR_ERROR = 2
+};
+
 class Sensor
 {
 public:
@@ -52,7 +58,7 @@ public:
     virtual void motionLoop(){};
     virtual void sendData();
     virtual void startCalibration(int calibrationType){};
-    virtual uint8_t getSensorState();
+    virtual SensorStatus getSensorState();
     virtual void printTemperatureCalibrationState();
     virtual void printDebugTemperatureCalibrationState();
     virtual void resetTemperatureCalibrationState();
@@ -95,12 +101,5 @@ private:
 };
 
 const char * getIMUNameByType(int imuType);
-
-enum SensorStatus {
-    SENSOR_OFFLINE = 0,
-    SENSOR_OK = 1,
-    SENSOR_ERROR = 2
-};
-
 
 #endif // SLIMEVR_SENSOR_H_

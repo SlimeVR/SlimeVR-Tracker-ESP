@@ -22,7 +22,6 @@
 */
 
 #include "serialcommands.h"
-#include "network/network.h"
 #include "logging/Logger.h"
 #include <CmdCallback.hpp>
 #include "GlobalVars.h"
@@ -88,14 +87,14 @@ namespace SerialCommands {
         if (parser->getParamCount() < 2) {
             return;
         }
-        
+
         if (parser->equalCmdParam(1, "INFO")) {
             printState();
         }
 
         if (parser->equalCmdParam(1, "CONFIG")) {
             String str =
-                "BOARD=%d\n" 
+                "BOARD=%d\n"
                 "IMU=%d\n"
                 "SECOND_IMU=%d\n"
                 "IMU_ROTATION=%f\n"
@@ -220,7 +219,7 @@ namespace SerialCommands {
         logger.info("Note:");
         logger.info("  Temperature calibration config saves automatically when calibration percent is at 100%");
     }
-    
+
     void setUp() {
         cmdCallbacks.addCmd("SET", &cmdSet);
         cmdCallbacks.addCmd("GET", &cmdGet);

@@ -21,7 +21,6 @@
     THE SOFTWARE.
 */
 #include "globals.h"
-#include "network.h"
 #include "logging/Logger.h"
 #include "GlobalVars.h"
 #if !ESP8266
@@ -86,7 +85,7 @@ void WiFiNetwork::setUp() {
     wifiHandlerLogger.debug("Status: %d", status);
     wifiState = SLIME_WIFI_SAVED_ATTEMPT;
     wifiConnectionTimeout = millis();
-    
+
 #if ESP8266
 #if POWERSAVING_MODE == POWER_SAVING_NONE
     WiFi.setSleepMode(WIFI_NONE_SLEEP);
@@ -188,7 +187,7 @@ void WiFiNetwork::upkeep() {
                     #endif
                     wifiState = SLIME_WIFI_HARDCODE_G_ATTEMPT;
                 return;
-                case SLIME_WIFI_SERVER_CRED_ATTEMPT: // Couldn't connect with server-sent credentials. 
+                case SLIME_WIFI_SERVER_CRED_ATTEMPT: // Couldn't connect with server-sent credentials.
                     #if ESP8266
                         // Try again silently but with 11G
                         WiFi.setPhyMode(WIFI_PHY_MODE_11G);
@@ -197,7 +196,7 @@ void WiFiNetwork::upkeep() {
                         wifiConnectionTimeout = millis();
                         wifiState = SLIME_WIFI_SERVER_CRED_G_ATTEMPT;
                     #endif
-                return;                
+                return;
                 case SLIME_WIFI_HARDCODE_G_ATTEMPT: // Couldn't connect with second set of credentials with PHY Mode G.
                 case SLIME_WIFI_SERVER_CRED_G_ATTEMPT: // Or if couldn't connect with server-sent credentials
                     // Return to the default PHY Mode N.
@@ -224,7 +223,7 @@ void WiFiNetwork::upkeep() {
         if(millis() - last_rssi_sample >= 2000) {
             last_rssi_sample = millis();
             uint8_t signalStrength = WiFi.RSSI();
-            Network::sendSignalStrength(signalStrength);
+            networkConnection.sendSignalStrength(signalStrength);
         }
     }
     return;

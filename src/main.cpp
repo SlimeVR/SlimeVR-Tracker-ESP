@@ -24,7 +24,6 @@
 #include "Wire.h"
 #include "ota.h"
 #include "GlobalVars.h"
-#include "network/network.h"
 #include "globals.h"
 #include "credentials.h"
 #include <i2cscan.h>
@@ -32,12 +31,14 @@
 #include "batterymonitor.h"
 #include "logging/Logger.h"
 
+Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
 SlimeVR::LEDManager ledManager(LED_PIN);
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
-Timer<> globalTimer;
+SlimeVR::Network::Manager networkManager;
+SlimeVR::Network::Connection networkConnection;
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -52,7 +53,7 @@ void setup()
     Serial.begin(serialBaudRate);
     globalTimer = timer_create_default();
 
-#ifdef ESP32C3 
+#ifdef ESP32C3
     // Wait for the Computer to be able to connect.
     delay(2000);
 #endif
@@ -82,7 +83,7 @@ void setup()
 #endif
 
     // using `static_cast` here seems to be better, because there are 2 similar function signatures
-    Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL)); 
+    Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
 
 #ifdef ESP8266
     Wire.setClockStretchLimit(150000L); // Default stretch limit 150mS
@@ -94,10 +95,10 @@ void setup()
 
     // Wait for IMU to boot
     delay(500);
-    
+
     sensorManager.setup();
-    
-    Network::setUp();
+
+    networkManager.setup();
     OTA::otaSetup(otaPassword);
     battery.Setup();
 
@@ -113,7 +114,7 @@ void loop()
     globalTimer.tick();
     SerialCommands::update();
     OTA::otaUpdate();
-    Network::update(sensorManager.getFirst(), sensorManager.getSecond());
+    networkManager.update();
     sensorManager.update();
     battery.Loop();
     ledManager.update();
