@@ -421,7 +421,7 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
 
     //apply offsets (bias) and scale factors from Magneto
     for (unsigned i = 0; i < 3; i++) {
-        temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+        temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
     }
     
     for (unsigned i = 0; i < 3; i++) {
