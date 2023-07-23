@@ -53,7 +53,7 @@ private:
     SlimeVR::Sensors::SensorFusionDMP sfusion;
 
 #ifndef IMU_MPU6050_RUNTIME_CALIBRATION
-    SlimeVR::Configuration::MPU6050CalibrationConfig m_Calibration;
+    SlimeVR::Configuration::MPU6050CalibrationConfig m_Calibration = {};
 #endif
 };
 
