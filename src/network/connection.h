@@ -30,6 +30,7 @@
 #include "quat.h"
 #include "sensors/sensor.h"
 #include "wifihandler.h"
+#include "featureflags.h"
 
 namespace SlimeVR {
 namespace Network {
@@ -70,6 +71,9 @@ public:
 	// PACKET_TEMPERATURE 20
 	void sendTemperature(uint8_t sensorId, float temperature);
 
+	// PACKET_FEATURE_FLAGS 22
+	void sendFeatureFlags();
+
 #if ENABLE_INSPECTION
 	void sendInspectionRawIMUData(
 		uint8_t sensorId,
@@ -103,17 +107,28 @@ public:
 	);
 #endif
 
+	const ServerFeatures& getServerFeatureFlags() {
+		return m_ServerFeatures;
+	}
+
+	bool beginBundle();
+	bool endBundle();
+
 private:
 	void updateSensorState(Sensor* const sensor1, Sensor* const sensor2);
+	void maybeRequestFeatureFlags();
 
 	bool beginPacket();
 	bool endPacket();
+
+	size_t write(const uint8_t *buffer, size_t size);
+	size_t write(uint8_t byte);
 
 	bool sendPacketType(uint8_t type);
 	bool sendPacketNumber();
 	bool sendFloat(float f);
 	bool sendByte(uint8_t c);
-	bool sendInt(int i);
+	bool sendInt(uint32_t i);
 	bool sendLong(uint64_t l);
 	bool sendBytes(const uint8_t* c, size_t length);
 	bool sendShortString(const char* str);
@@ -141,12 +156,19 @@ private:
 
 	int m_ServerPort = 6969;
 	IPAddress m_ServerHost = IPAddress(255, 255, 255, 255);
-	unsigned long m_lastConnectionAttemptTimestamp;
+	unsigned long m_LastConnectionAttemptTimestamp;
 	unsigned long m_LastPacketTimestamp;
 
 	SensorStatus m_AckedSensorState1 = SensorStatus::SENSOR_OFFLINE;
 	SensorStatus m_AckedSensorState2 = SensorStatus::SENSOR_OFFLINE;
 	unsigned long m_LastSensorInfoPacketTimestamp = 0;
+
+	uint8_t m_FeatureFlagsRequestAttempts = 0;
+	unsigned long m_FeatureFlagsRequestTimestamp = millis();
+	ServerFeatures m_ServerFeatures{};
+
+	bool m_IsBundle = false;
+	uint16_t m_BundlePacketPosition = 0;
 
 	unsigned char m_Buf[8];
 };

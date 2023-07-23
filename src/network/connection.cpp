@@ -66,6 +66,11 @@ namespace Network {
 		return;
 
 bool Connection::beginPacket() {
+	if (m_IsBundle) {
+		m_BundlePacketPosition = 0;
+		return true;
+	}
+
 	int r = m_UDP.beginPacket(m_ServerHost, m_ServerPort);
 	if (r == 0) {
 		// This *technically* should *never* fail, since the underlying UDP
@@ -78,6 +83,13 @@ bool Connection::beginPacket() {
 }
 
 bool Connection::endPacket() {
+	if (m_IsBundle) {
+		m_UDP.write(m_BundlePacketPosition >> 8);
+		m_UDP.write(m_BundlePacketPosition & 0xFF);
+		m_UDP.write(m_Packet, m_BundlePacketPosition);
+		return true;
+	}
+
 	int r = m_UDP.endPacket();
 	if (r == 0) {
 		// This is usually just `ERR_ABRT` but the UDP client doesn't expose
@@ -89,31 +101,80 @@ bool Connection::endPacket() {
 	return r > 0;
 }
 
+bool Connection::beginBundle() {
+	if (!m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
+		return false;
+	}
+
+	if (!m_Connected || m_IsBundle) {
+		return false;
+	}
+
+	if (beginPacket()) {
+		sendPacketType(PACKET_BUNDLE);
+		sendPacketNumber();
+		m_IsBundle = true;
+		return true;
+	}
+	
+	return false;
+}
+
+bool Connection::endBundle() {
+	m_IsBundle = false;
+
+	if (!m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
+		return false;
+	}
+
+	return endPacket();
+}
+
+size_t Connection::write(const uint8_t *buffer, size_t size) {
+	if (m_IsBundle) {
+		if (m_BundlePacketPosition + size > sizeof(m_Packet)) {
+			return 0;
+		}
+		memcpy(m_Packet + m_BundlePacketPosition, buffer, size);
+		m_BundlePacketPosition += size;
+		return size;
+	}
+	return m_UDP.write(buffer, size);
+}
+
+size_t Connection::write(uint8_t byte) {
+	return write(&byte, 1);
+}
+
 bool Connection::sendFloat(float f) {
 	convert_to_chars(f, m_Buf);
 
-	return m_UDP.write(m_Buf, sizeof(f)) != 0;
+	return write(m_Buf, sizeof(f)) != 0;
 }
 
-bool Connection::sendByte(uint8_t c) { return m_UDP.write(&c, 1) != 0; }
+bool Connection::sendByte(uint8_t c) { return write(&c, 1) != 0; }
 
-bool Connection::sendInt(int i) {
+bool Connection::sendInt(uint32_t i) {
 	convert_to_chars(i, m_Buf);
 
-	return m_UDP.write(m_Buf, sizeof(i)) != 0;
+	return write(m_Buf, sizeof(i)) != 0;
 }
 
 bool Connection::sendLong(uint64_t l) {
 	convert_to_chars(l, m_Buf);
 
-	return m_UDP.write(m_Buf, sizeof(l)) != 0;
+	return write(m_Buf, sizeof(l)) != 0;
 }
 
 bool Connection::sendBytes(const uint8_t* c, size_t length) {
-	return m_UDP.write(c, length) != 0;
+	return write(c, length) != 0;
 }
 
 bool Connection::sendPacketNumber() {
+	if (m_IsBundle) {
+		return true;
+	}
+
 	uint64_t pn = m_PacketNumber++;
 
 	return sendLong(pn);
@@ -297,6 +358,19 @@ void Connection::sendTemperature(uint8_t sensorId, float temperature) {
 	MUST(endPacket());
 }
 
+// PACKET_FEATURE_FLAGS 22
+void Connection::sendFeatureFlags() {
+	MUST(m_Connected);
+
+	MUST(beginPacket());
+
+	MUST(sendPacketType(PACKET_FEATURE_FLAGS));
+	MUST(sendPacketNumber());
+	MUST(write(FirmwareFeatures::flags.data(), FirmwareFeatures::flags.size()));
+
+	MUST(endPacket());
+}
+
 void Connection::sendTrackerDiscovery() {
 	MUST(!m_Connected);
 
@@ -443,6 +517,20 @@ void Connection::updateSensorState(Sensor* const sensor1, Sensor* const sensor2)
 	}
 }
 
+void Connection::maybeRequestFeatureFlags() {	
+	if (m_ServerFeatures.isAvailable() || m_FeatureFlagsRequestAttempts >= 15) {
+		return;
+	}
+
+	if (millis() - m_FeatureFlagsRequestTimestamp < 500) {
+		return;
+	}
+
+	sendFeatureFlags();
+	m_FeatureFlagsRequestTimestamp = millis();
+	m_FeatureFlagsRequestAttempts++;
+}
+
 void Connection::searchForServer() {
 	while (true) {
 		int packetSize = m_UDP.parsePacket();
@@ -475,6 +563,9 @@ void Connection::searchForServer() {
 			m_ServerPort = m_UDP.remotePort();
 			m_LastPacketTimestamp = millis();
 			m_Connected = true;
+			
+			m_FeatureFlagsRequestAttempts = 0;
+			m_ServerFeatures = ServerFeatures { };
 
 			statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, false);
 			ledManager.off();
@@ -492,12 +583,12 @@ void Connection::searchForServer() {
 	auto now = millis();
 
 	// This makes the LED blink for 20ms every second
-	if (m_lastConnectionAttemptTimestamp + 1000 < now) {
-		m_lastConnectionAttemptTimestamp = now;
+	if (m_LastConnectionAttemptTimestamp + 1000 < now) {
+		m_LastConnectionAttemptTimestamp = now;
 		m_Logger.info("Searching for the server on the local network...");
 		Connection::sendTrackerDiscovery();
 		ledManager.on();
-	} else if (m_lastConnectionAttemptTimestamp + 20 < now) {
+	} else if (m_LastConnectionAttemptTimestamp + 20 < now) {
 		ledManager.off();
 	}
 }
@@ -517,6 +608,7 @@ void Connection::update() {
 	auto sensor2 = sensorManager.getSecond();
 
 	updateSensorState(sensor1, sensor2);
+	maybeRequestFeatureFlags();
 
 	if (!m_Connected) {
 		searchForServer();
@@ -588,6 +680,29 @@ void Connection::update() {
 			} else if (m_Packet[4] == sensor2->getSensorId()) {
 				m_AckedSensorState2 = (SensorStatus)m_Packet[5];
 			}
+
+			break;
+
+		case PACKET_FEATURE_FLAGS:
+			// Packet type (4) + Packet number (8) + flags (len - 12)
+			if (len < 13) {
+				m_Logger.warn("Invalid feature flags packet: too short");
+				break;
+			}
+
+			uint32_t flagsLength = len - 12;
+
+			if (m_ServerFeatures.isAvailable() || flagsLength <= 0) {
+				break;
+			}
+			
+			m_ServerFeatures = ServerFeatures::from(&m_Packet[12], flagsLength);
+
+			#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+				if (m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
+					m_Logger.debug("Server supports packet bundling");
+				}
+			#endif
 
 			break;
 	}

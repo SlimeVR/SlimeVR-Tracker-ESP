@@ -124,18 +124,61 @@ namespace SlimeVR
 
         void SensorManager::update()
         {
-            // Gather IMU data
-            m_Sensor1->motionLoop();
-            m_Sensor2->motionLoop();
+            Sensor* sensors[2] = { m_Sensor1, m_Sensor2 };
 
-            if (!networkConnection.isConnected())
-            {
+            for (auto sensor : sensors) {
+                sensor->motionLoop();
+            }
+
+            if (!networkConnection.isConnected()) {
                 return;
             }
 
-            // Send updates
-            m_Sensor1->sendData();
-            m_Sensor2->sendData();
+            uint32_t now = micros();
+            bool shouldSend = false;
+
+            #ifndef PACKET_BUNDLING
+                static_assert(false, "PACKET_BUNDLING not set");
+            #endif
+            #if PACKET_BUNDLING == PACKET_BUNDLING_LOWLATENCY
+                for (auto sensor : sensors) {
+                    if (sensor->hasNewDataToSend()) {
+                        shouldSend = true;
+                        break;
+                    }
+                }
+            #elif PACKET_BUNDLING == PACKET_BUNDLING_BUFFERED
+                bool allSensorsReady = true;
+                for (auto sensor : sensors) {
+                    if (!sensor->isWorking()) continue;
+                    if (sensor->hasNewDataToSend()) shouldSend = true;
+                    allSensorsReady &= sensor->hasNewDataToSend();
+                }
+
+                if (now - m_LastBundleSentAtMicros < PACKET_BUNDLING_BUFFER_SIZE_MICROS) {
+                    shouldSend &= allSensorsReady;
+                }
+            #else
+                shouldSend = true;
+            #endif
+            
+            if (!shouldSend) {
+                return;
+            }
+
+            m_LastBundleSentAtMicros = now;
+            
+            #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+                networkConnection.beginBundle();
+            #endif
+
+            for (auto sensor : sensors) {
+                sensor->sendData();
+            }
+
+            #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+                networkConnection.endBundle();
+            #endif
         }
     }
 }

@@ -57,6 +57,8 @@ namespace SlimeVR
 
             Sensor *m_Sensor1;
             Sensor *m_Sensor2;
+
+            uint32_t m_LastBundleSentAtMicros = micros();
         };
     }
 }
