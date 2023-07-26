@@ -70,7 +70,7 @@ namespace SerialCommands {
                 "Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
                 sensor->getSensorId(),
                 getIMUNameByType(sensor->getSensorType()),
-                UNPACK_QUATERNION(sensor->getFusedRotations()),
+                UNPACK_QUATERNION(sensor->getFusedRotation()),
                 sensor->isWorking() ? "true" : "false",
                 sensor->hadData ? "true" : "false"
             );

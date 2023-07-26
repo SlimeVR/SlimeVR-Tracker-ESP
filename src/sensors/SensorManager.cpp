@@ -23,7 +23,6 @@
 
 #include "SensorManager.h"
 #include <i2cscan.h>
-#include "network/network.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
 #include "mpu9250sensor.h"
