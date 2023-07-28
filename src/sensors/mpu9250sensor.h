@@ -32,7 +32,8 @@
 class MPU9250Sensor : public Sensor
 {
 public:
-    MPU9250Sensor(uint8_t id, uint8_t address, float rotation) : Sensor("MPU9250Sensor", IMU_MPU9250, id, address, rotation){};
+    MPU9250Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin) 
+        : Sensor("MPU9250Sensor", IMU_MPU9250, id, address, rotation, sclPin, sdaPin){};
     ~MPU9250Sensor(){};
     void motionSetup() override final;
     void motionLoop() override final;
