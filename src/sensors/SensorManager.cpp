@@ -57,7 +57,7 @@ namespace SlimeVR
             I2CSCAN::clearBus(sdaPin, sclPin);
             swapI2C(sclPin, sdaPin);
 
-            if (I2CSCAN::isI2CExist(address)) {
+            if (I2CSCAN::hasDevOnBus(address)) {
                 m_Logger.trace("IMU %d found at address 0x%02X", sensorID, address);
             } else {
                 sensor = new ErroneousSensor(sensorID, imuType);
