@@ -44,8 +44,9 @@ enum class SensorStatus : uint8_t {
 class Sensor
 {
 public:
-    Sensor(const char *sensorName, uint8_t type, uint8_t id, uint8_t address, float rotation)
-        : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName))
+    Sensor(const char *sensorName, uint8_t type, uint8_t id, uint8_t address, float rotation, uint8_t sclpin=0, uint8_t sdapin=0)
+        : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
+            sclPin(sclpin), sdaPin(sdapin)
     {
         char buf[4];
         sprintf(buf, "%u", id);
@@ -63,9 +64,11 @@ public:
     virtual void printDebugTemperatureCalibrationState();
     virtual void resetTemperatureCalibrationState();
     virtual void saveTemperatureCalibration();
-    bool isWorking()
-    {
+    bool isWorking() {
         return working;
+    };
+    bool isValid() {
+        return sclPin != sdaPin;
     };
     uint8_t getSensorId() {
         return sensorId;
@@ -95,6 +98,10 @@ protected:
     float acceleration[3]{};
 
     SlimeVR::Logging::Logger m_Logger;
+    
+public:
+    uint8_t sclPin = 0;
+    uint8_t sdaPin = 0;
 
 private:
     void printTemperatureCalibrationUnsupported();

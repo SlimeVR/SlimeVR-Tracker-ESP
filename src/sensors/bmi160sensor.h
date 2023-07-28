@@ -167,6 +167,7 @@ class BMI160Sensor : public Sensor {
         bool getTemperature(float* out);
     private:
         BMI160 imu {};
+        int axisRemap;
 
         SlimeVR::Sensors::SensorFusionRestDetect sfusion;
 
