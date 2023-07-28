@@ -24,7 +24,8 @@
 #define SLIMEVR_ICM20948SENSOR_H_
 
 #include <ICM_20948.h>
-#include "sensor.h" // Used for periodically saving bias
+#include "sensor.h"
+#include "SensorFusionDMP.h"
 
 class ICM20948Sensor : public Sensor
 {
@@ -46,9 +47,7 @@ private:
     unsigned long lastData = 0;
     unsigned long lastDataSent = 0;
     int bias_save_counter = 0;
-    bool newTap;
-    int16_t rawAccel[3];
-    
+
     #define DMPNUMBERTODOUBLECONVERTER 1073741824.0;
 
     ICM_20948_I2C imu;
@@ -57,6 +56,8 @@ private:
     icm_20948_DMP_data_t dmpDataTemp{};
 
     SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration;
+
+    SlimeVR::Sensors::SensorFusionDMP sfusion;
 
     void saveCalibration(bool repeat);
     void loadCalibration();

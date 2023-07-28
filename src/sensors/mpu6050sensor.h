@@ -26,6 +26,7 @@
 
 #include "sensor.h"
 #include <MPU6050.h>
+#include "SensorFusionDMP.h"
 
 class MPU6050Sensor : public Sensor
 {
@@ -48,6 +49,8 @@ private:
     uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
     uint16_t fifoCount;       // count of all bytes currently in FIFO
     uint8_t fifoBuffer[64]{}; // FIFO storage buffer
+
+    SlimeVR::Sensors::SensorFusionDMP sfusion;
 
 #ifndef IMU_MPU6050_RUNTIME_CALIBRATION
     SlimeVR::Configuration::MPU6050CalibrationConfig m_Calibration;
