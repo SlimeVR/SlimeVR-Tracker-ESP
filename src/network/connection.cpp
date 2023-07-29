@@ -84,9 +84,21 @@ bool Connection::beginPacket() {
 
 bool Connection::endPacket() {
 	if (m_IsBundle) {
-		m_UDP.write(m_BundlePacketPosition >> 8);
-		m_UDP.write(m_BundlePacketPosition & 0xFF);
-		m_UDP.write(m_Packet, m_BundlePacketPosition);
+		uint32_t innerPacketSize = m_BundlePacketPosition;
+
+		MUST_TRANSFER_BOOL((innerPacketSize > 0));
+
+		m_IsBundle = false;
+		
+		if (m_BundlePacketInnerCount == 0) {
+			sendPacketType(PACKET_BUNDLE);
+			sendPacketNumber();
+		}
+		sendShort(innerPacketSize);
+		sendBytes(m_Packet, innerPacketSize);
+
+		m_BundlePacketInnerCount++;
+		m_IsBundle = true;
 		return true;
 	}
 
@@ -102,30 +114,22 @@ bool Connection::endPacket() {
 }
 
 bool Connection::beginBundle() {
-	if (!m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
-		return false;
-	}
+	MUST_TRANSFER_BOOL(m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT));
+	MUST_TRANSFER_BOOL(m_Connected);
+	MUST_TRANSFER_BOOL(!m_IsBundle);
+	MUST_TRANSFER_BOOL(beginPacket());
 
-	if (!m_Connected || m_IsBundle) {
-		return false;
-	}
-
-	if (beginPacket()) {
-		sendPacketType(PACKET_BUNDLE);
-		sendPacketNumber();
-		m_IsBundle = true;
-		return true;
-	}
-	
-	return false;
+	m_IsBundle = true;
+	m_BundlePacketInnerCount = 0;
+	return true;
 }
 
 bool Connection::endBundle() {
-	m_IsBundle = false;
+	MUST_TRANSFER_BOOL(m_IsBundle);
 
-	if (!m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
-		return false;
-	}
+	m_IsBundle = false;
+	
+	MUST_TRANSFER_BOOL((m_BundlePacketInnerCount > 0));
 
 	return endPacket();
 }
@@ -153,6 +157,12 @@ bool Connection::sendFloat(float f) {
 }
 
 bool Connection::sendByte(uint8_t c) { return write(&c, 1) != 0; }
+
+bool Connection::sendShort(uint16_t i) {
+	convert_to_chars(i, m_Buf);
+
+	return write(m_Buf, sizeof(i)) != 0;
+}
 
 bool Connection::sendInt(uint32_t i) {
 	convert_to_chars(i, m_Buf);

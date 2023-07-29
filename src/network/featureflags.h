@@ -21,8 +21,8 @@
 	THE SOFTWARE.
 */
 
-#ifndef SLIMEVR_SERVER_FEATURE_FLAGS_H_
-#define SLIMEVR_SERVER_FEATURE_FLAGS_H_
+#ifndef SLIMEVR_FEATURE_FLAGS_H_
+#define SLIMEVR_FEATURE_FLAGS_H_
 
 #include <cstring>
 #include <algorithm>
@@ -56,7 +56,7 @@ public:
 	static ServerFeatures from(uint8_t* received, uint32_t length) {
 		ServerFeatures res;
 		res.m_Available = true;
-		memcpy(res.m_Flags, received, std::min((uint32_t)sizeof(res.m_Flags), length));
+		memcpy(res.m_Flags, received, std::min(static_cast<uint32_t>(sizeof(res.m_Flags)), length));
 		return res;
 	}
 
