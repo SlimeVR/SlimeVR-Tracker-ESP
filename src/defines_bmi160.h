@@ -23,15 +23,6 @@
 #ifndef BMI160_DEFINES_H
 #define BMI160_DEFINES_H
 
-// BMI160 gyro/accel axis remapping.
-#define BMI160_REMAP_AXIS_X(x, y, z) (sensorId == 0 ? x : x)
-#define BMI160_REMAP_AXIS_Y(x, y, z) (sensorId == 0 ? y : y)
-#define BMI160_REMAP_AXIS_Z(x, y, z) (sensorId == 0 ? z : z)
-// Additional magnetometer remapping (if present and enabled in <debug.h>).
-#define BMI160_MAG_REMAP_AXIS_X(x, y, z) (sensorId == 0 ? x : x)
-#define BMI160_MAG_REMAP_AXIS_Y(x, y, z) (sensorId == 0 ? y : y)
-#define BMI160_MAG_REMAP_AXIS_Z(x, y, z) (sensorId == 0 ? z : z)
-
 // BMI160 magnetometer type, applies to both main and aux trackers, mixed types are not supported currently.
 // If only 1 out of 2 trackers has a mag, tracker without a mag should still function normally.
 // NOT USED if USE_6_AXIS == true

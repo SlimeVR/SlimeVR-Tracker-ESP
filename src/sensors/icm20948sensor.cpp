@@ -344,18 +344,18 @@ void ICM20948Sensor::readRotation()
             double q2 = ((double)dmpData.Quat9.Data.Q2) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q3 = ((double)dmpData.Quat9.Data.Q3) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-            quaternion.w = q0;
-            quaternion.x = q1;
-            quaternion.y = q2;
-            quaternion.z = q3;
+            fusedRotation.w = q0;
+            fusedRotation.x = q1;
+            fusedRotation.y = q2;
+            fusedRotation.z = q3;
 
             #if SEND_ACCELERATION
-            calculateAccelerationWithoutGravity(&quaternion);
+            calculateAccelerationWithoutGravity(&fusedRotation);
             #endif
 
-            quaternion *= sensorOffset; //imu rotation
+            fusedRotation *= sensorOffset; //imu rotation
 
-            newData = true;
+            newFusedRotation = true;
             lastData = millis();
         }
     }
@@ -470,26 +470,16 @@ void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
     {
         if((dmpData.header & DMP_header_bitmap_Accel) > 0)
         {
-            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
-            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
-            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
+            sfusion.updateQuaternion(*quaternion);
 
-            // get the component of the acceleration that is gravity
-            float gravity[3];
-            gravity[0] = 2 * ((-quaternion->x) * (-quaternion->z) - quaternion->w * quaternion->y);
-            gravity[1] = -2 * (quaternion->w * (-quaternion->x) + quaternion->y * (-quaternion->z));
-            gravity[2] = quaternion->w * quaternion->w - quaternion->x * quaternion->x - quaternion->y * quaternion->y + quaternion->z * quaternion->z;
+            float Axyz[3] = {(float)this->dmpData.Raw_Accel.Data.X * ASCALE_4G,
+                             (float)this->dmpData.Raw_Accel.Data.Y * ASCALE_4G,
+                             (float)this->dmpData.Raw_Accel.Data.Z * ASCALE_4G
+                            };
+            sfusion.updateAcc(Axyz);
 
-            // subtract gravity from the acceleration vector
-            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
-
-            // finally scale the acceleration values to mps2
-            this->acceleration[0] *= ASCALE_4G;
-            this->acceleration[1] *= ASCALE_4G;
-            this->acceleration[2] *= ASCALE_4G;
-            this->newAcceleration = true;
+            sfusion.getLinearAcc(this->acceleration);
+			this->newAcceleration = true;
         }
     }
     #endif

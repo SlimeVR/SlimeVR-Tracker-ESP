@@ -29,10 +29,27 @@
 
 #include <MPU9250_6Axis_MotionApps_V6_12.h>
 
+#define MPU9250_DEFAULT_ODR_HZ 8000.0f
+#define MPU9250_SAMPLE_DIV 39
+constexpr float MPU9250_ODR_TS = ( 1.0f / MPU9250_DEFAULT_ODR_HZ) * (1+MPU9250_SAMPLE_DIV);
+
+#define MPU_USE_DMPMAG 1
+
+#if MPU_USE_DMPMAG
+#include "SensorFusionDMP.h"
+#else
+#include "SensorFusion.h"
+#endif
+
 class MPU9250Sensor : public Sensor
 {
 public:
-    MPU9250Sensor(uint8_t id, uint8_t address, float rotation) : Sensor("MPU9250Sensor", IMU_MPU9250, id, address, rotation){};
+    MPU9250Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin)
+        : Sensor("MPU9250Sensor", IMU_MPU9250, id, address, rotation, sclPin, sdaPin)
+    #if !MPU_USE_DMPMAG
+        , sfusion(MPU9250_ODR_TS)
+    #endif
+        {};
     ~MPU9250Sensor(){};
     void motionSetup() override final;
     void motionLoop() override final;
@@ -46,16 +63,19 @@ private:
     // uint8_t mpuIntStatus;     // holds actual interrupt status byte from MPU
     uint16_t packetSize;      // expected DMP packet size (default is 42 bytes)
 
+    #if MPU_USE_DMPMAG
+        SlimeVR::Sensors::SensorFusionDMP sfusion;
+    #else
+        SlimeVR::Sensors::SensorFusion sfusion;
+    #endif
+
     // raw data and scaled as vector
-    float q[4]{1.0f, 0.0f, 0.0f, 0.0f}; // for raw filter
     float Axyz[3]{};
     float Gxyz[3]{};
     float Mxyz[3]{};
     VectorInt16 rawAccel{};
     Quat correction{0, 0, 0, 0};
-    // Loop timing globals
-    float deltat = 0;                // sample time in seconds
-
+    
     SlimeVR::Configuration::MPU9250CalibrationConfig m_Calibration;
 
     // outputs to respective member variables

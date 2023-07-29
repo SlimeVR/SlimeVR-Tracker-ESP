@@ -115,7 +115,7 @@ public:
 	bool endBundle();
 
 private:
-	void updateSensorState(Sensor* const sensor1, Sensor* const sensor2);
+	void updateSensorState(std::vector<Sensor *> & sensors);
 	void maybeRequestFeatureFlags();
 
 	bool beginPacket();
@@ -160,8 +160,7 @@ private:
 	unsigned long m_LastConnectionAttemptTimestamp;
 	unsigned long m_LastPacketTimestamp;
 
-	SensorStatus m_AckedSensorState1 = SensorStatus::SENSOR_OFFLINE;
-	SensorStatus m_AckedSensorState2 = SensorStatus::SENSOR_OFFLINE;
+	SensorStatus m_AckedSensorState[MAX_IMU_COUNT] = {SensorStatus::SENSOR_OFFLINE};
 	unsigned long m_LastSensorInfoPacketTimestamp = 0;
 
 	uint8_t m_FeatureFlagsRequestAttempts = 0;

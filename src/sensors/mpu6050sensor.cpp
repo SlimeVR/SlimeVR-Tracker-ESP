@@ -136,29 +136,24 @@ void MPU6050Sensor::motionLoop()
     if (imu.dmpGetCurrentFIFOPacket(fifoBuffer))
     {
         imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
-        fusedRotation.set(-rawQuat.y, rawQuat.x, rawQuat.z, rawQuat.w);
+
+        sfusion.updateQuaternion(rawQuat);
+
+        fusedRotation = sfusion.getQuaternionQuat();
         fusedRotation *= sensorOffset;
 
     #if SEND_ACCELERATION
         {
-            VectorFloat gravity;
-            this->imu.dmpGetGravity(&gravity, &this->rawQuat);
-
-            // dmpGetGravity returns a value that is the percentage of gravity that each axis is experiencing.
-            // dmpGetLinearAccel by default compensates this to be in 4g mode because of that
-            // we need to multiply by the gravity scale by two to convert to 2g mode
-            gravity.x *= 2;
-            gravity.y *= 2;
-            gravity.z *= 2;
-
             this->imu.dmpGetAccel(&this->rawAccel, this->fifoBuffer);
-            this->imu.dmpGetLinearAccel(&this->rawAccel, &this->rawAccel, &gravity);
 
-            // convert acceleration to m/s^2 (implicitly casts to float)
-            this->acceleration[0] = this->rawAccel.x * ASCALE_2G;
-            this->acceleration[1] = this->rawAccel.y * ASCALE_2G;
-            this->acceleration[2] = this->rawAccel.z * ASCALE_2G;
-            this->newAcceleration = true;
+            float Axyz[3] = {(float)rawAccel.x * ASCALE_2G,
+                             (float)rawAccel.y * ASCALE_2G,
+                             (float)rawAccel.z * ASCALE_2G };
+
+            sfusion.updateAcc(Axyz);
+
+            sfusion.getLinearAcc(this->acceleration);
+			this->newAcceleration = true;
         }
     #endif
 
