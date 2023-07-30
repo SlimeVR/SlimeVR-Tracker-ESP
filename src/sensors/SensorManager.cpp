@@ -191,21 +191,12 @@ namespace SlimeVR
                 return;
             }
 
-            uint32_t now = micros();
-            bool shouldSend = false;
-
             #ifndef PACKET_BUNDLING
                 static_assert(false, "PACKET_BUNDLING not set");
             #endif
-            #if PACKET_BUNDLING == PACKET_BUNDLING_LOWLATENCY
-                for (auto sensor : m_Sensors) {
-                    if (!sensor->isWorking()) continue;
-                    if (sensor->hasNewDataToSend()) {
-                        shouldSend = true;
-                        break;
-                    }
-                }
-            #elif PACKET_BUNDLING == PACKET_BUNDLING_BUFFERED
+            #if PACKET_BUNDLING == PACKET_BUNDLING_BUFFERED
+                uint32_t now = micros();
+                bool shouldSend = false;
                 bool allSensorsReady = true;
                 for (auto sensor : m_Sensors) {
                     if (!sensor->isWorking()) continue;
@@ -216,15 +207,13 @@ namespace SlimeVR
                 if (now - m_LastBundleSentAtMicros < PACKET_BUNDLING_BUFFER_SIZE_MICROS) {
                     shouldSend &= allSensorsReady;
                 }
-            #else
-                shouldSend = true;
-            #endif
-            
-            if (!shouldSend) {
-                return;
-            }
 
-            m_LastBundleSentAtMicros = now;
+                if (!shouldSend) {
+                    return;
+                }
+
+                m_LastBundleSentAtMicros = now;
+            #endif
             
             #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
                 networkConnection.beginBundle();
