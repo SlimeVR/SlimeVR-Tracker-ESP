@@ -27,14 +27,15 @@
 #include <cstring>
 #include <algorithm>
 
-// Bit packed flags, enum values start with 0 and indicate which bit it is
-
-// Change the enums/flagsEnabled to extend
-
+/**
+ * Bit packed flags, enum values start with 0 and indicate which bit it is.
+ * 
+ * Change the enums and `flagsEnabled` inside to extend.
+*/
 struct ServerFeatures {
 public:
     enum EServerFeatureFlags: uint32_t {
-        // Server can parse bundle packets
+        // Server can parse bundle packets: `PACKET_BUNDLE` = 100 (0x64).
         PROTOCOL_BUNDLE_SUPPORT,
         
         // Add new flags here
@@ -47,8 +48,10 @@ public:
         return m_Available && (m_Flags[bit / 8] & (1 << (bit % 8)));
     }
 
-    // Whether the server supports the "feature flags" feature,
-    // set to true when we've received flags packet from the server
+    /**
+     * Whether the server supports the "feature flags" feature,
+     * set to true when we've received flags packet from the server.
+    */
     bool isAvailable() {
         return m_Available;
     }
