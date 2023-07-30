@@ -60,6 +60,18 @@
 #define POWER_SAVING_MODERATE 3 // Sleeping and better PS => might miss broadcasts, use at own risk
 #define POWER_SAVING_MAXIMUM 4 // Actual CPU sleeping, currently has issues with disconnecting
 
+// Send rotation/acceleration data as separate frames.
+// PPS: 1470 @ 5+1, 1960 @ 5+3
+#define PACKET_BUNDLING_DISABLED 0
+// Less packets. Pack data per sensor and send asap.
+// Compared to PACKET_BUNDLING_DISABLED, reduces PPS by ~54% for 5+1, by ~63% for 5+3 setups.
+// PPS: 680 @ 5+1, 740 @ 5+3
+#define PACKET_BUNDLING_LOWLATENCY 1
+// Even less packets, if more than 1 sensor - wait for data from all sensors or until timeout, then send.
+// Compared to PACKET_BUNDLING_LOWLATENCY, reduces PPS by ~5% for 5+1, by ~15% for 5+3 setups.
+// PPS: 650 @ 5+1, 650 @ 5+3
+#define PACKET_BUNDLING_BUFFERED 2
+
 #define DEG_0 0.f
 #define DEG_90 -PI / 2
 #define DEG_180 PI

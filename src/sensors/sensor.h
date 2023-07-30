@@ -76,8 +76,11 @@ public:
     uint8_t getSensorType() {
         return sensorType;
     };
-    Quat& getFusedRotation() {
+    const Quat& getFusedRotation() {
         return fusedRotation;
+    };
+    bool hasNewDataToSend() {
+        return newFusedRotation || newAcceleration;
     };
 
     bool hadData = false;
