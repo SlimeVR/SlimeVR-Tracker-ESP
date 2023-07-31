@@ -141,8 +141,9 @@ void MPU6050Sensor::motionLoop()
 
         fusedRotation = sfusion.getQuaternionQuat();
         fusedRotation *= sensorOffset;
+        setFusedRotationReady();
 
-    #if SEND_ACCELERATION
+        #if SEND_ACCELERATION
         {
             this->imu.dmpGetAccel(&this->rawAccel, this->fifoBuffer);
 
@@ -152,16 +153,10 @@ void MPU6050Sensor::motionLoop()
 
             sfusion.updateAcc(Axyz);
 
-            sfusion.getLinearAcc(this->acceleration);
-			this->newAcceleration = true;
+            acceleration = sfusion.getLinearAccVec();
+			setAccelerationReady();
         }
-    #endif
-
-        if (!OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
-        {
-            newFusedRotation = true;
-            lastFusedRotationSent = fusedRotation;
-        }
+        #endif
     }
 }
 

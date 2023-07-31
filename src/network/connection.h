@@ -43,7 +43,7 @@ public:
 	bool isConnected() const { return m_Connected; }
 
 	// PACKET_ACCEL 4
-	void sendSensorAcceleration(uint8_t sensorId, float* vector);
+	void sendSensorAcceleration(uint8_t sensorId, Vector3 vector);
 
 	// PACKET_BATTERY_LEVEL 12
 	void sendBatteryLevel(float batteryVoltage, float batteryPercentage);

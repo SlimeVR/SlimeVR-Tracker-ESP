@@ -165,7 +165,7 @@ void MPU9250Sensor::motionLoop() {
 
     fusedRotation = sfusion.getQuaternionQuat();
 
-#if SEND_ACCELERATION
+    #if SEND_ACCELERATION
     {
         int16_t atemp[3];
         this->imu.dmpGetAccel(atemp, dmpPacket);
@@ -173,10 +173,10 @@ void MPU9250Sensor::motionLoop() {
 
         sfusion.updateAcc(Axyz);
 
-        sfusion.getLinearAcc(this->acceleration);
-		this->newAcceleration = true;
+        acceleration = sfusion.getLinearAccVec();
+		setAccelerationReady();
     }
-#endif
+    #endif
 
 #else
     union fifo_sample_raw buf;
@@ -200,16 +200,12 @@ void MPU9250Sensor::motionLoop() {
     fusedRotation = sfusion.getQuaternionQuat();
 
     #if SEND_ACCELERATION
-    sfusion.getLinearAcc(this->acceleration);
-	this->newAcceleration = true;
+    acceleration = sfusion.getLinearAccVec();
+	setAccelerationReady();
     #endif
 #endif
     fusedRotation *= sensorOffset;
-
-    if(!lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
-        newFusedRotation = true;
-        lastFusedRotationSent = fusedRotation;
-    }
+    setFusedRotationReady();
 }
 
 void MPU9250Sensor::startCalibration(int calibrationType) {

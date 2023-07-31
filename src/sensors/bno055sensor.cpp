@@ -63,21 +63,14 @@ void BNO055Sensor::motionLoop() {
     Quat quat = imu.getQuat();
     fusedRotation.set(quat.x, quat.y, quat.z, quat.w);
     fusedRotation *= sensorOffset;
+    setFusedRotationReady();
 
 #if SEND_ACCELERATION
     {
-        Vector3 accel = this->imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
-        this->acceleration[0] = accel.x;
-        this->acceleration[1] = accel.y;
-        this->acceleration[2] = accel.z;
-        this->newAcceleration = true;
+        acceleration = this->imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+        setAccelerationReady();
     }
 #endif
-
-    if(!OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
-        newFusedRotation = true;
-        lastFusedRotationSent = fusedRotation;
-    }
 }
 
 void BNO055Sensor::startCalibration(int calibrationType) {
