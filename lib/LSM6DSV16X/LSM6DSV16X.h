@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    LSM6DSV16XSensor.h
+ * @file    LSM6DSV16X.h
  * @author  SRA
  * @version V1.5.1
  * @date    July 2022
@@ -38,8 +38,8 @@
 
 /* Prevent recursive inclusion -----------------------------------------------*/
 
-#ifndef __LSM6DSV16XSensor_H__
-#define __LSM6DSV16XSensor_H__
+#ifndef __LSM6DSV16X_H__
+#define __LSM6DSV16X_H__
 
 
 /* Includes ------------------------------------------------------------------*/
@@ -120,10 +120,10 @@ typedef enum {
 /**
  * Abstract class of a LSM6DSV16X sensor.
  */
-class LSM6DSV16XSensor {
+class LSM6DSV16X {
   public:
-    LSM6DSV16XSensor(TwoWire *i2c, uint8_t address = LSM6DSV16X_I2C_ADD_H);
-    LSM6DSV16XSensor(SPIClass *spi, int cs_pin, uint32_t spi_speed = 2000000);
+    LSM6DSV16X(TwoWire *i2c, uint8_t address = LSM6DSV16X_I2C_ADD_H);
+    LSM6DSV16X(SPIClass *spi, int cs_pin, uint32_t spi_speed = 2000000);
 
     LSM6DSV16XStatusTypeDef begin();
     LSM6DSV16XStatusTypeDef end();
@@ -341,4 +341,4 @@ int32_t LSM6DSV16X_io_read(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uin
 }
 #endif
 
-#endif /* __LSM6DSV16XSensor_H__ */
+#endif /* __LSM6DSV16X_H__ */

@@ -21,11 +21,15 @@
     THE SOFTWARE.
 */
 
-#include "sensors/lsmdsv16x.h"
+#include "sensors/lsmdsv16xsensor.h"
 #include "utils.h"
 #include "GlobalVars.h"
 
 volatile bool imuEvent = false;
+
+void interruptHandler() {
+    imuEvent = true;
+}
 
 void LSMDSV16XSensor::motionSetup()
 {
@@ -33,7 +37,6 @@ void LSMDSV16XSensor::motionSetup()
     //TODO: Can anything go here
 #endif
     errorCounter = 0; //Either subtract to the error counter or handle the error
-    imu = LSM6DSV16XSensor(&Wire, addr);
     if(imu.begin() == LSM6DSV16X_ERROR) {
         m_Logger.fatal("Can't connect to %s at address 0x%02x", getIMUNameByType(sensorType), addr);
         ledManager.pattern(50, 50, 200);
@@ -84,10 +87,6 @@ void LSMDSV16XSensor::motionSetup()
     lastData = millis();
     working = true;
     configured = true;
-}
-
-void interruptHandler() {
-    imuEvent = true;
 }
 
 void LSMDSV16XSensor::motionLoop()

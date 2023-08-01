@@ -25,13 +25,15 @@
 #define SENSORS_LSMDSV16X_H
 
 #include "sensor.h"
-#include <LSM6DSV16XSensor.h>
+#include <LSM6DSV16X.h>
 
 class LSMDSV16XSensor : public Sensor
 {
 public:
     LSMDSV16XSensor(uint8_t id, uint8_t type, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
-        : Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin), m_IntPin(intPin) {};
+        : Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin),
+          imu(&Wire, addr),
+          m_IntPin(intPin) {};
     ~LSMDSV16XSensor(){};
     void motionSetup() override final;
     void postSetup() override {
@@ -47,7 +49,7 @@ private:
     //void interruptHandler();
     //volatile bool imuEvent; //the interrupt cant be a class function
 
-    LSM6DSV16XSensor imu;
+    LSM6DSV16X imu;
     uint8_t m_IntPin;
     uint8_t errorCounter = 0; //Error is -1, OK is 0
     uint8_t tap = 0;
