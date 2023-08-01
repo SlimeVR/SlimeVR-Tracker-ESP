@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2023 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -25,40 +25,60 @@
 #include "utils.h"
 #include "GlobalVars.h"
 
+volatile bool imuEvent = false;
+
 void LSMDSV16XSensor::motionSetup()
 {
 #ifdef DEBUG_SENSOR
-    imu.enableDebugging(Serial);
+    //TODO: Can anything go here
 #endif
+    errorCounter = 0; //Either subtract to the error counter or handle the error
     imu = LSM6DSV16XSensor(&Wire, addr);
-    if(!imu.begin()) {
+    if(imu.begin() == LSM6DSV16X_ERROR) {
         m_Logger.fatal("Can't connect to %s at address 0x%02x", getIMUNameByType(sensorType), addr);
         ledManager.pattern(50, 50, 200);
         return;
     }
+    uint8_t deviceId = 0;
+    if(imu.ReadID(&deviceId) == LSM6DSV16X_ERROR) {
+        m_Logger.fatal("The IMU returned an error when reading the device ID of: 0x%02x", deviceId);
+        ledManager.pattern(50, 50, 200);
+        return;
+    }
 
-    //if(imu.ReadID())
+    if (deviceId != 0x00) { //TODO: Look up device ID
+        m_Logger.fatal("The IMU returned an invalid device ID of: 0x%02x when it should have been: 0x%02x", deviceId, 0x00);
+        ledManager.pattern(50, 50, 200);
+        return;
+    }
 
-    m_Logger.info("Connected to %s on 0x%02x. "
-                  "Info: SW Version Major: 0x%02x "
-                  "SW Version Minor: 0x%02x "
-                  "SW Part Number: 0x%02x "
-                  "SW Build Number: 0x%02x "
-                  "SW Version Patch: 0x%02x",
-                  getIMUNameByType(sensorType),
-                  addr
-                );
+    m_Logger.info("Connected to %s on 0x%02x. ", getIMUNameByType(sensorType), addr);
 
-    if(!imu.Enable_X()) { //accel
+    if(imu.Enable_X() == LSM6DSV16X_ERROR) { //accel
         m_Logger.fatal("Error enabling accelerometer on %s at address 0x%02x", getIMUNameByType(sensorType), addr);
         ledManager.pattern(50, 50, 200);
         return;
     }
 
-    imu.Enable_G(); //gyro
-    //make an interupt
-    attachInterrupt(m_IntPin, DoSomething, RISING);
-    imu.Enable_6D_Orientation(LSM6DSV16X_INT1_PIN);
+    if(imu.Enable_G() == LSM6DSV16X_ERROR) { //gyro
+        m_Logger.fatal("Error enabling gyroscope on %s at address 0x%02x", getIMUNameByType(sensorType), addr);
+        ledManager.pattern(50, 50, 200);
+        return;
+    }
+
+
+    attachInterrupt(m_IntPin, interruptHandler, RISING);
+
+
+    errorCounter -= imu.Enable_6D_Orientation(LSM6DSV16X_INT1_PIN);
+    errorCounter -= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);
+    errorCounter -= imu.Enable_Double_Tap_Detection(LSM6DSV16X_INT1_PIN);
+
+    if (errorCounter) {
+        m_Logger.fatal("%d Error(s) occured enabling imu features on %s at address 0x%02x", errorCounter, getIMUNameByType(sensorType), addr);
+        ledManager.pattern(50, 50, 200);
+        return;
+    }
 
     lastReset = 0;
     lastData = millis();
@@ -66,108 +86,117 @@ void LSMDSV16XSensor::motionSetup()
     configured = true;
 }
 
+void interruptHandler() {
+    imuEvent = true;
+}
+
 void LSMDSV16XSensor::motionLoop()
 {
-    //Look for reports from the IMU
-    while (imu.dataAvailable())
-    {
-        hadData = true;
-#if ENABLE_INSPECTION
-        {
-            int16_t rX = imu.getRawGyroX();
-            int16_t rY = imu.getRawGyroY();
-            int16_t rZ = imu.getRawGyroZ();
-            uint8_t rA = imu.getGyroAccuracy();
+    if (imuEvent) {
+        imuEvent = false;
+        LSM6DSV16X_Event_Status_t status;
+        errorCounter -= imu.Get_X_Event_Status(&status);
 
-            int16_t aX = imu.getRawAccelX();
-            int16_t aY = imu.getRawAccelY();
-            int16_t aZ = imu.getRawAccelZ();
-            uint8_t aA = imu.getAccelAccuracy();
-
-            networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
+        if (status.TapStatus) {
+            tap++;
         }
+        if (status.DoubleTapStatus) {
+            tap += 2;
+        }
+        if (status.D6DOrientationStatus) {
+            hadData = true;
+#if ENABLE_INSPECTION
+            {
+                int16_t accelerometer[3];
+                int16_t gyroscope[3];
+            
+                errorCounter += imu.Get_X_AxesRaw(accelerometer);
+                errorCounter += imu.Get_G_AxesRaw(gyroscope);
+
+                networkConnection.sendInspectionRawIMUData(sensorId, gyroscope[0], gyroscope[1], gyroscope[2], 0, accelerometer[0], accelerometer[1], accelerometer[2], 0, 0, 0, 0, 0);
+            }
 #endif
 
-        uint8_t xl = 0;
-        uint8_t xh = 0;
-        uint8_t yl = 0;
-        uint8_t yh = 0;
-        uint8_t zl = 0;
-        uint8_t zh = 0;
+            uint8_t xl = 0;
+            uint8_t xh = 0;
+            uint8_t yl = 0;
+            uint8_t yh = 0;
+            uint8_t zl = 0;
+            uint8_t zh = 0;
   
-        imu.Get_6D_Orientation_XL(&xl);
-        imu.Get_6D_Orientation_XH(&xh);
-        imu.Get_6D_Orientation_YL(&yl);
-        imu.Get_6D_Orientation_YH(&yh);
-        imu.Get_6D_Orientation_ZL(&zl);
-        imu.Get_6D_Orientation_ZH(&zh);
+            imu.Get_6D_Orientation_XL(&xl);
+            imu.Get_6D_Orientation_XH(&xh);
+            imu.Get_6D_Orientation_YL(&yl);
+            imu.Get_6D_Orientation_YH(&yh);
+            imu.Get_6D_Orientation_ZL(&zl);
+            imu.Get_6D_Orientation_ZH(&zh);
 
-        lastReset = 0;
-        lastData = millis();
+            lastReset = 0;
+            lastData = millis();
 
-        if (imu.hasNewGameQuat()) // New quaternion if context
-        {
-            imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
-            fusedRotation *= sensorOffset;
+            
+            //We have imu position (x,y,z) in high/low registers, we need to convert this to a float16 and then to a quaternion
 
-            if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
+
+            /* bno code
+            if (imu.hasNewGameQuat()) // New quaternion if context
             {
-                newFusedRotation = true;
-                lastFusedRotationSent = fusedRotation;
-            }
-            // Leave new quaternion if context open, it's closed later
+                imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
+                fusedRotation *= sensorOffset;
 
-            // Continuation of the new quaternion if context, used for both 6 and 9 axis
+                if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
+                {
+                    newFusedRotation = true;
+                    lastFusedRotationSent = fusedRotation;
+                }
+                // Leave new quaternion if context open, it's closed later
+
+                // Continuation of the new quaternion if context, used for both 6 and 9 axis
+            } // Closing new quaternion if context
+            */
+
+
 #if SEND_ACCELERATION
             {
-                uint8_t acc;
-                this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
-                this->newAcceleration = true;
+                int32_t accelerometerInt[3];
+                errorCounter -= imu.Get_X_Axes(accelerometerInt);
+                acceleration[0] = accelerometerInt[0] * 1000.0; //convert from mg to g
+                acceleration[1] = accelerometerInt[1] * 1000.0;
+                acceleration[2] = accelerometerInt[2] * 1000.0;
+                newAcceleration = true;
             }
 #endif // SEND_ACCELERATION
-        } // Closing new quaternion if context
+        }
 
 
-        if (imu.getTapDetected())
+
+
+
+        if ((lastData + 1000 < millis() || errorCounter) && configured) //Errors
         {
-            tap = imu.getTapDetector();
-        }
-        if (m_IntPin == 255 || imu.I2CTimedOut())
-            break;
-    }
-    if (lastData + 1000 < millis() && configured)
-    {
-        while(true) {
-            BNO080Error error = imu.readError();
-            if(error.error_source == 255)
-                break;
-            lastError = error;
-            m_Logger.error("BNO08X error. Severity: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
-                error.severity, error.error_sequence_number, error.error_source, error.error, error.error_module, error.error_code);
-        }
-        statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
-        working = false;
-        lastData = millis();
-        uint8_t rr = imu.resetReason();
-        if (rr != lastReset)
-        {
-            lastReset = rr;
-            networkConnection.sendSensorError(this->sensorId, rr);
-        }
+            if (errorCounter) {
+               m_Logger.error("The %s at address 0x%02x, had %d error(s) in the motion processing loop", getIMUNameByType(sensorType), addr, errorCounter);
+            }
 
-        m_Logger.error("Sensor %d doesn't respond. Last reset reason:", sensorId, lastReset);
-        m_Logger.error("Last error: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
-                lastError.severity, lastError.error_sequence_number, lastError.error_source, lastError.error, lastError.error_module, lastError.error_code);
+            if (lastData + 1000 < millis()) {
+                m_Logger.error("The %s at address 0x%02x, has not responded in the last second", getIMUNameByType(sensorType), addr);
+            }
+
+            statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
+            working = false;
+            lastData = millis();
+            errorCounter = 0;
+        }
     }
 }
 
-SensorStatus BNO080Sensor::getSensorState() {
-    return lastReset > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
+SensorStatus LSMDSV16XSensor::getSensorState() {
+    return errorCounter > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
 void LSMDSV16XSensor::sendData()
 {
-    if (newFusedRotation)
+    if (newFusedRotation) //IDK how to get
     {
         newFusedRotation = false;
         networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
@@ -178,27 +207,14 @@ void LSMDSV16XSensor::sendData()
     }
 
 #if SEND_ACCELERATION
-    if(newAcceleration)
+    if(newAcceleration) //Returns acceleration in G's
     {
         newAcceleration = false;
         networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
     }
 #endif
 
-#if !USE_6_AXIS
-        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
-#endif
-
-#if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
-    if (newMagData)
-    {
-        newMagData = false;
-        networkConnection.sendRotationData(sensorId, &magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy);
-        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
-    }
-#endif
-
-    if (tap != 0)
+    if (tap != 0) //chip supports tap and double tap
     {
         networkConnection.sendSensorTap(sensorId, tap);
         tap = 0;

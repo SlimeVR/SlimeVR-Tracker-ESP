@@ -31,7 +31,7 @@ class LSMDSV16XSensor : public Sensor
 {
 public:
     LSMDSV16XSensor(uint8_t id, uint8_t type, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
-        : Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin), m_IntPin(intPin){};
+        : Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin), m_IntPin(intPin) {};
     ~LSMDSV16XSensor(){};
     void motionSetup() override final;
     void postSetup() override {
@@ -44,14 +44,16 @@ public:
     SensorStatus getSensorState() override final;
 
 private:
+    //void interruptHandler();
+    //volatile bool imuEvent; //the interrupt cant be a class function
+
     LSM6DSV16XSensor imu;
-
     uint8_t m_IntPin;
-
-    uint8_t tap;
+    uint8_t errorCounter = 0; //Error is -1, OK is 0
+    uint8_t tap = 0;
     unsigned long lastData = 0;
+
     uint8_t lastReset = 0;
-    LSM6DSV16XStatusTypeDef lastError{};
 };
 
 #endif
