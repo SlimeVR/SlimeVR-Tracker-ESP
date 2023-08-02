@@ -156,6 +156,8 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Set_G_Power_Mode(uint8_t PowerMode);
     LSM6DSV16XStatusTypeDef Set_G_Filter_Mode(uint8_t LowHighPassFlag, uint8_t FilterMode);
 
+    LSM6DSV16XStatusTypeDef Set_SFLP_ODR(float Odr);
+
     LSM6DSV16XStatusTypeDef Enable_6D_Orientation(LSM6DSV16X_SensorIntPin_t IntPin);
     LSM6DSV16XStatusTypeDef Disable_6D_Orientation();
     LSM6DSV16XStatusTypeDef Set_6D_Orientation_Threshold(uint8_t Threshold);

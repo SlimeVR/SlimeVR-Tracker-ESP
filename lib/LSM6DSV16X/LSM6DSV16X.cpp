@@ -3050,6 +3050,25 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_G_Filter_Mode(uint8_t LowHighPassFlag, u
   return LSM6DSV16X_OK;
 }
 
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_SFLP_ODR(float odr) {
+  uint8_t bits = odr <= 15 ? 0b000
+    : odr <= 30 ? 0b001
+    : odr <= 60 ? 0b010
+    : odr <= 120 ? 0b011
+    : odr <= 240 ? 0b100
+    : 0b101;
+
+  lsm6dsv16x_sflp_odr_t value;
+  value.not_used0 = 0b011;
+  value.sflp_game_odr = bits;
+  value.not_used1 = 0b01;
+
+  if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_SFLP_ODR, (uint8_t *)&value, sizeof(value)) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  return LSM6DSV16X_OK;
+}
+
 
 /**
  * @brief  Enable the LSM6DSV16X QVAR sensor

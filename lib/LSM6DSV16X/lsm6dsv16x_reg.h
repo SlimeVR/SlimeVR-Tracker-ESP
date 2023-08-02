@@ -2394,6 +2394,19 @@ typedef struct {
 #endif /* DRV_BYTE_ORDER */
 } lsm6dsv16x_fsm_outs8_t;
 
+#define LSM6DSV16X_SFLP_ODR   0x5EU
+typedef struct {
+#if DRV_BYTE_ORDER == DRV_LITTLE_ENDIAN
+  uint8_t not_used0 : 3;
+  uint8_t sflp_game_odr : 3;
+  uint8_t not_used1: 2;
+#elif DRV_BYTE_ORDER == DRV_BIG_ENDIAN
+  uint8_t not_used1: 2;
+  uint8_t sflp_game_odr : 3;
+  uint8_t not_used0 : 3;
+#endif /* DRV_BYTE_ORDER */
+} lsm6dsv16x_sflp_odr_t;
+
 #define LSM6DSV16X_FSM_ODR    0x5FU
 typedef struct {
 #if DRV_BYTE_ORDER == DRV_LITTLE_ENDIAN
