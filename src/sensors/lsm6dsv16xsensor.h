@@ -28,6 +28,22 @@
 
 #include "sensor.h"
 
+#ifndef LSM6DSV16X_ACCEL_MAX
+#define LSM6DSV16X_ACCEL_MAX 4
+#endif
+
+#ifndef LSM6DSV16X_GYRO_MAX
+#define LSM6DSV16X_GYRO_MAX 2000
+#endif
+
+#ifndef LSM6DSV16X_FIFO_MAX_ENTRIES
+#define LSM6DSV16X_FIFO_MAX_ENTRIES 32
+#endif
+
+#ifndef LSM6DSV16X_FIFO_DATA_RATE
+#define LSM6DSV16X_FIFO_DATA_RATE 120
+#endif
+
 class LSM6DSV16XSensor : public Sensor {
 public:
 	LSM6DSV16XSensor(

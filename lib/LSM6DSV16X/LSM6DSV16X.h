@@ -98,6 +98,12 @@ typedef union {
   uint8_t u8bit[2];
 } lsm6dsv16x_axis1bit16_t;
 
+enum LSM6DSV16X_Reset {
+  LSM6DSV16X_RESET_GLOBAL = 0x1,
+  LSM6DSV16X_RESET_CAL_PARAM = 0x2,
+  LSM6DSV16X_RESET_CTRL_REGS = 0x4,
+};
+
 typedef enum {
   LSM6DSV16X_ACC_HIGH_PERFORMANCE_MODE,
   LSM6DSV16X_ACC_HIGH_ACCURACY_MODE,
@@ -208,6 +214,7 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef FIFO_Set_X_BDR(float Bdr);
     LSM6DSV16XStatusTypeDef FIFO_Get_G_Axes(int32_t *AngularVelocity);
     LSM6DSV16XStatusTypeDef FIFO_Set_G_BDR(float Bdr);
+    LSM6DSV16XStatusTypeDef FIFO_Set_SFLP_Batch(bool GameRotation, bool Gravity, bool gBias);
 
     LSM6DSV16XStatusTypeDef QVAR_Enable();
     LSM6DSV16XStatusTypeDef QVAR_GetStatus(uint8_t *val);
@@ -219,6 +226,10 @@ class LSM6DSV16X {
 
     LSM6DSV16XStatusTypeDef Read_Reg(uint8_t Reg, uint8_t *Data);
     LSM6DSV16XStatusTypeDef Write_Reg(uint8_t Reg, uint8_t Data);
+
+    LSM6DSV16XStatusTypeDef Reset_Set(uint8_t flags);
+
+    LSM6DSV16XStatusTypeDef Enable_Game_Rotation(bool enable = true);
 
     /**
      * @brief Utility function to read data.
@@ -274,7 +285,7 @@ class LSM6DSV16X {
      * @param  NumByteToWrite: number of bytes to write.
      * @retval 0 if ok, an error code otherwise.
      */
-    uint8_t IO_Write(uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToWrite)
+    uint8_t IO_Write(const uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToWrite)
     {
       if (dev_spi) {
         dev_spi->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE3));
@@ -326,18 +337,18 @@ class LSM6DSV16X {
     int cs_pin;
     uint32_t spi_speed;
 
-    lsm6dsv16x_xl_data_rate_t acc_odr;
-    lsm6dsv16x_gy_data_rate_t gyro_odr;
+    lsm6dsv16x_data_rate_t acc_odr;
+    lsm6dsv16x_data_rate_t gyro_odr;
     uint8_t acc_is_enabled;
     uint8_t gyro_is_enabled;
     uint8_t initialized;
-    lsm6dsv16x_ctx_t reg_ctx;
+    stmdev_ctx_t reg_ctx;
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-int32_t LSM6DSV16X_io_write(void *handle, uint8_t WriteAddr, uint8_t *pBuffer, uint16_t nBytesToWrite);
+int32_t LSM6DSV16X_io_write(void *handle, uint8_t WriteAddr, const uint8_t *pBuffer, uint16_t nBytesToWrite);
 int32_t LSM6DSV16X_io_read(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint16_t nBytesToRead);
 #ifdef __cplusplus
 }

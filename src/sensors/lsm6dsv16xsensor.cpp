@@ -75,18 +75,30 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	uint8_t status = 0;
 
-	// Enable accelerometer
-	status |= imu.Enable_X();
-	// Enable gyro
-	status |= imu.Enable_G();
-	// Enable only low power fusion
-	status |= imu.Write_Reg(LSM6DSV16X_EMB_FUNC_EN_A, 0b00000010);
-	status |= imu.Set_X_ODR(120);
-	status |= imu.Set_G_ODR(120);
-	// Stream (in datasheet: continuous) mode discards old data as new comes in
+	// Restore defaults
+	status |= imu.Reset_Set(LSM6DSV16X_RESET_CTRL_REGS);
+
+	// Set maximums
+	status |= imu.Set_X_FS(LSM6DSV16X_ACCEL_MAX);
+	status |= imu.Set_G_FS(LSM6DSV16X_GYRO_MAX);
+
+	// Set FIFO size
+	status |= imu.FIFO_Set_Watermark_Level(LSM6DSV16X_FIFO_MAX_ENTRIES);
+
+	// Set FIFO SFLP Batch
+	// NOTE: might not need all of this
+	status |= imu.FIFO_Set_SFLP_Batch(true, true, true);
+
+	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
-	status |= imu.Set_SFLP_ODR(120);
-	status |= imu.Write_Reg(LSM6DSV16X_EMB_FUNC_INIT_A, 0b00000010);
+
+	// Set data rate
+	status |= imu.Set_X_ODR(LSM6DSV16X_FIFO_DATA_RATE);
+	status |= imu.Set_G_ODR(LSM6DSV16X_FIFO_DATA_RATE);
+	status |= imu.Set_SFLP_ODR(LSM6DSV16X_FIFO_DATA_RATE);
+
+	// Enable Game Rotation Fusion
+	status |= imu.Enable_Game_Rotation();
 
 #ifndef INTERRUPTFREE
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
