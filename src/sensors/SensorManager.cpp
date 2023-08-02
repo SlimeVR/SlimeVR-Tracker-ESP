@@ -101,7 +101,8 @@ namespace SlimeVR
             case IMU_LSM6DSV16X:
                 {
                 uint8_t intPin = extraParam;
-                sensor = new LSM6DSV16XSensor(sensorID, imuType, address, rotation, sclPin, sdaPin, intPin);
+                //We shift the address left 1 to work with the library
+                sensor = new LSM6DSV16XSensor(sensorID, imuType, address << 1, rotation, sclPin, sdaPin, intPin);
                 }
                 break;
             default:

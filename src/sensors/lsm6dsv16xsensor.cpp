@@ -26,10 +26,11 @@
 #include "customConversions.h"
 #include "GlobalVars.h"
 
+//#define INTERRUPTFREE  //TODO: change based on int pin number (255 = interruptFree)
 
 volatile bool imuEvent = false;
 
-void interruptHandler() {
+void IRAM_ATTR interruptHandler() {
     imuEvent = true;
 }
 
@@ -51,8 +52,8 @@ void LSM6DSV16XSensor::motionSetup()
         return;
     }
 
-    if (deviceId != 0x6B) {
-        m_Logger.fatal("The IMU returned an invalid device ID of: 0x%02x when it should have been: 0x%02x", deviceId, 0x6B);
+    if (deviceId != LSM6DSV16X_ID) {
+        m_Logger.fatal("The IMU returned an invalid device ID of: 0x%02x when it should have been: 0x%02x", deviceId, LSM6DSV16X_ID);
         ledManager.pattern(50, 50, 200);
         return;
     }
@@ -71,9 +72,9 @@ void LSM6DSV16XSensor::motionSetup()
         return;
     }
 
-
+#ifndef INTERRUPTFREE
     attachInterrupt(m_IntPin, interruptHandler, RISING);
-
+#endif
 
     errorCounter -= imu.Enable_6D_Orientation(LSM6DSV16X_INT1_PIN);
     errorCounter -= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);
@@ -101,6 +102,12 @@ void LSM6DSV16XSensor::motionSetup()
 
 void LSM6DSV16XSensor::motionLoop()
 {
+#ifdef INTERRUPTFREE 
+    //TODO: Check if data is actually availiable in the fifo instead of just hoping
+    if (millis() - 100 > lastData) //10Hz refresh rate TODO: make faster
+        imuEvent = true;
+#endif
+
     if (imuEvent) {
         imuEvent = false;
         LSM6DSV16X_Event_Status_t status;
