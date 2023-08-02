@@ -27,6 +27,9 @@
 
 volatile bool imuEvent = false;
 
+//Maybe this should go into the math lib
+float convertBytesToFloat(uint8_t dataLow, uint8_t dataHigh);
+
 void interruptHandler() {
     imuEvent = true;
 }
@@ -34,7 +37,7 @@ void interruptHandler() {
 void LSMDSV16XSensor::motionSetup()
 {
 #ifdef DEBUG_SENSOR
-    //TODO: Can anything go here
+    //TODO: Should anything go here
 #endif
     errorCounter = 0; //Either subtract to the error counter or handle the error
     if(imu.begin() == LSM6DSV16X_ERROR) {
@@ -49,8 +52,8 @@ void LSMDSV16XSensor::motionSetup()
         return;
     }
 
-    if (deviceId != 0x00) { //TODO: Look up device ID
-        m_Logger.fatal("The IMU returned an invalid device ID of: 0x%02x when it should have been: 0x%02x", deviceId, 0x00);
+    if (deviceId != 0x6B) {
+        m_Logger.fatal("The IMU returned an invalid device ID of: 0x%02x when it should have been: 0x%02x", deviceId, 0x6B);
         ledManager.pattern(50, 50, 200);
         return;
     }
@@ -83,6 +86,14 @@ void LSMDSV16XSensor::motionSetup()
         return;
     }
 
+    //errorCounter -= imu.Set_G_Filter_Mode(0, 0) //Look up filter setup
+    //errorCounter -= imu.Set_G_FS(8LSM6DSV16X_ACC_SENSITIVITY_FS_8G);
+    //errorCounter -= imu.Set_G_ODR(120.0F, LSM6DSV16X_GYRO_HIGH_ACCURACY_MODE) //High accuracy mode is not implemented
+
+    //errorCounter -= imu.Set_X_Filter_Mode(0, 0) //Look up filter setup
+    //errorCounter -= imu.Set_X_FS(8LSM6DSV16X_ACC_SENSITIVITY_FS_8G);
+    //errorCounter -= imu.Set_X_ODR(120.0F, LSM6DSV16X_ACC_HIGH_ACCURACY_MODE) //High accuracy mode is not implemented
+
     lastReset = 0;
     lastData = millis();
     working = true;
@@ -109,65 +120,50 @@ void LSMDSV16XSensor::motionLoop()
                 int16_t accelerometer[3];
                 int16_t gyroscope[3];
             
-                errorCounter += imu.Get_X_AxesRaw(accelerometer);
-                errorCounter += imu.Get_G_AxesRaw(gyroscope);
+                errorCounter -= imu.Get_X_AxesRaw(accelerometer);
+                errorCounter -= imu.Get_G_AxesRaw(gyroscope);
 
                 networkConnection.sendInspectionRawIMUData(sensorId, gyroscope[0], gyroscope[1], gyroscope[2], 0, accelerometer[0], accelerometer[1], accelerometer[2], 0, 0, 0, 0, 0);
             }
 #endif
 
-            uint8_t xl = 0;
-            uint8_t xh = 0;
-            uint8_t yl = 0;
-            uint8_t yh = 0;
-            uint8_t zl = 0;
-            uint8_t zh = 0;
-  
-            imu.Get_6D_Orientation_XL(&xl);
-            imu.Get_6D_Orientation_XH(&xh);
-            imu.Get_6D_Orientation_YL(&yl);
-            imu.Get_6D_Orientation_YH(&yh);
-            imu.Get_6D_Orientation_ZL(&zl);
-            imu.Get_6D_Orientation_ZH(&zh);
+            uint8_t dataLow = 0;
+            uint8_t dataHigh = 0;
+            errorCounter -= imu.Get_6D_Orientation_XL(&dataLow);
+            errorCounter -= imu.Get_6D_Orientation_XH(&dataHigh);
+            fusedRotation.x = convertBytesToFloat(dataLow, dataHigh);
+
+            errorCounter -= imu.Get_6D_Orientation_YL(&dataLow);
+            errorCounter -= imu.Get_6D_Orientation_YH(&dataHigh);
+            fusedRotation.y = convertBytesToFloat(dataLow, dataHigh);
+
+            errorCounter -= imu.Get_6D_Orientation_ZL(&dataLow);
+            errorCounter -= imu.Get_6D_Orientation_ZH(&dataHigh);
+            fusedRotation.z = convertBytesToFloat(dataLow, dataHigh);
+
+            fusedRotation.w = sqrtf(1.0F - sq(fusedRotation.x) - sq(fusedRotation.y) - sq(fusedRotation.z));
 
             lastReset = 0;
             lastData = millis();
 
-            
-            //We have imu position (x,y,z) in high/low registers, we need to convert this to a float16 and then to a quaternion
-
-
-            /* bno code
-            if (imu.hasNewGameQuat()) // New quaternion if context
+            if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
             {
-                imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
-                fusedRotation *= sensorOffset;
-
-                if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
-                {
-                    newFusedRotation = true;
-                    lastFusedRotationSent = fusedRotation;
-                }
-                // Leave new quaternion if context open, it's closed later
-
-                // Continuation of the new quaternion if context, used for both 6 and 9 axis
-            } // Closing new quaternion if context
-            */
+                newFusedRotation = true;
+                lastFusedRotationSent = fusedRotation;
+            }
 
 
 #if SEND_ACCELERATION
             {
                 int32_t accelerometerInt[3];
                 errorCounter -= imu.Get_X_Axes(accelerometerInt);
-                acceleration[0] = accelerometerInt[0] * 1000.0; //convert from mg to g
-                acceleration[1] = accelerometerInt[1] * 1000.0;
-                acceleration[2] = accelerometerInt[2] * 1000.0;
+                acceleration[0] = accelerometerInt[0] * 1000.0F; //convert from mg to g
+                acceleration[1] = accelerometerInt[1] * 1000.0F;
+                acceleration[2] = accelerometerInt[2] * 1000.0F;
                 newAcceleration = true;
             }
 #endif // SEND_ACCELERATION
         }
-
-
 
 
 
@@ -190,12 +186,13 @@ void LSMDSV16XSensor::motionLoop()
 }
 
 SensorStatus LSMDSV16XSensor::getSensorState() {
+    //TODO: this may need to be redone, errorCounter gets reset at the end of the loop
     return errorCounter > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
 void LSMDSV16XSensor::sendData()
 {
-    if (newFusedRotation) //IDK how to get
+    if (newFusedRotation)
     {
         newFusedRotation = false;
         networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
@@ -209,7 +206,7 @@ void LSMDSV16XSensor::sendData()
     if(newAcceleration) //Returns acceleration in G's
     {
         newAcceleration = false;
-        networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
+        networkConnection.sendSensorAcceleration(sensorId, acceleration);
     }
 #endif
 
@@ -222,5 +219,24 @@ void LSMDSV16XSensor::sendData()
 
 void LSMDSV16XSensor::startCalibration(int calibrationType)
 {
-    //TODO: Look up in data sheet, does not look like it is in the lib
+    //These IMU are factory calibrated.
+    //The register might be able to be changed but it could break the device
+    //I don't think we will need to mess with them
+}
+
+
+//Convert 2 bytes in f16 format to a float
+//f16: SEEE EEDD DDDD DDDD
+//f32: SEEE EEEE EDDD DDDD DDDD DDDD DDDD DDDD
+float convertBytesToFloat(uint8_t dataLow, uint8_t dataHigh) {
+    uint16_t combinedData = ((uint16_t)dataHigh << 8 | dataLow);
+    uint32_t dataHolder = ((uint32_t)(combinedData & DATA_MASK_F16) << 13);
+    dataHolder |= ((uint32_t)(combinedData & SIGN_BIT_F16) << 16);
+    uint8_t exponent = ((combinedData & EXPONENT_MASK_F16) >> 10);
+    exponent += 112; //-15 + 127
+    dataHolder |= (((uint32_t)exponent << 23));
+    float dataFloat = 0.0F;
+    memcpy(&dataFloat, &dataHolder, 4);
+    // float dataFloat = reinterpret_cast<float &>(dataHolder);
+    return dataFloat;
 }

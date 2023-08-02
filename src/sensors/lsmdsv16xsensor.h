@@ -27,6 +27,10 @@
 #include "sensor.h"
 #include <LSM6DSV16X.h>
 
+#define SIGN_BIT_F16 0x8000
+#define EXPONENT_MASK_F16 0x7C00
+#define DATA_MASK_F16 0x03FF
+
 class LSMDSV16XSensor : public Sensor
 {
 public:
