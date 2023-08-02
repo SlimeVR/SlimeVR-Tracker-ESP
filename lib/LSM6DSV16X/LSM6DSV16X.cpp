@@ -2601,13 +2601,10 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Set_G_BDR(float Bdr)
 LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Set_SFLP_Batch(bool GameRotation, bool Gravity, bool gBias)
 {
     lsm6dsv16x_fifo_sflp_raw_t fifo_sflp;
-    fifo_sflp.game_rotation = 1;
-    fifo_sflp.gravity = 1;
-    fifo_sflp.gbias = 1;
-    if (lsm6dsv16x_fifo_sflp_batch_set(&reg_ctx, fifo_sflp) != LSM6DSV16X_OK) {
-        return LSM6DSV16X_ERROR;
-    }
-    return LSM6DSV16X_OK;
+    fifo_sflp.game_rotation = GameRotation;
+    fifo_sflp.gravity = Gravity;
+    fifo_sflp.gbias = gBias;
+    return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_fifo_sflp_batch_set(&reg_ctx, fifo_sflp);
 }
 
 /**
@@ -2854,12 +2851,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_G_ODR_When_Enabled(float Odr)
             : (Odr <= 3840.0f) ? LSM6DSV16X_ODR_AT_3840Hz
             :                    LSM6DSV16X_ODR_AT_7680Hz;
 
-  /* Output data rate selection. */
-  if (lsm6dsv16x_gy_data_rate_set(&reg_ctx, new_odr) != LSM6DSV16X_OK) {
-    return LSM6DSV16X_ERROR;
-  }
-
-  return LSM6DSV16X_OK;
+  return (LSM6DSV16XStatusTypeDef) lsm6dsv16x_gy_data_rate_set(&reg_ctx, new_odr);
 }
 
 /**
@@ -2948,11 +2940,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_G_FS(int32_t FullScale)
            : (FullScale <= 2000) ? LSM6DSV16X_2000dps
            :                       LSM6DSV16X_4000dps;
 
-  if (lsm6dsv16x_gy_full_scale_set(&reg_ctx, new_fs) != LSM6DSV16X_OK) {
-    return LSM6DSV16X_ERROR;
-  }
-
-  return LSM6DSV16X_OK;
+  return (LSM6DSV16XStatusTypeDef) lsm6dsv16x_gy_full_scale_set(&reg_ctx, new_fs);
 }
 
 /**
@@ -3029,11 +3017,10 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_G_DRDY_Status(uint8_t *Status)
  */
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_G_Power_Mode(uint8_t PowerMode)
 {
-  if (lsm6dsv16x_gy_mode_set(&reg_ctx, (lsm6dsv16x_gy_mode_t)PowerMode) != LSM6DSV16X_OK) {
-    return LSM6DSV16X_ERROR;
-  }
-
-  return LSM6DSV16X_OK;
+    return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_gy_mode_set(
+        &reg_ctx,
+        (lsm6dsv16x_gy_mode_t)PowerMode
+    );
 }
 
 /**
