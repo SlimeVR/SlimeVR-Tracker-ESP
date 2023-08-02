@@ -21,20 +21,19 @@
     THE SOFTWARE.
 */
 
-#include "sensors/lsmdsv16xsensor.h"
+#include "sensors/lsm6dsv16xsensor.h"
 #include "utils.h"
+#include "customConversions.h"
 #include "GlobalVars.h"
 
-volatile bool imuEvent = false;
 
-//Maybe this should go into the math lib
-float convertBytesToFloat(uint8_t dataLow, uint8_t dataHigh);
+volatile bool imuEvent = false;
 
 void interruptHandler() {
     imuEvent = true;
 }
 
-void LSMDSV16XSensor::motionSetup()
+void LSM6DSV16XSensor::motionSetup()
 {
 #ifdef DEBUG_SENSOR
     //TODO: Should anything go here
@@ -87,7 +86,7 @@ void LSMDSV16XSensor::motionSetup()
     }
 
     //errorCounter -= imu.Set_G_Filter_Mode(0, 0) //Look up filter setup
-    //errorCounter -= imu.Set_G_FS(8LSM6DSV16X_ACC_SENSITIVITY_FS_8G);
+    //errorCounter -= imu.Set_G_FS(2000dps);
     //errorCounter -= imu.Set_G_ODR(120.0F, LSM6DSV16X_GYRO_HIGH_ACCURACY_MODE) //High accuracy mode is not implemented
 
     //errorCounter -= imu.Set_X_Filter_Mode(0, 0) //Look up filter setup
@@ -100,7 +99,7 @@ void LSMDSV16XSensor::motionSetup()
     configured = true;
 }
 
-void LSMDSV16XSensor::motionLoop()
+void LSM6DSV16XSensor::motionLoop()
 {
     if (imuEvent) {
         imuEvent = false;
@@ -126,20 +125,19 @@ void LSMDSV16XSensor::motionLoop()
                 networkConnection.sendInspectionRawIMUData(sensorId, gyroscope[0], gyroscope[1], gyroscope[2], 0, accelerometer[0], accelerometer[1], accelerometer[2], 0, 0, 0, 0, 0);
             }
 #endif
-
             uint8_t dataLow = 0;
             uint8_t dataHigh = 0;
             errorCounter -= imu.Get_6D_Orientation_XL(&dataLow);
             errorCounter -= imu.Get_6D_Orientation_XH(&dataHigh);
-            fusedRotation.x = convertBytesToFloat(dataLow, dataHigh);
+            fusedRotation.x = Conversions::convertBytesToFloat(dataLow, dataHigh);
 
             errorCounter -= imu.Get_6D_Orientation_YL(&dataLow);
             errorCounter -= imu.Get_6D_Orientation_YH(&dataHigh);
-            fusedRotation.y = convertBytesToFloat(dataLow, dataHigh);
+            fusedRotation.y = Conversions::convertBytesToFloat(dataLow, dataHigh);
 
             errorCounter -= imu.Get_6D_Orientation_ZL(&dataLow);
             errorCounter -= imu.Get_6D_Orientation_ZH(&dataHigh);
-            fusedRotation.z = convertBytesToFloat(dataLow, dataHigh);
+            fusedRotation.z = Conversions::convertBytesToFloat(dataLow, dataHigh);
 
             fusedRotation.w = sqrtf(1.0F - sq(fusedRotation.x) - sq(fusedRotation.y) - sq(fusedRotation.z));
 
@@ -185,12 +183,12 @@ void LSMDSV16XSensor::motionLoop()
     }
 }
 
-SensorStatus LSMDSV16XSensor::getSensorState() {
+SensorStatus LSM6DSV16XSensor::getSensorState() {
     //TODO: this may need to be redone, errorCounter gets reset at the end of the loop
     return errorCounter > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
-void LSMDSV16XSensor::sendData()
+void LSM6DSV16XSensor::sendData()
 {
     if (newFusedRotation)
     {
@@ -217,26 +215,9 @@ void LSMDSV16XSensor::sendData()
     }
 }
 
-void LSMDSV16XSensor::startCalibration(int calibrationType)
+void LSM6DSV16XSensor::startCalibration(int calibrationType)
 {
     //These IMU are factory calibrated.
     //The register might be able to be changed but it could break the device
     //I don't think we will need to mess with them
-}
-
-
-//Convert 2 bytes in f16 format to a float
-//f16: SEEE EEDD DDDD DDDD
-//f32: SEEE EEEE EDDD DDDD DDDD DDDD DDDD DDDD
-float convertBytesToFloat(uint8_t dataLow, uint8_t dataHigh) {
-    uint16_t combinedData = ((uint16_t)dataHigh << 8 | dataLow);
-    uint32_t dataHolder = ((uint32_t)(combinedData & DATA_MASK_F16) << 13);
-    dataHolder |= ((uint32_t)(combinedData & SIGN_BIT_F16) << 16);
-    uint8_t exponent = ((combinedData & EXPONENT_MASK_F16) >> 10);
-    exponent += 112; //-15 + 127
-    dataHolder |= (((uint32_t)exponent << 23));
-    float dataFloat = 0.0F;
-    memcpy(&dataFloat, &dataHolder, 4);
-    // float dataFloat = reinterpret_cast<float &>(dataHolder);
-    return dataFloat;
 }
