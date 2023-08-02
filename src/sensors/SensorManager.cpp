@@ -99,8 +99,10 @@ namespace SlimeVR
                 sensor = new ICM20948Sensor(sensorID, address, rotation, sclPin, sdaPin);
                 break;
             case IMU_LSM6DSV16X:
+                {
                 uint8_t intPin = extraParam;
                 sensor = new LSM6DSV16XSensor(sensorID, imuType, address, rotation, sclPin, sdaPin, intPin);
+                }
                 break;
             default:
                 sensor = new ErroneousSensor(sensorID, imuType);
