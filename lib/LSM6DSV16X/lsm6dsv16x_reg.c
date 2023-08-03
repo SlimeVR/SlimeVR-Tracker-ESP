@@ -5849,7 +5849,7 @@ int32_t lsm6dsv16x_sflp_game_gbias_set(stmdev_ctx_t *ctx,
   // disable gbias setting
   ctrl10.emb_func_debug = 0;
   ret += lsm6dsv16x_write_reg(ctx, LSM6DSV16X_CTRL10, (uint8_t *)&ctrl10, 1);
-
+  
   /* reload previous master configuration */
   ret += lsm6dsv16x_sh_master_set(ctx, master_config);
 

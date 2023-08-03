@@ -51,6 +51,7 @@ LSM6DSV16X::LSM6DSV16X(TwoWire *i2c, uint8_t address) : dev_i2c(i2c), address(ad
 {
   reg_ctx.write_reg = LSM6DSV16X_io_write;
   reg_ctx.read_reg = LSM6DSV16X_io_read;
+  reg_ctx.mdelay = LSM6DSV16X_sleep;
   reg_ctx.handle = (void *)this;
   dev_spi = NULL;
   acc_is_enabled = 0L;
@@ -91,7 +92,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::begin()
   }
 
   /* Enable BDU */
-  if (lsm6dsv16x_block_data_update_set(&reg_ctx, PROPERTY_ENABLE) != LSM6DSV16X_OK) {
+  if (Enable_Block_Data_Update() != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
@@ -2607,6 +2608,11 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Set_SFLP_Batch(bool GameRotation, bool 
     return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_fifo_sflp_batch_set(&reg_ctx, fifo_sflp);
 }
 
+LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_Status(lsm6dsv16x_fifo_status_t * Status)
+{
+    return (LSM6DSV16XStatusTypeDef) lsm6dsv16x_fifo_status_get(&reg_ctx, Status);
+}
+
 /**
  * @brief  Enable the LSM6DSV16X gyroscope sensor
  * @retval 0 in case of success, an error code otherwise
@@ -3053,23 +3059,30 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_G_Filter_Mode(uint8_t LowHighPassFlag, u
   return LSM6DSV16X_OK;
 }
 
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_G_Bias(float x, float y, float z)
+{
+    lsm6dsv16x_sflp_gbias_t gbias;
+    gbias.gbias_x = x;
+    gbias.gbias_y = y;
+    gbias.gbias_z = z;
+    return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_sflp_game_gbias_set(
+        &reg_ctx,
+        &gbias
+    );
+}
+
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_SFLP_ODR(float odr) {
-  uint8_t bits = odr <= 15 ? 0b000
-    : odr <= 30 ? 0b001
-    : odr <= 60 ? 0b010
-    : odr <= 120 ? 0b011
-    : odr <= 240 ? 0b100
-    : 0b101;
+    lsm6dsv16x_sflp_data_rate_t rate = odr <= 15 ? LSM6DSV16X_SFLP_15Hz
+        : odr <= 30 ? LSM6DSV16X_SFLP_30Hz
+        : odr <= 60 ? LSM6DSV16X_SFLP_60Hz
+        : odr <= 120 ? LSM6DSV16X_SFLP_120Hz
+        : odr <= 240 ? LSM6DSV16X_SFLP_240Hz
+        : LSM6DSV16X_SFLP_480Hz;
 
-  lsm6dsv16x_sflp_odr_t value;
-  value.not_used0 = 0b011;
-  value.sflp_game_odr = bits;
-  value.not_used1 = 0b01;
-
-  if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_SFLP_ODR, (uint8_t *)&value, sizeof(value)) != LSM6DSV16X_OK) {
-    return LSM6DSV16X_ERROR;
-  }
-  return LSM6DSV16X_OK;
+    return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_sflp_data_rate_set(
+        &reg_ctx,
+         rate
+    );
 }
 
 
@@ -3236,6 +3249,10 @@ int32_t LSM6DSV16X_io_read(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uin
   return ((LSM6DSV16X *)handle)->IO_Read(pBuffer, ReadAddr, nBytesToRead);
 }
 
+void LSM6DSV16X_sleep(uint32_t ms) {
+    delay(ms);
+}
+
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Reset_Set(uint8_t flags)
 {
     if (lsm6dsv16x_reset_set(&reg_ctx, (lsm6dsv16x_reset_t)flags) != LSM6DSV16X_OK) {
@@ -3253,8 +3270,16 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Reset_Set(uint8_t flags)
 
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Enable_Game_Rotation(bool enable)
 {
-    if (lsm6dsv16x_sflp_game_rotation_set(&reg_ctx, enable ? PROPERTY_ENABLE : PROPERTY_DISABLE) != LSM6DSV16X_OK) {
-        return LSM6DSV16X_ERROR;
-    }
-    return LSM6DSV16X_OK;
+    return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_sflp_game_rotation_set(
+        &reg_ctx,
+         enable ? PROPERTY_ENABLE : PROPERTY_DISABLE
+    );
+}
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Enable_Block_Data_Update(bool enable)
+{
+    return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_block_data_update_set(
+        &reg_ctx,
+         enable ? PROPERTY_ENABLE : PROPERTY_DISABLE
+    );
 }

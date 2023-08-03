@@ -161,6 +161,7 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Get_G_DRDY_Status(uint8_t *Status);
     LSM6DSV16XStatusTypeDef Set_G_Power_Mode(uint8_t PowerMode);
     LSM6DSV16XStatusTypeDef Set_G_Filter_Mode(uint8_t LowHighPassFlag, uint8_t FilterMode);
+    LSM6DSV16XStatusTypeDef Set_G_Bias(float x, float y, float z);
 
     LSM6DSV16XStatusTypeDef Set_SFLP_ODR(float Odr);
 
@@ -215,6 +216,7 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef FIFO_Get_G_Axes(int32_t *AngularVelocity);
     LSM6DSV16XStatusTypeDef FIFO_Set_G_BDR(float Bdr);
     LSM6DSV16XStatusTypeDef FIFO_Set_SFLP_Batch(bool GameRotation, bool Gravity, bool gBias);
+    LSM6DSV16XStatusTypeDef FIFO_Get_Status(lsm6dsv16x_fifo_status_t *Status);
 
     LSM6DSV16XStatusTypeDef QVAR_Enable();
     LSM6DSV16XStatusTypeDef QVAR_GetStatus(uint8_t *val);
@@ -230,6 +232,8 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Reset_Set(uint8_t flags);
 
     LSM6DSV16XStatusTypeDef Enable_Game_Rotation(bool enable = true);
+
+    LSM6DSV16XStatusTypeDef Enable_Block_Data_Update(bool enable = true);
 
     /**
      * @brief Utility function to read data.
@@ -350,6 +354,7 @@ extern "C" {
 #endif
 int32_t LSM6DSV16X_io_write(void *handle, uint8_t WriteAddr, const uint8_t *pBuffer, uint16_t nBytesToWrite);
 int32_t LSM6DSV16X_io_read(void *handle, uint8_t ReadAddr, uint8_t *pBuffer, uint16_t nBytesToRead);
+void LSM6DSV16X_sleep(uint32_t ms);
 #ifdef __cplusplus
 }
 #endif

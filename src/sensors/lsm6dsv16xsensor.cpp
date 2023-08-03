@@ -30,8 +30,6 @@
 #define INTERRUPTFREE  // TODO: change based on int pin number (255 = interruptFree)
 #define DEBUG_SENSOR
 
-constexpr uint8_t SFLP_GAME_EN_BIT = 1 << 1;
-
 volatile bool imuEvent = false;
 
 void IRAM_ATTR interruptHandler() { imuEvent = true; }
@@ -76,14 +74,17 @@ void LSM6DSV16XSensor::motionSetup() {
 	uint8_t status = 0;
 
 	// Restore defaults
-	status |= imu.Reset_Set(LSM6DSV16X_RESET_CTRL_REGS);
+	// status |= imu.Reset_Set(LSM6DSV16X_RESET_CTRL_REGS);
+
+	// Enable Block Data Update
+	status |= imu.Enable_Block_Data_Update();
 
 	// Set maximums
 	status |= imu.Set_X_FS(LSM6DSV16X_ACCEL_MAX);
 	status |= imu.Set_G_FS(LSM6DSV16X_GYRO_MAX);
 
 	// Set FIFO size
-	status |= imu.FIFO_Set_Watermark_Level(LSM6DSV16X_FIFO_MAX_ENTRIES);
+	status |= imu.FIFO_Set_Watermark_Level(LSM6DSV16X_FIFO_MAX_SIZE);
 
 	// Set FIFO SFLP Batch
 	// NOTE: might not need all of this
@@ -99,6 +100,9 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	// Enable Game Rotation Fusion
 	status |= imu.Enable_Game_Rotation();
+
+	// Set GBias
+	status |= imu.Set_G_Bias(0, 0, 0);
 
 #ifndef INTERRUPTFREE
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
@@ -125,7 +129,24 @@ void LSM6DSV16XSensor::motionSetup() {
 }
 
 void LSM6DSV16XSensor::motionLoop() {
-	uint16_t fifo_samples;
+	lsm6dsv16x_fifo_status_t fifo_status;
+	if (imu.FIFO_Get_Status(&fifo_status) != LSM6DSV16X_OK) {
+		m_Logger.error(
+			"Error getting FIFO status on %s at address 0x%02x",
+			getIMUNameByType(sensorType),
+			addr
+		);
+		errorCounter++;
+		return;
+	}
+
+	m_Logger.info("FIFO status: %d", fifo_status.fifo_level);
+
+	if (fifo_status.fifo_th != 1) {
+		return;
+	}
+
+	uint16_t fifo_samples = fifo_status.fifo_level;
 	if (imu.FIFO_Get_Num_Samples(&fifo_samples) == LSM6DSV16X_ERROR) {
 		m_Logger.error(
 			"Error getting number of samples in FIFO on %s at address 0x%02x",
@@ -134,6 +155,10 @@ void LSM6DSV16XSensor::motionLoop() {
 		);
 		errorCounter++;
 		return;
+	}
+
+	if (fifo_samples != 0) {
+		m_Logger.info("Got %d samples", fifo_samples);
 	}
 
 	for (uint16_t i = 0; i < fifo_samples; i++) {
