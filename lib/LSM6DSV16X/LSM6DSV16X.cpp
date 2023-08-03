@@ -801,10 +801,10 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_IMU(uint8_t XTestType, uint8_t GTestTyp
   if (Test_X_IMU(XTestType) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
-
+  
   if (Test_G_IMU(GTestType) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
-  } 
+  }
   return LSM6DSV16X_OK; 
 }
 
@@ -864,7 +864,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_X_IMU(uint8_t TestType)
   for (uint8_t i = 0; i < 3; i++) {
     val_st_off[i] /= 5.0f;
   }
-
+  
   if (lsm6dsv16x_xl_self_test_set(&reg_ctx, (lsm6dsv16x_xl_self_test_t)TestType) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
@@ -1015,6 +1015,52 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_G_IMU(uint8_t TestType = LSM6DSV16X_GY_
   }
 
   if (lsm6dsv16x_xl_data_rate_set(&reg_ctx, LSM6DSV16X_ODR_OFF) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  return LSM6DSV16X_OK;
+}
+
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_T_ODR(float *Odr) {
+  LSM6DSV16XStatusTypeDef ret;
+  lsm6dsv16x_fifo_ctrl4_t ctrl4;
+
+  if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (ctrl4.odr_t_batch == 0x00)
+    *Odr = 0.0F;
+  if (ctrl4.odr_t_batch <= 0x01)
+    *Odr = 1.875F;
+  if (ctrl4.odr_t_batch <= 0x02)
+    *Odr = 15.0F;
+  else 
+    *Odr = 60.0F;
+
+  return LSM6DSV16X_OK;
+}
+
+
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_T_ODR(float Odr) {
+  LSM6DSV16XStatusTypeDef ret;
+  lsm6dsv16x_fifo_ctrl4_t ctrl4;
+
+  if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (Odr == 0.0F)
+    ctrl4.odr_t_batch = 0x00;
+  if (Odr <= 1.875F)
+    ctrl4.odr_t_batch = 0x01;
+  if (Odr <= 15.0F)
+    ctrl4.odr_t_batch = 0x02;
+  else 
+    ctrl4.odr_t_batch = 0x03;
+
+  if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
   return LSM6DSV16X_OK;
@@ -3559,6 +3605,19 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Enable_Game_Rotation(bool enable)
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Enable_Block_Data_Update(bool enable)
 {
     return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_block_data_update_set(
+        &reg_ctx,
+         enable ? PROPERTY_ENABLE : PROPERTY_DISABLE
+    );
+}
+
+/**
+ * @brief  Enable register address automatically incremented during a multiple byte
+  access with a serial interface.
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_Auto_Increment(bool enable)
+{
+  return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_auto_increment_set(
         &reg_ctx,
          enable ? PROPERTY_ENABLE : PROPERTY_DISABLE
     );

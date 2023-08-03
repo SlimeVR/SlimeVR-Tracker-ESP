@@ -70,6 +70,11 @@
 
 #define LSM6DSV16X_QVAR_GAIN  78.000f
 
+
+
+//#define esp32
+//#define I2C_LIB_DEBUG
+
 /* Typedefs ------------------------------------------------------------------*/
 
 typedef enum {
@@ -173,6 +178,9 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Test_IMU(uint8_t XTestType, uint8_t GTestType);
     LSM6DSV16XStatusTypeDef Test_X_IMU(uint8_t TestType);
     LSM6DSV16XStatusTypeDef Test_G_IMU(uint8_t TestType);
+
+    LSM6DSV16XStatusTypeDef Get_T_ODR(float *Odr);
+    LSM6DSV16XStatusTypeDef Set_T_ODR(float Odr);
     
     LSM6DSV16XStatusTypeDef Set_SFLP_ODR(float Odr);
 
@@ -245,6 +253,7 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Enable_Game_Rotation(bool enable = true);
 
     LSM6DSV16XStatusTypeDef Enable_Block_Data_Update(bool enable = true);
+    LSM6DSV16XStatusTypeDef Set_Auto_Increment(bool enable);
 
     /**
      * @brief Utility function to read data.
@@ -256,8 +265,11 @@ class LSM6DSV16X {
     uint8_t IO_Read(uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToRead)
     {
       if (dev_spi) {
+#ifdef esp32
+        dev_spi->beginTransaction(SPISettings(spi_speed, SPI_MSBFIRST, SPI_MODE3));
+#else
         dev_spi->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE3));
-
+#endif
         digitalWrite(cs_pin, LOW);
 
         /* Write Reg Address */
@@ -275,6 +287,9 @@ class LSM6DSV16X {
       }
 
       if (dev_i2c) {
+#ifdef I2C_LIB_DEBUG
+        printf("\n\n[LSM LIB] Read register: 0x%02x, Byte Count: %d bytes", RegisterAddr, NumByteToRead);
+#endif
         dev_i2c->beginTransmission(((uint8_t)(((address) >> 1) & 0x7F)));
         dev_i2c->write(RegisterAddr);
         dev_i2c->endTransmission(false);
@@ -284,6 +299,9 @@ class LSM6DSV16X {
         int i = 0;
         while (dev_i2c->available()) {
           pBuffer[i] = dev_i2c->read();
+#ifdef I2C_LIB_DEBUG
+          printf("\n[LSM LIB] Register Read: 0x%02x, Data: 0x%02x", RegisterAddr + i, pBuffer[i]);
+#endif
           i++;
         }
 
@@ -303,8 +321,11 @@ class LSM6DSV16X {
     uint8_t IO_Write(const uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToWrite)
     {
       if (dev_spi) {
+#ifdef esp32
+        dev_spi->beginTransaction(SPISettings(spi_speed, SPI_MSBFIRST, SPI_MODE3));
+#else
         dev_spi->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE3));
-
+#endif
         digitalWrite(cs_pin, LOW);
 
         /* Write Reg Address */
@@ -322,10 +343,16 @@ class LSM6DSV16X {
       }
 
       if (dev_i2c) {
+#ifdef I2C_LIB_DEBUG
+        printf("\n\n[LSM LIB] Write register: 0x%02x, Byte Count: %d bytes", RegisterAddr, NumByteToWrite);
+#endif
         dev_i2c->beginTransmission(((uint8_t)(((address) >> 1) & 0x7F)));
 
         dev_i2c->write(RegisterAddr);
         for (uint16_t i = 0 ; i < NumByteToWrite ; i++) {
+#ifdef I2C_LIB_DEBUG
+          printf("\n[LSM LIB] Register Wrote: 0x%02x, Data: 0x%02x", RegisterAddr + i, pBuffer[i]);
+#endif
           dev_i2c->write(pBuffer[i]);
         }
 

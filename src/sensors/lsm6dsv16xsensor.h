@@ -24,7 +24,7 @@
 #ifndef SENSORS_LSM6DSV16X_H
 #define SENSORS_LSM6DSV16X_H
 
-#include <LSM6DSV16X.h>
+#include "LSM6DSV16X.h"
 
 #include "sensor.h"
 
