@@ -128,9 +128,9 @@ private:
 	bool sendPacketNumber();
 	bool sendFloat(float f);
 	bool sendByte(uint8_t c);
-	bool sendShort(uint16_t i);
-	bool sendInt(uint32_t i);
-	bool sendLong(uint64_t l);
+	bool sendShort(int16_t i);
+	bool sendInt(int32_t i);
+	bool sendU64(uint64_t l);
 	bool sendBytes(const uint8_t* c, size_t length);
 	bool sendShortString(const char* str);
 	bool sendLongString(const char* str);
