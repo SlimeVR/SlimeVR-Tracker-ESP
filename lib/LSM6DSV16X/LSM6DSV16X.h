@@ -63,6 +63,11 @@
 #define LSM6DSV16X_GYRO_SENSITIVITY_FS_2000DPS   70.000f
 #define LSM6DSV16X_GYRO_SENSITIVITY_FS_4000DPS  140.000f
 
+#define LSM6DSV16X_MIN_ST_LIMIT_mg         50.0f
+#define LSM6DSV16X_MAX_ST_LIMIT_mg       1700.0f
+#define LSM6DSV16X_MIN_ST_LIMIT_mdps   150000.0f
+#define LSM6DSV16X_MAX_ST_LIMIT_mdps   700000.0f
+
 #define LSM6DSV16X_QVAR_GAIN  78.000f
 
 /* Typedefs ------------------------------------------------------------------*/
@@ -143,6 +148,7 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Get_X_FS(int32_t *FullScale);
     LSM6DSV16XStatusTypeDef Set_X_FS(int32_t FullScale);
     LSM6DSV16XStatusTypeDef Get_X_AxesRaw(int16_t *Value);
+    LSM6DSV16XStatusTypeDef Get_X_AxesRaw_When_Aval(int16_t *Value);
     LSM6DSV16XStatusTypeDef Get_X_Axes(int32_t *Acceleration);
     LSM6DSV16XStatusTypeDef Get_X_DRDY_Status(uint8_t *Status);
     LSM6DSV16XStatusTypeDef Get_X_Event_Status(LSM6DSV16X_Event_Status_t *Status);
@@ -157,12 +163,17 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Get_G_FS(int32_t *FullScale);
     LSM6DSV16XStatusTypeDef Set_G_FS(int32_t FullScale);
     LSM6DSV16XStatusTypeDef Get_G_AxesRaw(int16_t *Value);
+    LSM6DSV16XStatusTypeDef Get_G_AxesRaw_When_Aval(int16_t *Value);
     LSM6DSV16XStatusTypeDef Get_G_Axes(int32_t *AngularRate);
     LSM6DSV16XStatusTypeDef Get_G_DRDY_Status(uint8_t *Status);
     LSM6DSV16XStatusTypeDef Set_G_Power_Mode(uint8_t PowerMode);
     LSM6DSV16XStatusTypeDef Set_G_Filter_Mode(uint8_t LowHighPassFlag, uint8_t FilterMode);
     LSM6DSV16XStatusTypeDef Set_G_Bias(float x, float y, float z);
 
+    LSM6DSV16XStatusTypeDef Test_IMU(uint8_t XTestType, uint8_t GTestType);
+    LSM6DSV16XStatusTypeDef Test_X_IMU(uint8_t TestType);
+    LSM6DSV16XStatusTypeDef Test_G_IMU(uint8_t TestType);
+    
     LSM6DSV16XStatusTypeDef Set_SFLP_ODR(float Odr);
 
     LSM6DSV16XStatusTypeDef Enable_6D_Orientation(LSM6DSV16X_SensorIntPin_t IntPin);

@@ -73,6 +73,15 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	uint8_t status = 0;
 
+	//Test
+	if (imu.Test_IMU(LSM6DSV16X_XL_ST_NEGATIVE, LSM6DSV16X_GY_ST_NEGATIVE) == LSM6DSV16X_ERROR) {
+		m_Logger.fatal(
+			"The IMU returned an error during the self test"
+		);
+		ledManager.pattern(50, 50, 200);
+		return;
+	}
+
 	// Restore defaults
 	// status |= imu.Reset_Set(LSM6DSV16X_RESET_CTRL_REGS);
 

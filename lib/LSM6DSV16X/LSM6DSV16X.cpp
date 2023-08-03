@@ -589,6 +589,25 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_X_AxesRaw(int16_t *Value)
 }
 
 /**
+ * @brief  Get the LSM6DSV16X accelerometer sensor raw axes when avaiable (Blocking)
+ * @param  Value pointer where the raw values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_X_AxesRaw_When_Aval(int16_t *Value) {
+  lsm6dsv16x_data_ready_t drdy;
+  do {
+    if (lsm6dsv16x_flag_data_ready_get(&reg_ctx, &drdy) != LSM6DSV16X_OK) {
+      return LSM6DSV16X_ERROR;
+    }
+  } while (!drdy.drdy_xl);
+
+  if (Get_X_AxesRaw(Value) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  return LSM6DSV16X_OK;
+}
+
+/**
  * @brief  Get the LSM6DSV16X ACC data ready bit value
  * @param  Status the status of data ready bit
  * @retval 0 in case of success, an error code otherwise
@@ -755,6 +774,248 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_X_Filter_Mode(uint8_t LowHighPassFlag, u
     if (lsm6dsv16x_filt_xl_lp2_bandwidth_set(&reg_ctx, (lsm6dsv16x_filt_xl_lp2_bandwidth_t)FilterMode) != LSM6DSV16X_OK) {
       return LSM6DSV16X_ERROR;
     }
+  }
+  return LSM6DSV16X_OK;
+}
+
+/**
+ * @brief  Runs the ST specified accelerometer and gyroscope self test
+ * @param XTestType LSM6DSV16X_XL_ST_DISABLE  = 0x0, LSM6DSV16X_XL_ST_POSITIVE = 0x1, LSM6DSV16X_XL_ST_NEGATIVE = 0x2
+ * @param GTestType LSM6DSV16X_GY_ST_DISABLE  = 0x0, LSM6DSV16X_GY_ST_POSITIVE = 0x1, LSM6DSV16X_GY_ST_NEGATIVE = 0x2
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_IMU(uint8_t XTestType, uint8_t GTestType)
+{
+  uint8_t whoamI;
+
+
+  if (ReadID(&whoamI) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (whoamI != LSM6DSV16X_ID) {
+    return LSM6DSV16X_ERROR;
+  }
+
+
+  if (Test_X_IMU(XTestType) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (Test_G_IMU(GTestType) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  } 
+  return LSM6DSV16X_OK; 
+}
+
+/**
+ * @brief  Runs the ST specified accelerometer self test
+ * @param TestType LSM6DSV16X_XL_ST_DISABLE  = 0x0, LSM6DSV16X_XL_ST_POSITIVE = 0x1, LSM6DSV16X_XL_ST_NEGATIVE = 0x2
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_X_IMU(uint8_t TestType)
+{
+  int16_t data_raw[3];
+  float val_st_off[3];
+  float val_st_on[3];
+  float test_val[3];
+
+
+  if (Reset_Set(LSM6DSV16X_RESTORE_CTRL_REGS) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (lsm6dsv16x_block_data_update_set(&reg_ctx, PROPERTY_ENABLE) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  /*
+   * Accelerometer Self Test
+   */
+  if (lsm6dsv16x_xl_data_rate_set(&reg_ctx, LSM6DSV16X_ODR_AT_60Hz) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (lsm6dsv16x_xl_full_scale_set(&reg_ctx, LSM6DSV16X_4g) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  delayMicroseconds(100); //Wait for Accelerometer to stabalize;
+  memset(val_st_off, 0x00, 3 * sizeof(float));
+  memset(val_st_on, 0x00, 3 * sizeof(float));
+
+
+  /*Ignore First Data*/
+  if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  for (uint8_t i = 0; i < 5; i++) {
+    if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
+      return LSM6DSV16X_ERROR;
+    }
+
+    /*Average the data in each axis*/
+    for (uint8_t j = 0; j < 3; j++) {
+      val_st_off[j] += lsm6dsv16x_from_fs4_to_mg(data_raw[j]);
+    }
+  }
+
+  /* Calculate the mg average values */
+  for (uint8_t i = 0; i < 3; i++) {
+    val_st_off[i] /= 5.0f;
+  }
+
+  if (lsm6dsv16x_xl_self_test_set(&reg_ctx, (lsm6dsv16x_xl_self_test_t)TestType) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  delayMicroseconds(100);
+
+
+  /*Ignore First Data*/
+  if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  
+  for (uint8_t i = 0; i < 5; i++) {
+    if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
+      return LSM6DSV16X_ERROR;
+    }
+
+    /*Average the data in each axis*/
+    for (uint8_t j = 0; j < 3; j++) {
+      val_st_on[j] += lsm6dsv16x_from_fs4_to_mg(data_raw[j]);
+    }
+  }
+
+  /* Calculate the mg average values */
+  for (uint8_t i = 0; i < 3; i++) {
+    val_st_on[i] /= 5.0f;
+  }
+
+  /* Calculate the mg values for self test */
+  for (uint8_t i = 0; i < 3; i++) {
+    test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+  }
+
+  for (uint8_t i = 0; i < 3; i++) {
+    if (( LSM6DSV16X_MIN_ST_LIMIT_mg > test_val[i] ) || ( test_val[i] > LSM6DSV16X_MAX_ST_LIMIT_mg))
+      return LSM6DSV16X_ERROR;
+  }
+
+  if (lsm6dsv16x_xl_self_test_set(&reg_ctx, LSM6DSV16X_XL_ST_DISABLE) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (lsm6dsv16x_xl_data_rate_set(&reg_ctx, LSM6DSV16X_ODR_OFF) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  return LSM6DSV16X_OK;
+}
+
+/**
+ * @brief  Runs the ST specified self test on the acceleration axis of the IMU
+ * @param TestType LSM6DSV16X_GY_ST_DISABLE  = 0x0, LSM6DSV16X_GY_ST_POSITIVE = 0x1, LSM6DSV16X_GY_ST_NEGATIVE = 0x2
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_G_IMU(uint8_t TestType = LSM6DSV16X_GY_ST_POSITIVE)
+{
+  int16_t data_raw[3];
+  float val_st_off[3];
+  float val_st_on[3];
+  float test_val[3];
+
+  if (Reset_Set(LSM6DSV16X_RESTORE_CTRL_REGS) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (lsm6dsv16x_block_data_update_set(&reg_ctx, PROPERTY_ENABLE) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  /*
+   * Gyroscope Self Test
+   */
+
+  if (lsm6dsv16x_gy_data_rate_set(&reg_ctx, LSM6DSV16X_ODR_AT_240Hz) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (lsm6dsv16x_gy_full_scale_set(&reg_ctx, LSM6DSV16X_2000dps) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  delayMicroseconds(100);
+  memset(val_st_off, 0x00, 3 * sizeof(float));
+  memset(val_st_on, 0x00, 3 * sizeof(float));
+
+
+  /*Ignore First Data*/
+  if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  
+  for (uint8_t i = 0; i < 5; i++) {
+    if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
+      return LSM6DSV16X_ERROR;
+    }
+
+    /*Average the data in each axis*/
+    for (uint8_t j = 0; j < 3; j++) {
+      val_st_off[j] += lsm6dsv16x_from_fs2000_to_mdps(data_raw[j]);
+    }
+  }
+
+  /* Calculate the mg average values */
+  for (uint8_t i = 0; i < 3; i++) {
+    val_st_off[i] /= 5.0f;
+  }
+
+  if (lsm6dsv16x_gy_self_test_set(&reg_ctx, (lsm6dsv16x_gy_self_test_t)TestType) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  delayMicroseconds(100);
+
+
+  /*Ignore First Data*/
+  if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  
+  for (uint8_t i = 0; i < 5; i++) {
+    if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
+      return LSM6DSV16X_ERROR;
+    }
+
+    /*Average the data in each axis*/
+    for (uint8_t j = 0; j < 3; j++) {
+      val_st_on[j] += lsm6dsv16x_from_fs2000_to_mdps(data_raw[j]);
+    }
+  }
+
+  /* Calculate the mg average values */
+  for (uint8_t i = 0; i < 3; i++) {
+    val_st_on[i] /= 5.0f;
+  }
+
+  /* Calculate the mg values for self test */
+  for (uint8_t i = 0; i < 3; i++) {
+    test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+  }
+
+  /* Check self test limit */
+  for (uint8_t i = 0; i < 3; i++) {
+    if (( LSM6DSV16X_MIN_ST_LIMIT_mdps > test_val[i] ) ||
+        ( test_val[i] > LSM6DSV16X_MAX_ST_LIMIT_mdps)) {
+      return LSM6DSV16X_ERROR;
+    }
+  }
+
+
+  if (lsm6dsv16x_gy_self_test_set(&reg_ctx, LSM6DSV16X_GY_ST_DISABLE) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (lsm6dsv16x_xl_data_rate_set(&reg_ctx, LSM6DSV16X_ODR_OFF) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
   }
   return LSM6DSV16X_OK;
 }
@@ -2968,6 +3229,25 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_G_AxesRaw(int16_t *Value)
   Value[1] = data_raw.i16bit[1];
   Value[2] = data_raw.i16bit[2];
 
+  return LSM6DSV16X_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV16X gyroscope sensor raw axes when data available (Blocking)
+ * @param  Value pointer where the raw values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_G_AxesRaw_When_Aval(int16_t *Value) {
+  lsm6dsv16x_data_ready_t drdy;
+  do {
+    if (lsm6dsv16x_flag_data_ready_get(&reg_ctx, &drdy) != LSM6DSV16X_OK) {
+      return LSM6DSV16X_ERROR;
+    }
+  } while (!drdy.drdy_xl);
+
+  if (Get_G_AxesRaw(Value) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
   return LSM6DSV16X_OK;
 }
 
