@@ -26,11 +26,11 @@
 #include <Arduino.h>
 #include <WiFiUdp.h>
 
+#include "featureflags.h"
 #include "globals.h"
 #include "quat.h"
 #include "sensors/sensor.h"
 #include "wifihandler.h"
-#include "featureflags.h"
 
 namespace SlimeVR {
 namespace Network {
@@ -107,29 +107,26 @@ public:
 	);
 #endif
 
-	const ServerFeatures& getServerFeatureFlags() {
-		return m_ServerFeatures;
-	}
+	const ServerFeatures& getServerFeatureFlags() { return m_ServerFeatures; }
 
 	bool beginBundle();
 	bool endBundle();
 
 private:
-	void updateSensorState(std::vector<Sensor *> & sensors);
+	void updateSensorState(std::vector<Sensor*>& sensors);
 	void maybeRequestFeatureFlags();
 
 	bool beginPacket();
 	bool endPacket();
 
-	size_t write(const uint8_t *buffer, size_t size);
-	size_t write(uint8_t byte);
+	size_t write(const uint8_t* buffer, size_t size);
 
-	bool sendPacketType(uint8_t type);
+	bool sendPacketType(int32_t type);
 	bool sendPacketNumber();
 	bool sendFloat(float f);
 	bool sendByte(uint8_t c);
-	bool sendShort(int16_t i);
-	bool sendInt(int32_t i);
+	bool sendU16(uint16_t c);
+	bool sendI32(int32_t i);
 	bool sendU64(uint64_t l);
 	bool sendBytes(const uint8_t* c, size_t length);
 	bool sendShortString(const char* str);
@@ -152,7 +149,11 @@ private:
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("UDPConnection");
 
 	WiFiUDP m_UDP;
-	unsigned char m_Packet[128];  // buffer for incoming packets
+	/*
+	  The current incoming packet that is being handled
+	  TODO: remove this from the class and make it a local variable
+	*/
+	uint8_t m_Packet[128];
 	uint64_t m_PacketNumber = 0;
 
 	int m_ServerPort = 6969;
@@ -168,10 +169,27 @@ private:
 	ServerFeatures m_ServerFeatures{};
 
 	bool m_IsBundle = false;
-	uint16_t m_BundlePacketPosition = 0;
-	uint16_t m_BundlePacketInnerCount = 0;
+	/* `53` is the maximum size of any packet that could be bundled, which is the
+	 * inspection packet. The additional `2` bytes are from the field which describes
+	 * how long the next bundled packet is. If you're having bundle size issues, then
+	 * you forgot to increase MAX_IMU_COUNT in `defines.h`. */
+	constexpr static size_t MAX_BUNDLE_SIZE = MAX_IMU_COUNT * (53 + 2);
+	/* The bundle that is currently being written. */
+	uint8_t m_Bundle[MAX_BUNDLE_SIZE];
+	/* Points into `m_Bundle` to indicate where we currently are. */
+	uint8_t* m_BundleInnerPosition = m_Bundle;
+	/* Points to where we started writing the current packet into `m_Bundle`. */
+	uint8_t* m_BundleInnerStart = m_Bundle;
+	/* Count of packets that are in the currently forming bundle. */
+	uint16_t m_BundlePacketCount = 0;
 
-	unsigned char m_Buf[8];
+	const size_t getBundleSize() const { return m_BundleInnerPosition - m_Bundle; }
+	const size_t getBundleInnerSize() const {
+		return m_BundleInnerPosition - m_BundleInnerStart - 2;
+	}
+	bool sendBundle();
+
+	uint8_t m_Buf[8];
 };
 
 }  // namespace Network

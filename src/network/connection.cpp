@@ -67,7 +67,11 @@ namespace Network {
 
 bool Connection::beginPacket() {
 	if (m_IsBundle) {
-		m_BundlePacketPosition = 0;
+		m_BundleInnerStart = m_BundleInnerPosition;
+		// We have to advance two bytes, since the first two bytes are reserved for the
+		// packet length
+		m_BundleInnerPosition += 2;
+
 		return true;
 	}
 
@@ -84,21 +88,14 @@ bool Connection::beginPacket() {
 
 bool Connection::endPacket() {
 	if (m_IsBundle) {
-		uint32_t innerPacketSize = m_BundlePacketPosition;
+		auto innerPacketSize = getBundleInnerSize();
 
-		MUST_TRANSFER_BOOL((innerPacketSize > 0));
+		// We have to go back to the start of the packet and write the size
+		convert_to_chars((uint16_t)innerPacketSize, m_Buf);
+		memcpy(m_BundleInnerStart, m_Buf, 2);
 
-		m_IsBundle = false;
+		m_BundlePacketCount++;
 
-		if (m_BundlePacketInnerCount == 0) {
-			sendPacketType(PACKET_BUNDLE);
-			sendPacketNumber();
-		}
-		sendShort(innerPacketSize);
-		sendBytes(m_Packet, innerPacketSize);
-
-		m_BundlePacketInnerCount++;
-		m_IsBundle = true;
 		return true;
 	}
 
@@ -115,38 +112,66 @@ bool Connection::endPacket() {
 
 bool Connection::beginBundle() {
 	MUST_TRANSFER_BOOL(m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT));
+
+	memset(m_Bundle, 0, sizeof(m_Bundle));
+	m_BundleInnerPosition = m_Bundle;
+	m_BundlePacketCount = 0;
+
 	MUST_TRANSFER_BOOL(m_Connected);
 	MUST_TRANSFER_BOOL(!m_IsBundle);
-	MUST_TRANSFER_BOOL(beginPacket());
 
 	m_IsBundle = true;
-	m_BundlePacketInnerCount = 0;
+
+	return true;
+}
+
+bool Connection::sendBundle() {
+	MUST_TRANSFER_BOOL(m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT));
+	MUST_TRANSFER_BOOL(!m_IsBundle);
+	MUST_TRANSFER_BOOL((m_BundlePacketCount > 0));
+
+	MUST_TRANSFER_BOOL(beginPacket());
+
+	MUST_TRANSFER_BOOL(sendPacketType(PACKET_BUNDLE));
+	MUST_TRANSFER_BOOL(sendPacketNumber());
+	MUST_TRANSFER_BOOL(write(m_Bundle, getBundleSize()));
+
+	MUST_TRANSFER_BOOL(endPacket());
+
 	return true;
 }
 
 bool Connection::endBundle() {
-	MUST_TRANSFER_BOOL(m_IsBundle);
-
 	m_IsBundle = false;
 
-	MUST_TRANSFER_BOOL((m_BundlePacketInnerCount > 0));
+	auto ret = sendBundle();
 
-	return endPacket();
+	memset(m_Buf, 0, sizeof(m_Buf));
+	m_BundleInnerStart = m_Buf;
+	m_BundleInnerPosition = m_Buf;
+	m_BundlePacketCount = 0;
+
+	return ret;
 }
 
 size_t Connection::write(const uint8_t* buffer, size_t size) {
 	if (m_IsBundle) {
-		if (m_BundlePacketPosition + size > sizeof(m_Packet)) {
+		if (getBundleSize() + size > MAX_BUNDLE_SIZE) {
+			m_Logger.error("Bundled packet too large");
+
+			// TODO: Drop the currently forming packet
+
 			return 0;
 		}
-		memcpy(m_Packet + m_BundlePacketPosition, buffer, size);
-		m_BundlePacketPosition += size;
+
+		memcpy(m_BundleInnerPosition, buffer, size);
+		m_BundleInnerPosition += size;
+
 		return size;
 	}
+
 	return m_UDP.write(buffer, size);
 }
-
-size_t Connection::write(uint8_t byte) { return write(&byte, 1); }
 
 bool Connection::sendFloat(float f) {
 	convert_to_chars(f, m_Buf);
@@ -156,13 +181,13 @@ bool Connection::sendFloat(float f) {
 
 bool Connection::sendByte(uint8_t c) { return write(&c, 1) != 0; }
 
-bool Connection::sendShort(int16_t i) {
+bool Connection::sendU16(uint16_t i) {
 	convert_to_chars(i, m_Buf);
 
 	return write(m_Buf, sizeof(i)) != 0;
 }
 
-bool Connection::sendInt(int32_t i) {
+bool Connection::sendI32(int32_t i) {
 	convert_to_chars(i, m_Buf);
 
 	return write(m_Buf, sizeof(i)) != 0;
@@ -197,18 +222,12 @@ bool Connection::sendShortString(const char* str) {
 	return true;
 }
 
-bool Connection::sendPacketType(uint8_t type) {
-	MUST_TRANSFER_BOOL(sendByte(0));
-	MUST_TRANSFER_BOOL(sendByte(0));
-	MUST_TRANSFER_BOOL(sendByte(0));
-
-	return sendByte(type);
-}
+bool Connection::sendPacketType(int32_t type) { return sendI32(type); }
 
 bool Connection::sendLongString(const char* str) {
 	int size = strlen(str);
 
-	MUST_TRANSFER_BOOL(sendInt(size));
+	MUST_TRANSFER_BOOL(sendI32(size));
 
 	return sendBytes((const uint8_t*)str, size);
 }
@@ -390,16 +409,16 @@ void Connection::sendTrackerDiscovery() {
 	MUST(sendPacketType(PACKET_HANDSHAKE));
 	// Packet number is always 0 for handshake
 	MUST(sendU64(0));
-	MUST(sendInt(BOARD));
+	MUST(sendI32(BOARD));
 	// This is kept for backwards compatibility,
 	// but the latest SlimeVR server will not initialize trackers
 	// with firmware build > 8 until it recieves a sensor info packet
-	MUST(sendInt(IMU));
-	MUST(sendInt(HARDWARE_MCU));
-	MUST(sendInt(0));
-	MUST(sendInt(0));
-	MUST(sendInt(0));
-	MUST(sendInt(FIRMWARE_BUILD_NUMBER));
+	MUST(sendI32(IMU));
+	MUST(sendI32(HARDWARE_MCU));
+	MUST(sendI32(0));
+	MUST(sendI32(0));
+	MUST(sendI32(0));
+	MUST(sendI32(FIRMWARE_BUILD_NUMBER));
 	MUST(sendShortString(FIRMWARE_VERSION));
 	// MAC address string
 	MUST(sendBytes(mac, 6));
@@ -435,19 +454,19 @@ void Connection::sendInspectionRawIMUData(
 	MUST(sendByte(sensorId));
 	MUST(sendByte(PACKET_INSPECTION_DATATYPE_INT));
 
-	MUST(sendInt(rX));
-	MUST(sendInt(rY));
-	MUST(sendInt(rZ));
+	MUST(sendI32(rX));
+	MUST(sendI32(rY));
+	MUST(sendI32(rZ));
 	MUST(sendByte(rA));
 
-	MUST(sendInt(aX));
-	MUST(sendInt(aY));
-	MUST(sendInt(aZ));
+	MUST(sendI32(aX));
+	MUST(sendI32(aY));
+	MUST(sendI32(aZ));
 	MUST(sendByte(aA));
 
-	MUST(sendInt(mX));
-	MUST(sendInt(mY));
-	MUST(sendInt(mZ));
+	MUST(sendI32(mX));
+	MUST(sendI32(mY));
+	MUST(sendI32(mZ));
 	MUST(sendByte(mA));
 
 	MUST(endPacket());
@@ -618,12 +637,13 @@ void Connection::update() {
 	std::vector<Sensor*>& sensors = sensorManager.getSensors();
 
 	updateSensorState(sensors);
-	maybeRequestFeatureFlags();
 
 	if (!m_Connected) {
 		searchForServer();
 		return;
 	}
+
+	maybeRequestFeatureFlags();
 
 	if (m_LastPacketTimestamp + TIMEOUT < millis()) {
 		statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
@@ -647,17 +667,7 @@ void Connection::update() {
 	m_LastPacketTimestamp = millis();
 	int len = m_UDP.read(m_Packet, sizeof(m_Packet));
 
-#ifdef DEBUG_NETWORK
-	m_Logger.trace(
-		"Received %d bytes from %s, port %d",
-		packetSize,
-		m_UDP.remoteIP().toString().c_str(),
-		m_UDP.remotePort()
-	);
-	m_Logger.traceArray("UDP packet contents: ", m_Packet, len);
-#else
 	(void)packetSize;
-#endif
 
 	switch (convert_chars<int>(m_Packet)) {
 		case PACKET_RECEIVE_HEARTBEAT:
