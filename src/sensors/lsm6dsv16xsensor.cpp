@@ -28,6 +28,15 @@
 #include "lsm6dsv16xsensor.h"
 #include "utils.h"
 
+
+#ifdef LSM6DSV16X_INTERRUPT
+volatile bool imuEvent = false;
+
+void IRAM_ATTR interruptHandler() {
+    imuEvent = true;
+}
+#endif
+
 LSM6DSV16XSensor::LSM6DSV16XSensor(
 	uint8_t id,
 	uint8_t type,
@@ -43,40 +52,32 @@ LSM6DSV16XSensor::LSM6DSV16XSensor(
 
 void LSM6DSV16XSensor::motionSetup() {
 	uint8_t deviceId = 0;
-	if (imu.ReadID(&deviceId) == LSM6DSV16X_ERROR) {
-		m_Logger.fatal(
-			"The IMU returned an error when reading the device ID of: 0x%02x",
-			deviceId
-		);
-		ledManager.pattern(50, 50, 200);
-		return;
-	}
+	if(imu.ReadID(&deviceId) == LSM6DSV16X_ERROR) {
+        m_Logger.fatal("The %s at 0x%02x returned an error when reading the device ID of: 0x%02x", getIMUNameByType(sensorType), addr, deviceId);
+        ledManager.pattern(50, 50, 200);
+        return;
+    }
 
 	if (deviceId != LSM6DSV16X_ID) {
-		m_Logger.fatal(
-			"The IMU returned an invalid device ID of: 0x%02x when it should have "
-			"been: 0x%02x",
-			deviceId,
-			LSM6DSV16X_ID
-		);
-		ledManager.pattern(50, 50, 200);
-		return;
-	}
+        m_Logger.fatal("The %s at 0x%02x returned an invalid device ID of: 0x%02x when it should have been: 0x%02x", getIMUNameByType(sensorType), addr, deviceId, LSM6DSV16X_ID);
+        ledManager.pattern(50, 50, 200);
+        return;
+    }
 
 #ifdef SELF_TEST_ON_INIT
 	m_Logger.info(
-		"%s Self Test started on 0x%02x.(Disabled)",
+		"%s Self Test started on address: 0x%02x",
 		getIMUNameByType(sensorType),
 		addr
 	);
 
 	if (imu.Test_IMU(LSM6DSV16X_XL_ST_NEGATIVE, LSM6DSV16X_GY_ST_NEGATIVE)
 		== LSM6DSV16X_ERROR) {
-		m_Logger.fatal("The IMU returned an error during the self test");
+		m_Logger.fatal("The %s at 0x%02x returned an error during the self test", getIMUNameByType(sensorType), addr);
 		ledManager.pattern(50, 50, 200);
 		return;
 	}
-	m_Logger.info("Self Test Passed");
+	m_Logger.info("Self Test Passed on address: 0x%02x");
 #endif
 
 	m_Logger.info("Connected to %s on 0x%02x", getIMUNameByType(sensorType), addr);
@@ -116,11 +117,11 @@ void LSM6DSV16XSensor::motionSetup() {
 	//status |= imu.beginPreconfigured();
 
 
-#ifdef INTERRUPT_FOR_SLEEP
+#ifdef LSM6DSV16X_INTERRUPT
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
 
-	errorCounter -= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);
-	errorCounter -= imu.Enable_Double_Tap_Detection(LSM6DSV16X_INT1_PIN);
+	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);
+	status |= imu.Enable_Double_Tap_Detection(LSM6DSV16X_INT1_PIN);
 #endif
 
 	if (status != LSM6DSV16X_OK) {
@@ -166,11 +167,11 @@ void LSM6DSV16XSensor::motionLoop() {
 			getIMUNameByType(sensorType),
 			addr
 		);
-		// statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
-		// working = false;
+		statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
+		working = false;
 		lastData = millis();  // reset time counter for error message
 
-#ifdef REINIT_ON_FAILURE
+#ifdef REINIT_ON_FAILURE  //Most likely will not fix the imu (maybe remove)
 		if (reinitOnFailAttempts < REINIT_RETRY_MAX_ATTEMPTS) {
 			motionSetup();
 		} else {
@@ -180,7 +181,6 @@ void LSM6DSV16XSensor::motionLoop() {
 				addr
 			);
 		}
-
 		reinitOnFailAttempts++;  // buf overflow will make it try again in about 4 min
 #endif
 	}
