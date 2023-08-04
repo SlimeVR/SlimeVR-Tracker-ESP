@@ -25,7 +25,6 @@
 #define SENSORS_LSM6DSV16X_H
 
 #include "LSM6DSV16X.h"
-
 #include "sensor.h"
 
 #ifndef LSM6DSV16X_ACCEL_MAX
@@ -41,7 +40,11 @@
 #endif
 
 #ifndef LSM6DSV16X_FIFO_DATA_RATE
-#define LSM6DSV16X_FIFO_DATA_RATE 30
+#define LSM6DSV16X_FIFO_DATA_RATE 120
+#endif
+
+#ifndef LSM6DSV16X_FIFO_TEMP_DATA_RATE
+#define LSM6DSV16X_FIFO_TEMP_DATA_RATE 1.875f
 #endif
 
 class LSM6DSV16XSensor : public Sensor {
@@ -70,6 +73,8 @@ public:
 private:
 	// void interruptHandler();
 	// volatile bool imuEvent; //the interrupt cant be a class function
+
+	Quat fusedRotationToQuaternion(float x, float y, float z);
 
 	LSM6DSV16X imu;
 	uint8_t m_IntPin;

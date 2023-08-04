@@ -1022,21 +1022,29 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_G_IMU(uint8_t TestType = LSM6DSV16X_GY_
 
 
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_T_ODR(float *Odr) {
-  LSM6DSV16XStatusTypeDef ret;
   lsm6dsv16x_fifo_ctrl4_t ctrl4;
 
   if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
-  if (ctrl4.odr_t_batch == 0x00)
-    *Odr = 0.0F;
-  if (ctrl4.odr_t_batch <= 0x01)
-    *Odr = 1.875F;
-  if (ctrl4.odr_t_batch <= 0x02)
-    *Odr = 15.0F;
-  else 
-    *Odr = 60.0F;
+  switch (ctrl4.odr_t_batch)
+  {
+  case LSM6DSV16X_TEMP_NOT_BATCHED:
+    *Odr = 0;
+    break;
+  case LSM6DSV16X_TEMP_BATCHED_AT_1Hz875:
+    *Odr = 1.875f;
+    break;
+  case LSM6DSV16X_TEMP_BATCHED_AT_15Hz:
+    *Odr = 15;
+    break;
+  case LSM6DSV16X_TEMP_BATCHED_AT_60Hz:
+    *Odr = 60;
+    break;
+  default:
+    break;
+  }
 
   return LSM6DSV16X_OK;
 }
@@ -1044,26 +1052,28 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_T_ODR(float *Odr) {
 
 
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_T_ODR(float Odr) {
-  LSM6DSV16XStatusTypeDef ret;
   lsm6dsv16x_fifo_ctrl4_t ctrl4;
 
   if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
-  if (Odr == 0.0F)
-    ctrl4.odr_t_batch = 0x00;
-  if (Odr <= 1.875F)
-    ctrl4.odr_t_batch = 0x01;
-  if (Odr <= 15.0F)
-    ctrl4.odr_t_batch = 0x02;
-  else 
-    ctrl4.odr_t_batch = 0x03;
-
-  if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV16X_OK) {
-    return LSM6DSV16X_ERROR;
+  if (Odr == 0.0F) {
+    ctrl4.odr_t_batch = LSM6DSV16X_TEMP_NOT_BATCHED;
+  } else if (Odr <= 1.875F) {
+    ctrl4.odr_t_batch = LSM6DSV16X_TEMP_BATCHED_AT_1Hz875;
+  } else if (Odr <= 15.0F) {
+    ctrl4.odr_t_batch = LSM6DSV16X_TEMP_BATCHED_AT_15Hz;
+  } else {
+    ctrl4.odr_t_batch = LSM6DSV16X_TEMP_BATCHED_AT_60Hz;
   }
-  return LSM6DSV16X_OK;
+
+  return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_write_reg(
+    &reg_ctx,
+    LSM6DSV16X_FIFO_CTRL4,
+    (uint8_t *)&ctrl4,
+    1
+  );
 }
 
 /**
