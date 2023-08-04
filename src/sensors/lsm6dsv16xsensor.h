@@ -81,11 +81,11 @@ private:
 	uint8_t m_IntPin;
 	uint8_t tap = 0;
 	unsigned long lastData = 0;
-	float accelSensitivity = 0.0f;
 	uint8_t lastReset = 0;
 	float temperature = 0;
 	bool newTemperature = false;
 	uint32_t lastTempRead = 0;
+	float gravityX = 0, gravityY = 0, gravityZ = 0;
 
 #ifdef REINIT_ON_FAILURE
 	uint8_t reinitOnFailAttempts = 0;

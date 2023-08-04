@@ -107,16 +107,14 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
-	status |= imu.FIFO_Set_SFLP_Batch(true, false, false);
+	status |= imu.FIFO_Set_SFLP_Batch(true, true, false); //TODO: Add the game specifiic SFLP to the Enable_Game_Rotation
 
 	// Enable Game Rotation Fusion
 	status |= imu.Enable_Game_Rotation();
 
-	// Get acceleration sensitivity
-	status |= imu.Get_X_Sensitivity(&accelSensitivity);
 
-	// Set GBias
-	// status |= imu.Set_G_Bias(0, 0, 0);
+	//status |= imu.beginPreconfigured();
+
 
 #ifdef INTERRUPT_FOR_SLEEP
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
@@ -208,8 +206,6 @@ void LSM6DSV16XSensor::motionLoop() {
 			continue;
 		}
 
-		uint8_t data[6];
-		imu.FIFO_Get_Data(data);
 		switch (tag) {
 			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_XL_NC_TAG: {  // accel
 #if SEND_ACCELERATION
@@ -222,17 +218,22 @@ void LSM6DSV16XSensor::motionLoop() {
 					);
 					continue;
 				}
-				acceleration[0] = rawAccelerations[0] / 1000.0f / 9.81;
-				acceleration[1] = rawAccelerations[1] / 1000.0f / 9.81;
-				acceleration[2] = rawAccelerations[2] / 1000.0f / 9.81;
-				// FIXME: this is obviously incorrect, please fix
+				acceleration[0] = (rawAccelerations[0] / 1000.0f) - gravityX;
+				acceleration[1] = (rawAccelerations[1] / 1000.0f) - gravityY;
+				acceleration[2] = (rawAccelerations[2] / 1000.0f) - gravityZ;
+
+				//acceleration[0] = gravityX;
+				//acceleration[1] = gravityY;
+				//acceleration[2] = gravityZ;
+
 				newAcceleration = true;
 #endif  // SEND_ACCELERATION
 				break;
 			}
 			case lsm6dsv16x_fifo_out_raw_t::
-				LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {  // SFLP game rotation
-															 // vector
+				LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {
+				uint8_t data[6];
+				imu.FIFO_Get_Data(data);
 				float x = Conversions::convertBytesToFloat(data[0], data[1]);
 				float y = Conversions::convertBytesToFloat(data[2], data[3]);
 				float z = Conversions::convertBytesToFloat(data[4], data[5]);
@@ -248,6 +249,25 @@ void LSM6DSV16XSensor::motionLoop() {
 					lastFusedRotationSent = fusedRotation;
 				}
 				break;
+			}
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GRAVITY_VECTOR_TAG: {
+				int32_t rawAccelerations[3];
+				if (imu.FIFO_Get_X_Axes(rawAccelerations) != LSM6DSV16X_OK) {
+					m_Logger.error(
+						"Failed to get accelerometer data on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					continue;
+				}
+				gravityX = rawAccelerations[0] / 2000.0F;
+				gravityY = rawAccelerations[1] / 2000.0F;
+				gravityZ = rawAccelerations[2] / 2000.0F;
+				break;
+			}
+			default: { //We don't use the data so remove from fifo
+				uint8_t data[6];
+				imu.FIFO_Get_Data(data);
 			}
 		}
 	}
