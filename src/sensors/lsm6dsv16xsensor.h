@@ -49,7 +49,7 @@
 
 // #define SELF_TEST_ON_INIT
 // #define REINIT_ON_FAILURE
-//#define LSM6DSV16X_INTERRUPT
+// #define LSM6DSV16X_INTERRUPT
 
 #ifdef REINIT_ON_FAILURE
 #define REINIT_RETRY_MAX_ATTEMPTS 5
@@ -77,6 +77,7 @@ public:
 private:
 	Quat fusedRotationToQuaternion(float x, float y, float z);
 	float temperatureSensorToActualTemperature(int16_t temperature);
+	LSM6DSV16XStatusTypeDef runSelfTest();
 
 	LSM6DSV16X imu;
 	uint8_t m_IntPin;

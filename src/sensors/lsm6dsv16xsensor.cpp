@@ -73,24 +73,17 @@ void LSM6DSV16XSensor::motionSetup() {
 		return;
 	}
 
-#ifdef SELF_TEST_ON_INIT
-	m_Logger.info(
-		"%s Self Test started on address: 0x%02x",
-		getIMUNameByType(sensorType),
-		addr
-	);
-
-	if (imu.Test_IMU(LSM6DSV16X_XL_ST_NEGATIVE, LSM6DSV16X_GY_ST_NEGATIVE)
-		== LSM6DSV16X_ERROR) {
-		m_Logger.fatal(
-			"The %s at 0x%02x returned an error during the self test",
+#ifndef LSM6DSV16X_NO_SELF_TEST_ON_STARTUP
+	if (runSelfTest() != LSM6DSV16X_OK) {
+		m_Logger.error(
+			"The %s at 0x%02x returned an error during the self test "
+			"(maybe it wasn't on a flat surface?)",
 			getIMUNameByType(sensorType),
 			addr
 		);
-		ledManager.pattern(50, 50, 200);
-		return;
+
+		// TODO: if we can signal a non calibrated state, this is the time
 	}
-	m_Logger.info("Self Test Passed on address: 0x%02x");
 #endif
 
 	m_Logger.info("Connected to %s on 0x%02x", getIMUNameByType(sensorType), addr);
@@ -313,6 +306,26 @@ constexpr float TEMPERATURE_OFFSET = 25;
 float LSM6DSV16XSensor::temperatureSensorToActualTemperature(int16_t temperature) {
 	float delta = temperature / TEMPERATURE_SENSITIVITY;
 	return TEMPERATURE_OFFSET + delta;
+}
+
+LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::runSelfTest() {
+	m_Logger.info(
+		"%s Self Test started on address: 0x%02x",
+		getIMUNameByType(sensorType),
+		addr
+	);
+
+	if (imu.Test_IMU(LSM6DSV16X_XL_ST_NEGATIVE, LSM6DSV16X_GY_ST_NEGATIVE)
+		== LSM6DSV16X_ERROR) {
+		return LSM6DSV16X_ERROR;
+	}
+	m_Logger.info(
+		"%s Self Test Passed on address: 0x%02x",
+		getIMUNameByType(sensorType),
+		addr
+	);
+
+	return LSM6DSV16X_OK;
 }
 
 void LSM6DSV16XSensor::sendData() {

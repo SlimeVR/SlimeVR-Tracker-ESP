@@ -805,7 +805,6 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_IMU(uint8_t XTestType, uint8_t GTestTyp
 {
   uint8_t whoamI;
 
-
   if (ReadID(&whoamI) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
@@ -814,7 +813,6 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_IMU(uint8_t XTestType, uint8_t GTestTyp
     return LSM6DSV16X_ERROR;
   }
 
-
   if (Test_X_IMU(XTestType) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
@@ -822,6 +820,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_IMU(uint8_t XTestType, uint8_t GTestTyp
   if (Test_G_IMU(GTestType) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
+  printf("IMU Test OK\n");
   return LSM6DSV16X_OK; 
 }
 
@@ -836,7 +835,6 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_X_IMU(uint8_t TestType)
   float val_st_off[3];
   float val_st_on[3];
   float test_val[3];
-
 
   if (Reset_Set(LSM6DSV16X_RESTORE_CTRL_REGS) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
@@ -856,10 +854,9 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_X_IMU(uint8_t TestType)
   if (lsm6dsv16x_xl_full_scale_set(&reg_ctx, LSM6DSV16X_4g) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
-  delayMicroseconds(100); //Wait for Accelerometer to stabalize;
+  delay(100); //Wait for Accelerometer to stabalize;
   memset(val_st_off, 0x00, 3 * sizeof(float));
   memset(val_st_on, 0x00, 3 * sizeof(float));
-
 
   /*Ignore First Data*/
   if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
@@ -885,8 +882,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_X_IMU(uint8_t TestType)
   if (lsm6dsv16x_xl_self_test_set(&reg_ctx, (lsm6dsv16x_xl_self_test_t)TestType) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
-  delayMicroseconds(100);
-
+  delay(100);
 
   /*Ignore First Data*/
   if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
@@ -937,8 +933,6 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_X_IMU(uint8_t TestType)
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_G_IMU(uint8_t TestType = LSM6DSV16X_GY_ST_POSITIVE)
 {
   int16_t data_raw[3];
-  float val_st_off[3];
-  float val_st_on[3];
   float test_val[3];
 
   if (Reset_Set(LSM6DSV16X_RESTORE_CTRL_REGS) != LSM6DSV16X_OK) {
@@ -960,15 +954,16 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_G_IMU(uint8_t TestType = LSM6DSV16X_GY_
   if (lsm6dsv16x_gy_full_scale_set(&reg_ctx, LSM6DSV16X_2000dps) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
-  delayMicroseconds(100);
-  memset(val_st_off, 0x00, 3 * sizeof(float));
-  memset(val_st_on, 0x00, 3 * sizeof(float));
 
+  delay(100);
 
   /*Ignore First Data*/
   if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
+
+  float val_st_off[3] = {0};
+  float val_st_on[3] = {0};
   
   for (uint8_t i = 0; i < 5; i++) {
     if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
@@ -989,8 +984,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Test_G_IMU(uint8_t TestType = LSM6DSV16X_GY_
   if (lsm6dsv16x_gy_self_test_set(&reg_ctx, (lsm6dsv16x_gy_self_test_t)TestType) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
-  delayMicroseconds(100);
-
+  delay(100);
 
   /*Ignore First Data*/
   if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV16X_OK) {
@@ -3316,7 +3310,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_G_AxesRaw_When_Aval(int16_t *Value) {
     if (lsm6dsv16x_flag_data_ready_get(&reg_ctx, &drdy) != LSM6DSV16X_OK) {
       return LSM6DSV16X_ERROR;
     }
-  } while (!drdy.drdy_xl);
+  } while (!drdy.drdy_gy);
 
   if (Get_G_AxesRaw(Value) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
