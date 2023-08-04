@@ -100,7 +100,6 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Set_X_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 	status |= imu.Set_SFLP_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 	status |= imu.FIFO_Set_X_BDR(LSM6DSV16X_FIFO_DATA_RATE);
-	status |= imu.Set_T_ODR(LSM6DSV16X_FIFO_TEMP_DATA_RATE);
 
 	// Enable IMU
 	status |= imu.Enable_X();
@@ -137,9 +136,29 @@ void LSM6DSV16XSensor::motionSetup() {
 	lastData = millis();
 	working = true;
 	configured = true;
+	lastTempRead = millis();
 }
 
 void LSM6DSV16XSensor::motionLoop() {
+	if (millis() - lastTempRead > LSM6DSV16X_TEMP_READ_INTERVAL * 1000) {
+		lastTempRead = millis();
+
+		int16_t rawTemp;
+		if (imu.Get_Temperature_Raw(&rawTemp) != LSM6DSV16X_OK) {
+			m_Logger.error(
+				"Error getting temperature on %s at address 0x%02x",
+				getIMUNameByType(sensorType),
+				addr
+			);
+		} else {
+			float actualTemp = temperatureSensorToActualTemperature(rawTemp);
+			if (fabsf(actualTemp - temperature) > 0.01f) {
+				temperature = actualTemp;
+				newTemperature = true;
+			}
+		}
+	}
+
 	if (lastData + 1000 < millis() && configured) {  // Errors
 		m_Logger.error(
 			"The %s at address 0x%02x, has not responded in the last second",
@@ -206,9 +225,6 @@ void LSM6DSV16XSensor::motionLoop() {
 				newAcceleration = true;
 #endif  // SEND_ACCELERATION
 				break;
-			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_TEMPERATURE_TAG:  // temp
-				// TODO: send temperature data to the server
-				break;
 			case lsm6dsv16x_fifo_out_raw_t::
 				LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {  // SFLP game rotation
 															 // vector
@@ -251,6 +267,14 @@ Quat LSM6DSV16XSensor::fusedRotationToQuaternion(float x, float y, float z) {
 	return Quat(x, y, z, w);
 }
 
+constexpr float TEMPERATURE_SENSITIVITY = 256;
+constexpr float TEMPERATURE_OFFSET = 25;
+
+float LSM6DSV16XSensor::temperatureSensorToActualTemperature(int16_t temperature) {
+	float delta = temperature / TEMPERATURE_SENSITIVITY;
+	return TEMPERATURE_OFFSET + delta;
+}
+
 void LSM6DSV16XSensor::sendData() {
 	if (newFusedRotation) {
 		newFusedRotation = false;
@@ -278,6 +302,11 @@ void LSM6DSV16XSensor::sendData() {
 	{
 		networkConnection.sendSensorTap(sensorId, tap);
 		tap = 0;
+	}
+
+	if (newTemperature) {
+		newTemperature = false;
+		networkConnection.sendTemperature(sensorId, temperature);
 	}
 }
 

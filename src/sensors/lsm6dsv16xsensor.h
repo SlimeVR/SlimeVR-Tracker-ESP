@@ -43,6 +43,10 @@
 #define LSM6DSV16X_FIFO_TEMP_DATA_RATE 1.875f
 #endif
 
+#ifndef LSM6DSV16X_TEMP_READ_INTERVAL
+#define LSM6DSV16X_TEMP_READ_INTERVAL 1
+#endif
+
 // #define SELF_TEST_ON_INIT
 // #define REINIT_ON_FAILURE
 
@@ -71,6 +75,7 @@ public:
 
 private:
 	Quat fusedRotationToQuaternion(float x, float y, float z);
+	float temperatureSensorToActualTemperature(int16_t temperature);
 
 	LSM6DSV16X imu;
 	uint8_t m_IntPin;
@@ -78,6 +83,9 @@ private:
 	unsigned long lastData = 0;
 	float sensitivity = 0.0f;
 	uint8_t lastReset = 0;
+	float temperature = 0;
+	bool newTemperature = false;
+	uint32_t lastTempRead = 0;
 
 #ifdef REINIT_ON_FAILURE
 	uint8_t reinitOnFailAttempts = 0;

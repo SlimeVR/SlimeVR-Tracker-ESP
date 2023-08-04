@@ -3649,3 +3649,22 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_Auto_Increment(bool enable)
          enable ? PROPERTY_ENABLE : PROPERTY_DISABLE
     );
 }
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_Temperature_Raw(int16_t * value)
+{
+    return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_temperature_raw_get(
+        &reg_ctx,
+        value
+    );
+}
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Is_New_Temperature_Data(bool * available)
+{
+    lsm6dsv16x_status_reg_t status;
+    if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_STATUS_REG, (uint8_t *)&status, 1) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+
+    *available = status.tda;
+    return LSM6DSV16X_OK;
+}

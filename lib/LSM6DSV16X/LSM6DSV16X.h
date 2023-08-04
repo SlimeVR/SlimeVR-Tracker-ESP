@@ -256,6 +256,9 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Enable_Block_Data_Update(bool enable = true);
     LSM6DSV16XStatusTypeDef Set_Auto_Increment(bool enable);
 
+    LSM6DSV16XStatusTypeDef Get_Temperature_Raw(int16_t *value);
+    LSM6DSV16XStatusTypeDef Is_New_Temperature_Data(bool *available);
+
     /**
      * @brief Utility function to read data.
      * @param  pBuffer: pointer to data to be read.
