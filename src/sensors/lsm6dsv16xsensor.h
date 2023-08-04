@@ -81,7 +81,7 @@ private:
 	uint8_t m_IntPin;
 	uint8_t tap = 0;
 	unsigned long lastData = 0;
-	float sensitivity = 0.0f;
+	float accelSensitivity = 0.0f;
 	uint8_t lastReset = 0;
 	float temperature = 0;
 	bool newTemperature = false;

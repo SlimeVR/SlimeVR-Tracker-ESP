@@ -112,6 +112,9 @@ void LSM6DSV16XSensor::motionSetup() {
 	// Enable Game Rotation Fusion
 	status |= imu.Enable_Game_Rotation();
 
+	// Get acceleration sensitivity
+	status |= imu.Get_X_Sensitivity(&accelSensitivity);
+
 	// Set GBias
 	// status |= imu.Set_G_Bias(0, 0, 0);
 
@@ -208,23 +211,25 @@ void LSM6DSV16XSensor::motionLoop() {
 		uint8_t data[6];
 		imu.FIFO_Get_Data(data);
 		switch (tag) {
-			case lsm6dsv16x_fifo_out_raw_t::
-				LSM6DSV16X_XL_NC_TAG:  // accel
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_XL_NC_TAG: {  // accel
 #if SEND_ACCELERATION
-									   // int32_t accelerometerInt[3];
-				// errorCounter -= imu.Get_X_Axes(accelerometerInt);
-				// acceleration[0] = accelerometerInt[0] * 0.01F; //convert from mg to g
-				// acceleration[1] = accelerometerInt[1] * 0.01F;
-				// acceleration[2] = accelerometerInt[2] * 0.01F;
-				acceleration[0]
-					= Conversions::convertBytesToFloat(data[0], data[1]) * sensitivity;
-				acceleration[1]
-					= Conversions::convertBytesToFloat(data[2], data[3]) * sensitivity;
-				acceleration[2]
-					= Conversions::convertBytesToFloat(data[4], data[5]) * sensitivity;
+				int32_t rawAccelerations[3];
+				if (imu.FIFO_Get_X_Axes(rawAccelerations) != LSM6DSV16X_OK) {
+					m_Logger.error(
+						"Failed to get accelerometer data on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					continue;
+				}
+				acceleration[0] = rawAccelerations[0] / 1000.0f / 9.81;
+				acceleration[1] = rawAccelerations[1] / 1000.0f / 9.81;
+				acceleration[2] = rawAccelerations[2] / 1000.0f / 9.81;
+				// FIXME: this is obviously incorrect, please fix
 				newAcceleration = true;
 #endif  // SEND_ACCELERATION
 				break;
+			}
 			case lsm6dsv16x_fifo_out_raw_t::
 				LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {  // SFLP game rotation
 															 // vector
