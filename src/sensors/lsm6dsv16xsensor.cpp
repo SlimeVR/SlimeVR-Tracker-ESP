@@ -28,6 +28,8 @@
 #include "lsm6dsv16xsensor.h"
 #include "utils.h"
 
+void IRAM_ATTR interruptHandler() {}
+
 #ifdef LSM6DSV16X_INTERRUPT
 volatile bool imuEvent = false;
 
@@ -73,17 +75,24 @@ void LSM6DSV16XSensor::motionSetup() {
 		return;
 	}
 
-#ifndef LSM6DSV16X_NO_SELF_TEST_ON_STARTUP
-	if (runSelfTest() != LSM6DSV16X_OK) {
-		m_Logger.error(
-			"The %s at 0x%02x returned an error during the self test "
-			"(maybe it wasn't on a flat surface?)",
-			getIMUNameByType(sensorType),
-			addr
-		);
+#ifndef LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
+	imu.Enable_6D_Orientation(LSM6DSV16X_INT1_PIN);
+	uint8_t isFaceDown;
+	imu.Get_6D_Orientation_ZL(&isFaceDown);
+	if (isFaceDown) {
+		if (runSelfTest() != LSM6DSV16X_OK) {
+			m_Logger.fatal(
+				"The %s at 0x%02x returned an error during the self test "
+				"(maybe it wasn't on a flat surface?)",
+				getIMUNameByType(sensorType),
+				addr
+			);
 
-		// TODO: if we can signal a non calibrated state, this is the time
+			ledManager.pattern(50, 50, 200);
+			return;
+		}
 	}
+	imu.Disable_6D_Orientation();
 #endif
 
 	m_Logger.info("Connected to %s on 0x%02x", getIMUNameByType(sensorType), addr);
@@ -127,7 +136,6 @@ void LSM6DSV16XSensor::motionSetup() {
 
 #ifdef LSM6DSV16X_INTERRUPT
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
-
 	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);
 	status |= imu.Enable_Double_Tap_Detection(LSM6DSV16X_INT1_PIN);
 #endif
