@@ -24,6 +24,7 @@
 #define SLIMEVR_CONSTS_H_
 
 // List of constants used in other places
+#define IMU_UNKNOWN 0
 #define IMU_MPU9250 1
 #define IMU_MPU6500 2
 #define IMU_BNO080 3
@@ -33,7 +34,9 @@
 #define IMU_BNO086 7
 #define IMU_BMI160 8
 #define IMU_ICM20948 9
+#define IMU_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
 
+#define BOARD_UNKNOWN 0
 #define BOARD_SLIMEVR_LEGACY 1
 #define BOARD_SLIMEVR_DEV 2
 #define BOARD_NODEMCU 3
@@ -46,6 +49,10 @@
 #define BOARD_LOLIN_C3_MINI 10
 #define BOARD_BEETLE32C3 11
 #define BOARD_ES32C3DEVKITM1 12
+#define BOARD_OWOTRACK 13 // Only used by owoTrack mobile app
+#define BOARD_WRANGLER 14 // Only used by wrangler app
+#define BOARD_MOCOPI 15 // Used by mocopi/moslime
+#define BOARD_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
 
 #define BAT_EXTERNAL 1
 #define BAT_INTERNAL 2
@@ -86,12 +93,22 @@
 #define BMI160_MAG_TYPE_HMC 1
 #define BMI160_MAG_TYPE_QMC 2
 
+#define MCU_UKNOWN 0
+#define MCU_ESP8266 1
+#define MCU_ESP32 2
+#define MCU_OWOTRACK_ANDROID 3 // Only used by owoTrack mobile app
+#define MCU_WRANGLER 4 // Only used by wrangler app
+#define MCU_OWOTRACK_IOS 5 // Only used by owoTrack mobile app
+#define MCU_ESP32_C3 6
+#define MCU_MOCOPI 7 // Used by mocopi/moslime
+#define MCU_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
+
 #ifdef ESP8266
-  #define HARDWARE_MCU 1
+  #define HARDWARE_MCU MCU_ESP8266
 #elif defined(ESP32)
-  #define HARDWARE_MCU 2
+  #define HARDWARE_MCU MCU_ESP32
 #else
-  #define HARDWARE_MCU 0
+  #define HARDWARE_MCU MCU_UKNOWN
 #endif
 
 #define CURRENT_CONFIGURATION_VERSION 1
