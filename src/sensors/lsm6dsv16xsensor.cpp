@@ -28,13 +28,10 @@
 #include "lsm6dsv16xsensor.h"
 #include "utils.h"
 
-
 #ifdef LSM6DSV16X_INTERRUPT
 volatile bool imuEvent = false;
 
-void IRAM_ATTR interruptHandler() {
-    imuEvent = true;
-}
+void IRAM_ATTR interruptHandler() { imuEvent = true; }
 #endif
 
 LSM6DSV16XSensor::LSM6DSV16XSensor(
@@ -52,17 +49,29 @@ LSM6DSV16XSensor::LSM6DSV16XSensor(
 
 void LSM6DSV16XSensor::motionSetup() {
 	uint8_t deviceId = 0;
-	if(imu.ReadID(&deviceId) == LSM6DSV16X_ERROR) {
-        m_Logger.fatal("The %s at 0x%02x returned an error when reading the device ID of: 0x%02x", getIMUNameByType(sensorType), addr, deviceId);
-        ledManager.pattern(50, 50, 200);
-        return;
-    }
+	if (imu.ReadID(&deviceId) == LSM6DSV16X_ERROR) {
+		m_Logger.fatal(
+			"The %s at 0x%02x returned an error when reading the device ID of: 0x%02x",
+			getIMUNameByType(sensorType),
+			addr,
+			deviceId
+		);
+		ledManager.pattern(50, 50, 200);
+		return;
+	}
 
 	if (deviceId != LSM6DSV16X_ID) {
-        m_Logger.fatal("The %s at 0x%02x returned an invalid device ID of: 0x%02x when it should have been: 0x%02x", getIMUNameByType(sensorType), addr, deviceId, LSM6DSV16X_ID);
-        ledManager.pattern(50, 50, 200);
-        return;
-    }
+		m_Logger.fatal(
+			"The %s at 0x%02x returned an invalid device ID of: 0x%02x when it should "
+			"have been: 0x%02x",
+			getIMUNameByType(sensorType),
+			addr,
+			deviceId,
+			LSM6DSV16X_ID
+		);
+		ledManager.pattern(50, 50, 200);
+		return;
+	}
 
 #ifdef SELF_TEST_ON_INIT
 	m_Logger.info(
@@ -73,7 +82,11 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	if (imu.Test_IMU(LSM6DSV16X_XL_ST_NEGATIVE, LSM6DSV16X_GY_ST_NEGATIVE)
 		== LSM6DSV16X_ERROR) {
-		m_Logger.fatal("The %s at 0x%02x returned an error during the self test", getIMUNameByType(sensorType), addr);
+		m_Logger.fatal(
+			"The %s at 0x%02x returned an error during the self test",
+			getIMUNameByType(sensorType),
+			addr
+		);
 		ledManager.pattern(50, 50, 200);
 		return;
 	}
@@ -108,14 +121,16 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
-	status |= imu.FIFO_Set_SFLP_Batch(true, true, false); //TODO: Add the game specifiic SFLP to the Enable_Game_Rotation
+	status |= imu.FIFO_Set_SFLP_Batch(
+		true,
+		true,
+		false
+	);  // TODO: Add the game specifiic SFLP to the Enable_Game_Rotation
 
 	// Enable Game Rotation Fusion
 	status |= imu.Enable_Game_Rotation();
 
-
-	//status |= imu.beginPreconfigured();
-
+	// status |= imu.beginPreconfigured();
 
 #ifdef LSM6DSV16X_INTERRUPT
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
@@ -140,6 +155,8 @@ void LSM6DSV16XSensor::motionSetup() {
 	configured = true;
 	lastTempRead = millis();
 }
+
+constexpr float G_TO_MS2 = 9.80665f;
 
 void LSM6DSV16XSensor::motionLoop() {
 	if (millis() - lastTempRead > LSM6DSV16X_TEMP_READ_INTERVAL * 1000) {
@@ -171,7 +188,7 @@ void LSM6DSV16XSensor::motionLoop() {
 		working = false;
 		lastData = millis();  // reset time counter for error message
 
-#ifdef REINIT_ON_FAILURE  //Most likely will not fix the imu (maybe remove)
+#ifdef REINIT_ON_FAILURE  // Most likely will not fix the imu (maybe remove)
 		if (reinitOnFailAttempts < REINIT_RETRY_MAX_ATTEMPTS) {
 			motionSetup();
 		} else {
@@ -221,17 +238,15 @@ void LSM6DSV16XSensor::motionLoop() {
 				acceleration[0] = (rawAccelerations[0] / 1000.0f) - gravityX;
 				acceleration[1] = (rawAccelerations[1] / 1000.0f) - gravityY;
 				acceleration[2] = (rawAccelerations[2] / 1000.0f) - gravityZ;
-
-				//acceleration[0] = gravityX;
-				//acceleration[1] = gravityY;
-				//acceleration[2] = gravityZ;
+				acceleration[0] *= G_TO_MS2;
+				acceleration[1] *= G_TO_MS2;
+				acceleration[2] *= G_TO_MS2;
 
 				newAcceleration = true;
 #endif  // SEND_ACCELERATION
 				break;
 			}
-			case lsm6dsv16x_fifo_out_raw_t::
-				LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {
 				uint8_t data[6];
 				imu.FIFO_Get_Data(data);
 				float x = Conversions::convertBytesToFloat(data[0], data[1]);
@@ -265,7 +280,7 @@ void LSM6DSV16XSensor::motionLoop() {
 				gravityZ = rawAccelerations[2] / 2000.0F;
 				break;
 			}
-			default: { //We don't use the data so remove from fifo
+			default: {  // We don't use the data so remove from fifo
 				uint8_t data[6];
 				imu.FIFO_Get_Data(data);
 			}
