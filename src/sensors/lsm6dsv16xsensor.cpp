@@ -28,6 +28,19 @@
 #include "lsm6dsv16xsensor.h"
 #include "utils.h"
 
+LSM6DSV16XSensor::LSM6DSV16XSensor(
+	uint8_t id,
+	uint8_t type,
+	uint8_t address,
+	float rotation,
+	uint8_t sclPin,
+	uint8_t sdaPin,
+	uint8_t intPin
+)
+	: Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin)
+	, imu(&Wire, addr << 1)  // We shift the address left 1 to work with the library
+	, m_IntPin(intPin){};
+
 void LSM6DSV16XSensor::motionSetup() {
 	uint8_t deviceId = 0;
 	if (imu.ReadID(&deviceId) == LSM6DSV16X_ERROR) {
@@ -70,6 +83,8 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	uint8_t status = 0;
 
+	status |= imu.begin();
+
 	// Restore defaults
 	status |= imu.Reset_Set(LSM6DSV16X_RESET_CTRL_REGS);
 
@@ -83,11 +98,8 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	// Set data rate
 	status |= imu.Set_X_ODR(LSM6DSV16X_FIFO_DATA_RATE);
-	status |= imu.Set_G_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 	status |= imu.Set_SFLP_ODR(LSM6DSV16X_FIFO_DATA_RATE);
-
 	status |= imu.FIFO_Set_X_BDR(LSM6DSV16X_FIFO_DATA_RATE);
-
 	status |= imu.Set_T_ODR(LSM6DSV16X_FIFO_TEMP_DATA_RATE);
 
 	// Enable IMU
@@ -96,11 +108,10 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
+	status |= imu.FIFO_Set_SFLP_Batch(true, false, false);
 
 	// Enable Game Rotation Fusion
 	status |= imu.Enable_Game_Rotation();
-
-	status |= imu.begin();
 
 	// Set GBias
 	// status |= imu.Set_G_Bias(0, 0, 0);
@@ -135,8 +146,8 @@ void LSM6DSV16XSensor::motionLoop() {
 			getIMUNameByType(sensorType),
 			addr
 		);
-		//statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
-		//working = false;
+		// statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
+		// working = false;
 		lastData = millis();  // reset time counter for error message
 
 #ifdef REINIT_ON_FAILURE
@@ -164,13 +175,8 @@ void LSM6DSV16XSensor::motionLoop() {
 		return;
 	}
 
-	if (fifo_samples < 1) {
-		return;
-	}
-
 	for (uint16_t i = 0; i < fifo_samples; i++) {
 		uint8_t tag;
-
 		if (imu.FIFO_Get_Tag(&tag) != LSM6DSV16X_OK) {
 			m_Logger.error(
 				"Failed to get FIFO data tag on %s at address 0x%02x",
@@ -182,46 +188,46 @@ void LSM6DSV16XSensor::motionLoop() {
 
 		uint8_t data[6];
 		imu.FIFO_Get_Data(data);
-		if (tag == 1) {  // gyro
-			continue;
-		}
-		if (tag == 2) {  // accel
+		switch (tag) {
+			case lsm6dsv16x_fifo_out_raw_t::
+				LSM6DSV16X_XL_NC_TAG:  // accel
 #if SEND_ACCELERATION
-			// int32_t accelerometerInt[3];
-			// errorCounter -= imu.Get_X_Axes(accelerometerInt);
-			// acceleration[0] = accelerometerInt[0] * 0.01F; //convert from mg to g
-			// acceleration[1] = accelerometerInt[1] * 0.01F;
-			// acceleration[2] = accelerometerInt[2] * 0.01F;
-			acceleration[0]
-				= Conversions::convertBytesToFloat(data[0], data[1]) * sensitivity;
-			acceleration[1]
-				= Conversions::convertBytesToFloat(data[2], data[3]) * sensitivity;
-			acceleration[2]
-				= Conversions::convertBytesToFloat(data[4], data[5]) * sensitivity;
-			newAcceleration = true;
+									   // int32_t accelerometerInt[3];
+				// errorCounter -= imu.Get_X_Axes(accelerometerInt);
+				// acceleration[0] = accelerometerInt[0] * 0.01F; //convert from mg to g
+				// acceleration[1] = accelerometerInt[1] * 0.01F;
+				// acceleration[2] = accelerometerInt[2] * 0.01F;
+				acceleration[0]
+					= Conversions::convertBytesToFloat(data[0], data[1]) * sensitivity;
+				acceleration[1]
+					= Conversions::convertBytesToFloat(data[2], data[3]) * sensitivity;
+				acceleration[2]
+					= Conversions::convertBytesToFloat(data[4], data[5]) * sensitivity;
+				newAcceleration = true;
 #endif  // SEND_ACCELERATION
-			continue;
-		}
-		if (tag == 3) {  // temp
-			continue;
-		}
+				break;
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_TEMPERATURE_TAG:  // temp
+				// TODO: send temperature data to the server
+				break;
+			case lsm6dsv16x_fifo_out_raw_t::
+				LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {  // SFLP game rotation
+															 // vector
+				float x = Conversions::convertBytesToFloat(data[0], data[1]);
+				float y = Conversions::convertBytesToFloat(data[2], data[3]);
+				float z = Conversions::convertBytesToFloat(data[4], data[5]);
 
-		if (tag == 0x13) {  // SFLP game rotation vector
-			float x = Conversions::convertBytesToFloat(data[0], data[1]);
-			float y = Conversions::convertBytesToFloat(data[2], data[3]);
-			float z = Conversions::convertBytesToFloat(data[4], data[5]);
+				fusedRotation = fusedRotationToQuaternion(x, y, z);
 
-			fusedRotation = fusedRotationToQuaternion(x, y, z);
+				lastReset = 0;
+				lastData = millis();
 
-			lastReset = 0;
-			lastData = millis();
-
-			if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES
-				|| !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
-				newFusedRotation = true;
-				lastFusedRotationSent = fusedRotation;
+				if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES
+					|| !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
+					newFusedRotation = true;
+					lastFusedRotationSent = fusedRotation;
+				}
+				break;
 			}
-			continue;
 		}
 	}
 }

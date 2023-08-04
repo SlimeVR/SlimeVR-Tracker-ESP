@@ -35,10 +35,6 @@
 #define LSM6DSV16X_GYRO_MAX 2000
 #endif
 
-#ifndef LSM6DSV16X_FIFO_MAX_SIZE
-#define LSM6DSV16X_FIFO_MAX_SIZE 32
-#endif
-
 #ifndef LSM6DSV16X_FIFO_DATA_RATE
 #define LSM6DSV16X_FIFO_DATA_RATE 120
 #endif
@@ -47,12 +43,12 @@
 #define LSM6DSV16X_FIFO_TEMP_DATA_RATE 1.875f
 #endif
 
-//#define SELF_TEST_ON_INIT
-//#define REINIT_ON_FAILURE
+// #define SELF_TEST_ON_INIT
+// #define REINIT_ON_FAILURE
 
 #ifdef REINIT_ON_FAILURE
-	#define REINIT_RETRY_MAX_ATTEMPTS 5
-	#undef SELF_TEST_ON_INIT
+#define REINIT_RETRY_MAX_ATTEMPTS 5
+#undef SELF_TEST_ON_INIT
 #endif
 
 class LSM6DSV16XSensor : public Sensor {
@@ -65,10 +61,7 @@ public:
 		uint8_t sclPin,
 		uint8_t sdaPin,
 		uint8_t intPin
-	)
-		: Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin)
-		, imu(&Wire, addr << 1) //We shift the address left 1 to work with the library
-		, m_IntPin(intPin){};
+	);
 	~LSM6DSV16XSensor(){};
 	void motionSetup() override final;
 	void motionLoop() override final;
