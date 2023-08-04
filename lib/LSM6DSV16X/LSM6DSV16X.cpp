@@ -133,6 +133,23 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::begin()
 }
 
 /**
+ * @brief  Initialize the LSM6DSV16X sensor when it has already been configured
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSV16XStatusTypeDef LSM6DSV16X::beginPreconfigured()
+{
+  if (dev_spi) {
+    // Configure CS pin
+    pinMode(cs_pin, OUTPUT);
+    digitalWrite(cs_pin, HIGH);
+  }
+
+  initialized = 1U;
+
+  return LSM6DSV16X_OK;
+}
+
+/**
  * @brief  Deinitialize the LSM6DSV16X sensor
  * @retval 0 in case of success, an error code otherwise
  */

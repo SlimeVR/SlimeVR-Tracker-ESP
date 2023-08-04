@@ -47,6 +47,14 @@
 #define LSM6DSV16X_FIFO_TEMP_DATA_RATE 1.875f
 #endif
 
+//#define SELF_TEST_ON_INIT
+//#define REINIT_ON_FAILURE
+
+#ifdef REINIT_ON_FAILURE
+	#define REINIT_RETRY_MAX_ATTEMPTS 5
+	#undef SELF_TEST_ON_INIT
+#endif
+
 class LSM6DSV16XSensor : public Sensor {
 public:
 	LSM6DSV16XSensor(
@@ -59,30 +67,28 @@ public:
 		uint8_t intPin
 	)
 		: Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin)
-		, imu(&Wire, addr)
+		, imu(&Wire, addr << 1) //We shift the address left 1 to work with the library
 		, m_IntPin(intPin){};
 	~LSM6DSV16XSensor(){};
 	void motionSetup() override final;
-	void postSetup() override { lastData = millis(); }
-
 	void motionLoop() override final;
 	void sendData() override final;
 	void startCalibration(int calibrationType) override final;
 	SensorStatus getSensorState() override final;
 
 private:
-	// void interruptHandler();
-	// volatile bool imuEvent; //the interrupt cant be a class function
-
 	Quat fusedRotationToQuaternion(float x, float y, float z);
 
 	LSM6DSV16X imu;
 	uint8_t m_IntPin;
-	uint8_t errorCounter = 0;  // Error is -1, OK is 0
 	uint8_t tap = 0;
 	unsigned long lastData = 0;
-
+	float sensitivity = 0.0f;
 	uint8_t lastReset = 0;
+
+#ifdef REINIT_ON_FAILURE
+	uint8_t reinitOnFailAttempts = 0;
+#endif
 };
 
 #endif

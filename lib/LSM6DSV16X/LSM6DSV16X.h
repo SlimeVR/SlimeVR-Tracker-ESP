@@ -72,7 +72,7 @@
 
 
 
-//#define esp32
+//#define ENABLE_SPI
 //#define I2C_LIB_DEBUG
 
 /* Typedefs ------------------------------------------------------------------*/
@@ -142,6 +142,7 @@ class LSM6DSV16X {
     LSM6DSV16X(SPIClass *spi, int cs_pin, uint32_t spi_speed = 2000000);
 
     LSM6DSV16XStatusTypeDef begin();
+    LSM6DSV16XStatusTypeDef beginPreconfigured();
     LSM6DSV16XStatusTypeDef end();
     LSM6DSV16XStatusTypeDef ReadID(uint8_t *Id);
 
@@ -264,12 +265,13 @@ class LSM6DSV16X {
      */
     uint8_t IO_Read(uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToRead)
     {
+#ifdef ENABLE_SPI
       if (dev_spi) {
-#ifdef esp32
+//#ifdef esp32
         dev_spi->beginTransaction(SPISettings(spi_speed, SPI_MSBFIRST, SPI_MODE3));
-#else
+//#else
         dev_spi->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE3));
-#endif
+//#endif
         digitalWrite(cs_pin, LOW);
 
         /* Write Reg Address */
@@ -285,6 +287,7 @@ class LSM6DSV16X {
 
         return 0;
       }
+#endif
 
       if (dev_i2c) {
 #ifdef I2C_LIB_DEBUG
@@ -320,12 +323,13 @@ class LSM6DSV16X {
      */
     uint8_t IO_Write(const uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToWrite)
     {
+#ifdef ENABLE_SPI
       if (dev_spi) {
-#ifdef esp32
+//#ifdef esp32
         dev_spi->beginTransaction(SPISettings(spi_speed, SPI_MSBFIRST, SPI_MODE3));
-#else
+//#else
         dev_spi->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE3));
-#endif
+//#endif
         digitalWrite(cs_pin, LOW);
 
         /* Write Reg Address */
@@ -341,6 +345,7 @@ class LSM6DSV16X {
 
         return 0;
       }
+#endif
 
       if (dev_i2c) {
 #ifdef I2C_LIB_DEBUG

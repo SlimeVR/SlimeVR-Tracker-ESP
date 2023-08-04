@@ -28,25 +28,7 @@
 #include "lsm6dsv16xsensor.h"
 #include "utils.h"
 
-#define INTERRUPTFREE  // TODO: change based on int pin number (255 = interruptFree)
-#define DEBUG_SENSOR
-
-volatile bool imuEvent = false;
-
-void IRAM_ATTR interruptHandler() { imuEvent = true; }
-
 void LSM6DSV16XSensor::motionSetup() {
-	errorCounter = 0;  // Either subtract to the error counter or handle the error
-	if (imu.begin() == LSM6DSV16X_ERROR) {
-		m_Logger.fatal(
-			"Can't connect to %s at address 0x%02x",
-			getIMUNameByType(sensorType),
-			addr
-		);
-		ledManager.pattern(50, 50, 200);
-		return;
-	}
-
 	uint8_t deviceId = 0;
 	if (imu.ReadID(&deviceId) == LSM6DSV16X_ERROR) {
 		m_Logger.fatal(
@@ -68,22 +50,28 @@ void LSM6DSV16XSensor::motionSetup() {
 		return;
 	}
 
-	// printf("\n\n\n%s Self Test started on 0x%02x.(Disabled)",
-	// getIMUNameByType(sensorType), addr); Test if
-	// (imu.Test_IMU(LSM6DSV16X_XL_ST_NEGATIVE, LSM6DSV16X_GY_ST_NEGATIVE) ==
-	// LSM6DSV16X_ERROR) { 	m_Logger.fatal( 		"The IMU returned an error during
-	// the self test"
-	//	);
-	// ledManager.pattern(50, 50, 200);
-	// return;
-	//}
-	printf(
-		"\nConnected to %s on 0x%02x. IMU test passed ",
+#ifdef SELF_TEST_ON_INIT
+	m_Logger.info(
+		"%s Self Test started on 0x%02x.(Disabled)",
 		getIMUNameByType(sensorType),
 		addr
 	);
 
+	if (imu.Test_IMU(LSM6DSV16X_XL_ST_NEGATIVE, LSM6DSV16X_GY_ST_NEGATIVE)
+		== LSM6DSV16X_ERROR) {
+		m_Logger.fatal("The IMU returned an error during the self test");
+		ledManager.pattern(50, 50, 200);
+		return;
+	}
+	m_Logger.info("Self Test Passed");
+#endif
+
+	m_Logger.info("Connected to %s on 0x%02x", getIMUNameByType(sensorType), addr);
+
 	uint8_t status = 0;
+
+	// Restore defaults
+	status |= imu.Reset_Set(LSM6DSV16X_RESET_CTRL_REGS);
 
 	// Enable Block Data Update
 	status |= imu.Enable_Block_Data_Update();
@@ -106,22 +94,18 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Enable_X();
 	status |= imu.Enable_G();
 
-	// Set FIFO size
-	status |= imu.FIFO_Set_Watermark_Level(LSM6DSV16X_FIFO_MAX_SIZE);
-
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
 
-	// Set FIFO SFLP Batch
-	// NOTE: might not need all of this
-	status |= imu.FIFO_Set_SFLP_Batch(true, false, false);
 	// Enable Game Rotation Fusion
 	status |= imu.Enable_Game_Rotation();
+
+	status |= imu.begin();
 
 	// Set GBias
 	// status |= imu.Set_G_Bias(0, 0, 0);
 
-#ifndef INTERRUPTFREE
+#ifdef INTERRUPT_FOR_SLEEP
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
 
 	errorCounter -= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);
@@ -130,8 +114,7 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	if (status != LSM6DSV16X_OK) {
 		m_Logger.fatal(
-			"%d Error(s) occured enabling imu features on %s at address 0x%02x",
-			errorCounter,
+			"Errors occured enabling imu features on %s at address 0x%02x",
 			getIMUNameByType(sensorType),
 			addr
 		);
@@ -146,21 +129,29 @@ void LSM6DSV16XSensor::motionSetup() {
 }
 
 void LSM6DSV16XSensor::motionLoop() {
-	lsm6dsv16x_fifo_status_t fifo_status;
-	if (imu.FIFO_Get_Status(&fifo_status) != LSM6DSV16X_OK) {
+	if (lastData + 1000 < millis() && configured) {  // Errors
 		m_Logger.error(
-			"Error getting FIFO status on %s at address 0x%02x",
+			"The %s at address 0x%02x, has not responded in the last second",
 			getIMUNameByType(sensorType),
 			addr
 		);
-		errorCounter++;
-		return;
-	}
+		//statusManager.setStatus(SlimeVR::Status::IMU_ERROR, true);
+		//working = false;
+		lastData = millis();  // reset time counter for error message
 
-	// m_Logger.info("FIFO status: %d", fifo_status.fifo_level);
+#ifdef REINIT_ON_FAILURE
+		if (reinitOnFailAttempts < REINIT_RETRY_MAX_ATTEMPTS) {
+			motionSetup();
+		} else {
+			m_Logger.error(
+				"The %s at address 0x%02x, could not be revived",
+				getIMUNameByType(sensorType),
+				addr
+			);
+		}
 
-	if (fifo_status.fifo_level < 1) {
-		return;
+		reinitOnFailAttempts++;  // buf overflow will make it try again in about 4 min
+#endif
 	}
 
 	uint16_t fifo_samples = 0;
@@ -170,7 +161,10 @@ void LSM6DSV16XSensor::motionLoop() {
 			getIMUNameByType(sensorType),
 			addr
 		);
-		errorCounter++;
+		return;
+	}
+
+	if (fifo_samples < 1) {
 		return;
 	}
 
@@ -187,12 +181,25 @@ void LSM6DSV16XSensor::motionLoop() {
 		}
 
 		uint8_t data[6];
-		// printf("\n\n\nimu.FIFO_Get_Data(data)");
 		imu.FIFO_Get_Data(data);
 		if (tag == 1) {  // gyro
 			continue;
 		}
 		if (tag == 2) {  // accel
+#if SEND_ACCELERATION
+			// int32_t accelerometerInt[3];
+			// errorCounter -= imu.Get_X_Axes(accelerometerInt);
+			// acceleration[0] = accelerometerInt[0] * 0.01F; //convert from mg to g
+			// acceleration[1] = accelerometerInt[1] * 0.01F;
+			// acceleration[2] = accelerometerInt[2] * 0.01F;
+			acceleration[0]
+				= Conversions::convertBytesToFloat(data[0], data[1]) * sensitivity;
+			acceleration[1]
+				= Conversions::convertBytesToFloat(data[2], data[3]) * sensitivity;
+			acceleration[2]
+				= Conversions::convertBytesToFloat(data[4], data[5]) * sensitivity;
+			newAcceleration = true;
+#endif  // SEND_ACCELERATION
 			continue;
 		}
 		if (tag == 3) {  // temp
@@ -216,26 +223,11 @@ void LSM6DSV16XSensor::motionLoop() {
 			}
 			continue;
 		}
-
-		if (tag == 0x16) {  // SFLP gyroscope bias
-			continue;
-		}
-
-		if (tag == 0x17) {  // SFLP gravity vector
-			continue;
-		}
-
-		if (tag == 0x19) {  // sensor hub nack
-			continue;
-		}
 	}
 }
 
 SensorStatus LSM6DSV16XSensor::getSensorState() {
-	// TODO: this may need to be redone, errorCounter gets reset at the end of the loop
-	return errorCounter > 0 ? SensorStatus::SENSOR_ERROR
-		 : isWorking()      ? SensorStatus::SENSOR_OK
-							: SensorStatus::SENSOR_OFFLINE;
+	return isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
 Quat LSM6DSV16XSensor::fusedRotationToQuaternion(float x, float y, float z) {
