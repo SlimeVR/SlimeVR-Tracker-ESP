@@ -237,6 +237,9 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef FIFO_Set_G_BDR(float Bdr);
     LSM6DSV16XStatusTypeDef FIFO_Set_SFLP_Batch(bool GameRotation, bool Gravity, bool gBias);
     LSM6DSV16XStatusTypeDef FIFO_Get_Status(lsm6dsv16x_fifo_status_t *Status);
+    LSM6DSV16XStatusTypeDef FIFO_Get_Gravity_Vector(float *data);
+    LSM6DSV16XStatusTypeDef FIFO_Get_Game_Vector(float *data);
+    LSM6DSV16XStatusTypeDef FIFO_Get_GBias_Vector(float *data);
 
     LSM6DSV16XStatusTypeDef QVAR_Enable();
     LSM6DSV16XStatusTypeDef QVAR_GetStatus(uint8_t *val);
@@ -258,6 +261,8 @@ class LSM6DSV16X {
 
     LSM6DSV16XStatusTypeDef Get_Temperature_Raw(int16_t *value);
     LSM6DSV16XStatusTypeDef Is_New_Temperature_Data(bool *available);
+    
+    uint32_t Half_Bits_To_Float_Bits(uint16_t half_bits);
 
     /**
      * @brief Utility function to read data.

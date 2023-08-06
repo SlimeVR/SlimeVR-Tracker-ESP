@@ -229,3 +229,27 @@ void Quat::set_axis_angle(const Vector3& axis, const float& angle) {
 			cos_angle);
 	}
 }
+
+Vector3 Quat::get_euler_xyz() const {
+#ifdef MATH_CHECKS
+	ERR_FAIL_COND_V_MSG(!is_normalized(), Vector3(), "The quaternion must be normalized.");
+#endif
+	Vector3 angles;
+
+    // roll (x-axis rotation)
+    double sinr_cosp = 2 * (w * x + y * z);
+    double cosr_cosp = 1 - 2 * (x * x + y * y);
+    angles.z = std::atan2(sinr_cosp, cosr_cosp);
+
+    // pitch (y-axis rotation)
+    double sinp = std::sqrt(1 + 2 * (w * y - x * z));
+    double cosp = std::sqrt(1 - 2 * (w * y - x * z));
+    angles.x = 2 * std::atan2(sinp, cosp) - M_PI / 2;
+
+    // yaw (z-axis rotation)
+    double siny_cosp = 2 * (w * z + x * y);
+    double cosy_cosp = 1 - 2 * (y * y + z * z);
+    angles.y = std::atan2(siny_cosp, cosy_cosp);
+
+    return angles;
+}

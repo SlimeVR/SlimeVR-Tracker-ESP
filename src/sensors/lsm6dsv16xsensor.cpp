@@ -93,7 +93,7 @@ void LSM6DSV16XSensor::motionSetup() {
 		}
 	}
 	imu.Disable_6D_Orientation();
-#endif
+#endif  // LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
 
 	m_Logger.info("Connected to %s on 0x%02x", getIMUNameByType(sensorType), addr);
 
@@ -114,6 +114,7 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	// Set data rate
 	status |= imu.Set_X_ODR(LSM6DSV16X_FIFO_DATA_RATE);
+	status |= imu.Set_G_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 	status |= imu.Set_SFLP_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 	status |= imu.FIFO_Set_X_BDR(LSM6DSV16X_FIFO_DATA_RATE);
 
@@ -123,13 +124,9 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
-	status |= imu.FIFO_Set_SFLP_Batch(
-		true,
-		true,
-		false
-	);  // TODO: Add the game specifiic SFLP to the Enable_Game_Rotation
 
-	// Enable Game Rotation Fusion
+	// Enable Fusion
+	status |= imu.FIFO_Set_SFLP_Batch(true, true, true);
 	status |= imu.Enable_Game_Rotation();
 
 	// status |= imu.beginPreconfigured();
@@ -138,7 +135,7 @@ void LSM6DSV16XSensor::motionSetup() {
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
 	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);
 	status |= imu.Enable_Double_Tap_Detection(LSM6DSV16X_INT1_PIN);
-#endif
+#endif  // LSM6DSV16X_INTERRUPT
 
 	if (status != LSM6DSV16X_OK) {
 		m_Logger.fatal(
@@ -157,7 +154,8 @@ void LSM6DSV16XSensor::motionSetup() {
 	lastTempRead = millis();
 }
 
-constexpr float G_TO_MS2 = 9.80665f;
+constexpr float mgPerG = 1000.0f;
+constexpr float mdpsPerDps = 1000.0f;
 
 void LSM6DSV16XSensor::motionLoop() {
 	if (millis() - lastTempRead > LSM6DSV16X_TEMP_READ_INTERVAL * 1000) {
@@ -171,7 +169,7 @@ void LSM6DSV16XSensor::motionLoop() {
 				addr
 			);
 		} else {
-			float actualTemp = temperatureSensorToActualTemperature(rawTemp);
+			float actualTemp = lsm6dsv16x_from_lsb_to_celsius(rawTemp);
 			if (fabsf(actualTemp - temperature) > 0.01f) {
 				temperature = actualTemp;
 				newTemperature = true;
@@ -200,7 +198,7 @@ void LSM6DSV16XSensor::motionLoop() {
 			);
 		}
 		reinitOnFailAttempts++;  // buf overflow will make it try again in about 4 min
-#endif
+#endif  // REINIT_ON_FAILURE
 	}
 
 	uint16_t fifo_samples = 0;
@@ -236,25 +234,30 @@ void LSM6DSV16XSensor::motionLoop() {
 					);
 					continue;
 				}
-				acceleration[0] = (rawAccelerations[0] / 1000.0f) - gravityX;
-				acceleration[1] = (rawAccelerations[1] / 1000.0f) - gravityY;
-				acceleration[2] = (rawAccelerations[2] / 1000.0f) - gravityZ;
-				acceleration[0] *= G_TO_MS2;
-				acceleration[1] *= G_TO_MS2;
-				acceleration[2] *= G_TO_MS2;
+				acceleration[0] = (rawAccelerations[0] / mgPerG) - gravity[0];
+				acceleration[1] = (rawAccelerations[1] / mgPerG) - gravity[1];
+				acceleration[2] = (rawAccelerations[2] / mgPerG) - gravity[2];
+				acceleration[0] *= CONST_EARTH_GRAVITY;
+				acceleration[1] *= CONST_EARTH_GRAVITY;
+				acceleration[2] *= CONST_EARTH_GRAVITY;
 
 				newAcceleration = true;
 #endif  // SEND_ACCELERATION
 				break;
 			}
 			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {
-				uint8_t data[6];
-				imu.FIFO_Get_Data(data);
-				float x = Conversions::convertBytesToFloat(data[0], data[1]);
-				float y = Conversions::convertBytesToFloat(data[2], data[3]);
-				float z = Conversions::convertBytesToFloat(data[4], data[5]);
+				float data[3];
+				if (imu.FIFO_Get_Game_Vector(data) != LSM6DSV16X_OK) {
+					m_Logger.error(
+						"Failed to get game rotation vector on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					continue;
+				}
 
-				fusedRotation = fusedRotationToQuaternion(x, y, z);
+				fusedRotation = fusedRotationToQuaternion(data[0], data[1], data[2])
+							  * sensorOffset * gyroBias;
 
 				lastReset = 0;
 				lastData = millis();
@@ -267,23 +270,36 @@ void LSM6DSV16XSensor::motionLoop() {
 				break;
 			}
 			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GRAVITY_VECTOR_TAG: {
-				int32_t rawAccelerations[3];
-				if (imu.FIFO_Get_X_Axes(rawAccelerations) != LSM6DSV16X_OK) {
+				if (imu.FIFO_Get_Gravity_Vector(gravity) != LSM6DSV16X_OK) {
 					m_Logger.error(
-						"Failed to get accelerometer data on %s at address 0x%02x",
+						"Failed to get gravity vector on %s at address 0x%02x",
 						getIMUNameByType(sensorType),
 						addr
 					);
 					continue;
 				}
-				gravityX = rawAccelerations[0] / 2000.0F;
-				gravityY = rawAccelerations[1] / 2000.0F;
-				gravityZ = rawAccelerations[2] / 2000.0F;
+				gravity[0] /= mgPerG;
+				gravity[1] /= mgPerG;
+				gravity[2] /= mgPerG;
 				break;
 			}
-			default: {  // We don't use the data so remove from fifo
-				uint8_t data[6];
-				imu.FIFO_Get_Data(data);
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GYROSCOPE_BIAS_TAG: {
+				float gbias[3];
+				if (imu.FIFO_Get_GBias_Vector(gbias) != LSM6DSV16X_OK) {
+					m_Logger.error(
+						"Failed to get gyro bias on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					continue;
+				}
+
+				gbias[0] /= mdpsPerDps;
+				gbias[1] /= mdpsPerDps;
+				gbias[2] /= mdpsPerDps;
+
+				gyroBias = fusedRotationToQuaternion(gbias[0], gbias[1], gbias[2]);
+				break;
 			}
 		}
 	}
@@ -306,14 +322,6 @@ Quat LSM6DSV16XSensor::fusedRotationToQuaternion(float x, float y, float z) {
 
 	float w = sqrt(1 - length2);
 	return Quat(x, y, z, w);
-}
-
-constexpr float TEMPERATURE_SENSITIVITY = 256;
-constexpr float TEMPERATURE_OFFSET = 25;
-
-float LSM6DSV16XSensor::temperatureSensorToActualTemperature(int16_t temperature) {
-	float delta = temperature / TEMPERATURE_SENSITIVITY;
-	return TEMPERATURE_OFFSET + delta;
 }
 
 LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::runSelfTest() {
@@ -348,7 +356,7 @@ void LSM6DSV16XSensor::sendData() {
 
 #ifdef DEBUG_SENSOR
 		m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
-#endif
+#endif  // DEBUG_SENSOR
 	}
 
 #if SEND_ACCELERATION
@@ -357,7 +365,7 @@ void LSM6DSV16XSensor::sendData() {
 		newAcceleration = false;
 		networkConnection.sendSensorAcceleration(sensorId, acceleration);
 	}
-#endif
+#endif  // SEND_ACCELERATION
 
 	if (tap != 0)  // chip supports tap and double tap
 	{

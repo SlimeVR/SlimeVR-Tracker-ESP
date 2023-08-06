@@ -2941,6 +2941,53 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_Status(lsm6dsv16x_fifo_status_t * S
     return (LSM6DSV16XStatusTypeDef) lsm6dsv16x_fifo_status_get(&reg_ctx, Status);
 }
 
+LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_Gravity_Vector(float * data)
+{
+    uint16_t raw_data[6];
+    if (FIFO_Get_Data((uint8_t *)raw_data) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+
+    data[0] = lsm6dsv16x_from_sflp_to_mg(raw_data[0]);
+    data[1] = lsm6dsv16x_from_sflp_to_mg(raw_data[1]);
+    data[2] = lsm6dsv16x_from_sflp_to_mg(raw_data[2]);
+    return LSM6DSV16X_OK;
+}
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_Game_Vector(float * data)
+{
+    uint16_t raw_data[3];
+    if (FIFO_Get_Data((uint8_t *)raw_data) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+
+    union bits_to_float {
+        uint32_t bits;
+        float value;
+    };
+
+    bits_to_float float_bits[3];
+    float_bits[0].bits = Half_Bits_To_Float_Bits(raw_data[0]);
+    float_bits[1].bits = Half_Bits_To_Float_Bits(raw_data[1]);
+    float_bits[2].bits = Half_Bits_To_Float_Bits(raw_data[2]);
+    data[0] = float_bits[0].value;
+    data[1] = float_bits[1].value;
+    data[2] = float_bits[2].value;
+    return LSM6DSV16X_OK;
+}
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_GBias_Vector(float * data)
+{
+    uint16_t raw_data[3];
+    if (FIFO_Get_Data((uint8_t *)raw_data) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+    data[0] = lsm6dsv16x_from_fs125_to_mdps(raw_data[0]);
+    data[1] = lsm6dsv16x_from_fs125_to_mdps(raw_data[1]);
+    data[2] = lsm6dsv16x_from_fs125_to_mdps(raw_data[2]);
+    return LSM6DSV16X_OK;
+}
+
 /**
  * @brief  Enable the LSM6DSV16X gyroscope sensor
  * @retval 0 in case of success, an error code otherwise
@@ -3661,4 +3708,36 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Is_New_Temperature_Data(bool * available)
 
     *available = status.tda;
     return LSM6DSV16X_OK;
+}
+
+uint32_t LSM6DSV16X::Half_Bits_To_Float_Bits(uint16_t h)
+{
+    uint16_t h_exp, h_sig;
+    uint32_t f_sgn, f_exp, f_sig;
+
+    h_exp = (h&0x7c00u);
+    f_sgn = ((uint32_t)h&0x8000u) << 16;
+    switch (h_exp) {
+        case 0x0000u: /* 0 or subnormal */
+            h_sig = (h&0x03ffu);
+            /* Signed zero */
+            if (h_sig == 0) {
+                return f_sgn;
+            }
+            /* Subnormal */
+            h_sig <<= 1;
+            while ((h_sig&0x0400u) == 0) {
+                h_sig <<= 1;
+                h_exp++;
+            }
+            f_exp = ((uint32_t)(127 - 15 - h_exp)) << 23;
+            f_sig = ((uint32_t)(h_sig&0x03ffu)) << 13;
+            return f_sgn + f_exp + f_sig;
+        case 0x7c00u: /* inf or NaN */
+            /* All-ones exponent and a copy of the significand */
+            return f_sgn + 0x7f800000u + (((uint32_t)(h&0x03ffu)) << 13);
+        default: /* normalized */
+            /* Just need to adjust the exponent and shift */
+            return f_sgn + (((uint32_t)(h&0x7fffu) + 0x1c000u) << 13);
+    }
 }

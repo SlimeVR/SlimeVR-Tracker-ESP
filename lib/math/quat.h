@@ -72,7 +72,7 @@ public:
 	Vector3 get_euler_yxz() const;
 
 	void set_euler(const Vector3& p_euler) { set_euler_yxz(p_euler); };
-	Vector3 get_euler() const { return get_euler_yxz(); };
+	Vector3 get_euler() const { return get_euler_xyz(); };
 
 	Quat slerp(const Quat& q, const float& t) const;
 	Quat slerpni(const Quat& q, const float& t) const;

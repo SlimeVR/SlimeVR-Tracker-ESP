@@ -76,7 +76,6 @@ public:
 
 private:
 	Quat fusedRotationToQuaternion(float x, float y, float z);
-	float temperatureSensorToActualTemperature(int16_t temperature);
 	LSM6DSV16XStatusTypeDef runSelfTest();
 
 	LSM6DSV16X imu;
@@ -87,7 +86,8 @@ private:
 	float temperature = 0;
 	bool newTemperature = false;
 	uint32_t lastTempRead = 0;
-	float gravityX = 0, gravityY = 0, gravityZ = 0;
+	float gravity[3];
+	Quat gyroBias;
 
 #ifdef REINIT_ON_FAILURE
 	uint8_t reinitOnFailAttempts = 0;
