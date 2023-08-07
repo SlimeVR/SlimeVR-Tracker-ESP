@@ -75,10 +75,11 @@ void LSM6DSV16XSensor::motionSetup() {
 		return;
 	}
 
-#ifndef LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
-	imu.Enable_6D_Orientation(LSM6DSV16X_INT1_PIN);
+	imu.Enable_6D_Orientation(LSM6DSV16X_INT2_PIN);
 	uint8_t isFaceDown;
 	imu.Get_6D_Orientation_ZL(&isFaceDown);
+
+#ifndef LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
 	if (isFaceDown) {
 		if (runSelfTest() != LSM6DSV16X_OK) {
 			m_Logger.fatal(
@@ -92,7 +93,6 @@ void LSM6DSV16XSensor::motionSetup() {
 			return;
 		}
 	}
-	imu.Disable_6D_Orientation();
 #endif  // LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
 
 	m_Logger.info("Connected to %s on 0x%02x", getIMUNameByType(sensorType), addr);
@@ -128,6 +128,12 @@ void LSM6DSV16XSensor::motionSetup() {
 	// Enable Fusion
 	status |= imu.FIFO_Set_SFLP_Batch(true, true, true);
 	status |= imu.Enable_Game_Rotation();
+
+	// Calibration
+	if (isFaceDown) {
+		startCalibration(0);
+	}
+	status |= imu.Disable_6D_Orientation();
 
 	// status |= imu.beginPreconfigured();
 
@@ -298,8 +304,12 @@ void LSM6DSV16XSensor::motionLoop() {
 				gbias[1] /= mdpsPerDps;
 				gbias[2] /= mdpsPerDps;
 
-				gyroBias = fusedRotationToQuaternion(gbias[0], gbias[1], gbias[2]);
+				//printf("\nx: %f, y: %f, z: %f", gbias[0], gbias[1], gbias[2]);
 				break;
+			}
+			default: {  // We don't use the data so remove from fifo
+				uint8_t data[6];
+				imu.FIFO_Get_Data(data);
 			}
 		}
 	}
@@ -380,7 +390,85 @@ void LSM6DSV16XSensor::sendData() {
 }
 
 void LSM6DSV16XSensor::startCalibration(int calibrationType) {
-	// These IMU are factory calibrated.
-	// The register might be able to be changed but it could break the device
-	// I don't think we will need to mess with them
+	// Supported Calibrations: Accelerometer offset and Gyroscope Bias
+	// Currently only second is used
+
+	m_Logger.info("Flip right side up in the next 5 seconds to start calibration.");
+	delay(5000);
+	uint8_t isFaceUp;
+	imu.Get_6D_Orientation_ZH(&isFaceUp);
+
+	if (!isFaceUp) {
+		return;
+	}
+
+	// give warning if temp is low ? (is this needed)?
+	m_Logger.info("Leave still for 30 seconds");
+	delay(2000);
+
+	double gbiasAvg[] = {0, 0, 0};
+	uint16_t dataCount = 0;
+
+	while (dataCount < 5000) {
+		uint16_t fifo_samples = 0;
+		if (imu.FIFO_Get_Num_Samples(&fifo_samples) == LSM6DSV16X_ERROR) {
+			m_Logger.error(
+				"Error getting number of samples in FIFO on %s at address 0x%02x",
+				getIMUNameByType(sensorType),
+				addr
+			);
+			return;
+		}
+
+		for (uint16_t i = 0; i < fifo_samples; i++) {
+			uint8_t tag;
+			if (imu.FIFO_Get_Tag(&tag) != LSM6DSV16X_OK) {
+				m_Logger.error(
+					"Failed to get FIFO data tag on %s at address 0x%02x",
+					getIMUNameByType(sensorType),
+					addr
+				);
+				continue;
+			}
+
+			switch (tag) {
+				case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GYROSCOPE_BIAS_TAG: {
+					if (dataCount < 2000) {
+						dataCount++;
+						break;
+					}
+					float gbias[3];
+					if (imu.FIFO_Get_GBias_Vector(gbias) != LSM6DSV16X_OK) {
+						m_Logger.error(
+							"Failed to get gyro bias on %s at address 0x%02x",
+							getIMUNameByType(sensorType),
+							addr
+						);
+						continue;
+					}
+
+					gbiasAvg[0] += gbias[0] / mdpsPerDps;
+					gbiasAvg[1] += gbias[1] / mdpsPerDps;
+					gbiasAvg[2] += gbias[2] / mdpsPerDps;
+					dataCount++;
+					//m_Logger.info("data: %d, x: %f, y: %f, z: %f", dataCount, gbias[0], gbias[1], gbias[2]);
+					break;
+				}
+				default: {  // We don't use the data so remove from fifo
+					uint8_t data[6];
+					imu.FIFO_Get_Data(data);
+				}
+			}
+		}
+	}
+	m_Logger.info("x: %f, y: %f, z: %f", gbiasAvg[0], gbiasAvg[1], gbiasAvg[2]);
+	dataCount -= 2000;
+	m_Logger.info(
+		"Calibration Data, X: %f, Y: %f, Z: %f",
+		gbiasAvg[0] / dataCount,
+		gbiasAvg[1] / dataCount,
+		gbiasAvg[2] / dataCount
+	);
+	imu.Set_SFLP_GBIAS(0.00, 0.245062, 0.150119);
+	delay(10000);
 }

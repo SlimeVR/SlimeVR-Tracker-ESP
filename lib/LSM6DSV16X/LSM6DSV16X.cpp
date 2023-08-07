@@ -3710,6 +3710,17 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Is_New_Temperature_Data(bool * available)
     return LSM6DSV16X_OK;
 }
 
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_SFLP_GBIAS(float x, float y, float z) {
+    lsm6dsv16x_sflp_gbias_t val = {0, 0, 0};
+    val.gbias_x = x;
+    val.gbias_y = y;
+    val.gbias_z = z;
+    if(lsm6dsv16x_sflp_game_gbias_set(&reg_ctx, &val) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+    return LSM6DSV16X_OK;
+}
+
 uint32_t LSM6DSV16X::Half_Bits_To_Float_Bits(uint16_t h)
 {
     uint16_t h_exp, h_sig;
