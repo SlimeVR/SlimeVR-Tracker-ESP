@@ -3721,6 +3721,103 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_SFLP_GBIAS(float x, float y, float z) {
     return LSM6DSV16X_OK;
 }
 
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Enable_X_User_Offset() {
+    lsm6dsv16x_ctrl9_t ctrl9;
+    if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+    ctrl9.usr_off_on_out = true; //1 On, 0 Off
+
+    if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+
+    // lsm6dsv16x_wake_up_ths_t wake_up_ths;
+    // if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&wake_up_ths, 1) != LSM6DSV16X_OK) {
+    //    return LSM6DSV16X_ERROR;
+    //}
+    //wake_up_ths.usr_off_on_wu = true; //1 On, 0 Off
+
+    //if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&wake_up_ths, 1) != LSM6DSV16X_OK) {
+    //    return LSM6DSV16X_ERROR;
+    //}
+
+    return LSM6DSV16X_OK;
+}
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Disable_X_User_Offset() {
+    lsm6dsv16x_ctrl9_t ctrl9;
+    if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+    ctrl9.usr_off_on_out = false; //1 On, 0 Off
+
+    if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+
+    // lsm6dsv16x_wake_up_ths_t wake_up_ths;
+    // if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&wake_up_ths, 1) != LSM6DSV16X_OK) {
+    //    return LSM6DSV16X_ERROR;
+    //}
+    //wake_up_ths.usr_off_on_wu = false; //1 On, 0 Off
+
+    //if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&wake_up_ths, 1) != LSM6DSV16X_OK) {
+    //    return LSM6DSV16X_ERROR;
+    //}
+
+    return LSM6DSV16X_OK;
+}
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_X_User_Offset(float x, float y, float z) {
+    lsm6dsv16x_ctrl9_t ctrl9;
+    if (lsm6dsv16x_read_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+    
+
+
+
+    int8_t xyz[3];
+
+    if ( // about +- 2 G's for high and +- 0.124 G's for low
+      (x <= LSM6DSV16X_ACC_USR_OFF_W_LOW_MAX && x >= -LSM6DSV16X_ACC_USR_OFF_W_LOW_MAX) &&
+      (y <= LSM6DSV16X_ACC_USR_OFF_W_LOW_MAX && y >= -LSM6DSV16X_ACC_USR_OFF_W_LOW_MAX) &&
+      (z <= LSM6DSV16X_ACC_USR_OFF_W_LOW_MAX && z >= -LSM6DSV16X_ACC_USR_OFF_W_LOW_MAX)
+    ) { //Then we are under the low requirements
+      xyz[0] = (int8_t)(x / LSM6DSV16X_ACC_USR_OFF_W_LOW_LSB);
+      xyz[1] = (int8_t)(y / LSM6DSV16X_ACC_USR_OFF_W_LOW_LSB);
+      xyz[2] = (int8_t)(z / LSM6DSV16X_ACC_USR_OFF_W_LOW_LSB);
+      ctrl9.usr_off_w = false;  //(0: 2^-10 g/LSB; 1: 2^-6 g/LSB)
+    }
+
+    else if ( // about +- 2 G's for high and +- 0.124 G's for low
+      (x <= LSM6DSV16X_ACC_USR_OFF_W_HIGH_MAX && x >= -LSM6DSV16X_ACC_USR_OFF_W_HIGH_MAX) &&
+      (y <= LSM6DSV16X_ACC_USR_OFF_W_HIGH_MAX && y >= -LSM6DSV16X_ACC_USR_OFF_W_HIGH_MAX) &&
+      (z <= LSM6DSV16X_ACC_USR_OFF_W_HIGH_MAX && z >= -LSM6DSV16X_ACC_USR_OFF_W_HIGH_MAX)
+    ) { //Then we are under the high requirements
+      xyz[0] = (int8_t)(x / LSM6DSV16X_ACC_USR_OFF_W_HIGH_LSB);
+      xyz[1] = (int8_t)(y / LSM6DSV16X_ACC_USR_OFF_W_HIGH_LSB);
+      xyz[2] = (int8_t)(z / LSM6DSV16X_ACC_USR_OFF_W_HIGH_LSB);
+      ctrl9.usr_off_w = true;  //(0: 2^-10 g/LSB; 1: 2^-6 g/LSB)
+    } else {
+      return LSM6DSV16X_ERROR; //Value too big
+    }
+
+
+    if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+
+
+    //convert from float in G's to what it wants. Signed byte
+    printf("x: %d, y: %d, z: %d", xyz[0], xyz[1], xyz[2]);
+    if (lsm6dsv16x_write_reg(&reg_ctx, LSM6DSV16X_X_OFS_USR, (uint8_t*)&xyz, 3) != LSM6DSV16X_OK) {
+        return LSM6DSV16X_ERROR;
+    }
+    return LSM6DSV16X_OK;
+}
+
 uint32_t LSM6DSV16X::Half_Bits_To_Float_Bits(uint16_t h)
 {
     uint16_t h_exp, h_sig;

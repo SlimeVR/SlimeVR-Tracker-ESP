@@ -116,17 +116,23 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Set_X_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 	status |= imu.Set_G_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 	status |= imu.Set_SFLP_ODR(LSM6DSV16X_FIFO_DATA_RATE);
-	status |= imu.FIFO_Set_X_BDR(LSM6DSV16X_FIFO_DATA_RATE);
+	status |= imu.FIFO_Set_X_BDR(60);
 
 	// Enable IMU
 	status |= imu.Enable_X();
 	status |= imu.Enable_G();
 
+	status |= imu.Set_X_Filter_Mode(1, LSM6DSV16X_XL_LIGHT);
+	status |= imu.Set_G_Filter_Mode(1, LSM6DSV16X_XL_LIGHT);
+
+	//status |= imu.Set_X_Filter_Mode(0, LSM6DSV16X_XL_ULTRA_LIGHT);
+	//status |= imu.Set_G_Filter_Mode(0, LSM6DSV16X_XL_ULTRA_LIGHT);
+
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
 
 	// Enable Fusion
-	status |= imu.FIFO_Set_SFLP_Batch(true, true, true);
+	status |= imu.FIFO_Set_SFLP_Batch(true, true, false);
 	status |= imu.Enable_Game_Rotation();
 
 	// Calibration
@@ -304,7 +310,7 @@ void LSM6DSV16XSensor::motionLoop() {
 				gbias[1] /= mdpsPerDps;
 				gbias[2] /= mdpsPerDps;
 
-				//printf("\nx: %f, y: %f, z: %f", gbias[0], gbias[1], gbias[2]);
+				// printf("\nx: %f, y: %f, z: %f", gbias[0], gbias[1], gbias[2]);
 				break;
 			}
 			default: {  // We don't use the data so remove from fifo
@@ -407,9 +413,9 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 	delay(2000);
 
 	double gbiasAvg[] = {0, 0, 0};
-	uint16_t dataCount = 0;
+	uint16_t dataCountGbias = 0;
 
-	while (dataCount < 5000) {
+	while (dataCountGbias < 4000) {
 		uint16_t fifo_samples = 0;
 		if (imu.FIFO_Get_Num_Samples(&fifo_samples) == LSM6DSV16X_ERROR) {
 			m_Logger.error(
@@ -433,8 +439,10 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 
 			switch (tag) {
 				case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GYROSCOPE_BIAS_TAG: {
-					if (dataCount < 2000) {
-						dataCount++;
+					if (dataCountGbias < 100) {
+						dataCountGbias++;
+						uint8_t data[6];
+						imu.FIFO_Get_Data(data);
 						break;
 					}
 					float gbias[3];
@@ -450,8 +458,7 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 					gbiasAvg[0] += gbias[0] / mdpsPerDps;
 					gbiasAvg[1] += gbias[1] / mdpsPerDps;
 					gbiasAvg[2] += gbias[2] / mdpsPerDps;
-					dataCount++;
-					//m_Logger.info("data: %d, x: %f, y: %f, z: %f", dataCount, gbias[0], gbias[1], gbias[2]);
+					dataCountGbias++;
 					break;
 				}
 				default: {  // We don't use the data so remove from fifo
@@ -461,14 +468,17 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 			}
 		}
 	}
-	m_Logger.info("x: %f, y: %f, z: %f", gbiasAvg[0], gbiasAvg[1], gbiasAvg[2]);
-	dataCount -= 2000;
-	m_Logger.info(
-		"Calibration Data, X: %f, Y: %f, Z: %f",
-		gbiasAvg[0] / dataCount,
-		gbiasAvg[1] / dataCount,
-		gbiasAvg[2] / dataCount
-	);
-	imu.Set_SFLP_GBIAS(0.00, 0.245062, 0.150119);
+	m_Logger.info("Gbias x: %f, y: %f, z: %f", gbiasAvg[0], gbiasAvg[1], gbiasAvg[2]);
+	dataCountGbias -= 100;
+
+	gbiasAvg[0] = gbiasAvg[0] / dataCountGbias;
+	gbiasAvg[1] = gbiasAvg[1] / dataCountGbias;
+	gbiasAvg[2] = gbiasAvg[2] / dataCountGbias;
+
+	m_Logger.info("Gbias Calibration Data, X: %f, Y: %f, Z: %f", gbiasAvg[0], gbiasAvg[1], gbiasAvg[2]);
+
+	
+	//imu.Set_SFLP_GBIAS(0.00, 0.245062, 0.150119);
+	imu.Set_SFLP_GBIAS(gbiasAvg[0], gbiasAvg[1], gbiasAvg[2]);
 	delay(10000);
 }

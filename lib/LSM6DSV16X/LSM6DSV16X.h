@@ -70,6 +70,12 @@
 
 #define LSM6DSV16X_QVAR_GAIN  78.000f
 
+#define LSM6DSV16X_ACC_USR_OFF_W_HIGH_LSB (float)(pow(2, -6))
+#define LSM6DSV16X_ACC_USR_OFF_W_LOW_LSB (float)(pow(2, -10))
+#define LSM6DSV16X_ACC_USR_OFF_W_HIGH_MAX LSM6DSV16X_ACC_USR_OFF_W_HIGH_LSB * INT8_MAX
+#define LSM6DSV16X_ACC_USR_OFF_W_LOW_MAX LSM6DSV16X_ACC_USR_OFF_W_LOW_LSB * INT8_MAX
+
+
 
 
 //#define ENABLE_SPI
@@ -148,6 +154,8 @@ class LSM6DSV16X {
 
     LSM6DSV16XStatusTypeDef Enable_X();
     LSM6DSV16XStatusTypeDef Disable_X();
+    LSM6DSV16XStatusTypeDef Enable_X_User_Offset();
+    LSM6DSV16XStatusTypeDef Disable_X_User_Offset();
     LSM6DSV16XStatusTypeDef Get_X_Sensitivity(float *Sensitivity);
     LSM6DSV16XStatusTypeDef Get_X_ODR(float *Odr);
     LSM6DSV16XStatusTypeDef Set_X_ODR(float Odr, LSM6DSV16X_ACC_Operating_Mode_t Mode = LSM6DSV16X_ACC_HIGH_PERFORMANCE_MODE);
@@ -160,6 +168,7 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Get_X_Event_Status(LSM6DSV16X_Event_Status_t *Status);
     LSM6DSV16XStatusTypeDef Set_X_Power_Mode(uint8_t PowerMode);
     LSM6DSV16XStatusTypeDef Set_X_Filter_Mode(uint8_t LowHighPassFlag, uint8_t FilterMode);
+    LSM6DSV16XStatusTypeDef Set_X_User_Offset(float x, float y, float z);
 
     LSM6DSV16XStatusTypeDef Enable_G();
     LSM6DSV16XStatusTypeDef Disable_G();
