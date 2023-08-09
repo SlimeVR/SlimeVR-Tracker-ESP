@@ -125,14 +125,14 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Set_X_Filter_Mode(1, LSM6DSV16X_XL_LIGHT);
 	status |= imu.Set_G_Filter_Mode(1, LSM6DSV16X_XL_LIGHT);
 
-	//status |= imu.Set_X_Filter_Mode(0, LSM6DSV16X_XL_ULTRA_LIGHT);
-	//status |= imu.Set_G_Filter_Mode(0, LSM6DSV16X_XL_ULTRA_LIGHT);
+	// status |= imu.Set_X_Filter_Mode(0, LSM6DSV16X_XL_ULTRA_LIGHT);
+	// status |= imu.Set_G_Filter_Mode(0, LSM6DSV16X_XL_ULTRA_LIGHT);
 
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
 
 	// Enable Fusion
-	status |= imu.FIFO_Set_SFLP_Batch(true, true, false);
+	status |= imu.FIFO_Set_SFLP_Batch(true, true, true);
 	status |= imu.Enable_Game_Rotation();
 
 	// Calibration
@@ -269,7 +269,7 @@ void LSM6DSV16XSensor::motionLoop() {
 				}
 
 				fusedRotation = fusedRotationToQuaternion(data[0], data[1], data[2])
-							  * sensorOffset * gyroBias;
+							  * sensorOffset;
 
 				lastReset = 0;
 				lastData = millis();
@@ -413,9 +413,12 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 	delay(2000);
 
 	double gbiasAvg[] = {0, 0, 0};
+	float startingQuat[3];
+	double quatDiffAvg[] = {0, 0, 0};
 	uint16_t dataCountGbias = 0;
+	uint16_t dataCountQuatDiff = 0;
 
-	while (dataCountGbias < 4000) {
+	while (dataCountGbias < 4000 && dataCountQuatDiff < 4000) {
 		uint16_t fifo_samples = 0;
 		if (imu.FIFO_Get_Num_Samples(&fifo_samples) == LSM6DSV16X_ERROR) {
 			m_Logger.error(
@@ -461,6 +464,49 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 					dataCountGbias++;
 					break;
 				}
+				case lsm6dsv16x_fifo_out_raw_t::
+					LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {
+					if (dataCountQuatDiff < 99) {
+						dataCountQuatDiff++;
+						uint8_t data[6];
+						imu.FIFO_Get_Data(data);
+						break;
+					}
+
+					float data[3];
+					if (imu.FIFO_Get_Game_Vector(data) != LSM6DSV16X_OK) {
+						m_Logger.error(
+							"Failed to get game rotation vector on %s at address "
+							"0x%02x",
+							getIMUNameByType(sensorType),
+							addr
+						);
+						continue;
+					}
+
+					if (dataCountQuatDiff == 99) {
+						startingQuat[0] = data[0];
+						startingQuat[1] = data[1];
+						startingQuat[2] = data[2];
+					}
+					
+					quatDiffAvg[0] += (startingQuat[0] - data[0]);
+					quatDiffAvg[1] += (startingQuat[1] - data[1]);
+					quatDiffAvg[2] += (startingQuat[2] - data[2]);
+					
+
+					printf(
+						"\nX: %f, Y: %f, Z: %f",
+						(startingQuat[0] - data[0]),
+						(startingQuat[1] - data[1]),
+						(startingQuat[2] - data[2])
+					);
+					startingQuat[0] = data[0];
+					startingQuat[1] = data[1];
+					startingQuat[2] = data[2];
+					dataCountQuatDiff++;
+					break;
+				}
 				default: {  // We don't use the data so remove from fifo
 					uint8_t data[6];
 					imu.FIFO_Get_Data(data);
@@ -469,16 +515,33 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 		}
 	}
 	m_Logger.info("Gbias x: %f, y: %f, z: %f", gbiasAvg[0], gbiasAvg[1], gbiasAvg[2]);
+	m_Logger.info("quatAvg x: %f, y: %f, z: %f", quatDiffAvg[0], quatDiffAvg[1], quatDiffAvg[2]);
 	dataCountGbias -= 100;
+	dataCountQuatDiff -= 100;
 
-	gbiasAvg[0] = gbiasAvg[0] / dataCountGbias;
-	gbiasAvg[1] = gbiasAvg[1] / dataCountGbias;
-	gbiasAvg[2] = gbiasAvg[2] / dataCountGbias;
+	gbiasAvg[0] /= dataCountGbias;
+	gbiasAvg[1] /= dataCountGbias;
+	gbiasAvg[2] /= dataCountGbias;
 
-	m_Logger.info("Gbias Calibration Data, X: %f, Y: %f, Z: %f", gbiasAvg[0], gbiasAvg[1], gbiasAvg[2]);
+	quatDiffAvg[0] /= dataCountGbias;
+	quatDiffAvg[1] /= dataCountGbias;
+	quatDiffAvg[2] /= dataCountGbias;
 
-	
-	//imu.Set_SFLP_GBIAS(0.00, 0.245062, 0.150119);
-	imu.Set_SFLP_GBIAS(gbiasAvg[0], gbiasAvg[1], gbiasAvg[2]);
+	m_Logger.info(
+		"Gbias Calibration Data, X: %f, Y: %f, Z: %f",
+		gbiasAvg[0],
+		gbiasAvg[1],
+		gbiasAvg[2]
+	);
+
+	m_Logger.info(
+		"Quat Diff Calibration Data, X: %f, Y: %f, Z: %f",
+		quatDiffAvg[0],
+		quatDiffAvg[1],
+		quatDiffAvg[2]
+	);
+
+	// imu.Set_SFLP_GBIAS(0.00, 0.245062, 0.150119);
+	// imu.Set_SFLP_GBIAS(gbiasAvg[0], gbiasAvg[1], gbiasAvg[2]);
 	delay(10000);
 }

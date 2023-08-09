@@ -87,7 +87,6 @@ private:
 	bool newTemperature = false;
 	uint32_t lastTempRead = 0;
 	float gravity[3];
-	Quat gyroBias;
 
 #ifdef REINIT_ON_FAILURE
 	uint8_t reinitOnFailAttempts = 0;
