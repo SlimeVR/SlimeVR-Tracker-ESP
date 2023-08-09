@@ -86,6 +86,12 @@ namespace SlimeVR
          */
         void pattern(unsigned long timeon, unsigned long timeoff, int times);
 
+        /*!
+        *  @brief Resets the timer used for the blinking pattern and adds an offset to when the pattern starts
+        *  @param offset Offset in milliseconds
+        */
+        void resetPatternWithOffset(unsigned long offset);
+
         void update();
 
     private:
@@ -93,6 +99,7 @@ namespace SlimeVR
         unsigned long m_Timer = 0;
         LEDStage m_CurrentStage = OFF;
         unsigned long m_LastUpdate = millis();
+        unsigned long m_Offset = 0;
 
         uint8_t m_Pin;
 

@@ -689,7 +689,7 @@ void Connection::update() {
 
 			break;
 
-		case PACKET_FEATURE_FLAGS:
+		case PACKET_FEATURE_FLAGS: {
 			// Packet type (4) + Packet number (8) + flags (len - 12)
 			if (len < 13) {
 				m_Logger.warn("Invalid feature flags packet: too short");
@@ -710,6 +710,20 @@ void Connection::update() {
 			}
 
 			break;
+        }
+
+		case PACKET_RECEIVE_LED_OFFSET: {
+			// Packet type (4) + Packet number (8) + offset in ms (32)
+			if (len < 44) {
+				m_Logger.warn("Invalid LED offset packet: too short");
+				break;
+			}
+
+			//uint32_t offset = convert_chars<uint32_t>(&m_Packet[12]);
+			//ledManager.resetPatternWithOffset(offset);
+			break;
+        }
+
 	}
 }
 
