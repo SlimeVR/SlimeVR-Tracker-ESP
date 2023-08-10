@@ -713,14 +713,14 @@ void Connection::update() {
         }
 
 		case PACKET_RECEIVE_LED_OFFSET: {
-			// Packet type (4) + Packet number (8) + offset in ms (32)
-			if (len < 44) {
+			// Packet type (4) + Packet number (8) + offset in ms (4)
+			if (len < 16) {
 				m_Logger.warn("Invalid LED offset packet: too short");
 				break;
 			}
 
-			//uint32_t offset = convert_chars<uint32_t>(&m_Packet[12]);
-			//ledManager.resetPatternWithOffset(offset);
+			uint32_t offset = convert_chars<uint32_t>(&m_Packet[12]);
+			ledManager.resetPatternWithOffset(offset);
 			break;
         }
 
