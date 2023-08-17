@@ -44,10 +44,11 @@ LSM6DSV16XSensor::LSM6DSV16XSensor(
 	uint8_t sclPin,
 	uint8_t sdaPin,
 	uint8_t intPin
-)
-	: Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin)
-	, imu(&Wire, addr << 1)  // We shift the address left 1 to work with the library
-	, m_IntPin(intPin){};
+) : Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin), 
+	imu(&Wire, addr << 1),  // We shift the address left 1 to work with the library
+	m_IntPin(intPin),
+	sfusion(1.0f, -1.0f, -1.0f)
+	{};
 
 void LSM6DSV16XSensor::motionSetup() {
 	uint8_t deviceId = 0;
@@ -77,8 +78,7 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	imu.Enable_6D_Orientation(LSM6DSV16X_INT2_PIN);
 	uint8_t isFaceDown;
-	imu.Get_6D_Orientation_ZL(&isFaceDown
-	);  // IMU rotation could be different (IMU upside down)
+	imu.Get_6D_Orientation_ZL(&isFaceDown);  //TODO: IMU rotation could be different (IMU upside down then isFaceUp)
 
 #ifndef LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
 	if (isFaceDown) {
@@ -117,17 +117,14 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Set_X_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 	status |= imu.Set_G_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 
-	status
-		|= imu.Set_SFLP_ODR(LSM6DSV16X_FIFO_DATA_RATE);  // Linear accel or full fusion
+	status |= imu.Set_SFLP_ODR(LSM6DSV16X_FIFO_DATA_RATE);  // Linear accel or full fusion
 	status |= imu.FIFO_Set_X_BDR(LSM6DSV16X_FIFO_DATA_RATE);
 
 #ifdef LSM6DSV16X_ESP_FUSION
 	status |= imu.FIFO_Set_G_BDR(LSM6DSV16X_FIFO_DATA_RATE);
 #endif
 
-	status |= imu.FIFO_Set_Timestamp_Decimation(
-		lsm6dsv16x_fifo_timestamp_batch_t::LSM6DSV16X_TMSTMP_DEC_1
-	);
+	status |= imu.FIFO_Set_Timestamp_Decimation(lsm6dsv16x_fifo_timestamp_batch_t::LSM6DSV16X_TMSTMP_DEC_1);
 
 	// Enable IMU
 	status |= imu.Enable_Timestamp();
@@ -143,14 +140,9 @@ void LSM6DSV16XSensor::motionSetup() {
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
 
-#if defined(LSM6DSV16X_ONBOARD_FUSION) \
-	&& defined(LSM6DSV16X_ESP_FUSION   \
-	)  // Group all the data together //set the watermark level here for nrf sleep
-	status |= imu.FIFO_Set_SFLP_Batch(
-		true,
-		true,
-		false
-	);  // Calculate Linear acceleration works great on imu
+
+#if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)  
+	status |= imu.FIFO_Set_SFLP_Batch(true, true, false);
 	status |= imu.Enable_Game_Rotation();
 
 	// Calibration
@@ -159,18 +151,10 @@ void LSM6DSV16XSensor::motionSetup() {
 	}
 	loadIMUCalibration();  // accel into imu and gryo into ram
 #elif defined(LSM6DSV16X_ONBOARD_FUSION)
-	status |= imu.FIFO_Set_SFLP_Batch(
-		true,
-		true,
-		false
-	);  // Calculate Linear acceleration works great on imu
+	status |= imu.FIFO_Set_SFLP_Batch(true, true, false);
 	status |= imu.Enable_Game_Rotation();
 #elif defined(LSM6DSV16X_ESP_FUSION)
-	status |= imu.FIFO_Set_SFLP_Batch(
-		false,
-		true,
-		false
-	);  // Calculate Linear acceleration works great on imu
+	status |= imu.FIFO_Set_SFLP_Batch(false, true, false);
 
 	// Calibration
 	if (isFaceDown) {
@@ -185,8 +169,7 @@ void LSM6DSV16XSensor::motionSetup() {
 
 #ifdef LSM6DSV16X_INTERRUPT
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
-	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN
-	);  // Tap requires an interrupt
+	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);  // Tap requires an interrupt
 	status |= imu.Enable_Double_Tap_Detection(LSM6DSV16X_INT1_PIN);
 #endif  // LSM6DSV16X_INTERRUPT
 
@@ -263,9 +246,8 @@ void LSM6DSV16XSensor::motionLoop() {
 		return;
 	}
 
-#if defined(LSM6DSV16X_ONBOARD_FUSION) \
-	&& defined(LSM6DSV16X_ESP_FUSION   \
-	)  // Group all the data together //set the watermark level here for nrf sleep
+// Group all the data together //set the watermark level here for nrf sleep
+#if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)  
 	if (fifo_samples < 5) {  // X BDR, G BDR, Game, Gravity, Timestamp
 		return;
 	}
@@ -311,12 +293,13 @@ void LSM6DSV16XSensor::motionLoop() {
 				newRawGyro = false;
 				newGravityVector = false;
 
-				m_Logger.info("timestamp: %d", currentDataTime);
+				// m_Logger.info("timestamp: %d", currentDataTime);
 				break;
 			}
 
-			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_XL_NC_TAG: {  // accel
 #if SEND_ACCELERATION || defined(LSM6DSV16X_ESP_FUSION)
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_XL_NC_TAG: {  // accel
+
 				int32_t acceleration[3];
 				if (imu.FIFO_Get_X_Axes(acceleration) != LSM6DSV16X_OK) {
 					m_Logger.error(
@@ -326,15 +309,16 @@ void LSM6DSV16XSensor::motionLoop() {
 					);
 					continue;
 				}
-				rawAcceleration[0] = (rawAcceleration[0] / mgPerG);
-				rawAcceleration[1] = (rawAcceleration[1] / mgPerG);
-				rawAcceleration[2] = (rawAcceleration[2] / mgPerG);
+				rawAcceleration[0] = (acceleration[0] / mgPerG);
+				rawAcceleration[1] = (acceleration[1] / mgPerG);
+				rawAcceleration[2] = (acceleration[2] / mgPerG);
 
 				newRawAcceleration = true;
-				m_Logger.info("accel");
-#endif  // SEND_ACCELERATION
+				// m_Logger.info("accel X: %f, Y: %f, Z: %f", rawAcceleration[0], rawAcceleration[1], rawAcceleration[2]);
 				break;
 			}
+#endif  // SEND_ACCELERATION
+
 			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GRAVITY_VECTOR_TAG: {
 				if (imu.FIFO_Get_Gravity_Vector(gravityVector) != LSM6DSV16X_OK) {
 					m_Logger.error(
@@ -347,15 +331,15 @@ void LSM6DSV16XSensor::motionLoop() {
 				gravityVector[0] /= mgPerG;
 				gravityVector[1] /= mgPerG;
 				gravityVector[2] /= mgPerG;
+
 #ifdef LSM6DSV16X_ESP_FUSION
-				gravityVector[0]
-					-= accelerationOffset[0];  // The SFLP block does not use the
-											   // accelerometer calibration
-				gravityVector[1] -= accelerationOffset[1];
-				gravityVector[2] -= accelerationOffset[2];
+				// The SFLP block does not use the accelerometer calibration
+				gravityVector[0] += accelerationOffset[0];  
+				gravityVector[1] += accelerationOffset[1];
+				gravityVector[2] += accelerationOffset[2];
 #endif
+				// m_Logger.info("gravity X: %f, Y: %f, Z: %f", gravityVector[0], gravityVector[1], gravityVector[2]);
 				newGravityVector = true;
-				m_Logger.info("gravity");
 				break;
 			}
 
@@ -374,8 +358,12 @@ void LSM6DSV16XSensor::motionLoop() {
 				rawGyro[1] = angularVelocity[1] / mdpsPerDps;
 				rawGyro[2] = angularVelocity[2] / mdpsPerDps;
 
+				rawGyro[0] += gyroOffset[0];
+				rawGyro[1] += gyroOffset[1];
+				rawGyro[2] += gyroOffset[2];
+
 				newRawGyro = true;
-				m_Logger.info("gyro");
+				m_Logger.info("gyro X: %f, Y: %f, Z: %f", rawGyro[0], rawGyro[1], rawGyro[2]);
 				break;
 			}
 #endif
@@ -392,7 +380,7 @@ void LSM6DSV16XSensor::motionLoop() {
 				}
 
 				newFusedGameRotation = true;
-				m_Logger.info("game");
+				// m_Logger.info("game");
 				break;
 			}
 #endif
@@ -403,32 +391,55 @@ void LSM6DSV16XSensor::motionLoop() {
 			}
 		}
 	}
-	m_Logger.info("\n\n");
 
 	if (newRawAcceleration && newGravityVector) {
-		acceleration[0]
-			*= (rawAcceleration[0] - gravityVector[0]) * CONST_EARTH_GRAVITY;
-		acceleration[1]
-			*= (rawAcceleration[1] - gravityVector[1]) * CONST_EARTH_GRAVITY;
-		acceleration[2]
-			*= (rawAcceleration[2] - gravityVector[2]) * CONST_EARTH_GRAVITY;
+		acceleration[0] = (rawAcceleration[0] - gravityVector[0]) * CONST_EARTH_GRAVITY;
+		acceleration[1] = (rawAcceleration[1] - gravityVector[1]) * CONST_EARTH_GRAVITY;
+		acceleration[2] = (rawAcceleration[2] - gravityVector[2]) * CONST_EARTH_GRAVITY;
 
 		newAcceleration = true;
+		newGravityVector = false;
 	}
 
+#if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)
+	//TODO: fusion of fusion stuff
+	fusedRotation = sfusion.getQuaternionQuat();
+	newFusedRotation = true;
+	lastFusedRotationSent = fusedRotation;
+#elif defined(LSM6DSV16X_ONBOARD_FUSION)
 	if (newFusedGameRotation) {
-		fusedRotation = fusedRotationToQuaternion(
+		Quat fusedRotationGame = fusedRotationToQuaternion(
 			fusedGameRotation[0],
 			fusedGameRotation[1],
 			fusedGameRotation[2]
 		);
-		if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES
-			|| !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
+		if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
 			newFusedRotation = true;
 			lastFusedRotationSent = fusedRotation;
 		}
 		lastData = millis();
+		newFusedGameRotation = false;
 	}
+#elif defined(LSM6DSV16X_ESP_FUSION)
+	fusedRotation = sfusion.getQuaternionQuat();
+	if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
+		newFusedRotation = true;
+		lastFusedRotationSent = fusedRotation;
+	}
+	lastData = millis();
+#endif
+
+#ifdef LSM6DSV16X_ESP_FUSION
+	if (newRawAcceleration && newRawGyro) {
+		sfusion.update6D(
+			rawAcceleration,
+			rawGyro,
+			(double)(currentDataTime - previousDataTime) * LSM6DSV16X_TIMESTAMP_LSB
+		);
+		newRawAcceleration = false;
+		newRawGyro = false;
+	}
+#endif
 }
 
 SensorStatus LSM6DSV16XSensor::getSensorState() {
@@ -457,8 +468,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::runSelfTest() {
 		addr
 	);
 
-	if (imu.Test_IMU(LSM6DSV16X_XL_ST_NEGATIVE, LSM6DSV16X_GY_ST_NEGATIVE)
-		== LSM6DSV16X_ERROR) {
+	if (imu.Test_IMU(LSM6DSV16X_XL_ST_NEGATIVE, LSM6DSV16X_GY_ST_NEGATIVE) == LSM6DSV16X_ERROR) {
 		return LSM6DSV16X_ERROR;
 	}
 	m_Logger.info(
@@ -517,8 +527,6 @@ void LSM6DSV16XSensor::sendData() {
 }
 
 void LSM6DSV16XSensor::startCalibration(int calibrationType) {
-	// Supported Calibrations: Accelerometer offset and Gyroscope Bias
-	// Currently only second is used
 
 	m_Logger.info("Flip right side up in the next 5 seconds to start calibration.");
 	delay(5000);

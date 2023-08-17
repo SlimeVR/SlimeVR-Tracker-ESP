@@ -26,6 +26,7 @@
 
 #include "LSM6DSV16X.h"
 #include "sensor.h"
+#include "SensorFusion.h"
 
 #ifndef LSM6DSV16X_ACCEL_MAX
 #define LSM6DSV16X_ACCEL_MAX 4
@@ -46,6 +47,8 @@
 #ifndef LSM6DSV16X_TEMP_READ_INTERVAL
 #define LSM6DSV16X_TEMP_READ_INTERVAL 1
 #endif
+
+#define LSM6DSV16X_TIMESTAMP_LSB 21.75e-6
 
 // #define SELF_TEST_ON_INIT
 // #define REINIT_ON_FAILURE
@@ -95,7 +98,7 @@ private:
 	uint32_t lastTempRead = 0;
 	float gravityVector[3];
 	bool newGravityVector = false;
-	float rawAcceleration[3]; //not needed with only imu fused
+	float rawAcceleration[3];
 	float accelerationOffset[3] = {0, 0, 0}; //Put these in stored calibration
 	bool newRawAcceleration = false;
 
@@ -106,7 +109,8 @@ private:
 #endif
 
 #ifdef LSM6DSV16X_ESP_FUSION
-	int32_t rawGyro[3];
+	SlimeVR::Sensors::SensorFusion sfusion;
+	float rawGyro[3];
 	float gyroOffset[3] = {0, 0, 0}; //Put these in stored calibration
 	bool newRawGyro = false;
 	Quat previousEspRotation;
