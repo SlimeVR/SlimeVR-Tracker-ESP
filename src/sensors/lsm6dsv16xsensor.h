@@ -50,11 +50,18 @@
 // #define SELF_TEST_ON_INIT
 // #define REINIT_ON_FAILURE
 // #define LSM6DSV16X_INTERRUPT
+// #define LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
 
 #ifdef REINIT_ON_FAILURE
 #define REINIT_RETRY_MAX_ATTEMPTS 5
 #undef SELF_TEST_ON_INIT
 #endif
+
+
+
+#define LSM6DSV16X_ONBOARD_FUSION
+#define LSM6DSV16X_ESP_FUSION
+
 
 class LSM6DSV16XSensor : public Sensor {
 public:
@@ -77,16 +84,37 @@ public:
 private:
 	Quat fusedRotationToQuaternion(float x, float y, float z);
 	LSM6DSV16XStatusTypeDef runSelfTest();
+	LSM6DSV16XStatusTypeDef loadIMUCalibration();
 
 	LSM6DSV16X imu;
 	uint8_t m_IntPin;
 	uint8_t tap = 0;
 	unsigned long lastData = 0;
-	uint8_t lastReset = 0;
 	float temperature = 0;
 	bool newTemperature = false;
 	uint32_t lastTempRead = 0;
-	float gravity[3];
+	float gravityVector[3];
+	bool newGravityVector = false;
+	float rawAcceleration[3]; //not needed with only imu fused
+	float accelerationOffset[3] = {0, 0, 0}; //Put these in stored calibration
+	bool newRawAcceleration = false;
+
+#ifdef LSM6DSV16X_ONBOARD_FUSION
+	float fusedGameRotation[3];
+	Quat previousGameRotation;
+	bool newFusedGameRotation = false;
+#endif
+
+#ifdef LSM6DSV16X_ESP_FUSION
+	int32_t rawGyro[3];
+	float gyroOffset[3] = {0, 0, 0}; //Put these in stored calibration
+	bool newRawGyro = false;
+	Quat previousEspRotation;
+	uint32_t previousDataTime = 0;
+	uint32_t currentDataTime = 0;
+	uint8_t previousTag = 0;
+#endif
+
 
 #ifdef REINIT_ON_FAILURE
 	uint8_t reinitOnFailAttempts = 0;

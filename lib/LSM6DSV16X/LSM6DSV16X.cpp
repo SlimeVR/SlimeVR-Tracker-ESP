@@ -2988,6 +2988,28 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_GBias_Vector(float * data)
     return LSM6DSV16X_OK;
 }
 
+LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_Timestamp(uint32_t *timestamp)
+{
+  uint32_t raw_data[2]; //first is timestamp second is half full of meta data
+  if (FIFO_Get_Data((uint8_t *)raw_data) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  *timestamp = raw_data[0];
+  return LSM6DSV16X_OK;
+}
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Set_Timestamp_Decimation(uint8_t decimation)
+{
+  return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_fifo_timestamp_batch_set(&reg_ctx, (lsm6dsv16x_fifo_timestamp_batch_t)decimation);
+
+}
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Enable_Timestamp()
+{
+  return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_timestamp_set(&reg_ctx, 1);
+}
+
+
 /**
  * @brief  Enable the LSM6DSV16X gyroscope sensor
  * @retval 0 in case of success, an error code otherwise

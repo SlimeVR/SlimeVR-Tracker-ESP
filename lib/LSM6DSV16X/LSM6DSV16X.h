@@ -250,6 +250,9 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef FIFO_Get_Gravity_Vector(float *data);
     LSM6DSV16XStatusTypeDef FIFO_Get_Game_Vector(float *data);
     LSM6DSV16XStatusTypeDef FIFO_Get_GBias_Vector(float *data);
+    LSM6DSV16XStatusTypeDef FIFO_Get_Timestamp(uint32_t *timestamp);
+    LSM6DSV16XStatusTypeDef FIFO_Set_Timestamp_Decimation(uint8_t decimation);
+    LSM6DSV16XStatusTypeDef Enable_Timestamp();
 
     LSM6DSV16XStatusTypeDef QVAR_Enable();
     LSM6DSV16XStatusTypeDef QVAR_GetStatus(uint8_t *val);
