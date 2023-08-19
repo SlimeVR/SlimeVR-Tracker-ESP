@@ -28,8 +28,6 @@
 #include "lsm6dsv16xsensor.h"
 #include "utils.h"
 
-void IRAM_ATTR interruptHandler() {}
-
 #ifdef LSM6DSV16X_INTERRUPT
 volatile bool imuEvent = false;
 
@@ -45,10 +43,13 @@ LSM6DSV16XSensor::LSM6DSV16XSensor(
 	uint8_t sdaPin,
 	uint8_t intPin
 ) : Sensor("LSM6DSV16XSensor", type, id, address, rotation, sclPin, sdaPin), 
-	imu(&Wire, addr << 1),  // We shift the address left 1 to work with the library
-	m_IntPin(intPin),
-	sfusion(1.0f, -1.0f, -1.0f)
-	{};
+	  imu(&Wire, addr << 1),  // We shift the address left 1 to work with the library
+	  m_IntPin(intPin),
+	  sfusion(
+		  1.0f / LSM6DSV16X_FIFO_DATA_RATE,
+		  1.0f / LSM6DSV16X_FIFO_DATA_RATE,
+		  -1.0f
+	  ){};
 
 void LSM6DSV16XSensor::motionSetup() {
 	uint8_t deviceId = 0;
@@ -76,9 +77,12 @@ void LSM6DSV16XSensor::motionSetup() {
 		return;
 	}
 
-	imu.Enable_6D_Orientation(LSM6DSV16X_INT2_PIN);
+	int8_t status = 0;
+
+	status |= imu.Enable_6D_Orientation(LSM6DSV16X_INT2_PIN);
 	uint8_t isFaceDown;
-	imu.Get_6D_Orientation_ZL(&isFaceDown);  //TODO: IMU rotation could be different (IMU upside down then isFaceUp)
+	// TODO: IMU rotation could be different (IMU upside down then isFaceUp)
+	status |= imu.Get_6D_Orientation_ZL(&isFaceDown);  
 
 #ifndef LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
 	if (isFaceDown) {
@@ -97,8 +101,6 @@ void LSM6DSV16XSensor::motionSetup() {
 #endif  // LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
 
 	m_Logger.info("Connected to %s on 0x%02x", getIMUNameByType(sensorType), addr);
-
-	int8_t status = 0;
 
 	status |= imu.begin();
 
@@ -124,7 +126,9 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.FIFO_Set_G_BDR(LSM6DSV16X_FIFO_DATA_RATE);
 #endif
 
-	status |= imu.FIFO_Set_Timestamp_Decimation(lsm6dsv16x_fifo_timestamp_batch_t::LSM6DSV16X_TMSTMP_DEC_1);
+	status |= imu.FIFO_Set_Timestamp_Decimation(
+		lsm6dsv16x_fifo_timestamp_batch_t::LSM6DSV16X_TMSTMP_DEC_1
+	);
 
 	// Enable IMU
 	status |= imu.Enable_Timestamp();
@@ -140,8 +144,7 @@ void LSM6DSV16XSensor::motionSetup() {
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);
 
-
-#if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)  
+#if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)
 	status |= imu.FIFO_Set_SFLP_Batch(true, true, false);
 	status |= imu.Enable_Game_Rotation();
 
@@ -149,18 +152,19 @@ void LSM6DSV16XSensor::motionSetup() {
 	if (isFaceDown) {
 		startCalibration(0);  // can not calibrate onboard fusion
 	}
-	loadIMUCalibration();  // accel into imu and gryo into ram
+	loadIMUCalibration();
 #elif defined(LSM6DSV16X_ONBOARD_FUSION)
 	status |= imu.FIFO_Set_SFLP_Batch(true, true, false);
 	status |= imu.Enable_Game_Rotation();
 #elif defined(LSM6DSV16X_ESP_FUSION)
 	status |= imu.FIFO_Set_SFLP_Batch(false, true, false);
+	status |= imu.Enable_Game_Rotation();
 
 	// Calibration
 	if (isFaceDown) {
 		startCalibration(0);  // can not calibrate onboard fusion
 	}
-	loadIMUCalibration();  // accel into imu and gryo into ram
+	loadIMUCalibration();
 #endif
 
 	status |= imu.Disable_6D_Orientation();
@@ -191,6 +195,7 @@ void LSM6DSV16XSensor::motionSetup() {
 
 constexpr float mgPerG = 1000.0f;
 constexpr float mdpsPerDps = 1000.0f;
+constexpr float dpsPerRad = 57.295779578552f;
 
 void LSM6DSV16XSensor::motionLoop() {
 	if (millis() - lastTempRead > LSM6DSV16X_TEMP_READ_INTERVAL * 1000) {
@@ -246,151 +251,12 @@ void LSM6DSV16XSensor::motionLoop() {
 		return;
 	}
 
-// Group all the data together //set the watermark level here for nrf sleep
-#if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)  
-	if (fifo_samples < 5) {  // X BDR, G BDR, Game, Gravity, Timestamp
+	// Group all the data together //set the watermark level for nrf sleep
+	if (fifo_samples < LSM6DSV16X_FIFO_FRAME_SIZE) {
 		return;
 	}
-#elif defined(LSM6DSV16X_ONBOARD_FUSION)
-	if (fifo_samples < 4) {  // X BDR, GAME and Gravity, Timestamp
-		return;
-	}
-#elif defined(LSM6DSV16X_ESP_FUSION)
-	if (fifo_samples < 4) {  // X BDR, G BDR, Gravity, Timestamp
-		return;
-	}
-#endif
 
-	for (uint16_t i = 0; i < fifo_samples; i++) {
-		uint8_t tag;
-		if (imu.FIFO_Get_Tag(&tag) != LSM6DSV16X_OK) {
-			m_Logger.error(
-				"Failed to get FIFO data tag on %s at address 0x%02x",
-				getIMUNameByType(sensorType),
-				addr
-			);
-			continue;
-		}
-
-		switch (tag) {
-			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_TIMESTAMP_TAG: {
-				if (i != 0) {
-					return;  // Group data together
-				}
-				previousDataTime = currentDataTime;
-				if (imu.FIFO_Get_Timestamp(&currentDataTime)) {
-					m_Logger.error(
-						"Failed to get timestamp data on %s at address 0x%02x",
-						getIMUNameByType(sensorType),
-						addr
-					);
-					continue;
-				}
-
-				// newTemperature = false;
-				newFusedGameRotation = false;
-				newRawAcceleration = false;
-				newRawGyro = false;
-				newGravityVector = false;
-
-				// m_Logger.info("timestamp: %d", currentDataTime);
-				break;
-			}
-
-#if SEND_ACCELERATION || defined(LSM6DSV16X_ESP_FUSION)
-			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_XL_NC_TAG: {  // accel
-
-				int32_t acceleration[3];
-				if (imu.FIFO_Get_X_Axes(acceleration) != LSM6DSV16X_OK) {
-					m_Logger.error(
-						"Failed to get accelerometer data on %s at address 0x%02x",
-						getIMUNameByType(sensorType),
-						addr
-					);
-					continue;
-				}
-				rawAcceleration[0] = (acceleration[0] / mgPerG);
-				rawAcceleration[1] = (acceleration[1] / mgPerG);
-				rawAcceleration[2] = (acceleration[2] / mgPerG);
-
-				newRawAcceleration = true;
-				// m_Logger.info("accel X: %f, Y: %f, Z: %f", rawAcceleration[0], rawAcceleration[1], rawAcceleration[2]);
-				break;
-			}
-#endif  // SEND_ACCELERATION
-
-			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GRAVITY_VECTOR_TAG: {
-				if (imu.FIFO_Get_Gravity_Vector(gravityVector) != LSM6DSV16X_OK) {
-					m_Logger.error(
-						"Failed to get gravity vector on %s at address 0x%02x",
-						getIMUNameByType(sensorType),
-						addr
-					);
-					continue;
-				}
-				gravityVector[0] /= mgPerG;
-				gravityVector[1] /= mgPerG;
-				gravityVector[2] /= mgPerG;
-
-#ifdef LSM6DSV16X_ESP_FUSION
-				// The SFLP block does not use the accelerometer calibration
-				gravityVector[0] += accelerationOffset[0];  
-				gravityVector[1] += accelerationOffset[1];
-				gravityVector[2] += accelerationOffset[2];
-#endif
-				// m_Logger.info("gravity X: %f, Y: %f, Z: %f", gravityVector[0], gravityVector[1], gravityVector[2]);
-				newGravityVector = true;
-				break;
-			}
-
-#ifdef LSM6DSV16X_ESP_FUSION
-			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_GY_NC_TAG: {
-				int32_t angularVelocity[3];
-				if (imu.FIFO_Get_G_Axes(angularVelocity) != LSM6DSV16X_OK) {
-					m_Logger.error(
-						"Failed to get accelerometer data on %s at address 0x%02x",
-						getIMUNameByType(sensorType),
-						addr
-					);
-					continue;
-				}
-				rawGyro[0] = angularVelocity[0] / mdpsPerDps;
-				rawGyro[1] = angularVelocity[1] / mdpsPerDps;
-				rawGyro[2] = angularVelocity[2] / mdpsPerDps;
-
-				rawGyro[0] += gyroOffset[0];
-				rawGyro[1] += gyroOffset[1];
-				rawGyro[2] += gyroOffset[2];
-
-				newRawGyro = true;
-				m_Logger.info("gyro X: %f, Y: %f, Z: %f", rawGyro[0], rawGyro[1], rawGyro[2]);
-				break;
-			}
-#endif
-
-#ifdef LSM6DSV16X_ONBOARD_FUSION
-			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {
-				if (imu.FIFO_Get_Game_Vector(fusedGameRotation) != LSM6DSV16X_OK) {
-					m_Logger.error(
-						"Failed to get game rotation vector on %s at address 0x%02x",
-						getIMUNameByType(sensorType),
-						addr
-					);
-					continue;
-				}
-
-				newFusedGameRotation = true;
-				// m_Logger.info("game");
-				break;
-			}
-#endif
-
-			default: {  // We don't use the data so remove from fifo
-				uint8_t data[6];
-				imu.FIFO_Get_Data(data);
-			}
-		}
-	}
+	readFifo(fifo_samples);
 
 	if (newRawAcceleration && newGravityVector) {
 		acceleration[0] = (rawAcceleration[0] - gravityVector[0]) * CONST_EARTH_GRAVITY;
@@ -402,18 +268,21 @@ void LSM6DSV16XSensor::motionLoop() {
 	}
 
 #if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)
-	//TODO: fusion of fusion stuff
+	// TODO: fusion of fusion stuff
 	fusedRotation = sfusion.getQuaternionQuat();
-	newFusedRotation = true;
 	lastFusedRotationSent = fusedRotation;
+	newFusedRotation = true;
+	newFusedGameRotation = false;
+	lastData = millis();
 #elif defined(LSM6DSV16X_ONBOARD_FUSION)
 	if (newFusedGameRotation) {
-		Quat fusedRotationGame = fusedRotationToQuaternion(
+		fusedRotation = fusedRotationToQuaternion(
 			fusedGameRotation[0],
 			fusedGameRotation[1],
 			fusedGameRotation[2]
 		);
-		if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
+		if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES
+			|| !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
 			newFusedRotation = true;
 			lastFusedRotationSent = fusedRotation;
 		}
@@ -421,12 +290,12 @@ void LSM6DSV16XSensor::motionLoop() {
 		newFusedGameRotation = false;
 	}
 #elif defined(LSM6DSV16X_ESP_FUSION)
-	fusedRotation = sfusion.getQuaternionQuat();
-	if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
-		newFusedRotation = true;
-		lastFusedRotationSent = fusedRotation;
-	}
-	lastData = millis();
+		fusedRotation = sfusion.getQuaternionQuat();
+		if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
+			newFusedRotation = true;
+			lastFusedRotationSent = fusedRotation;
+		}
+		lastData = millis();
 #endif
 
 #ifdef LSM6DSV16X_ESP_FUSION
@@ -481,12 +350,31 @@ LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::runSelfTest() {
 }
 
 LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::loadIMUCalibration() {
+	SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+    // If no compatible calibration data is found, the calibration data will just be zero-ed out
+    switch (sensorCalibration.type) {
+    case SlimeVR::Configuration::CalibrationConfigType::LSM6DSV16X:
+        m_Calibration = sensorCalibration.data.lsm6dsv16x;
+        break;
+
+    case SlimeVR::Configuration::CalibrationConfigType::NONE:
+        m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+        m_Logger.info("Calibration is advised");
+        break;
+
+    default:
+        m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+        m_Logger.info("Calibration is advised");
+    }
+
+
+
 	int8_t status = 0;
 	status |= imu.Enable_X_User_Offset();
 	status |= imu.Set_X_User_Offset(
-		accelerationOffset[0],
-		accelerationOffset[1],
-		accelerationOffset[2]
+		m_Calibration.A_off[0],
+		m_Calibration.A_off[1],
+		m_Calibration.A_off[2]
 	);
 	return (LSM6DSV16XStatusTypeDef)status;
 }
@@ -526,8 +414,153 @@ void LSM6DSV16XSensor::sendData() {
 	}
 }
 
-void LSM6DSV16XSensor::startCalibration(int calibrationType) {
+LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::readFifo(uint8_t fifo_samples) {
+	for (uint16_t i = 0; i < fifo_samples; i++) {
+		uint8_t tag;
+		if (imu.FIFO_Get_Tag(&tag) != LSM6DSV16X_OK) {
+			m_Logger.error(
+				"Failed to get FIFO data tag on %s at address 0x%02x",
+				getIMUNameByType(sensorType),
+				addr
+			);
+			return LSM6DSV16X_ERROR;
+		}
 
+		switch (tag) {
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_TIMESTAMP_TAG: {
+				if (i % LSM6DSV16X_FIFO_FRAME_SIZE != 0) {
+					return LSM6DSV16X_OK;  // If we are not requesting a full data set
+										   // then stop reading
+				}
+				previousDataTime = currentDataTime;
+				if (imu.FIFO_Get_Timestamp(&currentDataTime)) {
+					m_Logger.error(
+						"Failed to get timestamp data on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					return LSM6DSV16X_ERROR;
+				}
+
+				// newTemperature = false;
+				newRawAcceleration = false;
+				newGravityVector = false;
+
+#ifdef LSM6DSV16X_ONBOARD_FUSION
+				newFusedGameRotation = false;
+#endif
+#ifdef LSM6DSV16X_ESP_FUSION
+				newRawGyro = false;
+#endif
+				break;
+			}
+
+#if SEND_ACCELERATION || defined(LSM6DSV16X_ESP_FUSION)
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_XL_NC_TAG: {  // accel
+
+				int32_t acceleration[3];
+				if (imu.FIFO_Get_X_Axes(acceleration) != LSM6DSV16X_OK) {
+					m_Logger.error(
+						"Failed to get accelerometer data on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					return LSM6DSV16X_ERROR;
+				}
+				rawAcceleration[0] = (acceleration[0] / mgPerG);
+				rawAcceleration[1] = (acceleration[1] / mgPerG);
+				rawAcceleration[2] = (acceleration[2] / mgPerG);
+
+				newRawAcceleration = true;
+				break;
+			}
+#endif  // SEND_ACCELERATION
+
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GRAVITY_VECTOR_TAG: {
+				if (imu.FIFO_Get_Gravity_Vector(gravityVector) != LSM6DSV16X_OK) {
+					m_Logger.error(
+						"Failed to get gravity vector on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					return LSM6DSV16X_ERROR;
+				}
+				gravityVector[0] /= mgPerG;
+				gravityVector[1] /= mgPerG;
+				gravityVector[2] /= mgPerG;
+				newGravityVector = true;
+
+#ifdef LSM6DSV16X_ESP_FUSION
+				// The SFLP block does not use the accelerometer calibration
+				gravityVector[0] += m_Calibration.G_off[0];
+				gravityVector[1] += m_Calibration.G_off[1];
+				gravityVector[2] += m_Calibration.G_off[2];
+#endif
+				break;
+			}
+
+#ifdef LSM6DSV16X_ESP_FUSION
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_GY_NC_TAG: {
+				int32_t angularVelocity[3];
+				if (imu.FIFO_Get_G_Axes(angularVelocity) != LSM6DSV16X_OK) {
+					m_Logger.error(
+						"Failed to get accelerometer data on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					return LSM6DSV16X_ERROR;
+				}
+				rawGyro[0] = angularVelocity[0] / mdpsPerDps;
+				rawGyro[1] = angularVelocity[1] / mdpsPerDps;
+				rawGyro[2] = angularVelocity[2] / mdpsPerDps;
+
+				// convert to rads/s
+				rawGyro[0] /= dpsPerRad;
+				rawGyro[1] /= dpsPerRad;
+				rawGyro[2] /= dpsPerRad;
+
+				rawGyro[0] -= m_Calibration.G_off[0];
+				rawGyro[1] -= m_Calibration.G_off[1];
+				rawGyro[2] -= m_Calibration.G_off[2];
+
+				newRawGyro = true;
+				break;
+			}
+#endif
+
+#ifdef LSM6DSV16X_ONBOARD_FUSION
+			case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {
+				if (imu.FIFO_Get_Game_Vector(fusedGameRotation) != LSM6DSV16X_OK) {
+					m_Logger.error(
+						"Failed to get game rotation vector on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					return LSM6DSV16X_ERROR;
+				}
+
+				newFusedGameRotation = true;
+				break;
+			}
+#endif
+
+			default: {  // We don't use the data so remove from fifo
+				uint8_t data[6];
+				if (imu.FIFO_Get_Data(data) != LSM6DSV16X_OK) {
+					m_Logger.error(
+						"Failed to get unwanted data on %s at address 0x%02x",
+						getIMUNameByType(sensorType),
+						addr
+					);
+					return LSM6DSV16X_ERROR;
+				}
+			}
+		}
+	}
+	return LSM6DSV16X_OK;
+}
+
+void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 	m_Logger.info("Flip right side up in the next 5 seconds to start calibration.");
 	delay(5000);
 	uint8_t isFaceUp;
@@ -537,162 +570,77 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 		return;
 	}
 
-	// give warning if temp is low ? (is this needed)?
-	m_Logger.info("Leave still for 30 seconds");
+	ledManager.on();
+	m_Logger.debug("Gathering raw data for device calibration...");
+	constexpr uint16_t calibrationSamples = 300;
+	// Reset values
+	float tempGxyz[3] = {0, 0, 0};
+	m_Calibration.G_off[0] = 0.0f;
+	m_Calibration.G_off[1] = 0.0f;
+	m_Calibration.G_off[2] = 0.0f;
+
+	// Wait for sensor to calm down before calibration
+	m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
 	delay(2000);
-	/*
-		double gbiasAvg[] = {0, 0, 0};
-		float startingQuat[3];
-		double quatDiffAvg[] = {0, 0, 0};
-		uint16_t dataCountGbias = 0;
-		uint16_t dataCountQuatDiff = 0;
 
-		while (dataCountGbias < 4000 && dataCountQuatDiff < 4000) {
-			uint16_t fifo_samples = 0;
-			if (imu.FIFO_Get_Num_Samples(&fifo_samples) == LSM6DSV16X_ERROR) {
-				m_Logger.error(
-					"Error getting number of samples in FIFO on %s at address 0x%02x",
-					getIMUNameByType(sensorType),
-					addr
-				);
-				return;
-			}
-
-			for (uint16_t i = 0; i < fifo_samples; i++) {
-				uint8_t tag;
-				if (imu.FIFO_Get_Tag(&tag) != LSM6DSV16X_OK) {
-					m_Logger.error(
-						"Failed to get FIFO data tag on %s at address 0x%02x",
-						getIMUNameByType(sensorType),
-						addr
-					);
-					continue;
-				}
-
-				switch (tag) {
-					case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_XL_NC_TAG: {  // accel
-						int32_t rawAccelerations[3];
-						if (imu.FIFO_Get_X_Axes(rawAccelerations) != LSM6DSV16X_OK) {
-							m_Logger.error(
-								"Failed to get accelerometer data on %s at address
-	   0x%02x", getIMUNameByType(sensorType), addr
-							);
-							continue;
-						}
-						acceleration[0] = (rawAccelerations[0] / mgPerG) - gravity[0];
-						acceleration[1] = (rawAccelerations[1] / mgPerG) - gravity[1];
-						acceleration[2] = (rawAccelerations[2] / mgPerG) - gravity[2];
-						acceleration[0] *= CONST_EARTH_GRAVITY;
-						acceleration[1] *= CONST_EARTH_GRAVITY;
-						acceleration[2] *= CONST_EARTH_GRAVITY;
-
-						// m_Logger.info(
-						//	"Acceleration x: %f, y: %f, z: %f",
-						//	acceleration[0],
-						//	acceleration[1],
-						//	acceleration[2]
-						//);
-						break;
-					}
-					case lsm6dsv16x_fifo_out_raw_t::LSM6DSV16X_SFLP_GYROSCOPE_BIAS_TAG:
-	   { if (dataCountGbias < 100) { dataCountGbias++; uint8_t data[6];
-							imu.FIFO_Get_Data(data);
-							break;
-						}
-						float gbias[3];
-						if (imu.FIFO_Get_GBias_Vector(gbias) != LSM6DSV16X_OK) {
-							m_Logger.error(
-								"Failed to get gyro bias on %s at address 0x%02x",
-								getIMUNameByType(sensorType),
-								addr
-							);
-							continue;
-						}
-
-						gbiasAvg[0] += gbias[0] / mdpsPerDps;
-						gbiasAvg[1] += gbias[1] / mdpsPerDps;
-						gbiasAvg[2] += gbias[2] / mdpsPerDps;
-						dataCountGbias++;
-						break;
-					}
-					case lsm6dsv16x_fifo_out_raw_t::
-						LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {
-						if (dataCountQuatDiff < 99) {
-							dataCountQuatDiff++;
-							uint8_t data[6];
-							imu.FIFO_Get_Data(data);
-							break;
-						}
-
-						float data[3];
-						if (imu.FIFO_Get_Game_Vector(data) != LSM6DSV16X_OK) {
-							m_Logger.error(
-								"Failed to get game rotation vector on %s at address "
-								"0x%02x",
-								getIMUNameByType(sensorType),
-								addr
-							);
-							continue;
-						}
-
-						if (dataCountQuatDiff == 99) {
-							startingQuat[0] = data[0];
-							startingQuat[1] = data[1];
-							startingQuat[2] = data[2];
-						}
-
-						quatDiffAvg[0] += (startingQuat[0] - data[0]);
-						quatDiffAvg[1] += (startingQuat[1] - data[1]);
-						quatDiffAvg[2] += (startingQuat[2] - data[2]);
-
-						m_Logger.info(
-							"Game Diff X: %f, Y: %f, Z: %f",
-							(startingQuat[0] - data[0]),
-							(startingQuat[1] - data[1]),
-							(startingQuat[2] - data[2])
-						);
-						startingQuat[0] = data[0];
-						startingQuat[1] = data[1];
-						startingQuat[2] = data[2];
-						dataCountQuatDiff++;
-						break;
-					}
-					default: {  // We don't use the data so remove from fifo
-						uint8_t data[6];
-						imu.FIFO_Get_Data(data);
-					}
-				}
-			}
+	imu.FIFO_Set_Mode(LSM6DSV16X_BYPASS_MODE);  // add to lib but we need to
+	imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);  // get / keep track of current fifo type
+	uint16_t count = 0;
+	while (count < calibrationSamples) {
+		uint16_t fifo_samples = 0;
+		if (imu.FIFO_Get_Num_Samples(&fifo_samples) == LSM6DSV16X_ERROR) {
+			m_Logger.error(
+				"Error getting number of samples in FIFO on %s at address 0x%02x",
+				getIMUNameByType(sensorType),
+				addr
+			);
+			return;
 		}
-		m_Logger.info("Gbias x: %f, y: %f, z: %f", gbiasAvg[0], gbiasAvg[1],
-	   gbiasAvg[2]); m_Logger.info( "quatAvg x: %f, y: %f, z: %f", quatDiffAvg[0],
-			quatDiffAvg[1],
-			quatDiffAvg[2]
-		);
-		dataCountGbias -= 100;
-		dataCountQuatDiff -= 100;
 
-		gbiasAvg[0] /= dataCountGbias;
-		gbiasAvg[1] /= dataCountGbias;
-		gbiasAvg[2] /= dataCountGbias;
+		// Group all the data together //set the watermark level here for nrf sleep
+		if (fifo_samples >= LSM6DSV16X_FIFO_FRAME_SIZE) {
+			readFifo(fifo_samples);
+			tempGxyz[0] += rawGyro[0];
+			tempGxyz[1] += rawGyro[1];
+			tempGxyz[2] += rawGyro[2];
+			count++;
+		}
+	}
 
-		quatDiffAvg[0] /= dataCountGbias;
-		quatDiffAvg[1] /= dataCountGbias;
-		quatDiffAvg[2] /= dataCountGbias;
+	tempGxyz[0] /= calibrationSamples;
+	tempGxyz[1] /= calibrationSamples;
+	tempGxyz[2] /= calibrationSamples;
 
-		m_Logger.info(
-			"Gbias Calibration Data, X: %f, Y: %f, Z: %f",
-			gbiasAvg[0],
-			gbiasAvg[1],
-			gbiasAvg[2]
-		);
+#ifdef DEBUG_SENSOR
+	m_Logger.trace(
+		"Gyro calibration results: %f %f %f",
+		m_Calibration.G_off[0] + tempGxyz[0],
+		m_Calibration.G_off[1] + tempGxyz[1],
+		m_Calibration.G_off[2] + tempGxyz[2]
+	);
+#endif
 
-		m_Logger.info(
-			"Quat Diff Calibration Data, X: %f, Y: %f, Z: %f",
-			quatDiffAvg[0],
-			quatDiffAvg[1],
-			quatDiffAvg[2]
-		);
-		delay(10000);
-	*/
+	m_Calibration.G_off[0] = tempGxyz[0];
+	m_Calibration.G_off[1] = tempGxyz[1];
+	m_Calibration.G_off[2] = tempGxyz[2];
+
+	// accel calibration
+	m_Calibration.G_off[0] = 0.0f;
+	m_Calibration.G_off[1] = 0.0f;
+	m_Calibration.G_off[2] = 0.0f;
+
+	m_Logger.debug("Saving the calibration data");
+
+	SlimeVR::Configuration::CalibrationConfig calibration;
+	calibration.type = SlimeVR::Configuration::CalibrationConfigType::LSM6DSV16X;
+	calibration.data.lsm6dsv16x = m_Calibration;
+	configuration.setCalibration(sensorId, calibration);
+	configuration.save();
+
+	ledManager.off();
+	m_Logger.debug("Saved the calibration data");
+	m_Logger.info("Calibration data gathered");
+
+	imu.FIFO_Set_Mode(LSM6DSV16X_BYPASS_MODE);  // add to lib but we need to
+	imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);  // get / keep track of current fifo type
 }

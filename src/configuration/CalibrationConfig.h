@@ -76,7 +76,15 @@ namespace SlimeVR {
             int32_t C[3];
         };
 
-        enum CalibrationConfigType { NONE, BMI160, MPU6050, MPU9250, ICM20948 };
+        struct LSM6DSV16XCalibrationConfig {
+            // gyroscope bias
+            float G_off[3];
+
+            // accelerometer bias
+            float A_off[3];
+        };
+
+        enum CalibrationConfigType { NONE, BMI160, MPU6050, MPU9250, ICM20948, LSM6DSV16X };
 
         const char* calibrationConfigTypeToString(CalibrationConfigType type);
 
@@ -88,6 +96,7 @@ namespace SlimeVR {
                 MPU6050CalibrationConfig mpu6050;
                 MPU9250CalibrationConfig mpu9250;
                 ICM20948CalibrationConfig icm20948;
+                LSM6DSV16XCalibrationConfig lsm6dsv16x;
             } data;
         };
     }

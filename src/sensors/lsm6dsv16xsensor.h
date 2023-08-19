@@ -54,16 +54,20 @@
 // #define REINIT_ON_FAILURE
 // #define LSM6DSV16X_INTERRUPT
 // #define LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
+#define LSM6DSV16X_ONBOARD_FUSION
+#define LSM6DSV16X_ESP_FUSION
 
 #ifdef REINIT_ON_FAILURE
 #define REINIT_RETRY_MAX_ATTEMPTS 5
 #undef SELF_TEST_ON_INIT
 #endif
 
+#if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)
+#define LSM6DSV16X_FIFO_FRAME_SIZE 5 // X BDR, G BDR, Game, Gravity, Timestamp
+#else
+#define LSM6DSV16X_FIFO_FRAME_SIZE 4 // X BDR, (G BDR || Game), Gravity, Timestamp
+#endif
 
-
-#define LSM6DSV16X_ONBOARD_FUSION
-#define LSM6DSV16X_ESP_FUSION
 
 
 class LSM6DSV16XSensor : public Sensor {
@@ -88,6 +92,7 @@ private:
 	Quat fusedRotationToQuaternion(float x, float y, float z);
 	LSM6DSV16XStatusTypeDef runSelfTest();
 	LSM6DSV16XStatusTypeDef loadIMUCalibration();
+	LSM6DSV16XStatusTypeDef readFifo(uint8_t fifo_samples);
 
 	LSM6DSV16X imu;
 	uint8_t m_IntPin;
@@ -99,7 +104,6 @@ private:
 	float gravityVector[3];
 	bool newGravityVector = false;
 	float rawAcceleration[3];
-	float accelerationOffset[3] = {0, 0, 0}; //Put these in stored calibration
 	bool newRawAcceleration = false;
 
 #ifdef LSM6DSV16X_ONBOARD_FUSION
@@ -109,9 +113,9 @@ private:
 #endif
 
 #ifdef LSM6DSV16X_ESP_FUSION
+	SlimeVR::Configuration::LSM6DSV16XCalibrationConfig m_Calibration;
 	SlimeVR::Sensors::SensorFusion sfusion;
 	float rawGyro[3];
-	float gyroOffset[3] = {0, 0, 0}; //Put these in stored calibration
 	bool newRawGyro = false;
 	Quat previousEspRotation;
 	uint32_t previousDataTime = 0;
