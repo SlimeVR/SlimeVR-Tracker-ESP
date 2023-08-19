@@ -27,6 +27,8 @@
 #include "LSM6DSV16X.h"
 #include "sensor.h"
 #include "SensorFusion.h"
+#include "magneto1.4.h"
+#include "SensorFusionRestDetect.h"
 
 #ifndef LSM6DSV16X_ACCEL_MAX
 #define LSM6DSV16X_ACCEL_MAX 4
@@ -48,13 +50,13 @@
 #define LSM6DSV16X_TEMP_READ_INTERVAL 1
 #endif
 
-#define LSM6DSV16X_TIMESTAMP_LSB 21.75e-6
+#define LSM6DSV16X_TIMESTAMP_LSB 21.75e-6f
 
 // #define SELF_TEST_ON_INIT
 // #define REINIT_ON_FAILURE
 // #define LSM6DSV16X_INTERRUPT
 // #define LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
-#define LSM6DSV16X_ONBOARD_FUSION
+//#define LSM6DSV16X_ONBOARD_FUSION
 #define LSM6DSV16X_ESP_FUSION
 
 #ifdef REINIT_ON_FAILURE
@@ -92,7 +94,7 @@ private:
 	Quat fusedRotationToQuaternion(float x, float y, float z);
 	LSM6DSV16XStatusTypeDef runSelfTest();
 	LSM6DSV16XStatusTypeDef loadIMUCalibration();
-	LSM6DSV16XStatusTypeDef readFifo(uint8_t fifo_samples);
+	LSM6DSV16XStatusTypeDef readFifo(uint16_t fifo_samples);
 
 	LSM6DSV16X imu;
 	uint8_t m_IntPin;

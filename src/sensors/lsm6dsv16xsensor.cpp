@@ -176,6 +176,8 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);  // Tap requires an interrupt
 	status |= imu.Enable_Double_Tap_Detection(LSM6DSV16X_INT1_PIN);
 #endif  // LSM6DSV16X_INTERRUPT
+	status |= imu.FIFO_Set_Mode(LSM6DSV16X_BYPASS_MODE);  // add to lib but we need to
+	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);  // get / keep track of current fifo type
 
 	if (status != LSM6DSV16X_OK) {
 		m_Logger.fatal(
@@ -367,15 +369,13 @@ LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::loadIMUCalibration() {
         m_Logger.info("Calibration is advised");
     }
 
-
-
 	int8_t status = 0;
-	status |= imu.Enable_X_User_Offset();
 	status |= imu.Set_X_User_Offset(
 		m_Calibration.A_off[0],
 		m_Calibration.A_off[1],
 		m_Calibration.A_off[2]
 	);
+	status |= imu.Enable_X_User_Offset();
 	return (LSM6DSV16XStatusTypeDef)status;
 }
 
@@ -414,7 +414,7 @@ void LSM6DSV16XSensor::sendData() {
 	}
 }
 
-LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::readFifo(uint8_t fifo_samples) {
+LSM6DSV16XStatusTypeDef LSM6DSV16XSensor::readFifo(uint16_t fifo_samples) {
 	for (uint16_t i = 0; i < fifo_samples; i++) {
 		uint8_t tag;
 		if (imu.FIFO_Get_Tag(&tag) != LSM6DSV16X_OK) {
@@ -571,7 +571,6 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 	}
 
 	ledManager.on();
-	m_Logger.debug("Gathering raw data for device calibration...");
 	constexpr uint16_t calibrationSamples = 300;
 	// Reset values
 	float tempGxyz[3] = {0, 0, 0};
@@ -600,10 +599,12 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 		// Group all the data together //set the watermark level here for nrf sleep
 		if (fifo_samples >= LSM6DSV16X_FIFO_FRAME_SIZE) {
 			readFifo(fifo_samples);
-			tempGxyz[0] += rawGyro[0];
-			tempGxyz[1] += rawGyro[1];
-			tempGxyz[2] += rawGyro[2];
-			count++;
+			if (newRawGyro) {
+				tempGxyz[0] += rawGyro[0];
+				tempGxyz[1] += rawGyro[1];
+				tempGxyz[2] += rawGyro[2];
+				count++;
+			}
 		}
 	}
 
@@ -614,20 +615,150 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 #ifdef DEBUG_SENSOR
 	m_Logger.trace(
 		"Gyro calibration results: %f %f %f",
-		m_Calibration.G_off[0] + tempGxyz[0],
-		m_Calibration.G_off[1] + tempGxyz[1],
-		m_Calibration.G_off[2] + tempGxyz[2]
+		tempGxyz[0],
+		tempGxyz[1],
+		tempGxyz[2]
 	);
 #endif
 
-	m_Calibration.G_off[0] = tempGxyz[0];
-	m_Calibration.G_off[1] = tempGxyz[1];
-	m_Calibration.G_off[2] = tempGxyz[2];
 
-	// accel calibration
-	m_Calibration.G_off[0] = 0.0f;
-	m_Calibration.G_off[1] = 0.0f;
-	m_Calibration.G_off[2] = 0.0f;
+	//Accelerometer Calibration
+	MagnetoCalibration* magneto = new MagnetoCalibration();
+	imu.Disable_X_User_Offset();
+
+	m_Logger.info(
+		"Put the device into 6 unique orientations (all sides), leave it still and do "
+		"not hold/touch for 3 seconds each"
+	);
+	constexpr uint8_t ACCEL_CALIBRATION_DELAY_SEC = 3;
+	ledManager.on();
+	for (uint8_t i = ACCEL_CALIBRATION_DELAY_SEC; i > 0; i--) {
+		m_Logger.info("%i...", i);
+		delay(1000);
+	}
+	ledManager.off();
+
+	RestDetectionParams calibrationRestDetectionParams;
+	calibrationRestDetectionParams.restMinTimeMicros = 3 * 1e6;
+	calibrationRestDetectionParams.restThAcc = 0.01f;
+	RestDetection calibrationRestDetection(
+		calibrationRestDetectionParams,
+		1.0f / LSM6DSV16X_FIFO_DATA_RATE,
+		1.0f / LSM6DSV16X_FIFO_DATA_RATE
+	);
+
+	constexpr uint16_t expectedPositions = 6;
+	constexpr uint16_t numSamplesPerPosition = 96;
+
+	uint16_t numPositionsRecorded = 0;
+	uint16_t numCurrentPositionSamples = 0;
+	bool waitForMotion = false;
+
+	float* accelCalibrationChunk = new float[numSamplesPerPosition * 3];
+	ledManager.pattern(100, 100, 6);
+	ledManager.on();
+	m_Logger.info("Gathering accelerometer data...");
+	m_Logger.info(
+		"Waiting for position %i, leave the device as is...",
+		numPositionsRecorded + 1
+	);
+
+	imu.FIFO_Set_Mode(LSM6DSV16X_BYPASS_MODE);  // add to lib but we need to
+	imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);  // get / keep track of current fifo type
+	while (true) {
+		uint16_t fifo_samples = 0;
+		if (imu.FIFO_Get_Num_Samples(&fifo_samples) == LSM6DSV16X_ERROR) {
+			m_Logger.error(
+				"Error getting number of samples in FIFO on %s at address 0x%02x",
+				getIMUNameByType(sensorType),
+				addr
+			);
+			return;
+		}
+		
+
+		// Group all the data together //set the watermark level here for nrf sleep
+		if (fifo_samples < LSM6DSV16X_FIFO_FRAME_SIZE) {
+			continue;
+		}
+
+		readFifo(fifo_samples);
+
+		// in microseconds
+		if (!newRawAcceleration) {
+			continue;
+		}
+
+		calibrationRestDetection.updateAcc(
+			(currentDataTime - previousDataTime) * LSM6DSV16X_TIMESTAMP_LSB * 1e6,
+			rawAcceleration
+		);
+		newRawAcceleration = false;
+
+		if (waitForMotion) {
+			if (!calibrationRestDetection.getRestDetected()) {
+				waitForMotion = false;
+			}
+			continue;
+		}
+
+		if (calibrationRestDetection.getRestDetected()) {
+			const uint16_t i = numCurrentPositionSamples * 3;
+			accelCalibrationChunk[i + 0] = rawAcceleration[0];
+			accelCalibrationChunk[i + 1] = rawAcceleration[1];
+			accelCalibrationChunk[i + 2] = rawAcceleration[2];
+			numCurrentPositionSamples++;
+
+			if (numCurrentPositionSamples >= numSamplesPerPosition) {
+				for (int i = 0; i < numSamplesPerPosition; i++) {
+					magneto->sample(
+						accelCalibrationChunk[i * 3 + 0],
+						accelCalibrationChunk[i * 3 + 1],
+						accelCalibrationChunk[i * 3 + 2]
+					);
+				}
+				numPositionsRecorded++;
+				numCurrentPositionSamples = 0;
+				if (numPositionsRecorded < expectedPositions) {
+					ledManager.pattern(50, 50, 2);
+					ledManager.on();
+					m_Logger.info(
+						"Recorded, waiting for position %i...",
+						numPositionsRecorded + 1
+					);
+					waitForMotion = true;
+				}
+			}
+		} else {
+			numCurrentPositionSamples = 0;
+		}
+
+		if (numPositionsRecorded >= expectedPositions) {
+			break;
+		}
+	}
+	ledManager.off();
+	m_Logger.debug("Calculating accelerometer calibration data...");
+	delete[] accelCalibrationChunk;
+
+	float A_BAinv[4][3];
+	magneto->current_calibration(A_BAinv);
+	delete magneto;
+
+	m_Logger.debug("Finished calculating accelerometer calibration");
+
+	m_Calibration.A_off[0] = A_BAinv[0][0];
+	m_Calibration.A_off[1] = A_BAinv[0][1];
+	m_Calibration.A_off[2] = A_BAinv[0][2];
+
+#ifdef DEBUG_SENSOR
+	m_Logger.trace(
+		"Accel calibration results: %f %f %f",
+		A_BAinv[0][0],
+		A_BAinv[0][1],
+		A_BAinv[0][2]
+	);
+#endif
 
 	m_Logger.debug("Saving the calibration data");
 
@@ -638,9 +769,5 @@ void LSM6DSV16XSensor::startCalibration(int calibrationType) {
 	configuration.save();
 
 	ledManager.off();
-	m_Logger.debug("Saved the calibration data");
-	m_Logger.info("Calibration data gathered");
-
-	imu.FIFO_Set_Mode(LSM6DSV16X_BYPASS_MODE);  // add to lib but we need to
-	imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);  // get / keep track of current fifo type
+	m_Logger.info("Calibration finished, enjoy");
 }
