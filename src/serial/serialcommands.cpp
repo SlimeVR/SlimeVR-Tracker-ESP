@@ -218,12 +218,56 @@ namespace SerialCommands {
         logger.info("  Temperature calibration config saves automatically when calibration percent is at 100%");
     }
 
+    void cmdGyroScaleCalibration(CmdParser* parser) {
+        if (parser->getParamCount() > 1) {
+            if (parser->equalCmdParam(1, "GET")) {
+                for (auto sensor : sensorManager.getSensors()) {
+                    sensor->printGyroScaleCalibration();
+                }
+                return;
+            } else if (parser->equalCmdParam(1, "SET")) {
+                for (auto sensor : sensorManager.getSensors()) {
+					sensor->setGyroScaleCalibration(
+						std::atof(parser->getCmdParam(2)),
+						std::atof(parser->getCmdParam(3)),
+						std::atof(parser->getCmdParam(4))
+					);
+				}
+                return;
+            } else if (parser->equalCmdParam(1, "RESET")) {
+                for (auto sensor : sensorManager.getSensors()) {
+					sensor->resetGyroScaleCalibration();
+				}
+                return;
+            } else if (parser->equalCmdParam(1, "TEST")) {
+                for (auto sensor : sensorManager.getSensors()) {
+					if (parser->getParamCount() > 2) {
+						sensor->setGyroScaleCalibration(
+							std::atof(parser->getCmdParam(2)),
+							std::atof(parser->getCmdParam(3)),
+							std::atof(parser->getCmdParam(4))
+						);
+					}
+					sensor->testGyroScaleCalibration();
+				}
+                return;
+            }
+        }
+        logger.info("Usage:");
+        logger.info("  GSCALE GET: Prints out current gyroscope scale calibration values");
+        logger.info("  GSCALE SET \"X\" \"Y\" \"Z\": Sets the calibration after you guess a new value");
+        logger.info("  GSCALE RESET: Resets the GSCALE calibration to X: 1.0, Y: 1.0, Z: 1.0");
+        logger.info("  GSCALE TEST: Test the current configuration by following the instructions");
+        logger.info("  GSCALE TEST \"X\" \"Y\" \"Z\": Sets then tests the new values");
+    }
+
     void setUp() {
         cmdCallbacks.addCmd("SET", &cmdSet);
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REBOOT", &cmdReboot);
         cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
+        cmdCallbacks.addCmd("GSCALE", &cmdGyroScaleCalibration);
     }
 
     void update() {

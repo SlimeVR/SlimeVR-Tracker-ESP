@@ -80,6 +80,9 @@ namespace SlimeVR {
             // gyroscope bias
             float G_off[3];
 
+            // gyroscope scale
+            float G_scale[3];
+
             // accelerometer bias
             float A_off[3];
         };

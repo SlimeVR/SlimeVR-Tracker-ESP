@@ -41,6 +41,8 @@ namespace SlimeVR
             #if !SENSOR_WITH_REST_DETECT
                 void updateAcc(sensor_real_t Axyz[3], sensor_real_t deltat);
                 void updateGyro(sensor_real_t Gxyz[3], sensor_real_t deltat);
+                void update6D(sensor_real_t Axyz[3], sensor_real_t Gxyz[3], sensor_real_t deltat);
+                void updateRestDetectionParameters(RestDetectionParams newParams);
             #endif
         protected:
             #if !SENSOR_WITH_REST_DETECT

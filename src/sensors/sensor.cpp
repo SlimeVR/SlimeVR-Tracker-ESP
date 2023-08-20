@@ -55,6 +55,15 @@ void Sensor::printDebugTemperatureCalibrationState() { printTemperatureCalibrati
 void Sensor::saveTemperatureCalibration() { printTemperatureCalibrationUnsupported(); };
 void Sensor::resetTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
 
+void Sensor::printGyroScaleCalibrationUnsupported() {
+    m_Logger.error("Gyroscope Scale calibration not supported for IMU %s", getIMUNameByType(sensorType));
+}
+void Sensor::printGyroScaleCalibration() { printGyroScaleCalibrationUnsupported(); };
+void Sensor::setGyroScaleCalibration(float xScale, float yScale, float zScale) { printGyroScaleCalibrationUnsupported(); };
+void Sensor::resetGyroScaleCalibration() { printGyroScaleCalibrationUnsupported(); };
+void Sensor::testGyroScaleCalibration() { printGyroScaleCalibrationUnsupported(); };
+
+
 const char * getIMUNameByType(int imuType) {
     switch(imuType) {
         case IMU_MPU9250:

@@ -64,6 +64,10 @@ public:
     virtual void printDebugTemperatureCalibrationState();
     virtual void resetTemperatureCalibrationState();
     virtual void saveTemperatureCalibration();
+    virtual void printGyroScaleCalibration();
+    virtual void setGyroScaleCalibration(float xScale, float yScale, float zScale);
+    virtual void resetGyroScaleCalibration();
+    virtual void testGyroScaleCalibration();
     bool isWorking() {
         return working;
     };
@@ -108,6 +112,7 @@ public:
 
 private:
     void printTemperatureCalibrationUnsupported();
+    void printGyroScaleCalibrationUnsupported();
 };
 
 const char * getIMUNameByType(int imuType);
