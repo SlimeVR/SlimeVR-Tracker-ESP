@@ -128,8 +128,8 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Set_G_FS(LSM6DSV16X_GYRO_MAX);
 
 	// Set data rate
-	status |= imu.Set_X_ODR(LSM6DSV16X_FIFO_DATA_RATE);
-	status |= imu.Set_G_ODR(LSM6DSV16X_FIFO_DATA_RATE);
+	status |= imu.Set_X_ODR(LSM6DSV16X_GYRO_ACCEL_RATE, LSM6DSV16X_ACC_HIGH_PERFORMANCE_MODE);
+	status |= imu.Set_G_ODR(LSM6DSV16X_GYRO_ACCEL_RATE, LSM6DSV16X_GYRO_HIGH_PERFORMANCE_MODE);
 
 	status |= imu.Set_SFLP_ODR(LSM6DSV16X_FIFO_DATA_RATE);  // Linear accel or full fusion
 	status |= imu.FIFO_Set_X_BDR(LSM6DSV16X_FIFO_DATA_RATE);
