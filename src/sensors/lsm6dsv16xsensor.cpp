@@ -109,12 +109,12 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Set_Auto_Increment(true);
 
 	// Set maximums
-	status |= imu.Set_X_FS(16);
-	status |= imu.Set_G_FS(1000);
+	status |= imu.Set_X_FS(LSM6DSV16X_ACCEL_MAX);
+	status |= imu.Set_G_FS(LSM6DSV16X_GYRO_MAX);
 
 	// Set data rate
-	status |= imu.Set_X_ODR(7680.0f, LSM6DSV16X_ACC_HIGH_PERFORMANCE_MODE);
-	status |= imu.Set_G_ODR(7680.0f, LSM6DSV16X_GYRO_HIGH_PERFORMANCE_MODE);
+	status |= imu.Set_X_ODR(LSM6DSV16X_GYRO_ACCEL_RATE, LSM6DSV16X_ACC_HIGH_PERFORMANCE_MODE);
+	status |= imu.Set_G_ODR(LSM6DSV16X_GYRO_ACCEL_RATE, LSM6DSV16X_GYRO_HIGH_PERFORMANCE_MODE);
 	status |= imu.Set_SFLP_ODR(LSM6DSV16X_FIFO_DATA_RATE);
 	status |= imu.FIFO_Set_X_BDR(LSM6DSV16X_FIFO_DATA_RATE);
 
