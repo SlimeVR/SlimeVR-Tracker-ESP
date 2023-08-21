@@ -60,9 +60,13 @@
 #define LSM6DSV16X_ESP_FUSION
 
 
+
+#ifdef LSM6DSV16X_ESP_FUSION
 #define LSM6DSV16X_GYRO_OFFSET_CAL
 #define LSM6DSV16X_ACCEL_OFFSET_CAL
 #define LSM6DSV16X_GYRO_SCALE_CAL
+#endif
+
 
 #ifdef REINIT_ON_FAILURE
 #define REINIT_RETRY_MAX_ATTEMPTS 5
@@ -92,24 +96,20 @@ public:
 	void motionSetup() override final;
 	void motionLoop() override final;
 	void sendData() override final;
-	void startCalibration(int calibrationType) override final;
 	SensorStatus getSensorState() override final;
+
+#ifdef LSM6DSV16X_ESP_FUSION
+	void startCalibration(int calibrationType) override final;
 	void printGyroScaleCalibration() override final;
 	void setGyroScaleCalibration(float xScale, float yScale, float zScale) override final;
 	void resetGyroScaleCalibration() override final;
 	void testGyroScaleCalibration() override final;
+#endif
 	
-
 private:
 	Quat fusedRotationToQuaternion(float x, float y, float z);
 	LSM6DSV16XStatusTypeDef runSelfTest();
-	LSM6DSV16XStatusTypeDef loadIMUCalibration();
 	LSM6DSV16XStatusTypeDef readFifo(uint16_t fifo_samples);
-	LSM6DSV16XStatusTypeDef readNextFifoFrame();
-	void apply6DToRestDetection();
-	void waitForRest();
-	void waitForMovement();
-	void saveCalibration();
 
 	LSM6DSV16X imu;
 	uint8_t m_IntPin;
@@ -122,6 +122,8 @@ private:
 	bool newGravityVector = false;
 	float rawAcceleration[3];
 	bool newRawAcceleration = false;
+	uint32_t previousDataTime = 0;
+	uint32_t currentDataTime = 0;
 
 #ifdef LSM6DSV16X_ONBOARD_FUSION
 	float fusedGameRotation[3];
@@ -130,13 +132,17 @@ private:
 #endif
 
 #ifdef LSM6DSV16X_ESP_FUSION
+	LSM6DSV16XStatusTypeDef readNextFifoFrame();
+	LSM6DSV16XStatusTypeDef loadIMUCalibration();
+	void apply6DToRestDetection();
+	void waitForRest();
+	void waitForMovement();
+	void saveCalibration();
 	SlimeVR::Configuration::LSM6DSV16XCalibrationConfig m_Calibration;
 	SlimeVR::Sensors::SensorFusionRestDetect sfusion;
 	float rawGyro[3];
 	bool newRawGyro = false;
 	Quat previousEspRotation;
-	uint32_t previousDataTime = 0;
-	uint32_t currentDataTime = 0;
 	uint8_t previousTag = 0;
 #endif
 
