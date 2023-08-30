@@ -104,10 +104,11 @@ public:
 
 #ifdef LSM6DSV16X_ESP_FUSION
 	void startCalibration(int calibrationType) override final;
-	void printGyroScaleCalibration() override final;
-	void setGyroScaleCalibration(float xScale, float yScale, float zScale) override final;
-	void resetGyroScaleCalibration() override final;
-	void testGyroScaleCalibration() override final;
+	void calibrateAccel() override final;
+	void calibrateGyro() override final;
+	void calibrateGyroSensitivity() override final;
+	void printCalibration() override final;
+    void resetCalibration() override final;
 #endif
 	
 private:
