@@ -158,7 +158,7 @@ void LSM6DSV16XSensor::motionSetup() {
 
 #if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)
 	status |= imu.FIFO_Set_SFLP_Batch(true, true, false); // TODO: Don't use batch change for this
-	status |= imu.Enable_Game_Rotation(); // TODO: Rename to enable SFLP
+	status |= imu.Enable_SFLP_Block();
 
 #elif defined(LSM6DSV16X_ONBOARD_FUSION)
 	status |= imu.FIFO_Set_SFLP_Batch(true, true, false);
@@ -187,8 +187,7 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Enable_Double_Tap_Detection(LSM6DSV16X_INT1_PIN);
 #endif  // LSM6DSV16X_INTERRUPT
 
-	status |= imu.FIFO_Set_Mode(LSM6DSV16X_BYPASS_MODE);  // add to lib but we need to
-	status |= imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);  // get / keep track of current fifo type
+	status |= imu.FIFO_Reset();
 
 	if (status != LSM6DSV16X_OK) {
 		m_Logger.fatal(
@@ -665,8 +664,7 @@ void LSM6DSV16XSensor::calibrateAccel() {
 		numPositionsRecorded + 1
 	);
 
-	imu.FIFO_Set_Mode(LSM6DSV16X_BYPASS_MODE);  // add to lib but we need to
-	imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);  // get / keep track of current fifo type
+	imu.FIFO_Reset();
 	while (true) {
 		uint16_t fifo_samples = 0;
 		if (imu.FIFO_Get_Num_Samples(&fifo_samples) == LSM6DSV16X_ERROR) {
@@ -818,8 +816,7 @@ void LSM6DSV16XSensor::calibrateGyro() {
 	m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
 	delay(2000);
 
-	imu.FIFO_Set_Mode(LSM6DSV16X_BYPASS_MODE);  // TODO: add to lib but we need to
-	imu.FIFO_Set_Mode(LSM6DSV16X_STREAM_MODE);  // get / keep track of current fifo type
+	imu.FIFO_Reset();
 	waitForRest();
 	uint16_t count = 0;
 	while (count < calibrationSamples) {
@@ -855,7 +852,7 @@ void LSM6DSV16XSensor::calibrateGyro() {
 #endif
 
 
-#ifdef LSM6DSV16X_GYRO_SCALE_CAL
+#ifdef LSM6DSV16X_GYRO_SENSITIVITY_CAL
 void LSM6DSV16XSensor::calibrateGyroSensitivity() {
 	m_Logger.info(
 		"Gyro sensitivity calibration started on sensor #%d of type %s at address 0x%02x",
@@ -874,7 +871,6 @@ void LSM6DSV16XSensor::calibrateGyroSensitivity() {
 	uint8_t count = 0;
 	float gyroCount[3]; //Use this to determine the axis spun
 	float calculatedScale[3] = {1.0f, 1.0f, 1.0f};
-	constexpr uint8_t fullRotations = 1;
 
 	ledManager.off();
 
@@ -887,7 +883,7 @@ void LSM6DSV16XSensor::calibrateGyroSensitivity() {
 	m_Logger.info(
 		"\tStep 3: Rotate the tracker about one axis %d full rotations and align with the "
 		"previous edge.",
-		fullRotations
+		LSM6DSV16X_GYRO_SENSITIVITY_SPINS
 	);
 	m_Logger.info("\t\tNOTE: the light will turn off after you start moving it");
 
@@ -903,7 +899,7 @@ void LSM6DSV16XSensor::calibrateGyroSensitivity() {
 		waitForRest();
 
 		ledManager.on();  // The user should rotate
-		m_Logger.info("Rotate the tracker %d times", fullRotations);
+		m_Logger.info("Rotate the tracker %d times", LSM6DSV16X_GYRO_SENSITIVITY_SPINS);
 		gyroCount[0] = 0.0f;
 		gyroCount[1] = 0.0f;
 		gyroCount[2] = 0.0f;
@@ -922,21 +918,16 @@ void LSM6DSV16XSensor::calibrateGyroSensitivity() {
 		}
 
 		uint8_t isUp;
-		
-
 		rawRotationFinal = sfusion.getQuaternionQuat().get_euler() * dpsPerRad;
-
-
-
 
 		if (abs(gyroCount[0]) > abs(gyroCount[1]) && abs(gyroCount[0]) > abs(gyroCount[2])) { //Spun in X
 			imu.Get_6D_Orientation_XH(&isUp);
 			if((!isUp && gyroCount[0] > 0) || (isUp && gyroCount[0] < 0)) {
-				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * fullRotations))));
+				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * LSM6DSV16X_GYRO_SENSITIVITY_SPINS))));
 				m_Logger.info("X, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
 			}
 			else {
-				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * fullRotations))));
+				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * LSM6DSV16X_GYRO_SENSITIVITY_SPINS))));
 				m_Logger.info("-X, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
 			}
 		}
@@ -944,11 +935,11 @@ void LSM6DSV16XSensor::calibrateGyroSensitivity() {
 		else if (abs(gyroCount[1]) > abs(gyroCount[0]) && abs(gyroCount[1]) > abs(gyroCount[2])) { //Spun in Y
 			imu.Get_6D_Orientation_YH(&isUp);
 			if((isUp && gyroCount[1] > 0) || (!isUp && gyroCount[1] < 0)) {
-				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * fullRotations))));
+				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * LSM6DSV16X_GYRO_SENSITIVITY_SPINS))));
 				m_Logger.info("Y, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
 			}
 			else {
-				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * fullRotations))));
+				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * LSM6DSV16X_GYRO_SENSITIVITY_SPINS))));
 				m_Logger.info("-Y, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
 			}
 		}
@@ -956,11 +947,11 @@ void LSM6DSV16XSensor::calibrateGyroSensitivity() {
 		else if (abs(gyroCount[2]) > abs(gyroCount[0]) && abs(gyroCount[2]) > abs(gyroCount[1])) { //Spun in Z
 			imu.Get_6D_Orientation_ZH(&isUp);
 			if((isUp && gyroCount[2] > 0) || (!isUp && gyroCount[2] < 0)) {
-				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * fullRotations))));
+				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * LSM6DSV16X_GYRO_SENSITIVITY_SPINS))));
 				m_Logger.info("Z, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
 			}
 			else {
-				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * fullRotations))));
+				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * LSM6DSV16X_GYRO_SENSITIVITY_SPINS))));
 				m_Logger.info("-Z, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
 			}
 		}

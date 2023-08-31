@@ -192,6 +192,7 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Get_T_ODR(float *Odr);
     LSM6DSV16XStatusTypeDef Set_T_ODR(float Odr);
     
+    LSM6DSV16XStatusTypeDef Enable_SFLP_Block(bool enable = true);
     LSM6DSV16XStatusTypeDef Set_SFLP_ODR(float Odr);
     LSM6DSV16XStatusTypeDef Set_SFLP_GBIAS(float x, float y, float z);
 
@@ -232,6 +233,7 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Enable_Tilt_Detection(LSM6DSV16X_SensorIntPin_t IntPin);
     LSM6DSV16XStatusTypeDef Disable_Tilt_Detection();
 
+    LSM6DSV16XStatusTypeDef FIFO_Reset();
     LSM6DSV16XStatusTypeDef FIFO_Get_Num_Samples(uint16_t *NumSamples);
     LSM6DSV16XStatusTypeDef FIFO_Get_Full_Status(uint8_t *Status);
     LSM6DSV16XStatusTypeDef FIFO_Set_INT1_FIFO_Full(uint8_t Status);
@@ -266,8 +268,6 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Write_Reg(uint8_t Reg, uint8_t Data);
 
     LSM6DSV16XStatusTypeDef Reset_Set(uint8_t flags);
-
-    LSM6DSV16XStatusTypeDef Enable_Game_Rotation(bool enable = true);
 
     LSM6DSV16XStatusTypeDef Enable_Block_Data_Update(bool enable = true);
     LSM6DSV16XStatusTypeDef Set_Auto_Increment(bool enable);
@@ -396,6 +396,9 @@ class LSM6DSV16X {
     LSM6DSV16XStatusTypeDef Set_G_ODR_When_Enabled(float Odr);
     LSM6DSV16XStatusTypeDef Set_G_ODR_When_Disabled(float Odr);
 
+    float Convert_X_Sensitivity(lsm6dsv16x_xl_full_scale_t full_scale);
+    float Convert_G_Sensitivity(lsm6dsv16x_gy_full_scale_t full_scale);
+
     /* Helper classes. */
     TwoWire *dev_i2c;
     SPIClass *dev_spi;
@@ -407,6 +410,10 @@ class LSM6DSV16X {
 
     lsm6dsv16x_data_rate_t acc_odr;
     lsm6dsv16x_data_rate_t gyro_odr;
+    lsm6dsv16x_xl_full_scale_t acc_fs;
+    lsm6dsv16x_gy_full_scale_t gyro_fs;
+    lsm6dsv16x_fifo_mode_t fifo_mode;
+
     uint8_t acc_is_enabled;
     uint8_t gyro_is_enabled;
     uint8_t initialized;

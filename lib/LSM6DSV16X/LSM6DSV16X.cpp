@@ -97,7 +97,8 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::begin()
   }
 
   /* FIFO mode selection */
-  if (lsm6dsv16x_fifo_mode_set(&reg_ctx, LSM6DSV16X_BYPASS_MODE) != LSM6DSV16X_OK) {
+  fifo_mode = LSM6DSV16X_BYPASS_MODE;
+  if (lsm6dsv16x_fifo_mode_set(&reg_ctx, fifo_mode) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
@@ -110,7 +111,8 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::begin()
   }
 
   /* Full scale selection. */
-  if (lsm6dsv16x_xl_full_scale_set(&reg_ctx, LSM6DSV16X_2g) != LSM6DSV16X_OK) {
+  acc_fs = LSM6DSV16X_2g;
+  if (lsm6dsv16x_xl_full_scale_set(&reg_ctx, acc_fs) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
@@ -123,7 +125,8 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::begin()
   }
 
   /* Full scale selection. */
-  if (lsm6dsv16x_gy_full_scale_set(&reg_ctx, LSM6DSV16X_2000dps) != LSM6DSV16X_OK) {
+  gyro_fs = LSM6DSV16X_2000dps;
+  if (lsm6dsv16x_gy_full_scale_set(&reg_ctx, gyro_fs) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
@@ -241,7 +244,6 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Disable_X()
  */
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_X_Sensitivity(float *Sensitivity)
 {
-  LSM6DSV16XStatusTypeDef ret = LSM6DSV16X_OK;
   lsm6dsv16x_xl_full_scale_t full_scale;
 
   /* Read actual full scale selection from sensor. */
@@ -249,30 +251,34 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_X_Sensitivity(float *Sensitivity)
     return LSM6DSV16X_ERROR;
   }
 
+  *Sensitivity = Convert_X_Sensitivity(full_scale);
+  if (*Sensitivity == 0.0f) {
+    return LSM6DSV16X_ERROR;
+  }
+  return LSM6DSV16X_OK;
+}
+
+float LSM6DSV16X::Convert_X_Sensitivity(lsm6dsv16x_xl_full_scale_t full_scale) {
+  float Sensitivity = 0.0f;
   /* Store the Sensitivity based on actual full scale. */
   switch (full_scale) {
     case LSM6DSV16X_2g:
-      *Sensitivity = LSM6DSV16X_ACC_SENSITIVITY_FS_2G;
+      Sensitivity = LSM6DSV16X_ACC_SENSITIVITY_FS_2G;
       break;
 
     case LSM6DSV16X_4g:
-      *Sensitivity = LSM6DSV16X_ACC_SENSITIVITY_FS_4G;
+      Sensitivity = LSM6DSV16X_ACC_SENSITIVITY_FS_4G;
       break;
 
     case LSM6DSV16X_8g:
-      *Sensitivity = LSM6DSV16X_ACC_SENSITIVITY_FS_8G;
+      Sensitivity = LSM6DSV16X_ACC_SENSITIVITY_FS_8G;
       break;
 
     case LSM6DSV16X_16g:
-      *Sensitivity = LSM6DSV16X_ACC_SENSITIVITY_FS_16G;
-      break;
-
-    default:
-      ret = LSM6DSV16X_ERROR;
+      Sensitivity = LSM6DSV16X_ACC_SENSITIVITY_FS_16G;
       break;
   }
-
-  return ret;
+  return Sensitivity;
 }
 
 /**
@@ -359,7 +365,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_X_ODR(float *Odr)
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_X_Axes(int32_t *Acceleration)
 {
   lsm6dsv16x_axis3bit16_t data_raw;
-  float sensitivity = 0.0f;
+  float sensitivity = Convert_X_Sensitivity(acc_fs);
 
   /* Read raw data values. */
   if (lsm6dsv16x_acceleration_raw_get(&reg_ctx, data_raw.i16bit) != LSM6DSV16X_OK) {
@@ -367,7 +373,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_X_Axes(int32_t *Acceleration)
   }
 
   /* Get LSM6DSV16X actual sensitivity. */
-  if (Get_X_Sensitivity(&sensitivity) != LSM6DSV16X_OK) {
+  if (sensitivity == 0.0f) {
     return LSM6DSV16X_ERROR;
   }
 
@@ -576,7 +582,12 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_X_FS(int32_t FullScale)
            : (FullScale <= 8) ? LSM6DSV16X_8g
            :                    LSM6DSV16X_16g;
 
-  if (lsm6dsv16x_xl_full_scale_set(&reg_ctx, new_fs) != LSM6DSV16X_OK) {
+  if (new_fs == acc_fs) {
+    return LSM6DSV16X_OK;
+  }
+  acc_fs = new_fs;
+
+  if (lsm6dsv16x_xl_full_scale_set(&reg_ctx, acc_fs) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
@@ -2634,6 +2645,18 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Disable_Tilt_Detection()
   return ret;
 }
 
+
+LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Reset() { 
+  if (lsm6dsv16x_fifo_mode_set(&reg_ctx, LSM6DSV16X_BYPASS_MODE) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+
+  if (lsm6dsv16x_fifo_mode_set(&reg_ctx, fifo_mode) != LSM6DSV16X_OK) {
+    return LSM6DSV16X_ERROR;
+  }
+  return LSM6DSV16X_OK;
+}
+
 /**
   * @brief  Get the LSM6DSV16X FIFO number of samples
 
@@ -2744,7 +2767,6 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Set_Stop_On_Fth(uint8_t Status)
   */
 LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Set_Mode(uint8_t Mode)
 {
-  LSM6DSV16XStatusTypeDef ret = LSM6DSV16X_OK;
   lsm6dsv16x_fifo_mode_t newMode = LSM6DSV16X_BYPASS_MODE;
 
   switch (Mode) {
@@ -2767,19 +2789,14 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Set_Mode(uint8_t Mode)
       newMode = LSM6DSV16X_BYPASS_TO_FIFO_MODE;
       break;
     default:
-      ret = LSM6DSV16X_ERROR;
-      break;
+      return LSM6DSV16X_ERROR;
   }
-
-  if (ret == LSM6DSV16X_ERROR) {
+  fifo_mode = newMode;
+  if (lsm6dsv16x_fifo_mode_set(&reg_ctx, fifo_mode) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
-  if (lsm6dsv16x_fifo_mode_set(&reg_ctx, newMode) != LSM6DSV16X_OK) {
-    return LSM6DSV16X_ERROR;
-  }
-
-  return ret;
+  return LSM6DSV16X_OK;
 }
 
 /**
@@ -2820,14 +2837,14 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_Data(uint8_t *Data)
 LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_X_Axes(int32_t *Acceleration)
 {
   lsm6dsv16x_axis3bit16_t data_raw;
-  float sensitivity = 0.0f;
+  float sensitivity = Convert_X_Sensitivity(acc_fs);
   float acceleration_float[3];
 
   if (FIFO_Get_Data(data_raw.u8bit) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
-  if (Get_X_Sensitivity(&sensitivity) != LSM6DSV16X_OK) {
+  if (sensitivity == 0.0f) {
     return LSM6DSV16X_ERROR;
   }
   acceleration_float[0] = (float)data_raw.i16bit[0] * sensitivity;
@@ -2878,14 +2895,14 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Set_X_BDR(float Bdr)
 LSM6DSV16XStatusTypeDef LSM6DSV16X::FIFO_Get_G_Axes(int32_t *AngularVelocity)
 {
   lsm6dsv16x_axis3bit16_t data_raw;
-  float sensitivity = 0.0f;
+  float sensitivity = Convert_G_Sensitivity(gyro_fs);
   float angular_velocity_float[3];
 
   if (FIFO_Get_Data(data_raw.u8bit) != LSM6DSV16X_OK) {
     return LSM6DSV16X_ERROR;
   }
 
-  if (Get_G_Sensitivity(&sensitivity) != LSM6DSV16X_OK) {
+  if (sensitivity == 0.0f) {
     return LSM6DSV16X_ERROR;
   }
 
@@ -3072,38 +3089,44 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_G_Sensitivity(float *Sensitivity)
     return LSM6DSV16X_ERROR;
   }
 
+  *Sensitivity = Convert_G_Sensitivity(full_scale);
+  if (*Sensitivity == 0.0f) {
+    return LSM6DSV16X_ERROR;
+  }
+  
+  return LSM6DSV16X_OK;
+}
+
+
+float LSM6DSV16X::Convert_G_Sensitivity(lsm6dsv16x_gy_full_scale_t full_scale) { 
+  float Sensitivity = 0.0f;
   /* Store the sensitivity based on actual full scale. */
   switch (full_scale) {
     case LSM6DSV16X_125dps:
-      *Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_125DPS;
+      Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_125DPS;
       break;
 
     case LSM6DSV16X_250dps:
-      *Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_250DPS;
+      Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_250DPS;
       break;
 
     case LSM6DSV16X_500dps:
-      *Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_500DPS;
+      Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_500DPS;
       break;
 
     case LSM6DSV16X_1000dps:
-      *Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_1000DPS;
+      Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_1000DPS;
       break;
 
     case LSM6DSV16X_2000dps:
-      *Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_2000DPS;
+      Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_2000DPS;
       break;
 
     case LSM6DSV16X_4000dps:
-      *Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_4000DPS;
-      break;
-
-    default:
-      ret = LSM6DSV16X_ERROR;
+      Sensitivity = LSM6DSV16X_GYRO_SENSITIVITY_FS_4000DPS;
       break;
   }
-
-  return ret;
+  return Sensitivity;
 }
 
 /**
@@ -3343,7 +3366,12 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Set_G_FS(int32_t FullScale)
            : (FullScale <= 2000) ? LSM6DSV16X_2000dps
            :                       LSM6DSV16X_4000dps;
 
-  return (LSM6DSV16XStatusTypeDef) lsm6dsv16x_gy_full_scale_set(&reg_ctx, new_fs);
+  if (new_fs == gyro_fs) {
+    return LSM6DSV16X_OK;
+  }
+  gyro_fs = new_fs;
+
+  return (LSM6DSV16XStatusTypeDef) lsm6dsv16x_gy_full_scale_set(&reg_ctx, gyro_fs);
 }
 
 /**
@@ -3395,7 +3423,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_G_AxesRaw_When_Aval(int16_t *Value) {
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_G_Axes(int32_t *AngularRate)
 {
   lsm6dsv16x_axis3bit16_t data_raw;
-  float sensitivity;
+  float sensitivity = Convert_G_Sensitivity(gyro_fs);
 
   /* Read raw data values. */
   if (lsm6dsv16x_angular_rate_raw_get(&reg_ctx, data_raw.i16bit) != LSM6DSV16X_OK) {
@@ -3403,7 +3431,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_G_Axes(int32_t *AngularRate)
   }
 
   /* Get LSM6DSV16X actual sensitivity. */
-  if (Get_G_Sensitivity(&sensitivity) != LSM6DSV16X_OK) {
+  if (sensitivity == 0.0f) {
     return LSM6DSV16X_ERROR;
   }
 
@@ -3684,7 +3712,7 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Reset_Set(uint8_t flags)
     return LSM6DSV16X_OK;
 }
 
-LSM6DSV16XStatusTypeDef LSM6DSV16X::Enable_Game_Rotation(bool enable)
+LSM6DSV16XStatusTypeDef LSM6DSV16X::Enable_SFLP_Block(bool enable)
 {
     return (LSM6DSV16XStatusTypeDef)lsm6dsv16x_sflp_game_rotation_set(
         &reg_ctx,
