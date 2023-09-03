@@ -28,11 +28,12 @@
 #include "lsm6dsv16xsensor.h"
 #include "utils.h"
 
+
 #ifdef LSM6DSV16X_INTERRUPT
 volatile bool imuEvent = false;
-
 void IRAM_ATTR interruptHandler() { imuEvent = true; }
 #endif
+
 
 LSM6DSV16XSensor::LSM6DSV16XSensor(
 	uint8_t id,
@@ -183,8 +184,9 @@ void LSM6DSV16XSensor::motionSetup() {
 
 #ifdef LSM6DSV16X_INTERRUPT
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
-	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN);  // Tap requires an interrupt
-	status |= imu.Enable_Double_Tap_Detection(LSM6DSV16X_INT1_PIN);
+	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN); // Tap requires an interrupt
+#else
+	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT2_PIN); //Just poll to see if an event happened
 #endif  // LSM6DSV16X_INTERRUPT
 
 	status |= imu.FIFO_Reset();
@@ -210,6 +212,26 @@ constexpr float mdpsPerDps = 1000.0f;
 constexpr float dpsPerRad = 57.295779578552f;
 
 void LSM6DSV16XSensor::motionLoop() {
+#ifdef LSM6DSV16X_INTERRUPT
+	if (imuEvent) {
+		LSM6DSV16X_Event_Status_t status;
+		imu.Get_X_Event_Status(&status);
+
+		if (status.TapStatus) {
+			tap++;
+		}
+		imuEvent = false;
+	}
+#else
+	LSM6DSV16X_Event_Status_t status;
+	imu.Get_X_Event_Status(&status);
+
+	if (status.TapStatus) {
+		tap++;
+	}
+#endif
+
+
 	if (millis() - lastTempRead > LSM6DSV16X_TEMP_READ_INTERVAL * 1000) {
 		lastTempRead = millis();
 
