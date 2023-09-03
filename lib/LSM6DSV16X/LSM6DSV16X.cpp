@@ -3081,7 +3081,6 @@ LSM6DSV16XStatusTypeDef LSM6DSV16X::Disable_G()
  */
 LSM6DSV16XStatusTypeDef LSM6DSV16X::Get_G_Sensitivity(float *Sensitivity)
 {
-  LSM6DSV16XStatusTypeDef ret = LSM6DSV16X_OK;
   lsm6dsv16x_gy_full_scale_t full_scale;
 
   /* Read actual full scale selection from sensor. */
