@@ -54,11 +54,24 @@
 #define LSM6DSV16X_TEMP_READ_INTERVAL 1
 #endif
 
+
+#ifndef LSM6DSV16X_TAP_THRESHOLD
+#define LSM6DSV16X_TAP_THRESHOLD 5 //0-32
+#endif
+
+#ifndef LSM6DSV16X_TAP_SHOCK_TIME
+#define LSM6DSV16X_TAP_SHOCK_TIME 3 //0-3
+#endif
+
+#ifndef LSM6DSV16X_TAP_QUITE_TIME
+#define LSM6DSV16X_TAP_QUITE_TIME 3 //0-3
+#endif
+
 #define LSM6DSV16X_TIMESTAMP_LSB 21.75e-6f
 
 // #define SELF_TEST_ON_INIT
 // #define REINIT_ON_FAILURE
-// #define LSM6DSV16X_INTERRUPT //recommended for tap detect
+ #define LSM6DSV16X_INTERRUPT //recommended for tap detect
 // #define LSM6DSV16X_NO_SELF_TEST_ON_FACEDOWN
 #define LSM6DSV16X_ONBOARD_FUSION
 #define LSM6DSV16X_ESP_FUSION
@@ -122,6 +135,7 @@ private:
 	LSM6DSV16X imu;
 	uint8_t m_IntPin;
 	uint8_t tap = 0;
+	int8_t status = 0;
 	unsigned long lastData = 0;
 	float temperature = 0;
 	bool newTemperature = false;

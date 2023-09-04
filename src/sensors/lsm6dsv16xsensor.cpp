@@ -74,6 +74,7 @@ void LSM6DSV16XSensor::motionSetup() {
 			deviceId
 		);
 		ledManager.pattern(50, 50, 200);
+		status = LSM6DSV16X_ERROR;
 		return;
 	}
 
@@ -90,7 +91,6 @@ void LSM6DSV16XSensor::motionSetup() {
 		return;
 	}
 
-	int8_t status = 0;
 
 	status |= imu.Enable_6D_Orientation(LSM6DSV16X_INT2_PIN);
 	uint8_t isFaceDown;
@@ -106,8 +106,8 @@ void LSM6DSV16XSensor::motionSetup() {
 				getIMUNameByType(sensorType),
 				addr
 			);
-
 			ledManager.pattern(50, 50, 200);
+			status = LSM6DSV16X_ERROR;
 			return;
 		}
 	}
@@ -182,6 +182,8 @@ void LSM6DSV16XSensor::motionSetup() {
 
 	// status |= imu.beginPreconfigured();
 
+	
+
 #ifdef LSM6DSV16X_INTERRUPT
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
 	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT1_PIN); // Tap requires an interrupt
@@ -189,8 +191,12 @@ void LSM6DSV16XSensor::motionSetup() {
 	status |= imu.Enable_Single_Tap_Detection(LSM6DSV16X_INT2_PIN); //Just poll to see if an event happened
 #endif  // LSM6DSV16X_INTERRUPT
 
-	status |= imu.FIFO_Reset();
+	status |= imu.Set_Tap_Threshold(LSM6DSV16X_TAP_THRESHOLD);
+	status |= imu.Set_Tap_Shock_Time(LSM6DSV16X_TAP_SHOCK_TIME);
+	status |= imu.Set_Tap_Quiet_Time(LSM6DSV16X_TAP_QUITE_TIME);
 
+	status |= imu.FIFO_Reset();
+	
 	if (status != LSM6DSV16X_OK) {
 		m_Logger.fatal(
 			"Errors occured enabling imu features on %s at address 0x%02x",
@@ -214,23 +220,23 @@ constexpr float dpsPerRad = 57.295779578552f;
 void LSM6DSV16XSensor::motionLoop() {
 #ifdef LSM6DSV16X_INTERRUPT
 	if (imuEvent) {
-		LSM6DSV16X_Event_Status_t status;
-		imu.Get_X_Event_Status(&status);
+		LSM6DSV16X_Event_Status_t eventStatus;
+		status |= imu.Get_X_Event_Status(&eventStatus);
 
-		if (status.TapStatus) {
+		if (eventStatus.TapStatus) {
 			tap++;
+			m_Logger.info("Tap: %d", millis());
 		}
 		imuEvent = false;
 	}
 #else
-	LSM6DSV16X_Event_Status_t status;
-	imu.Get_X_Event_Status(&status);
+	LSM6DSV16X_Event_Status_t eventStatus;
+	status |= imu.Get_X_Event_Status(&eventStatus);
 
-	if (status.TapStatus) {
+	if (eventStatus.TapStatus) {
 		tap++;
 	}
 #endif
-
 
 	if (millis() - lastTempRead > LSM6DSV16X_TEMP_READ_INTERVAL * 1000) {
 		lastTempRead = millis();
@@ -242,6 +248,7 @@ void LSM6DSV16XSensor::motionLoop() {
 				getIMUNameByType(sensorType),
 				addr
 			);
+			status = LSM6DSV16X_ERROR;
 		} else {
 			float actualTemp = lsm6dsv16x_from_lsb_to_celsius(rawTemp);
 			if (fabsf(actualTemp - temperature) > 0.01f) {
@@ -282,6 +289,7 @@ void LSM6DSV16XSensor::motionLoop() {
 			getIMUNameByType(sensorType),
 			addr
 		);
+		status = LSM6DSV16X_ERROR;
 		return;
 	}
 
@@ -302,6 +310,7 @@ void LSM6DSV16XSensor::motionLoop() {
 	}
 
 #if defined(LSM6DSV16X_ONBOARD_FUSION) && defined(LSM6DSV16X_ESP_FUSION)
+
 	// TODO: fusion of fusion stuff
 	fusedRotation = sfusion.getQuaternionQuat();
 	lastFusedRotationSent = fusedRotation;
@@ -363,7 +372,10 @@ void LSM6DSV16XSensor::motionLoop() {
 }
 
 SensorStatus LSM6DSV16XSensor::getSensorState() {
-	return isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
+	return isWorking()
+			 ? (status == LSM6DSV16X_OK ? SensorStatus::SENSOR_OK
+										: SensorStatus::SENSOR_ERROR)
+			 : SensorStatus::SENSOR_OFFLINE;
 }
 
 Quat LSM6DSV16XSensor::fusedRotationToQuaternion(float x, float y, float z) {
@@ -695,6 +707,7 @@ void LSM6DSV16XSensor::calibrateAccel() {
 				getIMUNameByType(sensorType),
 				addr
 			);
+			status = LSM6DSV16X_ERROR;
 			return;
 		}
 		
