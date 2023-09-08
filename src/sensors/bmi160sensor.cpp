@@ -213,10 +213,10 @@ void BMI160Sensor::motionSetup() {
         gscaleX = BMI160_GSCALE * m_Calibration.G_Sens[0];
         gscaleY = BMI160_GSCALE * m_Calibration.G_Sens[1];
         gscaleZ = BMI160_GSCALE * m_Calibration.G_Sens[2];
+        m_Logger.debug("Gyro Sens: %f, %f, %f", m_Calibration.G_Sens[0], m_Calibration.G_Sens[1], m_Calibration.G_Sens[2]);
     }
     #endif
-
-    m_Logger.debug("BMISCALE: %f, %f, %f, setCal: %f, %f, %f", gscaleX, gscaleY, gscaleZ, m_Calibration.G_Sens[0], m_Calibration.G_Sens[1], m_Calibration.G_Sens[2]);
+    
 
     isGyroCalibrated = hasGyroCalibration();
     isAccelCalibrated = hasAccelCalibration();
@@ -226,7 +226,9 @@ void BMI160Sensor::motionSetup() {
     #endif
     m_Logger.info("Calibration data for gyro: %s", isGyroCalibrated ? "found" : "not found");
     m_Logger.info("Calibration data for accel: %s", isAccelCalibrated ? "found" : "not found");
+    #if BMI160_USE_SENSCAL
     m_Logger.info("Calibration data for senscal: %s", isSensCalCalibrated ? "found" : "not found");
+    #endif
     #if !USE_6_AXIS
     m_Logger.info("Calibration data for mag: %s", isMagCalibrated ? "found" : "not found");
     #endif
@@ -260,53 +262,7 @@ void BMI160Sensor::motionLoop() {
     }
     #endif
 
-    {
-        uint32_t now = micros();
-        constexpr uint32_t BMI160_TARGET_SYNC_INTERVAL_MICROS = 25000;
-        uint32_t elapsed = now - lastClockPollTime;
-        if (elapsed >= BMI160_TARGET_SYNC_INTERVAL_MICROS) {
-            lastClockPollTime = now - (elapsed - BMI160_TARGET_SYNC_INTERVAL_MICROS);
-
-            const uint32_t nextLocalTime1 = micros();
-            uint32_t rawSensorTime;
-            if (imu.getSensorTime(&rawSensorTime)) {
-                localTime0 = localTime1;
-                localTime1 = nextLocalTime1;
-                syncLatencyMicros = (micros() - localTime1) * 0.3;
-                sensorTime0 = sensorTime1;
-                sensorTime1 = rawSensorTime;
-                if ((sensorTime0 > 0 || localTime0 > 0) && (sensorTime1 > 0 || sensorTime1 > 0)) {
-                    // handle 24 bit overflow
-                    double remoteDt =
-                        sensorTime1 >= sensorTime0 ?
-                        sensorTime1 - sensorTime0 :
-                        (sensorTime1 + 0xFFFFFF) - sensorTime0;
-                    double localDt = localTime1 - localTime0;
-                    const double nextSensorTimeRatio = localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
-
-                    // handle sdk lags and time travel
-                    if (round(nextSensorTimeRatio) == 1.0) {
-                        sensorTimeRatio = nextSensorTimeRatio;
-
-                        if (round(sensorTimeRatioEma) != 1.0) {
-                            sensorTimeRatioEma = sensorTimeRatio;
-                        }
-
-                        constexpr double EMA_APPROX_SECONDS = 1.0;
-                        constexpr uint32_t EMA_SAMPLES = (EMA_APPROX_SECONDS / 3 * 1e6) / BMI160_TARGET_SYNC_INTERVAL_MICROS;
-                        sensorTimeRatioEma -= sensorTimeRatioEma / EMA_SAMPLES;
-                        sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
-
-                        sampleDtMicros = BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
-                        samplesSinceClockSync = 0;
-                    }
-                }
-            }
-
-            getTemperature(&temperature);
-            optimistic_yield(100);
-        }
-    }
+    getTimeFromIMU();    
 
     {
         uint32_t now = micros();
@@ -392,6 +348,56 @@ void BMI160Sensor::motionLoop() {
             optimistic_yield(100);
         }
     }
+}
+
+void BMI160Sensor::getTimeFromIMU() {
+	uint32_t now = micros();
+	constexpr uint32_t BMI160_TARGET_SYNC_INTERVAL_MICROS = 25000;
+	uint32_t elapsed = now - lastClockPollTime;
+	if (elapsed >= BMI160_TARGET_SYNC_INTERVAL_MICROS) {
+		lastClockPollTime = now - (elapsed - BMI160_TARGET_SYNC_INTERVAL_MICROS);
+
+		const uint32_t nextLocalTime1 = micros();
+		uint32_t rawSensorTime;
+		if (imu.getSensorTime(&rawSensorTime)) {
+			localTime0 = localTime1;
+			localTime1 = nextLocalTime1;
+			syncLatencyMicros = (micros() - localTime1) * 0.3;
+			sensorTime0 = sensorTime1;
+			sensorTime1 = rawSensorTime;
+			if ((sensorTime0 > 0 || localTime0 > 0)
+				&& (sensorTime1 > 0 || sensorTime1 > 0)) {
+				// handle 24 bit overflow
+				double remoteDt = sensorTime1 >= sensorTime0
+									? sensorTime1 - sensorTime0
+									: (sensorTime1 + 0xFFFFFF) - sensorTime0;
+				double localDt = localTime1 - localTime0;
+				const double nextSensorTimeRatio
+					= localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
+
+				// handle sdk lags and time travel
+				if (round(nextSensorTimeRatio) == 1.0) {
+					sensorTimeRatio = nextSensorTimeRatio;
+
+					if (round(sensorTimeRatioEma) != 1.0) {
+						sensorTimeRatioEma = sensorTimeRatio;
+					}
+
+					constexpr double EMA_APPROX_SECONDS = 1.0;
+					constexpr uint32_t EMA_SAMPLES = (EMA_APPROX_SECONDS / 3 * 1e6)
+												   / BMI160_TARGET_SYNC_INTERVAL_MICROS;
+					sensorTimeRatioEma -= sensorTimeRatioEma / EMA_SAMPLES;
+					sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
+
+					sampleDtMicros = BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
+					samplesSinceClockSync = 0;
+				}
+			}
+		}
+
+		getTemperature(&temperature);
+		optimistic_yield(100);
+	}
 }
 
 void BMI160Sensor::readFIFO() {
@@ -1057,10 +1063,14 @@ void BMI160Sensor::maybeCalibrateSens() {
 	ledManager.off();
 
 	m_Logger.info("");
+    m_Logger.info(
+		"\tStep 0: Let the tracker sit, the light will come on when you can move it"
+	);
 	m_Logger.info(
 		"\tStep 1: Move the tracker to a corner or edge that you can get it in the "
 		"same position every time"
 	);
+    m_Logger.info("\t\tNOTE: You might also want to unplug usb so it doesn't affect spins");
 	m_Logger.info("\tStep 2: Let the tracker rest until the light turns on");
 	m_Logger.info(
 		"\tStep 3: Rotate the tracker about one axis %d full rotations and align with the "
@@ -1076,8 +1086,6 @@ void BMI160Sensor::maybeCalibrateSens() {
     imu.resetFIFO();
     delayMicroseconds(BMI160_ODR_ACC_MICROS);
     waitForRest();
-    
-
 
 	while (count < 3) {
 		ledManager.on();
@@ -1096,60 +1104,7 @@ void BMI160Sensor::maybeCalibrateSens() {
 		ledManager.off();
 
 		do {
-			{
-				uint32_t now = micros();
-				constexpr uint32_t BMI160_TARGET_SYNC_INTERVAL_MICROS = 25000;
-				uint32_t elapsed = now - lastClockPollTime;
-				if (elapsed >= BMI160_TARGET_SYNC_INTERVAL_MICROS) {
-					lastClockPollTime
-						= now - (elapsed - BMI160_TARGET_SYNC_INTERVAL_MICROS);
-
-					const uint32_t nextLocalTime1 = micros();
-					uint32_t rawSensorTime;
-					if (imu.getSensorTime(&rawSensorTime)) {
-						localTime0 = localTime1;
-						localTime1 = nextLocalTime1;
-						syncLatencyMicros = (micros() - localTime1) * 0.3;
-						sensorTime0 = sensorTime1;
-						sensorTime1 = rawSensorTime;
-						if ((sensorTime0 > 0 || localTime0 > 0)
-							&& (sensorTime1 > 0 || sensorTime1 > 0)) {
-							// handle 24 bit overflow
-							double remoteDt
-								= sensorTime1 >= sensorTime0
-									? sensorTime1 - sensorTime0
-									: (sensorTime1 + 0xFFFFFF) - sensorTime0;
-							double localDt = localTime1 - localTime0;
-							const double nextSensorTimeRatio
-								= localDt
-								/ (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
-
-							// handle sdk lags and time travel
-							if (round(nextSensorTimeRatio) == 1.0) {
-								sensorTimeRatio = nextSensorTimeRatio;
-
-								if (round(sensorTimeRatioEma) != 1.0) {
-									sensorTimeRatioEma = sensorTimeRatio;
-								}
-
-								constexpr double EMA_APPROX_SECONDS = 1.0;
-								constexpr uint32_t EMA_SAMPLES
-									= (EMA_APPROX_SECONDS / 3 * 1e6)
-									/ BMI160_TARGET_SYNC_INTERVAL_MICROS;
-								sensorTimeRatioEma -= sensorTimeRatioEma / EMA_SAMPLES;
-								sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
-
-								sampleDtMicros
-									= BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
-								samplesSinceClockSync = 0;
-							}
-						}
-					}
-
-					getTemperature(&temperature);
-					optimistic_yield(100);
-				}
-			}
+			getTimeFromIMU();
 
 			uint32_t now = micros();
 			constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
@@ -1174,33 +1129,33 @@ void BMI160Sensor::maybeCalibrateSens() {
 		if (abs(gyroCount[0]) > abs(gyroCount[1]) && abs(gyroCount[0]) > abs(gyroCount[2])) { //Spun in X
 			if((ax < 0 && gyroCount[0] > 0) || (ax > 0 && gyroCount[0] < 0)) {
 				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("X, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
+				m_Logger.debug("X, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
 			}
 			else {
 				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("-X, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
+				m_Logger.debug("-X, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
 			}
 		}
 
 		else if (abs(gyroCount[1]) > abs(gyroCount[0]) && abs(gyroCount[1]) > abs(gyroCount[2])) { //Spun in Y
 			if((ay > 0 && gyroCount[1] > 0) || (ay < 0 && gyroCount[1] < 0)) {
 				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("Y, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
+				m_Logger.debug("Y, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
 			}
 			else {
 				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("-Y, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
+				m_Logger.debug("-Y, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
 			}
 		}
 
 		else if (abs(gyroCount[2]) > abs(gyroCount[0]) && abs(gyroCount[2]) > abs(gyroCount[1])) { //Spun in Z
 			if((az > 0 && gyroCount[2] > 0) || (az < 0 && gyroCount[2] < 0)) {
 				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("-Z, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
+				m_Logger.debug("-Z, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
 			}
 			else {
 				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("Z, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
+				m_Logger.debug("Z, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
 			}
 		}
 		count++;
@@ -1229,57 +1184,7 @@ void BMI160Sensor::maybeCalibrateSens() {
 
 void BMI160Sensor::waitForRest() {
     do {
-		{
-			uint32_t now = micros();
-			constexpr uint32_t BMI160_TARGET_SYNC_INTERVAL_MICROS = 25000;
-			uint32_t elapsed = now - lastClockPollTime;
-			if (elapsed >= BMI160_TARGET_SYNC_INTERVAL_MICROS) {
-				lastClockPollTime
-					= now - (elapsed - BMI160_TARGET_SYNC_INTERVAL_MICROS);
-
-				const uint32_t nextLocalTime1 = micros();
-				uint32_t rawSensorTime;
-				if (imu.getSensorTime(&rawSensorTime)) {
-					localTime0 = localTime1;
-					localTime1 = nextLocalTime1;
-					syncLatencyMicros = (micros() - localTime1) * 0.3;
-					sensorTime0 = sensorTime1;
-					sensorTime1 = rawSensorTime;
-					if ((sensorTime0 > 0 || localTime0 > 0)
-						&& (sensorTime1 > 0 || sensorTime1 > 0)) {
-						// handle 24 bit overflow
-						double remoteDt = sensorTime1 >= sensorTime0
-											? sensorTime1 - sensorTime0
-											: (sensorTime1 + 0xFFFFFF) - sensorTime0;
-						double localDt = localTime1 - localTime0;
-						const double nextSensorTimeRatio
-							= localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
-
-						// handle sdk lags and time travel
-						if (round(nextSensorTimeRatio) == 1.0) {
-							sensorTimeRatio = nextSensorTimeRatio;
-
-							if (round(sensorTimeRatioEma) != 1.0) {
-								sensorTimeRatioEma = sensorTimeRatio;
-							}
-
-							constexpr double EMA_APPROX_SECONDS = 1.0;
-							constexpr uint32_t EMA_SAMPLES
-								= (EMA_APPROX_SECONDS / 3 * 1e6)
-								/ BMI160_TARGET_SYNC_INTERVAL_MICROS;
-							sensorTimeRatioEma -= sensorTimeRatioEma / EMA_SAMPLES;
-							sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
-
-							sampleDtMicros = BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
-							samplesSinceClockSync = 0;
-						}
-					}
-				}
-
-				getTemperature(&temperature);
-				optimistic_yield(100);
-			}
-		}
+		getTimeFromIMU();
 		uint32_t now = micros();
 		constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
 		uint32_t elapsed = now - lastPollTime;
@@ -1293,57 +1198,7 @@ void BMI160Sensor::waitForRest() {
 
 void BMI160Sensor::waitForMovement() {
     do {
-        {
-			uint32_t now = micros();
-			constexpr uint32_t BMI160_TARGET_SYNC_INTERVAL_MICROS = 25000;
-			uint32_t elapsed = now - lastClockPollTime;
-			if (elapsed >= BMI160_TARGET_SYNC_INTERVAL_MICROS) {
-				lastClockPollTime
-					= now - (elapsed - BMI160_TARGET_SYNC_INTERVAL_MICROS);
-
-				const uint32_t nextLocalTime1 = micros();
-				uint32_t rawSensorTime;
-				if (imu.getSensorTime(&rawSensorTime)) {
-					localTime0 = localTime1;
-					localTime1 = nextLocalTime1;
-					syncLatencyMicros = (micros() - localTime1) * 0.3;
-					sensorTime0 = sensorTime1;
-					sensorTime1 = rawSensorTime;
-					if ((sensorTime0 > 0 || localTime0 > 0)
-						&& (sensorTime1 > 0 || sensorTime1 > 0)) {
-						// handle 24 bit overflow
-						double remoteDt = sensorTime1 >= sensorTime0
-											? sensorTime1 - sensorTime0
-											: (sensorTime1 + 0xFFFFFF) - sensorTime0;
-						double localDt = localTime1 - localTime0;
-						const double nextSensorTimeRatio
-							= localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
-
-						// handle sdk lags and time travel
-						if (round(nextSensorTimeRatio) == 1.0) {
-							sensorTimeRatio = nextSensorTimeRatio;
-
-							if (round(sensorTimeRatioEma) != 1.0) {
-								sensorTimeRatioEma = sensorTimeRatio;
-							}
-
-							constexpr double EMA_APPROX_SECONDS = 1.0;
-							constexpr uint32_t EMA_SAMPLES
-								= (EMA_APPROX_SECONDS / 3 * 1e6)
-								/ BMI160_TARGET_SYNC_INTERVAL_MICROS;
-							sensorTimeRatioEma -= sensorTimeRatioEma / EMA_SAMPLES;
-							sensorTimeRatioEma += sensorTimeRatio / EMA_SAMPLES;
-
-							sampleDtMicros = BMI160_ODR_GYR_MICROS * sensorTimeRatioEma;
-							samplesSinceClockSync = 0;
-						}
-					}
-				}
-
-				getTemperature(&temperature);
-				optimistic_yield(100);
-			}
-		}
+        getTimeFromIMU();
         uint32_t now = micros();
         constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
         uint32_t elapsed = now - lastPollTime;
