@@ -28,7 +28,6 @@
 #include "debug.h"
 #include "defines.h"
 #include "defines_bmi160.h"
-#include "defines_sensitivity.h"
 
 #ifndef SECOND_IMU
 #define SECOND_IMU IMU

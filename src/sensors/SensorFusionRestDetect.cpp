@@ -8,7 +8,7 @@ namespace SlimeVR
         {
             #if !SENSOR_WITH_REST_DETECT
                 if (deltat < 0) deltat = accTs;
-                restDetection.updateAcc(deltat, Axyz);
+                restDetection.updateAcc(deltat * 1e6, Axyz);
             #endif
             SensorFusion::updateAcc(Axyz, deltat);
         }
@@ -17,7 +17,7 @@ namespace SlimeVR
         {
             #if !SENSOR_WITH_REST_DETECT
                 if (deltat < 0) deltat = accTs;
-                restDetection.updateGyr(deltat, Gxyz);
+                restDetection.updateGyr(deltat * 1e6, Gxyz);
             #endif
             SensorFusion::updateGyro(Gxyz, deltat);
         }
@@ -29,6 +29,11 @@ namespace SlimeVR
             #elif SENSOR_USE_VQF
                 return vqf.getRestDetected();
             #endif
+        }
+
+        void SensorFusionRestDetect::updateRestDetectionParameters(RestDetectionParams newParams)
+        {
+            restDetection.updateRestDetectionParameters(newParams);
         }
     }
 }

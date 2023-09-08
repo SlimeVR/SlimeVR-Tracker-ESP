@@ -39,6 +39,7 @@ namespace SlimeVR {
 
             // raw offsets, determined from gyro at rest
             float G_off[3];
+            float G_Sens[3];
 
             // calibration temperature for dynamic compensation
             float temperature;

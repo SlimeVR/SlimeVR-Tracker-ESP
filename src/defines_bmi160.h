@@ -72,5 +72,8 @@
 
 // Use sensitivity calibration.
 #define BMI160_USE_SENSCAL true
+#if BMI160_USE_SENSCAL
+#define BMI160_GYRO_SENSITIVITY_SPINS 2
+#endif
 
 #endif
