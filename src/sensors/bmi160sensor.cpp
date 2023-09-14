@@ -126,6 +126,13 @@ void BMI160Sensor::motionSetup() {
 
     m_Logger.info("Connected to BMI160 (reported device ID 0x%02x) at address 0x%02x", imu.getDeviceID(), addr);
 
+    gyroTempCalibrator = new GyroTemperatureCalibrator(
+        SlimeVR::Configuration::CalibrationConfigType::BMI160,
+        sensorId,
+        BMI160_GYRO_TYPICAL_SENSITIVITY_LSB,
+        BMI160_TEMP_CALIBRATION_REQUIRED_SAMPLES_PER_STEP
+    );
+    
     // Initialize the configuration
     {
         SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
@@ -146,13 +153,6 @@ void BMI160Sensor::motionSetup() {
             resetCalibration();
         }
     }
-
-    gyroTempCalibrator = new GyroTemperatureCalibrator(
-        SlimeVR::Configuration::CalibrationConfigType::BMI160,
-        sensorId,
-        BMI160_GYRO_TYPICAL_SENSITIVITY_LSB,
-        BMI160_TEMP_CALIBRATION_REQUIRED_SAMPLES_PER_STEP
-    );
 
     #if BMI160_USE_TEMPCAL
         gyroTempCalibrator->loadConfig(BMI160_GYRO_TYPICAL_SENSITIVITY_LSB);
