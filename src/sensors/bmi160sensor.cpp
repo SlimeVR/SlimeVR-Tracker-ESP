@@ -1064,27 +1064,43 @@ void BMI160Sensor::maybeCalibrateSens() {
 	ledManager.off();
 
 	m_Logger.info("");
-    m_Logger.info(
-		"\tStep 0: Let the tracker sit, the light will come on when you can move it"
+	m_Logger.info(
+		"\tStep 0: Let the tracker sit, the light will come on when you should move "
+		"the tracker"
 	);
 	m_Logger.info(
-		"\tStep 1: Move the tracker to a corner or edge that you can get it in the "
+		"\tStep 1: Move the tracker to a corner or edge that aligns the tracker to the "
 		"same position every time"
 	);
-    m_Logger.info("\t\tNOTE: You might also want to unplug usb so it doesn't affect spins");
-	m_Logger.info("\tStep 2: Let the tracker rest until the light turns on");
 	m_Logger.info(
-		"\tStep 3: Rotate the tracker about one axis %d full rotations and align with the "
-		"previous edge.",
+		"\t\tNOTE: You might also want to unplug the USB so it doesn't affect spins"
+	);
+	m_Logger.info(
+		"\tLet the tracker rest until the light turns on, you might need to hold it "
+		"against a wall depending on the case and orientation"
+	);
+	m_Logger.info(
+		"\tStep 3: Rotate the tracker in the yaw axis for %d full rotations and align "
+		"it with the previous edge ",
 		BMI160_GYRO_SENSITIVITY_SPINS
 	);
-	m_Logger.info("\t\tNOTE: the light will turn off after you start moving it");
+	m_Logger.info(
+		"\t\tNOTE: The yaw axis is the direction of looking left or right with your "
+		"head, perpendicular to gravity"
+	);
+	m_Logger.info("\t\tNOTE: The light will turn off after you start moving it");
 
 	m_Logger.info(
-		"\tStep 4: Repeat step 1 - 3 in the other 2 axis. When the light is on you should move it"
+		"\tStep 4: Wait for the light then rotate the tracker 90 degrees to a new axis "
+		"and align with an edge. Repeat steps 2 and 3"
 	);
 
-    imu.resetFIFO();
+	m_Logger.info(
+		"\tStep 5: Wait for the light then rotate the tracker 90 degrees so the last "
+		"axis is up and aligned with an edge. Repeat steps 2 and 3"
+	);
+
+	imu.resetFIFO();
     delayMicroseconds(BMI160_ODR_ACC_MICROS);
     waitForRest();
 
