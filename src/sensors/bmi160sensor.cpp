@@ -651,6 +651,7 @@ void BMI160Sensor::resetCalibration() {
             m_Calibration.M_Ainv[i][j] = 0.0f;
         }
         
+        m_Calibration.A_B[i] = 0.0f;
         m_Calibration.M_B[i] = 0.0f;
         m_Calibration.G_off[i] = 0.0f;
         m_Calibration.G_Sens[i] = 1.0f;
