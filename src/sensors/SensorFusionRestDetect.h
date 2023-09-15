@@ -37,6 +37,7 @@ namespace SlimeVR
             {}
 
             bool getRestDetected();
+            bool getMoveDetected();
 
             #if !SENSOR_WITH_REST_DETECT
                 void updateAcc(sensor_real_t Axyz[3], sensor_real_t deltat);

@@ -73,6 +73,11 @@ namespace SlimeVR
         void off();
 
         /*!
+         * @brief Switches the state of the led. If it is on then it changes to off, and vice versa.
+         */
+        void toggle();
+
+        /*!
          *  @brief Blink the LED for [time]ms. *Can* cause lag
          *  @param time Amount of ms to turn the LED on
          */
@@ -92,6 +97,7 @@ namespace SlimeVR
         uint8_t m_CurrentCount = 0;
         unsigned long m_Timer = 0;
         LEDStage m_CurrentStage = OFF;
+        LEDStage m_LedStatus = OFF;
         unsigned long m_LastUpdate = millis();
 
         uint8_t m_Pin;

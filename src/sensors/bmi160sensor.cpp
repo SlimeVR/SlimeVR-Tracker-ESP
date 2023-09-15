@@ -93,9 +93,12 @@ void BMI160Sensor::initQMC(BMI160MagRate magRate) {
 
 void BMI160Sensor::motionSetup() {
     RestDetectionParams restDetectionParams;
-	restDetectionParams.restMinTimeMicros = 3 * 1e6;
+	restDetectionParams.restMinTimeMicros = 2 * 1e6;
+    restDetectionParams.moveMinTimeMicros = 50000;
 	restDetectionParams.restThAcc = 0.25f;
 	restDetectionParams.restThGyr = 0.5f; //dps
+    restDetectionParams.moveThAcc = 0.20f;
+	restDetectionParams.moveThGyr = 0.10f; //dps
 	sfusion.updateRestDetectionParameters(restDetectionParams);
 
     // initialize device
@@ -262,49 +265,41 @@ void BMI160Sensor::motionLoop() {
     }
     #endif
 
-    getTimeFromIMU();    
-
     {
-        uint32_t now = micros();
-        constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
-        uint32_t elapsed = now - lastPollTime;
-        if (elapsed >= BMI160_TARGET_POLL_INTERVAL_MICROS) {
-            lastPollTime = now - (elapsed - BMI160_TARGET_POLL_INTERVAL_MICROS);
+        #if BMI160_DEBUG
 
-            #if BMI160_DEBUG
                 uint32_t start = micros();
                 readFIFO();
-                uint32_t end = micros();
-                cpuUsageMicros += end - start;
-                if (!lastCpuUsagePrinted) lastCpuUsagePrinted = end;
-                if (end - lastCpuUsagePrinted > 1e6) {
-                    bool restDetected = sfusion.getRestDetected();
-
-                    #define BMI160_FUSION_TYPE "sfusion"
-
-                    m_Logger.debug("readFIFO took %0.4f ms, read gyr %i acc %i mag %i rest %i resets %i readerrs %i type " BMI160_FUSION_TYPE,
-                        ((float)cpuUsageMicros / 1e3f),
-                        gyrReads,
-                        accReads,
-                        magReads,
-                        restDetected,
-                        numFIFODropped,
-                        numFIFOFailedReads
-                    );
-
-                    cpuUsageMicros = 0;
-                    lastCpuUsagePrinted = end;
-                    gyrReads = 0;
-                    accReads = 0;
-                    magReads = 0;
+                if (readFIFO()) {
+                    uint32_t end = micros();
+                    cpuUsageMicros += end - start;
+                    if (!lastCpuUsagePrinted) lastCpuUsagePrinted = end;
+                    if (end - lastCpuUsagePrinted > 1e6) {
+                        bool restDetected = sfusion.getRestDetected()
+                        #define BMI160_FUSION_TYPE "sfusion"
+                        m_Logger.debug("readFIFO took %0.4f ms, read gyr %i acc %i mag %i rest %i resets %i readerrs %i type " BMI160_FUSION_TYPE,
+                            ((float)cpuUsageMicros / 1e3f),
+                            gyrReads,
+                            accReads,
+                            magReads,
+                            restDetected,
+                            numFIFODropped,
+                            numFIFOFailedReads
+                        )
+                        cpuUsageMicros = 0;
+                        lastCpuUsagePrinted = end;
+                        gyrReads = 0;
+                        accReads = 0;
+                        magReads = 0;
+                    }
                 }
-            #else
-                readFIFO();
-            #endif
-            optimistic_yield(100);
-            if (!sfusion.isUpdated()) return;
-            sfusion.clearUpdated();
-        }
+            }
+        #else
+            readFIFO();
+        #endif
+        optimistic_yield(100);
+        if (!sfusion.isUpdated()) return;
+        sfusion.clearUpdated();
     }
 
     {
@@ -400,28 +395,38 @@ void BMI160Sensor::getTimeFromIMU() {
 	}
 }
 
-void BMI160Sensor::readFIFO() {
+bool BMI160Sensor::readFIFO() {
+    getTimeFromIMU();
+	uint32_t now = micros();
+	constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
+	uint32_t elapsed = now - lastPollTime;
+	if (elapsed < BMI160_TARGET_POLL_INTERVAL_MICROS) {
+		return false;
+	}
+    lastPollTime = now - (elapsed - BMI160_TARGET_POLL_INTERVAL_MICROS);
+	optimistic_yield(100);
+
     if (!imu.getFIFOCount(&fifo.length)) {
         #if BMI160_DEBUG
             numFIFOFailedReads++;
         #endif
-        return;
+        return false;
     }
 
-    if (fifo.length <= 1) return;
+    if (fifo.length <= 1) return false;
     if (fifo.length > sizeof(fifo.data)) {
         #if BMI160_DEBUG
             numFIFODropped++;
         #endif
         imu.resetFIFO();
-        return;
+        return false;
     }
     std::fill(fifo.data, fifo.data + fifo.length, 0);
     if (!imu.getFIFOBytes(fifo.data, fifo.length)) {
         #if BMI160_DEBUG
             numFIFOFailedReads++;
         #endif
-        return;
+        return false;
     }
 
     optimistic_yield(100);
@@ -523,6 +528,7 @@ void BMI160Sensor::readFIFO() {
             break;
         }
     }
+    return true;
 }
 
 void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z) {
@@ -1061,55 +1067,81 @@ void BMI160Sensor::maybeCalibrateSens() {
 	float gyroCount[3]; //Use this to determine the axis spun
 	float calculatedScale[3] = {1.0f, 1.0f, 1.0f};
 
+    unsigned long prevLedTime = millis();
+    constexpr uint16_t ledFlashDuration = 600;
+
 	ledManager.off();
 
 	m_Logger.info("");
 	m_Logger.info(
-		"\tStep 0: Let the tracker sit, the light will come on when you should move "
-		"the tracker"
+		"  Step 0: Let the tracker sit, the light will flash when you should reorient the tracker"
 	);
 	m_Logger.info(
-		"\tStep 1: Move the tracker to a corner or edge that aligns the tracker to the "
+		"  Step 1: Move the tracker to a corner or edge that aligns the tracker to the "
 		"same position every time"
 	);
 	m_Logger.info(
-		"\t\tNOTE: You might also want to unplug the USB so it doesn't affect spins"
+		"      NOTE: You might also want to unplug the USB so it doesn't affect spins"
 	);
 	m_Logger.info(
-		"\tLet the tracker rest until the light turns on, you might need to hold it "
-		"against a wall depending on the case and orientation"
+		"  Step 2: Let the tracker rest until the solid light turns on, you might need to hold it"
+	);
+    m_Logger.info(
+		"    against a wall depending on the case and orientation"
 	);
 	m_Logger.info(
-		"\tStep 3: Rotate the tracker in the yaw axis for %d full rotations and align "
+		"  Step 3: Rotate the tracker in the yaw axis for %d full rotations and align "
 		"it with the previous edge ",
 		BMI160_GYRO_SENSITIVITY_SPINS
 	);
 	m_Logger.info(
-		"\t\tNOTE: The yaw axis is the direction of looking left or right with your "
+		"      NOTE: The yaw axis is the direction of looking left or right with your "
 		"head, perpendicular to gravity"
 	);
-	m_Logger.info("\t\tNOTE: The light will turn off after you start moving it");
+	m_Logger.info("      NOTE: The light will turn off after you start moving it");
 
 	m_Logger.info(
-		"\tStep 4: Wait for the light then rotate the tracker 90 degrees to a new axis "
-		"and align with an edge. Repeat steps 2 and 3"
+		"  Step 4: Wait for the flashing light then rotate the tracker 90 degrees "
+		" to a new axis and "
 	);
+    m_Logger.info("    align with an edge. Repeat steps 2 and 3");
 
 	m_Logger.info(
-		"\tStep 5: Wait for the light then rotate the tracker 90 degrees so the last "
-		"axis is up and aligned with an edge. Repeat steps 2 and 3"
+		"  Step 5: Wait for the flashing light then rotate the tracker 90 degrees so the last "
+		"axis is up and"
 	);
+    m_Logger.info("    aligned with an edge. Repeat steps 2 and 3");
 
 	imu.resetFIFO();
     delayMicroseconds(BMI160_ODR_ACC_MICROS);
-    waitForRest();
+    while (!sfusion.getRestDetected()) //Wait for rest
+    {
+        readFIFO();
+    }
+    
 
 	while (count < 3) {
 		ledManager.on();
+        prevLedTime = millis();
         m_Logger.info("Move the tracker to a new axis then let sit");
-		waitForMovement(); //position tracker
+		while (!sfusion.getMoveDetected())
+        {
+            unsigned long now = millis();
+            if (now - ledFlashDuration > prevLedTime) {
+                ledManager.toggle();
+                prevLedTime = millis();
+            }
+            if (sfusion.getRestDetected() && sfusion.isUpdated()) {
+                rawRotationInit = sfusion.getQuaternionQuat();
+                sfusion.clearUpdated();
+            }
+            readFIFO();
+        }
 		ledManager.off();
-		waitForRest();
+		while (!sfusion.getRestDetected())
+        {
+            readFIFO();
+        }
 
 		ledManager.on();  // The user should rotate
 		m_Logger.info("Rotate the tracker %d times", BMI160_GYRO_SENSITIVITY_SPINS);
@@ -1117,26 +1149,25 @@ void BMI160Sensor::maybeCalibrateSens() {
 		gyroCount[1] = 0.0f;
 		gyroCount[2] = 0.0f;
         rawRotationInit = sfusion.getQuaternionQuat();
-		waitForMovement();
+		while (!sfusion.getMoveDetected())
+        {
+            if (sfusion.getRestDetected() && sfusion.isUpdated()) {
+                rawRotationInit = sfusion.getQuaternionQuat();
+                sfusion.clearUpdated();
+            }
+            readFIFO();
+        }
 		ledManager.off();
 
-		do {
-			getTimeFromIMU();
-
-			uint32_t now = micros();
-			constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
-			uint32_t elapsed = now - lastPollTime;
-			if (elapsed >= BMI160_TARGET_POLL_INTERVAL_MICROS) {
-				lastPollTime = now - (elapsed - BMI160_TARGET_POLL_INTERVAL_MICROS);
-				readFIFO();
-				optimistic_yield(100);
+		while (!sfusion.getRestDetected()) {
+			if (readFIFO()) {
 				int16_t gx, gy, gz;
 				imu.getRotation(&gx, &gy, &gz);
 				gyroCount[0] += (float)gx;
 				gyroCount[1] += (float)gy;
 				gyroCount[2] += (float)gz;
 			}
-		} while (!sfusion.getRestDetected());
+		}
 
 		rawRotationFinal = (sfusion.getQuaternionQuat() * rawRotationInit.inverse()).get_euler() * dpsPerRad;
 
@@ -1199,33 +1230,6 @@ void BMI160Sensor::maybeCalibrateSens() {
 #endif // BMI160_USE_SENSCAL
 }
 
-void BMI160Sensor::waitForRest() {
-    do {
-		getTimeFromIMU();
-		uint32_t now = micros();
-		constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
-		uint32_t elapsed = now - lastPollTime;
-		if (elapsed >= BMI160_TARGET_POLL_INTERVAL_MICROS) {
-			lastPollTime = now - (elapsed - BMI160_TARGET_POLL_INTERVAL_MICROS);
-			readFIFO();
-			optimistic_yield(100);
-		}
-	} while (!sfusion.getRestDetected());
-}
-
-void BMI160Sensor::waitForMovement() {
-    do {
-        getTimeFromIMU();
-        uint32_t now = micros();
-        constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
-        uint32_t elapsed = now - lastPollTime;
-        if (elapsed >= BMI160_TARGET_POLL_INTERVAL_MICROS) {
-            lastPollTime = now - (elapsed - BMI160_TARGET_POLL_INTERVAL_MICROS);
-            readFIFO();
-            optimistic_yield(100);
-        }
-	} while (sfusion.getRestDetected());
-}
 
 void BMI160Sensor::remapGyroAccel(sensor_real_t* x, sensor_real_t* y, sensor_real_t* z) {
     remapAllAxis(AXIS_REMAP_GET_ALL_IMU(axisRemap), x, y, z);

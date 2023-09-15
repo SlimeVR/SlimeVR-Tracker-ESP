@@ -159,13 +159,10 @@ class BMI160Sensor : public Sensor {
         bool hasMagCalibration();
         bool hasSensCalibration();
 
-        void waitForRest();
-        void waitForMovement();
-
         void onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z);
         void onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z);
         void onMagRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z);
-        void readFIFO();
+        bool readFIFO();
         void getTimeFromIMU();
 
         void getMagnetometerXYZFromBuffer(uint8_t* data, int16_t* x, int16_t* y, int16_t* z);

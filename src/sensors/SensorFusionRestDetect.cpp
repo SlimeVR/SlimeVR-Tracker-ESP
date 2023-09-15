@@ -31,6 +31,12 @@ namespace SlimeVR
             #endif
         }
 
+        bool SensorFusionRestDetect::getMoveDetected()
+        {
+            return restDetection.getMoveDetected();
+
+        }
+
         void SensorFusionRestDetect::updateRestDetectionParameters(RestDetectionParams newParams)
         {
             restDetection.updateRestDetectionParameters(newParams);

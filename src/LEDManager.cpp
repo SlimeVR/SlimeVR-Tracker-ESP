@@ -41,6 +41,7 @@ namespace SlimeVR
     {
 #if ENABLE_LEDS
         digitalWrite(m_Pin, LED__ON);
+        m_LedStatus = ON;
 #endif
     }
 
@@ -48,6 +49,17 @@ namespace SlimeVR
     {
 #if ENABLE_LEDS
         digitalWrite(m_Pin, LED__OFF);
+        m_LedStatus = OFF;
+#endif
+    }
+
+    void LEDManager::toggle()
+    {
+#if ENABLE_LEDS
+        if (m_LedStatus == OFF) 
+            on();
+        else
+            off();
 #endif
     }
 

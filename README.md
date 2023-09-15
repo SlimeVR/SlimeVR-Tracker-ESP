@@ -81,20 +81,20 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
   
   - **Step 3: Gyroscope Sensitivity Calibration**
 
-    > Step 0: Let the tracker sit, the light will come on when you should move the tracker.
+    > Step 0: Let the tracker sit, the light will flash when you should reorient the tracker.
 
     > Step 1: Move the tracker to a corner or edge that aligns the tracker to the same position every time.
       > NOTE: You might also want to unplug the USB so it doesn't affect spins.
     
-    > Step 2: Let the tracker rest until the light turns on, you might need to hold it against a wall depending on the case and orientation.
+    > Step 2: Let the tracker rest until the solid light turns on, you might need to hold it against a wall depending on the case and orientation.
 
-    > Step 3: Rotate the tracker in the yaw axis for 2 full rotations and align it with the previous edge.
+    > Step 3: Rotate the tracker in the yaw axis for **2** full rotations and align it with the previous edge.
       > NOTE: The yaw axis is the direction of looking left or right with your head, perpendicular to gravity.
       > NOTE: The light will turn off after you start moving it.
 
-    > Step 4: Wait for the light then rotate the tracker 90 degrees to a new axis and align with an edge. Repeat steps 2 and 3.
+    > Step 4: Wait for the flashing light then rotate the tracker 90 degrees to a new axis and align with an edge. Repeat steps 2 and 3.
 
-    > Step 5: Wait for the light then rotate the tracker 90 degrees so the last axis is up and aligned with an edge. Repeat steps 2 and 3
+    > Step 5: Wait for the flashing light then rotate the tracker 90 degrees so the last axis is up and aligned with an edge. Repeat steps 2 and 3.
 
     After letting sit the last time the calibration is complete and the tracker will flash 2 times.
 
