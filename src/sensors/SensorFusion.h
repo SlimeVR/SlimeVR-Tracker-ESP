@@ -74,9 +74,9 @@ namespace SlimeVR
 
             void update6D(sensor_real_t Axyz[3], sensor_real_t Gxyz[3], sensor_real_t deltat=-1.0f);
             void update9D(sensor_real_t Axyz[3], sensor_real_t Gxyz[3], sensor_real_t Mxyz[3], sensor_real_t deltat=-1.0f);
-            void updateAcc(sensor_real_t Axyz[3], sensor_real_t deltat=-1.0f);
-            void updateMag(sensor_real_t Mxyz[3], sensor_real_t deltat=-1.0f);
-            void updateGyro(sensor_real_t Gxyz[3], sensor_real_t deltat=-1.0f);
+            void updateAcc(const sensor_real_t Axyz[3], sensor_real_t deltat=-1.0f);
+            void updateMag(const sensor_real_t Mxyz[3], sensor_real_t deltat=-1.0f);
+            void updateGyro(const sensor_real_t Gxyz[3], sensor_real_t deltat=-1.0f);
 
             bool isUpdated();
             void clearUpdated();

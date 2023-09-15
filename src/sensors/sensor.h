@@ -105,7 +105,7 @@ protected:
     bool newAcceleration = false;
     Vector3 acceleration{};
 
-    SlimeVR::Logging::Logger m_Logger;
+    mutable SlimeVR::Logging::Logger m_Logger;
     
 public:
     uint8_t sclPin = 0;
