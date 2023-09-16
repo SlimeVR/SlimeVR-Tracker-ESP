@@ -1049,7 +1049,17 @@ void BMI160Sensor::maybeCalibrateMag() {
 }
 
 void BMI160Sensor::maybeCalibrateSens() {
-#if BMI160_USE_SENSCAL
+#if !USE_6_AXIS
+    m_Logger.info(
+		"Skipping gyro sensitivity calibration on sensor #%d of type %s at address 0x%02x because magnetometer is enabled",
+		getSensorId(),
+		getIMUNameByType(sensorType),
+		addr
+	);
+    return;
+#endif
+
+#if USE_6_AXIS && BMI160_USE_SENSCAL
     m_Logger.info(
 		"Gyro sensitivity calibration started on sensor #%d of type %s at address 0x%02x",
 		getSensorId(),
