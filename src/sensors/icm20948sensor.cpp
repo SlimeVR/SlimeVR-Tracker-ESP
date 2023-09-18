@@ -102,14 +102,14 @@ void ICM20948Sensor::sendData()
             networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy);
         }
         #endif
-    }
 
 #if SEND_ACCELERATION
-    if(newAcceleration) {
-        newAcceleration = false;
-        networkConnection.sendSensorAcceleration(sensorId, acceleration);
-    }
+        if (newAcceleration) {
+            newAcceleration = false;
+            networkConnection.sendSensorAcceleration(sensorId, acceleration);
+        }
 #endif
+    }
 }
 
 void ICM20948Sensor::startCalibration(int calibrationType)
@@ -478,7 +478,7 @@ void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
                             };
             sfusion.updateAcc(Axyz);
 
-            sfusion.getLinearAcc(this->acceleration);
+            acceleration = sfusion.getLinearAccVec();
 			this->newAcceleration = true;
         }
     }

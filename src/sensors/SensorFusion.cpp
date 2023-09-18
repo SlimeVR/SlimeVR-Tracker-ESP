@@ -156,6 +156,12 @@ namespace SlimeVR
             std::copy(linAccel, linAccel+3, outLinAccel);
         }
 
+        Vector3 SensorFusion::getLinearAccVec()
+        {
+            getLinearAcc();
+            return Vector3(linAccel[0], linAccel[1], linAccel[2]);
+        }
+
         void SensorFusion::calcGravityVec(const sensor_real_t qwxyz[4], sensor_real_t gravVec[3])
         {
             gravVec[0] = 2 * (qwxyz[1] * qwxyz[3] - qwxyz[0] * qwxyz[2]);
