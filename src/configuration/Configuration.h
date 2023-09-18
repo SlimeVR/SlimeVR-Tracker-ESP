@@ -60,8 +60,6 @@ namespace SlimeVR {
             std::vector<CalibrationConfig> m_Calibrations;
 
             Logging::Logger m_Logger = Logging::Logger("Configuration");
-
-            static CalibrationConfig m_EmptyCalibration;
         };
     }
 }

@@ -32,7 +32,7 @@ void BatteryMonitor::Setup()
 #if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
     for (uint8_t i = 0x48; i < 0x4F; i++)
     {
-        if (I2CSCAN::isI2CExist(i))
+        if (I2CSCAN::hasDevOnBus(i))
         {
             address = i;
             break;

@@ -103,6 +103,11 @@ namespace SlimeVR
             getLinearAcc();
             std::copy(linAccel, linAccel+3, outLinAccel);
         }
-        
+
+        Vector3 SensorFusionDMP::getLinearAccVec()
+        {
+            getLinearAcc();
+            return Vector3(linAccel[0], linAccel[1], linAccel[2]);
+        }        
     }
 }

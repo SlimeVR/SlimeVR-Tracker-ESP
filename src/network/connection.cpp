@@ -230,16 +230,16 @@ void Connection::sendHeartbeat() {
 }
 
 // PACKET_ACCEL 4
-void Connection::sendSensorAcceleration(uint8_t sensorId, float* vector) {
+void Connection::sendSensorAcceleration(uint8_t sensorId, Vector3 vector) {
 	MUST(m_Connected);
 
 	MUST(beginPacket());
 
 	MUST(sendPacketType(PACKET_ACCEL));
 	MUST(sendPacketNumber());
-	MUST(sendFloat(vector[0]));
-	MUST(sendFloat(vector[1]));
-	MUST(sendFloat(vector[2]));
+	MUST(sendFloat(vector.x));
+	MUST(sendFloat(vector.y));
+	MUST(sendFloat(vector.z));
 	MUST(sendByte(sensorId));
 
 	MUST(endPacket());
@@ -696,19 +696,18 @@ void Connection::update() {
 				break;
 			}
 
-			uint32_t flagsLength = len - 12;
-
-			if (m_ServerFeatures.isAvailable() || flagsLength <= 0) {
-				break;
-			}
+			bool hadFlags = m_ServerFeatures.isAvailable();
 			
+			uint32_t flagsLength = len - 12;
 			m_ServerFeatures = ServerFeatures::from(&m_Packet[12], flagsLength);
 
-			#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
-				if (m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
-					m_Logger.debug("Server supports packet bundling");
-				}
-			#endif
+			if (!hadFlags) {
+				#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+					if (m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
+						m_Logger.debug("Server supports packet bundling");
+					}
+				#endif
+			}
 
 			break;
 	}

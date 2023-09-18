@@ -24,6 +24,7 @@ namespace SlimeVR
             sensor_real_t const * getGravityVec();
             sensor_real_t const * getLinearAcc();
             void getLinearAcc(sensor_real_t outLinAccel[3]);
+            Vector3 getLinearAccVec();
 
         protected:
             DMPMag<sensor_real_t> dmpmag;

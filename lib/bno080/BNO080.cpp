@@ -159,6 +159,7 @@ boolean BNO080::beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_I
 	if (receivePacket() == true)
 	{
 		if (shtpData[0] == SHTP_REPORT_PRODUCT_ID_RESPONSE)
+		{
 			if (_printDebug == true)
 			{
 				_debugPort->print(F("SW Version Major: 0x"));
@@ -176,6 +177,7 @@ boolean BNO080::beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_I
 				_debugPort->println(SW_Version_Patch, HEX);
 			}
 			return (true);
+		}
 	}
 
 	return (false); //Something went wrong
@@ -1036,7 +1038,7 @@ bool BNO080::readFRSdata(uint16_t recordID, uint8_t startLocation, uint8_t words
 // See 5.2.1 on BNO08X datasheet.
 // Wait For both of these packets specifically up to a max time and exit
 // after both packets are read or max waiting time is reached.
-void BNO080::waitForCompletedReset(void)
+void BNO080::waitForCompletedReset(uint32_t timeout)
 {
 	uint32_t tInitialResetTimeMS = millis();
 	bool tResetCompleteReceived = false;
@@ -1044,9 +1046,12 @@ void BNO080::waitForCompletedReset(void)
 	shtpHeader[2] = 0; // Make sure we aren't reading old data.
 	shtpData[0] = 0;
 
-	// Wait max 5s for the two packets. OR Until we get both reset responses.
-	while (millis() - tInitialResetTimeMS < 5000 &&
+	// Wait requested timeout for the two packets. OR Until we get both reset responses.
+	while (millis() - tInitialResetTimeMS < timeout &&
 	       (!tResetCompleteReceived || !tUnsolicitedResponseReceived)) {
+		#ifdef ESP8266
+			ESP.wdtFeed();
+		#endif
 		receivePacket();
 		if (shtpHeader[2] == 1 && shtpData[0] == 0x01) {
 			tResetCompleteReceived = true;
@@ -1059,17 +1064,18 @@ void BNO080::waitForCompletedReset(void)
 
 //Send command to reset IC
 //Read all advertisement packets from sensor
-//The sensor has been seen to reset twice if we attempt too much too quickly.
-//This seems to work reliably.
 void BNO080::softReset(void)
 {
+	// after power-on sensor is resetting by itself
+	// let's handle that POTENTIAL reset with shorter timeout
+	// in case sensor was not resetted - like after issuing RESET command
+	waitForCompletedReset(1000);
 	shtpData[0] = 1; //Reset
 
 	//Attempt to start communication with sensor
 	sendPacket(CHANNEL_EXECUTABLE, 1); //Transmit packet on channel 1, 1 byte
-
-	waitForCompletedReset();
-	waitForCompletedReset();
+	// now that reset should occur for sure, so let's try with longer timeout
+	waitForCompletedReset(5000);
 }
 
 //Set the operating mode to "On"
