@@ -20,18 +20,19 @@ namespace I2CSCAN
 {
 
     uint8_t pickDevice(uint8_t addr1, uint8_t addr2, bool scanIfNotFound) {
-        if(I2CSCAN::isI2CExist(addr1))
+        if(I2CSCAN::hasDevOnBus(addr1)) {
             return addr1;
-        if(!I2CSCAN::isI2CExist(addr2)) {
-            if(scanIfNotFound) {
-                Serial.println("[ERR] I2C: Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
-                I2CSCAN::scani2cports();
-            } else {
-                Serial.println("[ERR] I2C: Can't find I2C device on provided addresses");
-            }
-            return 0;
         }
-        return addr2;
+        if(I2CSCAN::hasDevOnBus(addr2)) {
+            return addr2;
+        }
+        if (scanIfNotFound) {
+            Serial.println("[ERR] I2C: Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
+            I2CSCAN::scani2cports();
+        } else {
+            Serial.println("[ERR] I2C: Can't find I2C device on provided addresses");
+        }
+        return 0;
     }
 
     void scani2cports()
@@ -103,16 +104,25 @@ namespace I2CSCAN
             }
             else if (error == 4)
             {
-                Serial.printf("[ERR] I2C (@ %s(%d) : %s(%d)): Unknow error at address 0x%02x\n", 
+                Serial.printf("[ERR] I2C (@ %s(%d) : %s(%d)): Unknown error at address 0x%02x\n",
                                 portMap[i].c_str(), portArray[i], portMap[j].c_str(), portArray[j], address);
             }
         }
         return found;
     }
 
-    bool isI2CExist(uint8_t addr) {
-        Wire.beginTransmission(addr);
-        byte error = Wire.endTransmission();
+    bool hasDevOnBus(uint8_t addr) {
+        byte error;
+#if ESP32C3
+        int retries = 1;
+        do {
+#endif
+            Wire.beginTransmission(addr);
+            error = Wire.endTransmission();
+#if ESP32C3
+        }
+        while (error == 5 && retries--);
+#endif
         if(error == 0)
             return true;
         return false;
