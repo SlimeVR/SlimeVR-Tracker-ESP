@@ -40,7 +40,7 @@ namespace SlimeVR
             void motionLoop() override final{};
             void sendData() override{};
             void startCalibration(int calibrationType) override final{};
-            SensorStatus getSensorState() override;
+            SensorStatus getSensorState() override final;
 
         private:
             uint8_t m_ExpectedType;
