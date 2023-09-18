@@ -55,7 +55,7 @@ private:
     icm_20948_DMP_data_t dmpData{};
     icm_20948_DMP_data_t dmpDataTemp{};
 
-    SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration;
+    SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration = {};
 
     SlimeVR::Sensors::SensorFusionDMP sfusion;
 
