@@ -47,7 +47,7 @@ namespace SlimeVR
         class SensorFusion
         {
         public:
-            SensorFusion(float gyrTs, float accTs=-1.0, float magTs=-1.0)
+            SensorFusion(sensor_real_t gyrTs, sensor_real_t accTs=-1.0, sensor_real_t magTs=-1.0)
                 : gyrTs(gyrTs), 
                   accTs( (accTs<0) ? gyrTs : accTs ), 
                   magTs( (magTs<0) ? gyrTs : magTs )
