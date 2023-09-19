@@ -52,7 +52,7 @@ THE SOFTWARE.
 #define BMI160_RA_MAG_CONF             0x44
 #define BMI160_RA_MAG_IF_0_DEVADDR     0x4B
 #define BMI160_RA_MAG_IF_1_MODE        0x4C
-#define BMI160_RA_MAG_IF_2_READ_RA    0x4D
+#define BMI160_RA_MAG_IF_2_READ_RA     0x4D
 #define BMI160_RA_MAG_IF_3_WRITE_RA    0x4E
 #define BMI160_RA_MAG_IF_4_WRITE_VALUE 0x4F
 #define BMI160_RA_IF_CONF              0x6B
@@ -343,11 +343,12 @@ typedef enum {
 #define BMI160_FIFO_A_LEN 6
 
 #define BMI160_RA_ERR                        0x02
-#define BMI160_ERR_MASK_MAG_DRDY_ERR         0x10000000
-#define BMI160_ERR_MASK_DROP_CMD_ERR         0x01000000
-#define BMI160_ERR_MASK_I2C_FAIL             0x00100000
-#define BMI160_ERR_MASK_ERROR_CODE           0x00011110
-#define BMI160_ERR_MASK_CHIP_NOT_OPERABLE    0x00000001
+#define BMI160_ERR_MASK_MAG_DRDY_ERR         0b10000000
+#define BMI160_ERR_MASK_DROP_CMD_ERR         0b01000000
+// datasheet is unclear - reserved or i2c_fail_err?
+// #define BMI160_ERR_MASK_I2C_FAIL             0b00100000
+#define BMI160_ERR_MASK_ERROR_CODE           0b00011110
+#define BMI160_ERR_MASK_CHIP_NOT_OPERABLE    0b00000001
 
 /**
  * Interrupt Latch Mode options
@@ -755,7 +756,7 @@ class BMI160 {
         void waitForMagDrdy();
         bool getSensorTime(uint32_t *v_sensor_time_u32);
         void setMagDeviceAddress(uint8_t addr);
-        bool setMagRegister(uint8_t addr, uint8_t value);
+        void setMagRegister(uint8_t addr, uint8_t value);
 
         bool getErrReg(uint8_t* out);
     private:

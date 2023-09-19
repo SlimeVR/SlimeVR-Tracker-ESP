@@ -33,12 +33,6 @@ void BMI160Sensor::initHMC(BMI160MagRate magRate) {
     imu.setRegister(BMI160_RA_CMD, BMI160_CMD_MAG_MODE_NORMAL);
     delay(60);
 
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_1);
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_2);
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_3);
-    imu.setRegister(BMI160_7F, BMI160_EN_PULL_UP_REG_4);
-    imu.setRegister(BMI160_7F, BMI160_EN_PULL_UP_REG_5);
-
     /* Enable MAG interface */
     imu.setRegister(BMI160_RA_IF_CONF, BMI160_IF_CONF_MODE_PRI_AUTO_SEC_MAG);
     delay(1);
@@ -64,12 +58,6 @@ void BMI160Sensor::initQMC(BMI160MagRate magRate) {
     /* Set MAG interface normal power mode */
     imu.setRegister(BMI160_RA_CMD, BMI160_CMD_MAG_MODE_NORMAL);
     delay(60);
-
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_1);
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_2);
-    imu.setRegister(BMI160_RA_CMD, BMI160_EN_PULL_UP_REG_3);
-    imu.setRegister(BMI160_7F, BMI160_EN_PULL_UP_REG_4);
-    imu.setRegister(BMI160_7F, BMI160_EN_PULL_UP_REG_5);
 
     /* Enable MAG interface */
     imu.setRegister(BMI160_RA_IF_CONF, BMI160_IF_CONF_MODE_PRI_AUTO_SEC_MAG);
