@@ -28,8 +28,8 @@
 
 #else
     //If not using the default address you can set custom addresses here
-    #define PRIMARY_IMU_ADDRESS_ONE 0x6a
-    #define PRIMARY_IMU_ADDRESS_TWO 0x68
+    #define PRIMARY_IMU_ADDRESS_ONE 0x68
+    #define PRIMARY_IMU_ADDRESS_TWO 0x69
     #define SECONDARY_IMU_ADDRESS_ONE 0x69
     #define SECONDARY_IMU_ADDRESS_TWO 0x68
 #endif

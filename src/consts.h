@@ -37,6 +37,7 @@
 #define IMU_ICM42688 10
 #define IMU_BMI270 11
 #define IMU_LSM6DS3TRC 12
+#define IMU_ICM42688P 13
 
 #define IMU_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
 

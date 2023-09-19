@@ -15,7 +15,7 @@ struct LSM6DS3TRC
 {
     static constexpr uint8_t DevAddr = 0x6a;
     static constexpr auto Name = "LSM6DS3TR-C";
-    static constexpr auto Type = 11;
+    static constexpr auto Type = 12;
 
     static constexpr float Freq = 425;
 

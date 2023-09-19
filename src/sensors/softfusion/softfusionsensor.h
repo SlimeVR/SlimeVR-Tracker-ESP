@@ -2,6 +2,7 @@
 
 #include "../sensor.h"
 #include "drivers/lsm6ds3trc.h"
+#include "drivers/icm42688p.h"
 #include "../SensorFusionRestDetect.h"
 
 namespace SlimeVR::Sensors
@@ -124,6 +125,7 @@ public:
     void motionSetup() override final
     {
         if (!detected()) {
+            m_status = SensorStatus::SENSOR_ERROR;
             return;
         }
 
