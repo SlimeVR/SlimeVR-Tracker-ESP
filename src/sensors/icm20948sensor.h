@@ -47,6 +47,7 @@ private:
     unsigned long lastData = 0;
     unsigned long lastDataSent = 0;
     int bias_save_counter = 0;
+    bool hasdata = false;
 
     #define DMPNUMBERTODOUBLECONVERTER 1073741824.0;
 

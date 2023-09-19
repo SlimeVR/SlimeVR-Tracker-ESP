@@ -64,6 +64,7 @@ void ICM20948Sensor::motionLoop()
     }
 #endif
 
+    hasdata = false;
     readFIFOToEnd();
     readRotation();
     checkSensorTimeout();
@@ -82,6 +83,7 @@ void ICM20948Sensor::readFIFOToEnd()
     if(readStatus == ICM_20948_Stat_Ok)
     {
         dmpData = dmpDataTemp;
+        hasdata = true;
         readFIFOToEnd();
     }
 }
@@ -307,7 +309,7 @@ void ICM20948Sensor::readRotation()
 {
     #if(USE_6_AXIS)
     {
-        if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
+        if (((dmpData.header & DMP_header_bitmap_Quat6) > 0) && hasdata)
         {
             // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
             // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
@@ -334,7 +336,7 @@ void ICM20948Sensor::readRotation()
     }
     #else
     {
-        if((dmpData.header & DMP_header_bitmap_Quat9) > 0)
+        if(((dmpData.header & DMP_header_bitmap_Quat9) > 0) && hasdata)
         {
             // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
             // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
