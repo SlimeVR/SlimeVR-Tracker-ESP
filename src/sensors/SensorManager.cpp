@@ -187,12 +187,19 @@ namespace SlimeVR
         void SensorManager::update()
         {
             // Gather IMU data
+            bool allIMUGood = true;
             for (auto sensor : m_Sensors) {
                 if (sensor->isWorking()) {
                     swapI2C(sensor->sclPin, sensor->sdaPin);
                     sensor->motionLoop();
                 }
+                if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR)
+                {
+                    allIMUGood = false;
+                }
             }
+
+            statusManager.setStatus(SlimeVR::Status::IMU_ERROR, !allIMUGood);
 
             if (!networkConnection.isConnected()) {
                 return;
