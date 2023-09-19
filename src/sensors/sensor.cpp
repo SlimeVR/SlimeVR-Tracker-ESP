@@ -26,7 +26,7 @@
 #include "calibration.h"
 
 SensorStatus Sensor::getSensorState() {
-    return isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
+    return isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_ERROR;
 }
 
 void Sensor::setAccelerationReady() {
