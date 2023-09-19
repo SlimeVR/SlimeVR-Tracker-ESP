@@ -223,14 +223,14 @@ class BMI160Sensor : public Sensor {
         double gscaleY = BMI160_GSCALE;
         double gscaleZ = BMI160_GSCALE;
 
-        double GOxyzStaticTempCompensated[3];
+        double GOxyzStaticTempCompensated[3] = {0.0, 0.0, 0.0};
 
         bool isGyroCalibrated = false;
         bool isSensCalCalibrated = false;
         bool isAccelCalibrated = false;
         bool isMagCalibrated = false;
 
-        SlimeVR::Configuration::BMI160CalibrationConfig m_Calibration;
+        SlimeVR::Configuration::BMI160CalibrationConfig m_Calibration = {};
 };
 
 #endif

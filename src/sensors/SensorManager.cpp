@@ -41,14 +41,14 @@ namespace SlimeVR
 {
     namespace Sensors
     {
-        Sensor* SensorManager::buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, int extraParam)
+        Sensor* SensorManager::buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, bool optional, int extraParam)
         {
             m_Logger.trace("Building IMU with: id=%d,\n\
                             imuType=0x%02X, address=0x%02X, rotation=%f,\n\
-                            sclPin=%d, sdaPin=%d, extraParam=%d",
+                            sclPin=%d, sdaPin=%d, extraParam=%d, optional=%d",
                             sensorID,
                             imuType, address, rotation,
-                            sclPin, sdaPin, extraParam);
+                            sclPin, sdaPin, extraParam, optional);
 
             // Now start detecting and building the IMU
             Sensor* sensor = nullptr;
@@ -57,10 +57,17 @@ namespace SlimeVR
             I2CSCAN::clearBus(sdaPin, sclPin);
             swapI2C(sclPin, sdaPin);
 
-            if (I2CSCAN::isI2CExist(address)) {
-                m_Logger.trace("IMU %d found at address 0x%02X", sensorID, address);
+            if (I2CSCAN::hasDevOnBus(address)) {
+                m_Logger.trace("Sensor %d found at address 0x%02X", sensorID + 1, address);
             } else {
-                sensor = new ErroneousSensor(sensorID, imuType);
+                if (!optional) {
+                    m_Logger.error("Mandatory sensor %d not found at address 0x%02X", sensorID + 1, address);
+                    sensor = new ErroneousSensor(sensorID, imuType);
+                }
+                else {
+                    m_Logger.debug("Optional sensor %d not found at address 0x%02X", sensorID + 1, address);
+                    sensor = new EmptySensor(sensorID);
+                }
                 return sensor;
             }
 
