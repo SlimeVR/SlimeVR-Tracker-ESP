@@ -68,6 +68,18 @@ void ICM20948Sensor::motionLoop()
     readFIFOToEnd();
     readRotation();
     checkSensorTimeout();
+// Performance Test
+/*
+    if (hasdata) cntrounds ++;
+
+    if ((lastData2 + 2000) <= millis())
+    {
+        lastData2 = millis();
+        printf("Data worked/2sec: %d, Dataframes: %d\n", cntrounds,cntbuf);
+        cntbuf = 0;
+        cntrounds = 0;
+    }
+*/  
 }
 
 void ICM20948Sensor::readFIFOToEnd()
@@ -83,6 +95,8 @@ void ICM20948Sensor::readFIFOToEnd()
     if(readStatus == ICM_20948_Stat_Ok)
     {
         dmpData = dmpDataTemp;
+// Performance Test
+//        cntbuf ++;
         hasdata = true;
         readFIFOToEnd();
     }
@@ -129,6 +143,19 @@ void ICM20948Sensor::startCalibrationAutoSave()
 
 void ICM20948Sensor::startDMP()
 {
+#ifdef ESP32
+    #if ESP32C3
+        #define ICM20948_ODRGYR 1
+        #define ICM20948_ODRAXL 1
+    #else
+        #define ICM20948_ODRGYR 1
+        #define ICM20948_ODRAXL 1
+    #endif
+#else
+    #define ICM20948_ODRGYR 1
+    #define ICM20948_ODRAXL 1
+#endif
+
     if(imu.initializeDMP() == ICM_20948_Stat_Ok)
     {
         m_Logger.debug("DMP initialized");
@@ -183,7 +210,7 @@ void ICM20948Sensor::startDMP()
 
     #if(USE_6_AXIS)
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 0) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, ICM20948_ODRGYR) == ICM_20948_Stat_Ok)
         {
             m_Logger.debug("Set Quat6 to 100Hz frequency");
         }
@@ -195,7 +222,7 @@ void ICM20948Sensor::startDMP()
     }
     #else
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, ICM20948_ODRGYR) == ICM_20948_Stat_Ok)
         {
             m_Logger.debug("Set Quat9 to 100Hz frequency");
         }
@@ -208,7 +235,7 @@ void ICM20948Sensor::startDMP()
     #endif
 
     #if(SEND_ACCELERATION)
-    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok)
+    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, ICM20948_ODRAXL) == ICM_20948_Stat_Ok)
     {
         this->m_Logger.debug("Set Accel to 100Hz frequency");
     }
