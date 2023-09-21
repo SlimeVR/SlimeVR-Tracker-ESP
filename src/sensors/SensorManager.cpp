@@ -23,7 +23,6 @@
 
 #include "SensorManager.h"
 #include <i2cscan.h>
-#include "network/network.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
 #include "mpu9250sensor.h"
@@ -32,110 +31,218 @@
 #include "icm20948sensor.h"
 #include "ErroneousSensor.h"
 #include "sensoraddresses.h"
+#include "GlobalVars.h"
+
+#if ESP32
+    #include "driver/i2c.h"
+#endif
 
 namespace SlimeVR
 {
     namespace Sensors
     {
-        void SensorManager::setup()
+        Sensor* SensorManager::buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, bool optional, int extraParam)
         {
-            uint8_t firstIMUAddress = 0;
-            uint8_t secondIMUAddress = 0;
+            m_Logger.trace("Building IMU with: id=%d,\n\
+                            imuType=0x%02X, address=0x%02X, rotation=%f,\n\
+                            sclPin=%d, sdaPin=%d, extraParam=%d, optional=%d",
+                            sensorID,
+                            imuType, address, rotation,
+                            sclPin, sdaPin, extraParam, optional);
 
-            bool sharedIMUAddresses = (PRIMARY_IMU_ADDRESS_ONE == SECONDARY_IMU_ADDRESS_ONE && PRIMARY_IMU_ADDRESS_TWO == SECONDARY_IMU_ADDRESS_TWO);
-            {
-                firstIMUAddress = I2CSCAN::pickDevice(PRIMARY_IMU_ADDRESS_ONE, PRIMARY_IMU_ADDRESS_TWO, true);
-                uint8_t sensorID = 0;
-                if(sharedIMUAddresses && firstIMUAddress != PRIMARY_IMU_ADDRESS_ONE)
-                {
-                    sensorID = 1;
+            // Now start detecting and building the IMU
+            Sensor* sensor = nullptr;
+
+            // Clear and reset I2C bus for each sensor upon startup
+            I2CSCAN::clearBus(sdaPin, sclPin);
+            swapI2C(sclPin, sdaPin);
+
+            if (I2CSCAN::hasDevOnBus(address)) {
+                m_Logger.trace("Sensor %d found at address 0x%02X", sensorID + 1, address);
+            } else {
+                if (!optional) {
+                    m_Logger.error("Mandatory sensor %d not found at address 0x%02X", sensorID + 1, address);
+                    sensor = new ErroneousSensor(sensorID, imuType);
                 }
-
-                if (firstIMUAddress == 0)
-                {
-                    m_Sensor1 = new ErroneousSensor(sensorID, IMU);
+                else {
+                    m_Logger.debug("Optional sensor %d not found at address 0x%02X", sensorID + 1, address);
+                    sensor = new EmptySensor(sensorID);
                 }
-                else
-                {
-                    m_Logger.trace("Primary IMU found at address 0x%02X", firstIMUAddress);
-
-#if IMU == IMU_BNO080 || IMU == IMU_BNO085 || IMU == IMU_BNO086
-                    m_Sensor1 = new BNO080Sensor(sensorID, IMU, firstIMUAddress, IMU_ROTATION, PIN_IMU_INT);
-#elif IMU == IMU_BNO055
-                    m_Sensor1 = new BNO055Sensor(sensorID, firstIMUAddress, IMU_ROTATION);
-#elif IMU == IMU_MPU9250
-                    m_Sensor1 = new MPU9250Sensor(sensorID, firstIMUAddress, IMU_ROTATION);
-#elif IMU == IMU_BMI160
-                    m_Sensor1 = new BMI160Sensor(sensorID, firstIMUAddress, IMU_ROTATION);
-#elif IMU == IMU_MPU6500 || IMU == IMU_MPU6050
-                    m_Sensor1 = new MPU6050Sensor(sensorID, IMU, firstIMUAddress, IMU_ROTATION);
-#elif IMU == IMU_ICM20948
-                    m_Sensor1 = new ICM20948Sensor(sensorID, firstIMUAddress, IMU_ROTATION);
-#endif
-                }
-
-                m_Sensor1->motionSetup();
+                return sensor;
             }
 
-            {
-                secondIMUAddress = I2CSCAN::pickDevice(SECONDARY_IMU_ADDRESS_TWO, SECONDARY_IMU_ADDRESS_ONE, false);
-                uint8_t sensorID = 1;
-                if(sharedIMUAddresses && secondIMUAddress != SECONDARY_IMU_ADDRESS_TWO)
+            switch (imuType) {
+            case IMU_BNO080: case IMU_BNO085: case IMU_BNO086:
+                // Extra param used as interrupt pin
                 {
-                    sensorID = 0;
+                uint8_t intPin = extraParam;
+                sensor = new BNO080Sensor(sensorID, imuType, address, rotation, sclPin, sdaPin, intPin);
                 }
+                break;
+            case IMU_BNO055:
+                sensor = new BNO055Sensor(sensorID, address, rotation, sclPin, sdaPin);
+                break;
+            case IMU_MPU9250:
+                sensor = new MPU9250Sensor(sensorID, address, rotation, sclPin, sdaPin);
+                break;
+            case IMU_BMI160:
+                // Extra param used as axis remap descriptor
+                {
+                int axisRemap = extraParam;
+                // Valid remap will use all axes, so there will be non-zero term in upper 9 mag bits
+                // Used to avoid default INT_PIN misinterpreted as axis mapping
+                if (axisRemap < 256) {
+                    sensor = new BMI160Sensor(sensorID, address, rotation, sclPin, sdaPin);
+                } else {
+                    sensor = new BMI160Sensor(sensorID, address, rotation, sclPin, sdaPin, axisRemap);
+                }
+                }
+                break;
+            case IMU_MPU6500: case IMU_MPU6050:
+                sensor = new MPU6050Sensor(sensorID, imuType, address, rotation, sclPin, sdaPin);
+                break;
+            case IMU_ICM20948:
+                sensor = new ICM20948Sensor(sensorID, address, rotation, sclPin, sdaPin);
+                break;
+            default:
+                sensor = new ErroneousSensor(sensorID, imuType);
+                break;
+            }
 
-                if (secondIMUAddress == firstIMUAddress)
-                {
-                    m_Logger.debug("No secondary IMU connected");
-                }
-                else if (secondIMUAddress == 0)
-                {
-                    m_Sensor2 = new ErroneousSensor(sensorID, SECOND_IMU);
-                }
-                else
-                {
-                    m_Logger.trace("Secondary IMU found at address 0x%02X", secondIMUAddress);
+            sensor->motionSetup();
+            return sensor;
+        }
 
-#if SECOND_IMU == IMU_BNO080 || SECOND_IMU == IMU_BNO085 || SECOND_IMU == IMU_BNO086
-                    m_Sensor2 = new BNO080Sensor(sensorID, SECOND_IMU, secondIMUAddress, SECOND_IMU_ROTATION, PIN_IMU_INT_2);
-#elif SECOND_IMU == IMU_BNO055
-                    m_Sensor2 = new BNO055Sensor(sensorID, secondIMUAddress, SECOND_IMU_ROTATION);
-#elif SECOND_IMU == IMU_MPU9250
-                    m_Sensor2 = new MPU9250Sensor(sensorID, secondIMUAddress, SECOND_IMU_ROTATION);
-#elif SECOND_IMU == IMU_BMI160
-                    m_Sensor2 = new BMI160Sensor(sensorID, secondIMUAddress, SECOND_IMU_ROTATION);
-#elif SECOND_IMU == IMU_MPU6500 || SECOND_IMU == IMU_MPU6050
-                    m_Sensor2 = new MPU6050Sensor(sensorID, SECOND_IMU, secondIMUAddress, SECOND_IMU_ROTATION);
-#elif SECOND_IMU == IMU_ICM20948
-                    m_Sensor2 = new ICM20948Sensor(sensorID, secondIMUAddress, SECOND_IMU_ROTATION);
-#endif
-                }
+        // TODO Make it more generic in the future and move another place (abstract sensor interface)
+        void SensorManager::swapI2C(uint8_t sclPin, uint8_t sdaPin)
+        {
+            if (sclPin != activeSCL || sdaPin != activeSDA || !running) {
+                Wire.flush();
+                #if ESP32
+                    if (running) {}
+                    else {
+                        // Reset HWI2C to avoid being affected by I2CBUS reset
+                        Wire.end();
+                    }
+                    // Disconnect pins from HWI2C
+                    pinMode(activeSCL, INPUT);
+                    pinMode(activeSDA, INPUT);
 
-                m_Sensor2->motionSetup();
+                    if (running) {
+                        i2c_set_pin(I2C_NUM_0, sdaPin, sclPin, false, false, I2C_MODE_MASTER);
+                    } else {
+                        Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin), I2C_SPEED);
+                        Wire.setTimeOut(150);
+                    }
+                #else
+                    Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin));
+                #endif
+
+                activeSCL = sclPin;
+                activeSDA = sdaPin;
+            }
+        }
+
+        void SensorManager::setup()
+        {
+            running = false;
+            activeSCL = PIN_IMU_SCL;
+            activeSDA = PIN_IMU_SDA;
+
+            uint8_t sensorID = 0;
+            uint8_t activeSensorCount = 0;
+#define IMU_DESC_ENTRY(...)                                          \
+            {                                                        \
+                Sensor* sensor = buildSensor(sensorID, __VA_ARGS__); \
+                m_Sensors[sensorID] = sensor;                        \
+                sensorID++;                                          \
+                if (sensor->isWorking()) {                           \
+                    m_Logger.info("Sensor %d configured", sensorID); \
+                    activeSensorCount++;                             \
+                }                                                    \
+            }
+            // Apply descriptor list and expand to entrys
+            IMU_DESC_LIST;
+
+#undef IMU_DESC_ENTRY
+            m_Logger.info("%d sensor(s) configured", activeSensorCount);
+            // Check and scan i2c if no sensors active
+            if (activeSensorCount == 0) {
+                m_Logger.error("Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
+                I2CSCAN::scani2cports();
             }
         }
 
         void SensorManager::postSetup()
         {
-            m_Sensor1->postSetup();
-            m_Sensor2->postSetup();
+            running = true;
+            for (auto sensor : m_Sensors) {
+                if (sensor->isWorking()) {
+                    swapI2C(sensor->sclPin, sensor->sdaPin);
+                    sensor->postSetup();
+                }
+            }
         }
 
         void SensorManager::update()
         {
             // Gather IMU data
-            m_Sensor1->motionLoop();
-            m_Sensor2->motionLoop();
+            bool allIMUGood = true;
+            for (auto sensor : m_Sensors) {
+                if (sensor->isWorking()) {
+                    swapI2C(sensor->sclPin, sensor->sdaPin);
+                    sensor->motionLoop();
+                }
+                if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR)
+                {
+                    allIMUGood = false;
+                }
+            }
 
-            if (!ServerConnection::isConnected())
-            {
+            statusManager.setStatus(SlimeVR::Status::IMU_ERROR, !allIMUGood);
+
+            if (!networkConnection.isConnected()) {
                 return;
             }
 
-            // Send updates
-            m_Sensor1->sendData();
-            m_Sensor2->sendData();
+            #ifndef PACKET_BUNDLING
+                static_assert(false, "PACKET_BUNDLING not set");
+            #endif
+            #if PACKET_BUNDLING == PACKET_BUNDLING_BUFFERED
+                uint32_t now = micros();
+                bool shouldSend = false;
+                bool allSensorsReady = true;
+                for (auto sensor : m_Sensors) {
+                    if (!sensor->isWorking()) continue;
+                    if (sensor->hasNewDataToSend()) shouldSend = true;
+                    allSensorsReady &= sensor->hasNewDataToSend();
+                }
+
+                if (now - m_LastBundleSentAtMicros < PACKET_BUNDLING_BUFFER_SIZE_MICROS) {
+                    shouldSend &= allSensorsReady;
+                }
+
+                if (!shouldSend) {
+                    return;
+                }
+
+                m_LastBundleSentAtMicros = now;
+            #endif
+            
+            #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+                networkConnection.beginBundle();
+            #endif
+
+            for (auto sensor : m_Sensors) {
+                if (sensor->isWorking()) {
+                    sensor->sendData();
+                }
+            }
+
+            #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+                networkConnection.endBundle();
+            #endif
         }
+
     }
 }

@@ -22,7 +22,6 @@
 */
 
 #include "sensors/bno080sensor.h"
-#include "network/network.h"
 #include "utils.h"
 #include "GlobalVars.h"
 
@@ -42,13 +41,13 @@ void BNO080Sensor::motionSetup()
                   "SW Version Minor: 0x%02x "
                   "SW Part Number: 0x%02x "
                   "SW Build Number: 0x%02x "
-                  "SW Version Patch: 0x%02x", 
-                  getIMUNameByType(sensorType), 
-                  addr, 
-                  imu.swMajor, 
-                  imu.swMinor, 
-                  imu.swPartNumber, 
-                  imu.swBuildNumber, 
+                  "SW Version Patch: 0x%02x",
+                  getIMUNameByType(sensorType),
+                  addr,
+                  imu.swMajor,
+                  imu.swMinor,
+                  imu.swPartNumber,
+                  imu.swBuildNumber,
                   imu.swVersionPatch
                 );
 
@@ -107,7 +106,7 @@ void BNO080Sensor::motionLoop()
             int16_t mZ = imu.getRawMagZ();
             uint8_t mA = imu.getMagAccuracy();
 
-            Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
+            networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
         }
 #endif
 
@@ -120,11 +119,7 @@ void BNO080Sensor::motionLoop()
             imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
             fusedRotation *= sensorOffset;
 
-            if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
-            {
-                newFusedRotation = true;
-                lastFusedRotationSent = fusedRotation;
-            }
+            setFusedRotationReady();
             // Leave new quaternion if context open, it's closed later
 
 #else // USE_6_AXIS
@@ -134,11 +129,7 @@ void BNO080Sensor::motionLoop()
             imu.getQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, magneticAccuracyEstimate, calibrationAccuracy);
             fusedRotation *= sensorOffset;
 
-            if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
-            {
-                newFusedRotation = true;
-                lastFusedRotationSent = fusedRotation;
-            }
+            setFusedRotationReady();
             // Leave new quaternion if context open, it's closed later
 #endif // USE_6_AXIS
 
@@ -146,8 +137,8 @@ void BNO080Sensor::motionLoop()
 #if SEND_ACCELERATION
             {
                 uint8_t acc;
-                this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
-                this->newAcceleration = true;
+                imu.getLinAccel(acceleration.x, acceleration.y, acceleration.z, acc);
+                setAccelerationReady();
             }
 #endif // SEND_ACCELERATION
         } // Closing new quaternion if context
@@ -160,7 +151,7 @@ void BNO080Sensor::motionLoop()
 
     #if ENABLE_INSPECTION
             {
-                Network::sendInspectionCorrectionData(sensorId, quaternion);
+                networkConnection.sendInspectionCorrectionData(sensorId, quaternion);
             }
     #endif // ENABLE_INSPECTION
 
@@ -192,15 +183,16 @@ void BNO080Sensor::motionLoop()
         if (rr != lastReset)
         {
             lastReset = rr;
-            Network::sendError(rr, this->sensorId);
+            networkConnection.sendSensorError(this->sensorId, rr);
         }
+
         m_Logger.error("Sensor %d doesn't respond. Last reset reason:", sensorId, lastReset);
         m_Logger.error("Last error: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
                 lastError.severity, lastError.error_sequence_number, lastError.error_source, lastError.error, lastError.error_module, lastError.error_code);
     }
 }
 
-uint8_t BNO080Sensor::getSensorState() {
+SensorStatus BNO080Sensor::getSensorState() {
     return lastReset > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
@@ -209,37 +201,37 @@ void BNO080Sensor::sendData()
     if (newFusedRotation)
     {
         newFusedRotation = false;
-        Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
+        networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
 
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
 #endif
-    }
 
 #if SEND_ACCELERATION
-    if(newAcceleration)
-    {
-        newAcceleration = false;
-        Network::sendAccel(this->acceleration, this->sensorId);
-    }
+        if (newAcceleration)
+        {
+            newAcceleration = false;
+            networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
+        }
 #endif
+    }
 
 #if !USE_6_AXIS
-        Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
+        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
 #endif
 
 #if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
     if (newMagData)
     {
         newMagData = false;
-        Network::sendRotationData(&magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy, sensorId);
-        Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
+        networkConnection.sendRotationData(sensorId, &magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy);
+        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
     }
 #endif
 
     if (tap != 0)
     {
-        Network::sendTap(tap, sensorId);
+        networkConnection.sendSensorTap(sensorId, tap);
         tap = 0;
     }
 }

@@ -37,26 +37,40 @@ namespace SlimeVR
         {
         public:
             SensorManager()
-                : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensor1(new EmptySensor(0)), m_Sensor2(new EmptySensor(0)) {}
+                : m_Logger(SlimeVR::Logging::Logger("SensorManager"))
+                , m_Sensors(MAX_IMU_COUNT, nullptr) {
+                    for (auto & u : m_Sensors) {
+                        u = new EmptySensor(0);
+                    }
+                }
             ~SensorManager()
             {
-                delete m_Sensor1;
-                delete m_Sensor2;
+                for (auto u : m_Sensors) {
+                    if (u != nullptr) {
+                        delete u;
+                    }
+                }
             }
 
             void setup();
             void postSetup();
 
             void update();
-
-            Sensor *getFirst() { return m_Sensor1; };
-            Sensor *getSecond() { return m_Sensor2; };
+            
+            std::vector<Sensor *> & getSensors() { return m_Sensors; };
 
         private:
             SlimeVR::Logging::Logger m_Logger;
 
-            Sensor *m_Sensor1;
-            Sensor *m_Sensor2;
+            std::vector<Sensor *> m_Sensors;
+            Sensor* buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, bool optional = false, int extraParam = 0);
+            
+            uint8_t activeSCL = 0;
+            uint8_t activeSDA = 0;
+            bool running = false;
+            void swapI2C(uint8_t scl, uint8_t sda);
+            
+            uint32_t m_LastBundleSentAtMicros = micros();
         };
     }
 }

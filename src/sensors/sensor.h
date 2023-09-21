@@ -35,11 +35,18 @@
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
 
+enum class SensorStatus : uint8_t {
+    SENSOR_OFFLINE = 0,
+    SENSOR_OK = 1,
+    SENSOR_ERROR = 2
+};
+
 class Sensor
 {
 public:
-    Sensor(const char *sensorName, uint8_t type, uint8_t id, uint8_t address, float rotation)
-        : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName))
+    Sensor(const char *sensorName, uint8_t type, uint8_t id, uint8_t address, float rotation, uint8_t sclpin=0, uint8_t sdapin=0)
+        : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
+            sclPin(sclpin), sdaPin(sdapin)
     {
         char buf[4];
         sprintf(buf, "%u", id);
@@ -51,15 +58,19 @@ public:
     virtual void postSetup(){};
     virtual void motionLoop(){};
     virtual void sendData();
+    virtual void setAccelerationReady();
+    virtual void setFusedRotationReady();
     virtual void startCalibration(int calibrationType){};
-    virtual uint8_t getSensorState();
+    virtual SensorStatus getSensorState();
     virtual void printTemperatureCalibrationState();
     virtual void printDebugTemperatureCalibrationState();
     virtual void resetTemperatureCalibrationState();
     virtual void saveTemperatureCalibration();
-    bool isWorking()
-    {
+    bool isWorking() {
         return working;
+    };
+    bool isValid() {
+        return sclPin != sdaPin;
     };
     uint8_t getSensorId() {
         return sensorId;
@@ -67,8 +78,14 @@ public:
     uint8_t getSensorType() {
         return sensorType;
     };
-    Quat& getFusedRotation() {
+    const Vector3& getAcceleration() {
+        return acceleration;
+    };
+    const Quat& getFusedRotation() {
         return fusedRotation;
+    };
+    bool hasNewDataToSend() {
+        return newFusedRotation || newAcceleration;
     };
 
     bool hadData = false;
@@ -86,21 +103,18 @@ protected:
     Quat lastFusedRotationSent{};
 
     bool newAcceleration = false;
-    float acceleration[3]{};
+    Vector3 acceleration{};
 
     SlimeVR::Logging::Logger m_Logger;
+    
+public:
+    uint8_t sclPin = 0;
+    uint8_t sdaPin = 0;
 
 private:
     void printTemperatureCalibrationUnsupported();
 };
 
 const char * getIMUNameByType(int imuType);
-
-enum SensorStatus {
-    SENSOR_OFFLINE = 0,
-    SENSOR_OK = 1,
-    SENSOR_ERROR = 2
-};
-
 
 #endif // SLIMEVR_SENSOR_H_

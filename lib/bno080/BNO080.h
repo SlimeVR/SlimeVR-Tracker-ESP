@@ -156,7 +156,7 @@ public:
 	void enableDebugging(Stream &debugPort = Serial); //Turn on debug printing. If user doesn't specify then Serial will be used.
 
 	void softReset();	  //Try to reset the IMU via software
-	void waitForCompletedReset();
+	void waitForCompletedReset(uint32_t timeout);
 	uint8_t resetReason(); //Query the IMU for the reason it last reset
 	void modeOn();	  //Use the executable channel to turn the BNO on
 	void modeSleep();	  //Use the executable channel to put the BNO to sleep

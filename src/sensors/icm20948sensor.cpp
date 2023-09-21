@@ -23,7 +23,6 @@
 #include "icm20948sensor.h"
 #include "calibration.h"
 #include <i2cscan.h>
-#include "network/network.h"
 #include "GlobalVars.h"
 
 // seconds after previous save (from start) when calibration (DMP Bias) data will be saved to NVS. Increments through the list then stops; to prevent unwelcome eeprom wear.
@@ -61,13 +60,26 @@ void ICM20948Sensor::motionLoop()
         float mY = imu.magY();
         float mZ = imu.magZ();
 
-        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
+        networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
     }
 #endif
 
+    hasdata = false;
     readFIFOToEnd();
     readRotation();
     checkSensorTimeout();
+// Performance Test
+/*
+    if (hasdata) cntrounds ++;
+
+    if ((lastData2 + 2000) <= millis())
+    {
+        lastData2 = millis();
+        printf("Data worked/2sec: %d, Dataframes: %d\n", cntrounds,cntbuf);
+        cntbuf = 0;
+        cntrounds = 0;
+    }
+*/  
 }
 
 void ICM20948Sensor::readFIFOToEnd()
@@ -83,6 +95,9 @@ void ICM20948Sensor::readFIFOToEnd()
     if(readStatus == ICM_20948_Stat_Ok)
     {
         dmpData = dmpDataTemp;
+// Performance Test
+//        cntbuf ++;
+        hasdata = true;
         readFIFOToEnd();
     }
 }
@@ -96,21 +111,21 @@ void ICM20948Sensor::sendData()
 
         #if(USE_6_AXIS)
         {
-            Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, 0, sensorId);
+            networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, 0);
         }
         #else
         {
-            Network::sendRotationData(&fusedRotation, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy, sensorId);
+            networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy);
         }
         #endif
-    }
 
 #if SEND_ACCELERATION
-    if(newAcceleration) {
-        newAcceleration = false;
-        Network::sendAccel(acceleration, sensorId);
-    }
+        if (newAcceleration) {
+            newAcceleration = false;
+            networkConnection.sendSensorAcceleration(sensorId, acceleration);
+        }
 #endif
+    }
 }
 
 void ICM20948Sensor::startCalibration(int calibrationType)
@@ -128,6 +143,19 @@ void ICM20948Sensor::startCalibrationAutoSave()
 
 void ICM20948Sensor::startDMP()
 {
+#ifdef ESP32
+    #if ESP32C3
+        #define ICM20948_ODRGYR 1
+        #define ICM20948_ODRAXL 1
+    #else
+        #define ICM20948_ODRGYR 1
+        #define ICM20948_ODRAXL 1
+    #endif
+#else
+    #define ICM20948_ODRGYR 1
+    #define ICM20948_ODRAXL 1
+#endif
+
     if(imu.initializeDMP() == ICM_20948_Stat_Ok)
     {
         m_Logger.debug("DMP initialized");
@@ -182,7 +210,7 @@ void ICM20948Sensor::startDMP()
 
     #if(USE_6_AXIS)
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, 0) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat6, ICM20948_ODRGYR) == ICM_20948_Stat_Ok)
         {
             m_Logger.debug("Set Quat6 to 100Hz frequency");
         }
@@ -194,7 +222,7 @@ void ICM20948Sensor::startDMP()
     }
     #else
     {
-        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok)
+        if(imu.setDMPODRrate(DMP_ODR_Reg_Quat9, ICM20948_ODRGYR) == ICM_20948_Stat_Ok)
         {
             m_Logger.debug("Set Quat9 to 100Hz frequency");
         }
@@ -207,7 +235,7 @@ void ICM20948Sensor::startDMP()
     #endif
 
     #if(SEND_ACCELERATION)
-    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok)
+    if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, ICM20948_ODRAXL) == ICM_20948_Stat_Ok)
     {
         this->m_Logger.debug("Set Accel to 100Hz frequency");
     }
@@ -300,7 +328,7 @@ void ICM20948Sensor::checkSensorTimeout()
         working = false;
         lastData = millis();
         m_Logger.error("Sensor timeout I2C Address 0x%02x", addr);
-        Network::sendError(1, this->sensorId);
+        networkConnection.sendSensorError(this->sensorId, 1);
     }
 }
 
@@ -308,7 +336,7 @@ void ICM20948Sensor::readRotation()
 {
     #if(USE_6_AXIS)
     {
-        if ((dmpData.header & DMP_header_bitmap_Quat6) > 0)
+        if (((dmpData.header & DMP_header_bitmap_Quat6) > 0) && hasdata)
         {
             // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
             // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
@@ -335,7 +363,7 @@ void ICM20948Sensor::readRotation()
     }
     #else
     {
-        if((dmpData.header & DMP_header_bitmap_Quat9) > 0)
+        if(((dmpData.header & DMP_header_bitmap_Quat9) > 0) && hasdata)
         {
             // Q0 value is computed from this equation: Q0^2 + Q1^2 + Q2^2 + Q3^2 = 1.
             // In case of drift, the sum will not add to 1, therefore, quaternion data need to be corrected with right bias values.
@@ -345,18 +373,18 @@ void ICM20948Sensor::readRotation()
             double q2 = ((double)dmpData.Quat9.Data.Q2) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q3 = ((double)dmpData.Quat9.Data.Q3) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-            quaternion.w = q0;
-            quaternion.x = q1;
-            quaternion.y = q2;
-            quaternion.z = q3;
+            fusedRotation.w = q0;
+            fusedRotation.x = q1;
+            fusedRotation.y = q2;
+            fusedRotation.z = q3;
 
             #if SEND_ACCELERATION
-            calculateAccelerationWithoutGravity(&quaternion);
+            calculateAccelerationWithoutGravity(&fusedRotation);
             #endif
 
-            quaternion *= sensorOffset; //imu rotation
+            fusedRotation *= sensorOffset; //imu rotation
 
-            newData = true;
+            newFusedRotation = true;
             lastData = millis();
         }
     }
@@ -471,26 +499,16 @@ void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
     {
         if((dmpData.header & DMP_header_bitmap_Accel) > 0)
         {
-            this->acceleration[0] = (float)this->dmpData.Raw_Accel.Data.X;
-            this->acceleration[1] = (float)this->dmpData.Raw_Accel.Data.Y;
-            this->acceleration[2] = (float)this->dmpData.Raw_Accel.Data.Z;
+            sfusion.updateQuaternion(*quaternion);
 
-            // get the component of the acceleration that is gravity
-            float gravity[3];
-            gravity[0] = 2 * ((-quaternion->x) * (-quaternion->z) - quaternion->w * quaternion->y);
-            gravity[1] = -2 * (quaternion->w * (-quaternion->x) + quaternion->y * (-quaternion->z));
-            gravity[2] = quaternion->w * quaternion->w - quaternion->x * quaternion->x - quaternion->y * quaternion->y + quaternion->z * quaternion->z;
+            float Axyz[3] = {(float)this->dmpData.Raw_Accel.Data.X * ASCALE_4G,
+                             (float)this->dmpData.Raw_Accel.Data.Y * ASCALE_4G,
+                             (float)this->dmpData.Raw_Accel.Data.Z * ASCALE_4G
+                            };
+            sfusion.updateAcc(Axyz);
 
-            // subtract gravity from the acceleration vector
-            this->acceleration[0] -= gravity[0] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[1] -= gravity[1] * ACCEL_SENSITIVITY_4G;
-            this->acceleration[2] -= gravity[2] * ACCEL_SENSITIVITY_4G;
-
-            // finally scale the acceleration values to mps2
-            this->acceleration[0] *= ASCALE_4G;
-            this->acceleration[1] *= ASCALE_4G;
-            this->acceleration[2] *= ASCALE_4G;
-            this->newAcceleration = true;
+            acceleration = sfusion.getLinearAccVec();
+			this->newAcceleration = true;
         }
     }
     #endif

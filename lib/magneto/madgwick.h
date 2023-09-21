@@ -3,7 +3,16 @@
 
 #include "helper_3dmath.h"
 
-void madgwickQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float deltat);
-void madgwickQuaternionUpdate(float q[4], float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float deltat);
+template<typename T>
+class Madgwick {
+
+    static constexpr float madgwickBeta = 0.1f;
+
+public:
+    void update(T q[4], T ax, T ay, T az, T gx, T gy, T gz, T mx, T my, T mz, T deltat);
+    void update(T q[4], T ax, T ay, T az, T gx, T gy, T gz, T deltat);
+};
+
+#include "madgwick.hpp"
 
 #endif /* _MADGWICK_H_ */

@@ -22,7 +22,6 @@
 */
 
 #include "bmi160sensor.h"
-#include "network/network.h"
 #include "GlobalVars.h"
 #include <hmc5883l.h>
 #include <qmc5883l.h>
@@ -205,7 +204,7 @@ void BMI160Sensor::motionSetup() {
             gscaleZ = BMI160_GSCALE * BMI160_CALCULATE_SENSITIVTY_MUL(offsets.z);
             m_Logger.debug("Custom sensitivity offset enabled: %s %s",
                 offsets.mac,
-                offsets.sensorId == SENSORID_PRIMARY ? "primary" : "aux" 
+                offsets.sensorId == SENSORID_PRIMARY ? "primary" : "aux"
             );
         }
     }
@@ -256,7 +255,7 @@ void BMI160Sensor::motionLoop() {
         getRemappedRotation(&rX, &rY, &rZ);
         getRemappedAcceleration(&aX, &aY, &aZ);
 
-        Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
+        networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, 0, 0, 0, 255);
     }
     #endif
 
@@ -277,13 +276,13 @@ void BMI160Sensor::motionLoop() {
                 sensorTime1 = rawSensorTime;
                 if ((sensorTime0 > 0 || localTime0 > 0) && (sensorTime1 > 0 || sensorTime1 > 0)) {
                     // handle 24 bit overflow
-                    double remoteDt = 
+                    double remoteDt =
                         sensorTime1 >= sensorTime0 ?
                         sensorTime1 - sensorTime0 :
                         (sensorTime1 + 0xFFFFFF) - sensorTime0;
                     double localDt = localTime1 - localTime0;
                     const double nextSensorTimeRatio = localDt / (remoteDt * BMI160_TIMESTAMP_RESOLUTION_MICROS);
-                    
+
                     // handle sdk lags and time travel
                     if (round(nextSensorTimeRatio) == 1.0) {
                         sensorTimeRatio = nextSensorTimeRatio;
@@ -307,7 +306,7 @@ void BMI160Sensor::motionLoop() {
             optimistic_yield(100);
         }
     }
-    
+
     {
         uint32_t now = micros();
         constexpr uint32_t BMI160_TARGET_POLL_INTERVAL_MICROS = 6000;
@@ -322,18 +321,10 @@ void BMI160Sensor::motionLoop() {
                 cpuUsageMicros += end - start;
                 if (!lastCpuUsagePrinted) lastCpuUsagePrinted = end;
                 if (end - lastCpuUsagePrinted > 1e6) {
-                    bool restDetected = false;
-                    #if BMI160_VQF_REST_DETECTION_AVAILABLE
-                        restDetected = vqf.getRestDetected();
-                    #else
-                        restDetected = restDetection.getRestDetected();
-                    #endif
+                    bool restDetected = sfusion.getRestDetected();
 
-                    #if BMI160_USE_VQF
-                        #define BMI160_FUSION_TYPE "vqf"
-                    #else
-                        #define BMI160_FUSION_TYPE "mahony"
-                    #endif
+                    #define BMI160_FUSION_TYPE "sfusion"
+
                     m_Logger.debug("readFIFO took %0.4f ms, read gyr %i acc %i mag %i rest %i resets %i readerrs %i type " BMI160_FUSION_TYPE,
                         ((float)cpuUsageMicros / 1e3f),
                         gyrReads,
@@ -354,8 +345,8 @@ void BMI160Sensor::motionLoop() {
                 readFIFO();
             #endif
             optimistic_yield(100);
-            if (!fusionUpdated) return;
-            fusionUpdated = false;
+            if (!sfusion.isUpdated()) return;
+            sfusion.clearUpdated();
         }
     }
 
@@ -368,9 +359,9 @@ void BMI160Sensor::motionLoop() {
             lastTemperaturePacketSent = now - (elapsed - sendInterval);
             #if BMI160_TEMPCAL_DEBUG
                 uint32_t isCalibrating = gyroTempCalibrator->isCalibrating() ? 10000 : 0;
-                Network::sendTemperature(isCalibrating + 10000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature, sensorId);
+                networkConnection.sendTemperature(sensorId, isCalibrating + 10000 + (gyroTempCalibrator->config.samplesTotal * 100) + temperature);
             #else
-                Network::sendTemperature(temperature, sensorId);
+                networkConnection.sendTemperature(sensorId, temperature);
             #endif
             optimistic_yield(100);
         }
@@ -384,47 +375,13 @@ void BMI160Sensor::motionLoop() {
         if (elapsed >= sendInterval) {
             lastRotationPacketSent = now - (elapsed - sendInterval);
 
-            #if BMI160_USE_VQF
-                #if USE_6_AXIS
-                    vqf.getQuat6D(qwxyz);
-                #else
-                    vqf.getQuat9D(qwxyz);
-                #endif
-            #endif
-            
-            if (isnan(qwxyz[0]) || isnan(qwxyz[1]) || isnan(qwxyz[2]) || isnan(qwxyz[3])) {
-                qwxyz[0] = 1;
-                qwxyz[1] = 0;
-                qwxyz[2] = 0;
-                qwxyz[3] = 0;
-                return;
-            }
+            fusedRotation = sfusion.getQuaternionQuat();
+            setFusedRotationReady();
 
-            fusedRotation.set(qwxyz[1], qwxyz[2], qwxyz[3], qwxyz[0]);
-
-            const Quat q = fusedRotation;
-            sensor_real_t vecGravity[3];
-            vecGravity[0] = 2 * (q.x * q.z - q.w * q.y);
-            vecGravity[1] = 2 * (q.w * q.x + q.y * q.z);
-            vecGravity[2] = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
-
-            VectorFloat linAccel;
-            linAccel.x = lastAxyz[0] - vecGravity[0] * CONST_EARTH_GRAVITY;
-            linAccel.y = lastAxyz[1] - vecGravity[1] * CONST_EARTH_GRAVITY;
-            linAccel.z = lastAxyz[2] - vecGravity[2] * CONST_EARTH_GRAVITY;
-
-            acceleration[0] = linAccel.x;
-            acceleration[1] = linAccel.y;
-            acceleration[2] = linAccel.z;
-            newAcceleration = true;
+            acceleration = sfusion.getLinearAccVec();
+            setAccelerationReady();
 
             fusedRotation *= sensorOffset;
-
-            if (!OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
-            {
-                newFusedRotation = true;
-                lastFusedRotationSent = fusedRotation;
-            }
 
             optimistic_yield(100);
         }
@@ -469,11 +426,11 @@ void BMI160Sensor::readFIFO() {
     for (uint32_t i = 0; i < fifo.length;) {
         #define BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(len) { if (i + len > fifo.length) break; }
         BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(1);
-        
+
         // ignore interrupt tags in header
         header = fifo.data[i] & 0b11111100;
         i++;
-        
+
         if (header == BMI160_FIFO_HEADER_CTL_SKIP_FRAME) {
             BMI160_FIFO_FRAME_ENSURE_BYTES_AVAILABLE(BMI160_FIFO_SKIP_FRAME_LEN);
             break;
@@ -502,7 +459,7 @@ void BMI160Sensor::readFIFO() {
                 #endif
                 i += BMI160_FIFO_M_LEN;
             }
-            
+
             // bmi160 -> 0 lsb 1 msb
             // gyro
             if (header & BMI160_FIFO_HEADER_DATA_FRAME_FLAG_G) {
@@ -539,7 +496,7 @@ void BMI160Sensor::readFIFO() {
                 timestamp1 = (localTime1 - alignmentOffset - syncLatencyMicros) +
                     (++samplesSinceClockSync) * sampleDtMicros;
                 int32_t dtMicros = timestamp1 - timestamp0;
-                
+
                 constexpr float invPeriod = 1.0f / BMI160_ODR_GYR_MICROS;
                 int32_t sampleOffset = round((float)dtMicros * invPeriod) - 1;
                 if (abs(sampleOffset) > 3) {
@@ -562,12 +519,7 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
     #endif
 
     #if BMI160_USE_TEMPCAL
-        bool restDetected = false;
-        #if BMI160_VQF_REST_DETECTION_AVAILABLE
-            restDetected = vqf.getRestDetected();
-        #else
-            restDetected = restDetection.getRestDetected();
-        #endif
+        bool restDetected = sfusion.getRestDetected();
         gyroTempCalibrator->updateGyroTemperatureCalibration(temperature, restDetected, x, y, z);
     #endif
 
@@ -592,27 +544,8 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
     }
     remapGyroAccel(&Gxyz[0], &Gxyz[1], &Gxyz[2]);
 
-    #if !BMI160_VQF_REST_DETECTION_AVAILABLE
-        restDetection.updateGyr(dtMicros, Gxyz);
-    #endif
-    #if USE_6_AXIS
-        #if BMI160_USE_VQF
-            vqf.updateGyr(Gxyz, (double)dtMicros * 1.0e-6);
-        #else
-            mahony.updateInto(qwxyz, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], ((float)dtMicros) * 1.0e-6);
-        #endif
-    #else
-        #if BMI160_USE_VQF
-            vqf.updateGyr(Gxyz, (double)dtMicros * 1.0e-6);
-        #else
-            mahonyQuaternionUpdate(qwxyz, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], ((float)dtMicros) * 1.0e-6f);
-        #endif
-    #endif
-    Axyz[0] = 0;
-    Axyz[1] = 0;
-    Axyz[2] = 0;
+    sfusion.updateGyro(Gxyz, (double)dtMicros * 1.0e-6);
 
-    fusionUpdated = true;
     optimistic_yield(100);
 }
 void BMI160Sensor::onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z) {
@@ -628,12 +561,9 @@ void BMI160Sensor::onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int
     lastAxyz[0] = Axyz[0];
     lastAxyz[1] = Axyz[1];
     lastAxyz[2] = Axyz[2];
-    #if !BMI160_VQF_REST_DETECTION_AVAILABLE
-        restDetection.updateAcc(dtMicros, Axyz);
-    #endif
-    #if BMI160_USE_VQF
-        vqf.updateAcc(Axyz);
-    #endif
+
+    sfusion.updateAcc(Axyz, dtMicros);
+
     optimistic_yield(100);
 }
 void BMI160Sensor::onMagRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z) {
@@ -641,17 +571,13 @@ void BMI160Sensor::onMagRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16
         magReads++;
     #endif
 
+    #if !USE_6_AXIS
     Mxyz[0] = (sensor_real_t)x;
     Mxyz[1] = (sensor_real_t)y;
     Mxyz[2] = (sensor_real_t)z;
-    #if !USE_6_AXIS
-        applyMagCalibrationAndScale(Mxyz);
-    #endif
+    applyMagCalibrationAndScale(Mxyz);
     remapMagnetometer(&Mxyz[0], &Mxyz[1], &Mxyz[2]);
-    #if !USE_6_AXIS
-        #if BMI160_USE_VQF
-            vqf.updateMag(Mxyz);
-        #endif
+    sfusion.updateMag(Mxyz);
     #endif
 }
 
@@ -788,7 +714,7 @@ void BMI160Sensor::startCalibration(int calibrationType) {
     maybeCalibrateGyro();
     maybeCalibrateAccel();
     maybeCalibrateMag();
-    
+
     m_Logger.debug("Saving the calibration data");
 
     SlimeVR::Configuration::CalibrationConfig calibration;
@@ -950,7 +876,7 @@ void BMI160Sensor::maybeCalibrateAccel() {
                 delayMicroseconds(BMI160_ODR_ACC_MICROS);
                 continue;
             }
-            
+
             if (calibrationRestDetection.getRestDetected()) {
                 const uint16_t i = numCurrentPositionSamples * 3;
                 accelCalibrationChunk[i + 0] = ax;
@@ -1029,7 +955,7 @@ void BMI160Sensor::maybeCalibrateMag() {
     delay(100);
     ledManager.on();
     m_Logger.debug("Gathering magnetometer data...");
-    
+
     constexpr float SAMPLE_DELAY_MS = 100.0f;
     constexpr uint16_t magCalibrationSamples =
         MAG_CALIBRATION_DURATION_SEC / (SAMPLE_DELAY_MS / 1e3f);
@@ -1067,31 +993,20 @@ void BMI160Sensor::maybeCalibrateMag() {
 }
 
 void BMI160Sensor::remapGyroAccel(sensor_real_t* x, sensor_real_t* y, sensor_real_t* z) {
-    sensor_real_t gx = *x, gy = *y, gz = *z;
-    *x = BMI160_REMAP_AXIS_X(gx, gy, gz);
-    *y = BMI160_REMAP_AXIS_Y(gx, gy, gz);
-    *z = BMI160_REMAP_AXIS_Z(gx, gy, gz);
+    remapAllAxis(AXIS_REMAP_GET_ALL_IMU(axisRemap), x, y, z);
 }
+
 void BMI160Sensor::remapMagnetometer(sensor_real_t* x, sensor_real_t* y, sensor_real_t* z) {
-    sensor_real_t mx = *x, my = *y, mz = *z;
-    *x = BMI160_MAG_REMAP_AXIS_X(mx, my, mz);
-    *y = BMI160_MAG_REMAP_AXIS_Y(mx, my, mz);
-    *z = BMI160_MAG_REMAP_AXIS_Z(mx, my, mz);
+    remapAllAxis(AXIS_REMAP_GET_ALL_MAG(axisRemap), x, y, z);
 }
 
 void BMI160Sensor::getRemappedRotation(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t gx, gy, gz;
-    imu.getRotation(&gx, &gy, &gz);
-    *x = BMI160_REMAP_AXIS_X(gx, gy, gz);
-    *y = BMI160_REMAP_AXIS_Y(gx, gy, gz);
-    *z = BMI160_REMAP_AXIS_Z(gx, gy, gz);
+    imu.getRotation(x, y, z);
+    remapAllAxis(AXIS_REMAP_GET_ALL_IMU(axisRemap), x, y, z);
 }
 void BMI160Sensor::getRemappedAcceleration(int16_t* x, int16_t* y, int16_t* z) {
-    int16_t ax, ay, az;
-    imu.getAcceleration(&ax, &ay, &az);
-    *x = BMI160_REMAP_AXIS_X(ax, ay, az);
-    *y = BMI160_REMAP_AXIS_Y(ax, ay, az);
-    *z = BMI160_REMAP_AXIS_Z(ax, ay, az);
+    imu.getAcceleration(x, y, z);
+    remapAllAxis(AXIS_REMAP_GET_ALL_IMU(axisRemap), x, y, z);
 }
 
 void BMI160Sensor::getMagnetometerXYZFromBuffer(uint8_t* data, int16_t* x, int16_t* y, int16_t* z) {
