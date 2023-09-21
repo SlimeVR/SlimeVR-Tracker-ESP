@@ -40,6 +40,10 @@ namespace SlimeVR
             void motionLoop() override final{};
             void sendData() override final{};
             void startCalibration(int calibrationType) override final{};
+            SensorStatus getSensorState() override final
+            {
+                return SensorStatus::SENSOR_OFFLINE;
+            };
         };
     }
 }
