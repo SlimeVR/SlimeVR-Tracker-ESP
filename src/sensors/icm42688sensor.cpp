@@ -20,7 +20,6 @@
 */
 
 #include "icm42688sensor.h"
-#include "network/network.h"
 #include "globals.h"
 #include "helper_3dmath.h"
 #include <i2cscan.h>
@@ -44,7 +43,7 @@ void ICM42688Sensor::motionSetup() {
 
     m_Logger.info("Connected to ICM42688 (reported device ID 0x%02x) at address 0x%02x", temp, addr);
 
-    if (I2CSCAN::isI2CExist(addr_mag)) {
+    if (I2CSCAN::hasDevOnBus(addr_mag)) {
         I2Cdev::readByte(addr_mag, MMC5983MA_PRODUCT_ID, &temp);
         if(!(temp == 0x30)) {
             m_Logger.fatal("Can't connect to MMC5983MA (reported device ID 0x%02x) at address 0x%02x", temp, addr_mag);
@@ -54,9 +53,10 @@ void ICM42688Sensor::motionSetup() {
             m_Logger.info("Connected to MMC5983MA (reported device ID 0x%02x) at address 0x%02x", temp, addr_mag);
             magExists = true;
         }
+    } else {
+        m_Logger.info("Magnetometer unavailable!");
+        magExists = false;
     }
-
-    deltat = 1.0 / 1000.0; // gyro fifo 1khz
 
     if (magExists) {
         I2Cdev::writeByte(addr_mag, MMC5983MA_CONTROL_1, 0x80); // Reset MMC now
@@ -136,7 +136,6 @@ void ICM42688Sensor::motionLoop() {
 	count += 32; // Add a few read buffer packets (4 ms)
 	uint16_t packets = count / 8;								 // Packet size 8 bytes
 	uint8_t rawData[2080];
-	uint16_t stco = 0;
     I2Cdev::readBytes(addr, ICM42688_FIFO_DATA, count, &rawData[0]); // Read buffer
 
     accel_read();
@@ -164,22 +163,20 @@ void ICM42688Sensor::motionLoop() {
 		Gxyz[2] = raw2 * gscale; //gres
         parseGyroData();
 
-        // TODO: mag axes will be different, make sure to change them here
-        #if defined(_MAHONY_H_)
-        mahonyQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
-        #elif defined(_MADGWICK_H_)
-        madgwickQuaternionUpdate(q, Axyz[0], Axyz[1], Axyz[2], Gxyz[0], Gxyz[1], Gxyz[2], Mxyz[0], Mxyz[1], Mxyz[2], deltat * 1.0e-6);
-        #endif
+        // TODO: mag axes will be different, make sure to change them???
+        sfusion.updateGyro(Gxyz);
     }
+
+    sfusion.updateAcc(Axyz);
+
+    if (magExists)
+        sfusion.updateMag(Mxyz);
     
-    quaternion.set(-q[2], q[1], q[3], q[0]);
-
-    quaternion *= sensorOffset;
-
-    if(!lastQuatSent.equalsWithEpsilon(quaternion)) {
-        newData = true;
-        lastQuatSent = quaternion;
-    }
+    fusedRotation = sfusion.getQuaternionQuat();
+    fusedRotation *= sensorOffset;
+    acceleration = sfusion.getLinearAccVec();
+    setFusedRotationReady();
+    setAccelerationReady();
 }
 
 void ICM42688Sensor::accel_read() {
@@ -310,7 +307,6 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
     configuration.save();
 
     ledManager.off();
-    Network::sendCalibrationFinished(CALIBRATION_TYPE_EXTERNAL_ALL, 0);
     m_Logger.debug("Saved the calibration data");
 
     m_Logger.info("Calibration data gathered");
