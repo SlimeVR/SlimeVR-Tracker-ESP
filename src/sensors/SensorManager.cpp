@@ -29,6 +29,7 @@
 #include "mpu6050sensor.h"
 #include "bmi160sensor.h"
 #include "icm20948sensor.h"
+#include "icm42688sensor.h"
 #include "ErroneousSensor.h"
 #include "sensoraddresses.h"
 #include "GlobalVars.h"
@@ -103,6 +104,9 @@ namespace SlimeVR
                 break;
             case IMU_ICM20948:
                 sensor = new ICM20948Sensor(sensorID, address, rotation, sclPin, sdaPin);
+                break;
+            case IMU_ICM42688:
+                sensor = new ICM42688Sensor(sensorID, address, rotation, sclPin, sdaPin);
                 break;
             default:
                 sensor = new ErroneousSensor(sensorID, imuType);
