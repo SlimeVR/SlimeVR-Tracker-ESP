@@ -5,7 +5,7 @@
 
 // Calibration method choice: Smooth rotation or keeping the tracker still in 6 orientations
 // (for details refer to defines_bmi160.h)
-#define MPU6050_ACCEL_CALIBRATION_METHOD ACCEL_CALIBRATION_METHOD_ROTATION
+#define MPU6050_ACCEL_CALIBRATION_METHOD ACCEL_CALIBRATION_METHOD_6POINT
 
 // Whether to calibrate accelerometer or not
 // Setting to false will skip this step during calibration
