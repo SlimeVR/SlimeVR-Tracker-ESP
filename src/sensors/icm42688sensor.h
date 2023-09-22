@@ -31,10 +31,14 @@
 #include <MMC5983MA.h>
 #include "I2Cdev.h"
 
+#include "SensorFusion.h"
+
 class ICM42688Sensor : public Sensor
 {
 public:
-    ICM42688Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin) : Sensor("ICM42688Sensor", IMU_ICM42688, id, address, rotation, sclPin, sdaPin){};
+    ICM42688Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin)
+        : Sensor("ICM42688Sensor", IMU_ICM42688, id, address, rotation, sclPin, sdaPin),
+        sfusion(0.001f, 0.01f, 0.01f){};
     ~ICM42688Sensor(){};
     void motionSetup() override final;
     void motionLoop() override final;
@@ -45,13 +49,11 @@ private:
     bool magExists = false;
 
     // raw data and scaled as vector
-    float q[4]{1.0f, 0.0f, 0.0f, 0.0f}; // for raw filter
     float Axyz[3]{};
     float Gxyz[3]{};
     float Mxyz[3]{};
-    Quat correction{0, 0, 0, 0};
-    // Loop timing globals
-    float deltat = 0;                // sample time in seconds
+
+    SlimeVR::Sensors::SensorFusion sfusion;
 
     SlimeVR::Configuration::ICM42688CalibrationConfig m_Calibration;
 
