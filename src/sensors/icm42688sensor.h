@@ -34,7 +34,7 @@
 class ICM42688Sensor : public Sensor
 {
 public:
-    ICM42688Sensor(uint8_t id, uint8_t address, float rotation) : Sensor("ICM42688Sensor", IMU_ICM42688, id, address, rotation){};
+    ICM42688Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin) : Sensor("ICM42688Sensor", IMU_ICM42688, id, address, rotation, sclPin, sdaPin){};
     ~ICM42688Sensor(){};
     void motionSetup() override final;
     void motionLoop() override final;
