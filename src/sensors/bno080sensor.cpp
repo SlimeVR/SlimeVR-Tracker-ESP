@@ -22,7 +22,6 @@
 */
 
 #include "sensors/bno080sensor.h"
-#include "network/network.h"
 #include "utils.h"
 #include "GlobalVars.h"
 
@@ -42,13 +41,13 @@ void BNO080Sensor::motionSetup()
                   "SW Version Minor: 0x%02x "
                   "SW Part Number: 0x%02x "
                   "SW Build Number: 0x%02x "
-                  "SW Version Patch: 0x%02x", 
-                  getIMUNameByType(sensorType), 
-                  addr, 
-                  imu.swMajor, 
-                  imu.swMinor, 
-                  imu.swPartNumber, 
-                  imu.swBuildNumber, 
+                  "SW Version Patch: 0x%02x",
+                  getIMUNameByType(sensorType),
+                  addr,
+                  imu.swMajor,
+                  imu.swMinor,
+                  imu.swPartNumber,
+                  imu.swBuildNumber,
                   imu.swVersionPatch
                 );
 
@@ -107,7 +106,7 @@ void BNO080Sensor::motionLoop()
             int16_t mZ = imu.getRawMagZ();
             uint8_t mA = imu.getMagAccuracy();
 
-            Network::sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
+            networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
         }
 #endif
 
@@ -117,40 +116,20 @@ void BNO080Sensor::motionLoop()
 #if USE_6_AXIS
         if (imu.hasNewGameQuat()) // New quaternion if context
         {
-            imu.getGameQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, calibrationAccuracy);
-            quaternion *= sensorOffset;
+            imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
+            fusedRotation *= sensorOffset;
 
-    #if ENABLE_INSPECTION
-            {
-                Network::sendInspectionFusedIMUData(sensorId, quaternion);
-            }
-    #endif // ENABLE_INSPECTION
-
-            if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
-            {
-                newData = true;
-                lastQuatSent = quaternion;
-            }
+            setFusedRotationReady();
             // Leave new quaternion if context open, it's closed later
 
 #else // USE_6_AXIS
 
         if (imu.hasNewQuat()) // New quaternion if context
         {
-            imu.getQuat(quaternion.x, quaternion.y, quaternion.z, quaternion.w, magneticAccuracyEstimate, calibrationAccuracy);
-            quaternion *= sensorOffset;
+            imu.getQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, magneticAccuracyEstimate, calibrationAccuracy);
+            fusedRotation *= sensorOffset;
 
-    #if ENABLE_INSPECTION
-            {
-                Network::sendInspectionFusedIMUData(sensorId, quaternion);
-            }
-    #endif // ENABLE_INSPECTION
-
-            if (!OPTIMIZE_UPDATES || !lastQuatSent.equalsWithEpsilon(quaternion))
-            {
-                newData = true;
-                lastQuatSent = quaternion;
-            }
+            setFusedRotationReady();
             // Leave new quaternion if context open, it's closed later
 #endif // USE_6_AXIS
 
@@ -158,7 +137,8 @@ void BNO080Sensor::motionLoop()
 #if SEND_ACCELERATION
             {
                 uint8_t acc;
-                this->imu.getLinAccel(this->linearAcceleration[0], this->linearAcceleration[1], this->linearAcceleration[2], acc);
+                imu.getLinAccel(acceleration.x, acceleration.y, acceleration.z, acc);
+                setAccelerationReady();
             }
 #endif // SEND_ACCELERATION
         } // Closing new quaternion if context
@@ -171,7 +151,7 @@ void BNO080Sensor::motionLoop()
 
     #if ENABLE_INSPECTION
             {
-                Network::sendInspectionCorrectionData(sensorId, quaternion);
+                networkConnection.sendInspectionCorrectionData(sensorId, quaternion);
             }
     #endif // ENABLE_INSPECTION
 
@@ -203,68 +183,62 @@ void BNO080Sensor::motionLoop()
         if (rr != lastReset)
         {
             lastReset = rr;
-            Network::sendError(rr, this->sensorId);
+            networkConnection.sendSensorError(this->sensorId, rr);
         }
+
         m_Logger.error("Sensor %d doesn't respond. Last reset reason:", sensorId, lastReset);
         m_Logger.error("Last error: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
                 lastError.severity, lastError.error_sequence_number, lastError.error_source, lastError.error, lastError.error_module, lastError.error_code);
     }
 }
 
-uint8_t BNO080Sensor::getSensorState() {
+SensorStatus BNO080Sensor::getSensorState() {
     return lastReset > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
 void BNO080Sensor::sendData()
 {
-    if (newData)
+    if (newFusedRotation)
     {
-        newData = false;
-        Network::sendRotationData(&quaternion, DATA_TYPE_NORMAL, calibrationAccuracy, sensorId);
-
-#if SEND_ACCELERATION
-        Network::sendAccel(this->linearAcceleration, this->sensorId);
-#endif
-
-#if !USE_6_AXIS
-        Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
-#endif
+        newFusedRotation = false;
+        networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
 
 #ifdef DEBUG_SENSOR
-        m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(quaternion));
+        m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
+#endif
+
+#if SEND_ACCELERATION
+        if (newAcceleration)
+        {
+            newAcceleration = false;
+            networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
+        }
 #endif
     }
+
+#if !USE_6_AXIS
+        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
+#endif
 
 #if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
     if (newMagData)
     {
         newMagData = false;
-        Network::sendRotationData(&magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy, sensorId);
-        Network::sendMagnetometerAccuracy(magneticAccuracyEstimate, sensorId);
+        networkConnection.sendRotationData(sensorId, &magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy);
+        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
     }
 #endif
 
     if (tap != 0)
     {
-        Network::sendTap(tap, sensorId);
+        networkConnection.sendSensorTap(sensorId, tap);
         tap = 0;
     }
 }
 
 void BNO080Sensor::startCalibration(int calibrationType)
 {
-    // TODO It only calibrates gyro, it should have multiple calibration modes, and check calibration status in motionLoop()
-    ledManager.pattern(20, 20, 10);
-    ledManager.blink(2000);
-    imu.calibrateGyro();
-    do
-    {
-        ledManager.on();
-        imu.requestCalibrationStatus();
-        delay(20);
-        imu.getReadings();
-        ledManager.off();
-        delay(20);
-    } while (!imu.calibrationComplete());
-    imu.saveCalibration();
+    // BNO does automatic calibration,
+    // it's always enabled except accelerometer
+    // that is disabled 30 seconds after startup
 }

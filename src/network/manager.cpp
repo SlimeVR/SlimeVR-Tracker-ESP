@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2023 SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,25 +20,33 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#include "manager.h"
 
-#ifndef GLOBALVARS_H
-#define GLOBALVARS_H
+#include "GlobalVars.h"
 
-#include <arduino-timer.h>
+namespace SlimeVR {
+namespace Network {
 
-#include "LEDManager.h"
-#include "configuration/Configuration.h"
-#include "network/connection.h"
-#include "network/manager.h"
-#include "sensors/SensorManager.h"
-#include "status/StatusManager.h"
+void Manager::setup() { ::WiFiNetwork::setUp(); }
 
-extern Timer<> globalTimer;
-extern SlimeVR::LEDManager ledManager;
-extern SlimeVR::Status::StatusManager statusManager;
-extern SlimeVR::Configuration::Configuration configuration;
-extern SlimeVR::Sensors::SensorManager sensorManager;
-extern SlimeVR::Network::Manager networkManager;
-extern SlimeVR::Network::Connection networkConnection;
+void Manager::update() {
+	WiFiNetwork::upkeep();
 
-#endif
+	auto wasConnected = m_IsConnected;
+
+	m_IsConnected = ::WiFiNetwork::isConnected();
+
+	if (!m_IsConnected) {
+		return;
+	}
+
+	if (!wasConnected) {
+		// WiFi was reconnected, rediscover the server and reconnect
+		networkConnection.reset();
+	}
+
+	networkConnection.update();
+}
+
+}  // namespace Network
+}  // namespace SlimeVR

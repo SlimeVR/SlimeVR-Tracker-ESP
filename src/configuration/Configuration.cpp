@@ -32,8 +32,6 @@
 
 namespace SlimeVR {
     namespace Configuration {
-        CalibrationConfig Configuration::m_EmptyCalibration = {NONE};
-
         void Configuration::setup() {
             if (m_Loaded) {
                 return;
@@ -140,7 +138,7 @@ namespace SlimeVR {
 
         CalibrationConfig Configuration::getCalibration(size_t sensorID) const {
             if (sensorID >= m_Calibrations.size()) {
-                return m_EmptyCalibration;
+                return {};
             }
 
             return m_Calibrations.at(sensorID);
@@ -150,7 +148,7 @@ namespace SlimeVR {
             size_t currentCalibrations = m_Calibrations.size();
 
             if (sensorID >= currentCalibrations) {
-                m_Calibrations.resize(sensorID + 1, m_EmptyCalibration);
+                m_Calibrations.resize(sensorID + 1);
             }
 
             m_Calibrations[sensorID] = config;

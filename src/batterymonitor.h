@@ -25,7 +25,6 @@
 
 #include <Arduino.h>
 #include "globals.h"
-#include "network/network.h"
 #include <i2cscan.h>
 #include <I2Cdev.h>
 #include "logging/Logger.h"
@@ -62,7 +61,7 @@
     // Wemos D1 Mini has an internal Voltage Divider with R1=100K and R2=220K > this means, 3.3V analogRead input voltage results in 1023.0
     // Wemos D1 Mini with Wemos Battery Shield v1.2.0 or higher: Battery Shield with J2 closed, has an additional 130K resistor. So the resulting Voltage Divider is R1=220K+100K=320K and R2=100K > this means, 4.5V analogRead input voltage results in 1023.0
     // ESP32 Boards may have not the internal Voltage Divider. Also ESP32 has a 12bit ADC (0..4095). So R1 and R2 can be changed.
-    // Diagramm: 
+    // Diagramm:
     //   (Battery)--- [BATTERY_SHIELD_RESISTANCE] ---(INPUT_BOARD)---  [BATTERY_SHIELD_R2] ---(ESP_INPUT)--- [BATTERY_SHIELD_R1] --- (GND)
     // SlimeVR Board can handle max 5V > so analogRead of 5.0V input will result in 1023.0
   #define batteryADCMultiplier ADCVoltageMax / ADCResulution * (BATTERY_SHIELD_R1 + BATTERY_SHIELD_R2 + BATTERY_SHIELD_RESISTANCE) / BATTERY_SHIELD_R1

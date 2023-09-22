@@ -22,9 +22,9 @@
 */
 
 #include "serialcommands.h"
-#include "network/network.h"
 #include "logging/Logger.h"
 #include <CmdCallback.hpp>
+#include <libb64/cdecode.h>
 #include "GlobalVars.h"
 #include "batterymonitor.h"
 #include "utils.h"
@@ -38,19 +38,37 @@ namespace SerialCommands {
 
     CmdCallback<6> cmdCallbacks;
     CmdParser cmdParser;
-    CmdBuffer<64> cmdBuffer;
+    CmdBuffer<256> cmdBuffer;
 
     void cmdSet(CmdParser * parser) {
-        if(parser->getParamCount() != 1 && parser->equalCmdParam(1, "WIFI")  ) {
-            if(parser->getParamCount() < 3) {
-                logger.error("CMD SET WIFI ERROR: Too few arguments");
-                logger.info("Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
-            } else {
-                WiFiNetwork::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
-                logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
-            }
+        if(parser->getParamCount() != 1) {
+			if (parser->equalCmdParam(1, "WIFI")) {
+				if(parser->getParamCount() < 3) {
+					logger.error("CMD SET WIFI ERROR: Too few arguments");
+					logger.info("Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
+				} else {
+					WiFiNetwork::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
+					logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
+				}
+			} else if (parser->equalCmdParam(1, "BWIFI")) {
+				if(parser->getParamCount() < 3) {
+					logger.error("CMD SET BWIFI ERROR: Too few arguments");
+					logger.info("Syntax: SET BWIFI <B64SSID> <B64PASSWORD>");
+				} else {
+					char ssid[33];
+					char pass[65];
+					const char * b64ssid = parser->getCmdParam(2);
+					const char * b64pass = parser->getCmdParam(3);
+					base64_decode_chars(b64ssid, strlen_P(b64ssid), ssid);
+					base64_decode_chars(b64pass, strlen_P(b64pass), pass);
+					WiFiNetwork::setWiFiCredentials(ssid, pass);
+					logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
+				}
+			} else {
+            	logger.error("CMD SET ERROR: Unrecognized variable to set");
+			}
         } else {
-            logger.error("CMD SET ERROR: Unrecognized variable to set");
+            logger.error("CMD SET ERROR: No variable to set");
         }
     }
 
@@ -66,36 +84,30 @@ namespace SerialCommands {
             statusManager.getStatus(),
             WiFiNetwork::getWiFiState()
         );
-        Sensor* sensor1 = sensorManager.getFirst();
-        Sensor* sensor2 = sensorManager.getSecond();
-        logger.info(
-            "Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
-            getIMUNameByType(sensor1->getSensorType()),
-            UNPACK_QUATERNION(sensor1->getQuaternion()),
-            sensor1->isWorking() ? "true" : "false",
-            sensor1->hadData ? "true" : "false"
-        );
-        logger.info(
-            "Sensor 2: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
-            getIMUNameByType(sensor2->getSensorType()),
-            UNPACK_QUATERNION(sensor2->getQuaternion()),
-            sensor2->isWorking() ? "true" : "false",
-            sensor2->hadData ? "true" : "false"
-        );
+        for (auto sensor : sensorManager.getSensors()) {
+            logger.info(
+                "Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
+                sensor->getSensorId(),
+                getIMUNameByType(sensor->getSensorType()),
+                UNPACK_QUATERNION(sensor->getFusedRotation()),
+                sensor->isWorking() ? "true" : "false",
+                sensor->hadData ? "true" : "false"
+            );
+        }
     }
 
     void cmdGet(CmdParser * parser) {
         if (parser->getParamCount() < 2) {
             return;
         }
-        
+
         if (parser->equalCmdParam(1, "INFO")) {
             printState();
         }
 
         if (parser->equalCmdParam(1, "CONFIG")) {
             String str =
-                "BOARD=%d\n" 
+                "BOARD=%d\n"
                 "IMU=%d\n"
                 "SECOND_IMU=%d\n"
                 "IMU_ROTATION=%f\n"
@@ -145,20 +157,46 @@ namespace SerialCommands {
                 statusManager.getStatus(),
                 WiFiNetwork::getWiFiState()
             );
-            Sensor* sensor1 = sensorManager.getFirst();
-            sensor1->motionLoop();
+            Sensor* sensor0 = sensorManager.getSensors()[0];
+            sensor0->motionLoop();
             logger.info(
-                "[TEST] Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
-                getIMUNameByType(sensor1->getSensorType()),
-                UNPACK_QUATERNION(sensor1->getQuaternion()),
-                sensor1->isWorking() ? "true" : "false",
-                sensor1->hadData ? "true" : "false"
+                "[TEST] Sensor[0]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
+                getIMUNameByType(sensor0->getSensorType()),
+                UNPACK_QUATERNION(sensor0->getFusedRotation()),
+                sensor0->isWorking() ? "true" : "false",
+                sensor0->hadData ? "true" : "false"
             );
-            if(!sensor1->hadData) {
-                logger.error("[TEST] Sensor 1 didn't send any data yet!");
+            if(!sensor0->hadData) {
+                logger.error("[TEST] Sensor[0] didn't send any data yet!");
             } else {
-                logger.info("[TEST] Sensor 1 sent some data, looks working.");
+                logger.info("[TEST] Sensor[0] sent some data, looks working.");
             }
+        }
+
+        if (parser->equalCmdParam(1, "WIFISCAN")) {
+			logger.info("[WSCAN] Scanning for WiFi networks...");
+
+			// Scan would fail if connecting, stop connecting before scan
+			if (WiFi.status() != WL_CONNECTED) WiFi.disconnect();
+
+			WiFi.scanNetworks();
+
+			int scanRes = WiFi.scanComplete();
+			if (scanRes >= 0) {
+				logger.info("[WSCAN] Found %d networks:", scanRes);
+				for (int i = 0; i < scanRes; i++) {
+					logger.info("[WSCAN] %d:\t%02d\t%s\t(%d)\t%s",
+						i, WiFi.SSID(i).length(), WiFi.SSID(i).c_str(), WiFi.RSSI(i),
+						((WiFi.encryptionType(i) == 0) ? "OPEN" : "PASS")
+					);
+				}
+				WiFi.scanDelete();
+			} else {
+				logger.info("[WSCAN] Scan failed!");
+			}
+
+			// Restore conencting state
+			if (WiFi.status() != WL_CONNECTED) WiFi.begin();
         }
     }
 
@@ -195,20 +233,24 @@ namespace SerialCommands {
     void cmdTemperatureCalibration(CmdParser* parser) {
         if (parser->getParamCount() > 1) {
             if (parser->equalCmdParam(1, "PRINT")) {
-                sensorManager.getFirst()->printTemperatureCalibrationState();
-                sensorManager.getSecond()->printTemperatureCalibrationState();
+                for (auto sensor : sensorManager.getSensors()) {
+                    sensor->printTemperatureCalibrationState();
+                }
                 return;
             } else if (parser->equalCmdParam(1, "DEBUG")) {
-                sensorManager.getFirst()->printDebugTemperatureCalibrationState();
-                sensorManager.getSecond()->printDebugTemperatureCalibrationState();
+                for (auto sensor : sensorManager.getSensors()) {
+                    sensor->printDebugTemperatureCalibrationState();
+                }
                 return;
             } else if (parser->equalCmdParam(1, "RESET")) {
-                sensorManager.getFirst()->resetTemperatureCalibrationState();
-                sensorManager.getSecond()->resetTemperatureCalibrationState();
+                for (auto sensor : sensorManager.getSensors()) {
+                    sensor->resetTemperatureCalibrationState();
+                }
                 return;
             } else if (parser->equalCmdParam(1, "SAVE")) {
-                sensorManager.getFirst()->saveTemperatureCalibration();
-                sensorManager.getSecond()->saveTemperatureCalibration();
+                for (auto sensor : sensorManager.getSensors()) {
+                    sensor->saveTemperatureCalibration();
+                }
                 return;
             }
         }
@@ -220,7 +262,7 @@ namespace SerialCommands {
         logger.info("Note:");
         logger.info("  Temperature calibration config saves automatically when calibration percent is at 100%");
     }
-    
+
     void setUp() {
         cmdCallbacks.addCmd("SET", &cmdSet);
         cmdCallbacks.addCmd("GET", &cmdGet);
