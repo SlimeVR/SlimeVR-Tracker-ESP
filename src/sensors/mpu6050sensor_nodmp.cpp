@@ -265,7 +265,11 @@ void MPU6050NoDMPSensor::motionLoop()
 
 #if SEND_ACCELERATION
     {
-        sfusion.getLinearAcc(this->acceleration);
+        sensor_real_t accel[3];
+        sfusion.getLinearAcc(accel);
+        this->acceleration.x = accel[0]; 
+        this->acceleration.y = accel[1]; 
+        this->acceleration.z = accel[2];
         this->newAcceleration = true;
     }
 #endif
