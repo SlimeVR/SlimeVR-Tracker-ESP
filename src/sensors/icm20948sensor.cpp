@@ -324,11 +324,12 @@ void ICM20948Sensor::startMotionLoop()
 
 void ICM20948Sensor::checkSensorTimeout()
 {
-    if(lastData + 1000 < millis()) {
+    unsigned long currenttime = millis();
+    if(lastData + 2000 < currenttime) {
         working = false;
-        lastData = millis();
-        m_Logger.error("Sensor timeout I2C Address 0x%02x", addr);
+        m_Logger.error("Sensor timeout I2C Address 0x%02x delaytime: %d ms", addr, currenttime-lastData );
         networkConnection.sendSensorError(this->sensorId, 1);
+        lastData = currenttime;
     }
 }
 
