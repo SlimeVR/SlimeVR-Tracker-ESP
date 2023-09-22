@@ -72,6 +72,7 @@ const char * getIMUNameByType(int imuType) {
         case IMU_MPU9250:
             return "MPU9250";
         case IMU_MPU6500:
+        case IMU_MPU6500_NODMP:
             return "MPU6500";
         case IMU_BNO080:
             return "BNO080";
@@ -80,6 +81,7 @@ const char * getIMUNameByType(int imuType) {
         case IMU_BNO055:
             return "BNO055";
         case IMU_MPU6050:
+        case IMU_MPU6050_NODMP:
             return "MPU6050";
         case IMU_BNO086:
             return "BNO086";

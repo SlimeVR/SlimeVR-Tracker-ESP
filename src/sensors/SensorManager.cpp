@@ -27,6 +27,7 @@
 #include "bno080sensor.h"
 #include "mpu9250sensor.h"
 #include "mpu6050sensor.h"
+#include "mpu6050sensor_nodmp.h"
 #include "bmi160sensor.h"
 #include "icm20948sensor.h"
 #include "icm42688sensor.h"
@@ -101,6 +102,9 @@ namespace SlimeVR
                 break;
             case IMU_MPU6500: case IMU_MPU6050:
                 sensor = new MPU6050Sensor(sensorID, imuType, address, rotation, sclPin, sdaPin);
+                break;
+            case IMU_MPU6500_NODMP: case IMU_MPU6050_NODMP:
+                sensor = new MPU6050NoDMPSensor(sensorID, imuType, address, rotation, sclPin, sdaPin);
                 break;
             case IMU_ICM20948:
                 sensor = new ICM20948Sensor(sensorID, address, rotation, sclPin, sdaPin);
