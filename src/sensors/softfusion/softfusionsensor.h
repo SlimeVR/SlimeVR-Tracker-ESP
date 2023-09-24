@@ -16,6 +16,8 @@ class SoftFusionSensor : public Sensor
 
     static constexpr auto GyroCalibDelaySeconds = 5;
     static constexpr auto GyroCalibSeconds = 5;
+    static constexpr auto SampleRateCalibDelaySeconds = 1;
+    static constexpr auto SampleRateCalibSeconds = 5;
 
     static constexpr auto AccelCalibDelaySeconds = 3;
     static constexpr auto AccelCalibRestSeconds = 3;
@@ -49,16 +51,15 @@ class SoftFusionSensor : public Sensor
             m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
             networkConnection.sendTemperature(sensorId, temperature);
         }
-
     }
 
-public:
-    SoftFusionSensor(uint8_t id, uint8_t sclPin, uint8_t sdaPin, float rotation)
-    : Sensor(imu::Name, imu::Type, id, imu::DevAddr, rotation, sclPin, sdaPin),
-      m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs) {}
-    ~SoftFusionSensor(){}
+    void recalcFusion()
+    {
+        m_fusion = SensorFusionRestDetect(m_calibration.G_Ts, m_calibration.A_Ts, m_calibration.M_Ts);
+    }
 
-    void processAccelSample(const int16_t xyz[3], const sensor_real_t timeDelta) {
+    void processAccelSample(const int16_t xyz[3], const sensor_real_t timeDelta)
+    {
         sensor_real_t accelData[] = {
             static_cast<sensor_real_t>(xyz[0]),
             static_cast<sensor_real_t>(xyz[1]),
@@ -72,16 +73,40 @@ public:
         accelData[1] = (m_calibration.A_Ainv[1][0] * tmp[0] + m_calibration.A_Ainv[1][1] * tmp[1] + m_calibration.A_Ainv[1][2] * tmp[2]) * AScale;
         accelData[2] = (m_calibration.A_Ainv[2][0] * tmp[0] + m_calibration.A_Ainv[2][1] * tmp[1] + m_calibration.A_Ainv[2][2] * tmp[2]) * AScale;
 
-        m_fusion.updateAcc(accelData, timeDelta);
+        m_fusion.updateAcc(accelData, m_calibration.A_Ts);
     }
 
-    void processGyroSample(const int16_t xyz[3], const sensor_real_t timeDelta) {
+    void processGyroSample(const int16_t xyz[3], const sensor_real_t timeDelta)
+    {
         const sensor_real_t scaledData[] = {
             static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off[0])),
             static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[1]) - m_calibration.G_off[1])),
             static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2]))};
-        m_fusion.updateGyro(scaledData, timeDelta);
+        m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
     }
+
+    void eatSamplesForSeconds(const size_t seconds) {
+        const auto calibTargetDelay = millis() + 1000 * seconds;
+        auto lastSecondsRemaining = seconds;
+        while (millis() < calibTargetDelay)
+        {
+            auto currentSecondsRemaining = (calibTargetDelay - millis()) / 1000;
+            if (currentSecondsRemaining != lastSecondsRemaining) {
+                m_Logger.info("%d...", currentSecondsRemaining + 1);
+                lastSecondsRemaining = currentSecondsRemaining;
+            }
+            m_sensor.bulkRead(
+                [](const int16_t xyz[3], const sensor_real_t timeDelta) { },
+                [](const int16_t xyz[3], const sensor_real_t timeDelta) { }
+            );
+        }
+    }
+
+public:
+    SoftFusionSensor(uint8_t id, uint8_t sclPin, uint8_t sdaPin, float rotation)
+    : Sensor(imu::Name, imu::Type, id, imu::DevAddr, rotation, sclPin, sdaPin),
+      m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs) {}
+    ~SoftFusionSensor(){}
 
     void motionLoop() override final
     {
@@ -140,6 +165,7 @@ public:
         switch (sensorCalibration.type) {
             case SlimeVR::Configuration::CalibrationConfigType::SFUSION:
                 m_calibration = sensorCalibration.data.sfusion;
+                recalcFusion();
                 break;
 
             case SlimeVR::Configuration::CalibrationConfigType::NONE:
@@ -150,8 +176,6 @@ public:
                 m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
                 m_Logger.info("Calibration is advised");
                 startCalibration(0);
-                startCalibration(1);
-                saveCalibration();
         }
 
         m_status = SensorStatus::SENSOR_OK;
@@ -161,13 +185,26 @@ public:
 
     void startCalibration(int calibrationType) override final
     {
-        if (calibrationType == 0)
+        if (calibrationType == 0) {
+            // ALL
+            calibrateSampleRate();
+            calibrateGyroOffset();
+            calibrateAccel();
+        }
+        else if (calibrationType == 1)
+        {
+            calibrateSampleRate();
+        }
+        else if (calibrationType == 2)
         {
             calibrateGyroOffset();
         }
-        else if (calibrationType == 1) {
+        else if (calibrationType == 3)
+        {
             calibrateAccel();
         }
+
+        saveCalibration();
     }
 
     void saveCalibration()
@@ -185,20 +222,10 @@ public:
         // Wait for sensor to calm down before calibration
         m_Logger.info("Put down the device and wait for baseline gyro reading calibration (%d seconds)", GyroCalibDelaySeconds);
         ledManager.on();
-        const auto targetDelay = millis() + 1000 * GyroCalibDelaySeconds;
-        uint32_t sampleCount = 0;
-
-        while (millis() < targetDelay)
-        {
-            m_sensor.bulkRead(
-                [](const int16_t xyz[3], const sensor_real_t timeDelta) { },
-                [&sampleCount](const int16_t xyz[3], const sensor_real_t timeDelta) { }
-            );
-        }
+        eatSamplesForSeconds(GyroCalibDelaySeconds);
         ledManager.off();
 
         m_calibration.temperature = m_sensor.getDirectTemp();
-        m_Logger.trace("Skipped %d samples", sampleCount);
         m_Logger.trace("Calibration temperature: %f", m_calibration.temperature);
 
         ledManager.pattern(100, 100, 3);
@@ -207,7 +234,7 @@ public:
 
         int32_t sumXYZ[3] = {0};
         const auto targetCalib = millis() + 1000 * GyroCalibSeconds;
-        sampleCount = 0;
+        uint32_t sampleCount = 0;
 
         while (millis() < targetCalib)
         {
@@ -235,10 +262,7 @@ public:
         auto magneto = std::make_unique<MagnetoCalibration>();
         m_Logger.info("Put the device into 6 unique orientations (all sides), leave it still and do not hold/touch for %d seconds each", AccelCalibRestSeconds);
         ledManager.on();
-        for (auto i = AccelCalibDelaySeconds; i > 0; i--) {
-            m_Logger.info("%d...", i);
-            delay(1000);
-        }
+        eatSamplesForSeconds(AccelCalibDelaySeconds);
         ledManager.off();
 
         RestDetectionParams calibrationRestDetectionParams;
@@ -265,7 +289,6 @@ public:
         m_Logger.info("Waiting for position %i, you can leave the device as is...", numPositionsRecorded + 1);
         bool samplesGathered = false;
         while (!samplesGathered) {
-
             m_sensor.bulkRead(
                 [&](const int16_t xyz[3], const sensor_real_t timeDelta) {
                     const sensor_real_t scaledData[] = {
@@ -343,6 +366,38 @@ public:
         m_Logger.debug("}");
     }
 
+    void calibrateSampleRate()
+    {
+        m_Logger.debug("Calibrating IMU sample rate in %d second(s)...", SampleRateCalibDelaySeconds);
+        ledManager.on();
+        eatSamplesForSeconds(SampleRateCalibDelaySeconds);
+
+        uint32_t accelSamples = 0;
+        uint32_t gyroSamples = 0;
+
+        const auto calibTarget = millis() + 1000 * SampleRateCalibSeconds;
+        m_Logger.debug("Counting samples now...");
+        uint32_t currentTime;
+        while ((currentTime = millis()) < calibTarget)
+        {
+            m_sensor.bulkRead(
+                [&accelSamples](const int16_t xyz[3], const sensor_real_t timeDelta) { accelSamples++; },
+                [&gyroSamples](const int16_t xyz[3], const sensor_real_t timeDelta) { gyroSamples++; }
+            );
+        }
+
+        const auto millisFromStart = currentTime - (calibTarget - 1000 * SampleRateCalibSeconds);
+        m_Logger.debug("Collected %d gyro, %d acc samples during %d ms", gyroSamples, accelSamples, millisFromStart);
+        m_calibration.A_Ts = millisFromStart / (accelSamples * 1000.0);
+        m_calibration.G_Ts = millisFromStart / (gyroSamples * 1000.0) ;
+
+        m_Logger.debug("Gyro frequency %fHz, accel frequency: %fHz", 1.0/m_calibration.G_Ts, 1.0/m_calibration.A_Ts);
+        ledManager.off();
+
+        //fusion needs to be recalculated
+        recalcFusion();
+    }
+
     SensorStatus getSensorState() override final
     {
         return m_status;
@@ -350,7 +405,19 @@ public:
 
     T m_sensor;
     SensorFusionRestDetect m_fusion;
-    SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration = {};
+    SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration = {
+        // let's create here transparent calibration that doesn't affect input data
+        .A_B = {0.0, 0.0, 0.0},
+        .A_Ainv = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
+        .M_B = {0.0, 0.0, 0.0},
+        .M_Ainv = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
+        .G_off = { 0.0, 0.0, 0.0 },
+        .temperature = 0.0,
+        .A_Ts = imu::AccTs,
+        .G_Ts = imu::GyrTs,
+        .M_Ts = imu::MagTs,
+        .G_Sens = {1.0, 1.0, 1.0}
+    };
 
     SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
     uint32_t m_lastPollTime = micros();

@@ -9,6 +9,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 
 // Driver uses acceleration range at 8g
 // and gyroscope range at 1000dps
+// Gyroscope ODR = 500Hz, accel ODR = 100Hz
 
 template <template<uint8_t> typename I2CImpl>
 struct ICM42688P
@@ -17,8 +18,9 @@ struct ICM42688P
     static constexpr auto Name = "ICM-42688-P";
     static constexpr auto Type = 13;
 
-    static constexpr float GyrTs=1.0/500;
-    static constexpr float AccTs=1.0/100;
+    static constexpr float GyrTs=1.0/500.0;
+    static constexpr float AccTs=1.0/100.0;
+
     static constexpr float MagTs=1.0/100;
 
     static constexpr float GyroSensitivity = 32.8f;
@@ -26,11 +28,6 @@ struct ICM42688P
 
     using i2c = I2CImpl<DevAddr>;
  
-    //uint32_t m_freqSamples = 1;
-    //float m_freq = 425.0f;
-    //unsigned long m_lastTimestamp = millis();
-
-
     struct Regs {
         struct WhoAmI {
             static constexpr uint8_t reg = 0x75;
@@ -76,6 +73,22 @@ struct ICM42688P
         static constexpr uint8_t FifoData = 0x30;
     };
 
+    #pragma pack(push, 1)
+    struct FifoEntryAligned {
+        union {
+            struct {
+                int16_t accel[3];
+                int16_t gyro[3];
+                uint16_t temp;
+                uint16_t timestamp;
+            } part;
+            uint8_t raw[15];
+        };
+    };
+    #pragma pack(pop)
+
+    static constexpr size_t FullFifoEntrySize = 16;
+
     bool initialize()
     {
         // perform initialization step
@@ -101,39 +114,21 @@ struct ICM42688P
     template <typename AccelCall, typename GyroCall>
     void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
         const auto fifo_bytes = i2c::readReg16(Regs::FifoCount);
-        constexpr auto single_measurement_bytes = 16;
         
-        std::array<uint8_t, single_measurement_bytes * 6> read_buffer; // max 8 readings
+        std::array<uint8_t, FullFifoEntrySize * 8> read_buffer; // max 8 readings
         const auto bytes_to_read = std::min(static_cast<size_t>(read_buffer.size()),
-            static_cast<size_t>(fifo_bytes)) / single_measurement_bytes * single_measurement_bytes;
+            static_cast<size_t>(fifo_bytes)) / FullFifoEntrySize * FullFifoEntrySize;
         i2c::readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
-        //static auto samples = 0;
-        for (uint16_t i=0; i<bytes_to_read; i+=single_measurement_bytes) {
-            //printf("\r%d/%d     ", i, bytes_to_read/*, read_buffer[3], read_buffer[4], read_buffer[5]*/);
-            int16_t samples[3];
-            memcpy(samples, &read_buffer[i+0x07], sizeof(samples));
-            processGyroSample(samples, GyrTs);
+        for (auto i=0u; i<bytes_to_read; i+=FullFifoEntrySize) {
+            FifoEntryAligned entry;
+            memcpy(entry.raw, &read_buffer[i+0x1], sizeof(FifoEntryAligned)); // skip fifo header
+            processGyroSample(entry.part.gyro, GyrTs);
 
-            memcpy(samples, &read_buffer[i+0x01], sizeof(samples));
-            if (samples[0] != -32768) {
-                processAccelSample(samples, AccTs);
+            if (entry.part.accel[0] != -32768) {
+                processAccelSample(entry.part.accel, AccTs);
             }
-            //samples++;
-        }
-        /*
-        auto stop = millis();
-        if (stop - m_lastTimestamp >= 1000) {
-            float lastSamples =  (samples*1000.0) / (stop - m_lastTimestamp);
-            printf("Samples %f mean %f diff %d\n", lastSamples, m_freq, stop - m_lastTimestamp);
-            m_freq += (lastSamples - m_freq) / m_freqSamples;
-            samples = 0;
-            m_lastTimestamp += 1000;
-
-            m_freqSamples++;
-        }*/
-        
+        }      
     }
-
 
 };
 

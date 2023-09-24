@@ -9,6 +9,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 
 // Driver uses acceleration range at 8g
 // and gyroscope range at 1000dps
+// Gyroscope ODR = 416Hz, accel ODR = 416Hz
 
 template <template<uint8_t> typename I2CImpl>
 struct LSM6DS3TRC
@@ -17,7 +18,7 @@ struct LSM6DS3TRC
     static constexpr auto Name = "LSM6DS3TR-C";
     static constexpr auto Type = 12;
 
-    static constexpr float Freq = 425;
+    static constexpr float Freq = 416;
 
     static constexpr float GyrTs=1.0/Freq;
     static constexpr float AccTs=1.0/Freq;
@@ -27,11 +28,6 @@ struct LSM6DS3TRC
     static constexpr float AccelSensitivity = 4098.360655738f;
 
     using i2c = I2CImpl<DevAddr>;
- 
-    //uint32_t m_freqSamples = 1;
-    //float m_freq = 425.0f;
-    //unsigned long m_lastTimestamp = millis();
-
 
     struct Regs {
         struct WhoAmI {
@@ -105,25 +101,10 @@ struct LSM6DS3TRC
                      * sizeof(uint16_t) / single_measurement_bytes * single_measurement_bytes;
 
         i2c::readBytes(Regs::FifoData, bytes_to_read, reinterpret_cast<uint8_t *>(read_buffer.data()));
-        //static auto samples = 0;
         for (uint16_t i=0; i<bytes_to_read/sizeof(uint16_t); i+=single_measurement_words) {
-            //printf("\r%d/%d     ", i, bytes_to_read/*, read_buffer[3], read_buffer[4], read_buffer[5]*/);
             processGyroSample(reinterpret_cast<const int16_t *>(&read_buffer[i]), GyrTs);
             processAccelSample(reinterpret_cast<const int16_t *>(&read_buffer[i+3]), AccTs);
-            //samples++;
         }
-        /*
-        auto stop = millis();
-        if (stop - m_lastTimestamp >= 1000) {
-            float lastSamples =  (samples*1000.0) / (stop - m_lastTimestamp);
-            printf("Samples %f mean %f diff %d\n", lastSamples, m_freq, stop - m_lastTimestamp);
-            m_freq += (lastSamples - m_freq) / m_freqSamples;
-            samples = 0;
-            m_lastTimestamp += 1000;
-
-            m_freqSamples++;
-        }*/
-        
     }
 
 

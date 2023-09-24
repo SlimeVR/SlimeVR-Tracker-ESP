@@ -58,6 +58,14 @@ namespace SlimeVR {
 
             // calibration temperature for dynamic compensation
             float temperature;
+
+            // real measured sensor sampling rate 
+            float A_Ts;
+            float G_Ts;
+            float M_Ts;
+
+            // gyro sensitivity multiplier
+            float G_Sens[3];
         };
 
 
