@@ -10,6 +10,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 // Driver uses acceleration range at 8g
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 500Hz, accel ODR = 100Hz
+// Timestamps reading not used, as they're useless (constant predefined increment)
 
 template <template<uint8_t> typename I2CImpl>
 struct ICM42688P
@@ -64,10 +65,10 @@ struct ICM42688P
             static constexpr uint8_t value = 0b11 | (0b11 << 2); //accel in low noise mode, gyro in low noise
         };
 
+        // TODO: might be worth checking
         //GYRO_CONFIG1
         //GYRO_ACCEL_CONFIG0
         //ACCEL_CONFIG1
-        //TMST_CONFIG check deltas!
 
         static constexpr uint8_t FifoCount = 0x2e;
         static constexpr uint8_t FifoData = 0x30;
@@ -79,8 +80,8 @@ struct ICM42688P
             struct {
                 int16_t accel[3];
                 int16_t gyro[3];
-                uint16_t temp;
-                uint16_t timestamp;
+                uint8_t temp;
+                uint8_t timestamp[2]; // cannot do uint16_t because it's unaligned
             } part;
             uint8_t raw[15];
         };
@@ -94,13 +95,15 @@ struct ICM42688P
         // perform initialization step
         i2c::writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
         delay(20);
+
         i2c::writeReg(Regs::IntfConfig0::reg, Regs::IntfConfig0::value);
         i2c::writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
         i2c::writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
         i2c::writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
         i2c::writeReg(Regs::FifoConfig1::reg, Regs::FifoConfig1::value);
         i2c::writeReg(Regs::PwrMgmt::reg, Regs::PwrMgmt::value);
-        delay(100);
+        delay(1);
+
         return true;
     }
 
@@ -126,7 +129,7 @@ struct ICM42688P
 
             if (entry.part.accel[0] != -32768) {
                 processAccelSample(entry.part.accel, AccTs);
-            }
+            }            
         }      
     }
 
