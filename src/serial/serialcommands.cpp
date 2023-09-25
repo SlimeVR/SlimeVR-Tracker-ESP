@@ -177,7 +177,12 @@ namespace SerialCommands {
 			logger.info("[WSCAN] Scanning for WiFi networks...");
 
 			// Scan would fail if connecting, stop connecting before scan
-			if (WiFi.status() != WL_CONNECTED) WiFi.disconnect();
+			if (WiFi.status() != WL_CONNECTED) {
+				WiFi.disconnect();
+			}
+			if (WiFiNetwork::isProvisioning()) {
+				WiFiNetwork::stopProvisioning();
+			}
 
 			WiFi.scanNetworks();
 
@@ -196,7 +201,10 @@ namespace SerialCommands {
 			}
 
 			// Restore conencting state
-			if (WiFi.status() != WL_CONNECTED) WiFi.begin();
+			if (WiFi.status() != WL_CONNECTED) {
+				WiFi.begin();
+			}
+
         }
     }
 
