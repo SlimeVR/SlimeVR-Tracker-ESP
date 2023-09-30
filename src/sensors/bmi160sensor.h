@@ -149,7 +149,6 @@ class BMI160Sensor : public Sensor {
             m_Logger.info("Temperature calibration state has been reset for sensorId:%i", sensorId);
         };
         void saveTemperatureCalibration() override final;
-        void resetCalibration();
 
         void applyAccelCalibrationAndScale(sensor_real_t Axyz[3]);
         void applyMagCalibrationAndScale(sensor_real_t Mxyz[3]);

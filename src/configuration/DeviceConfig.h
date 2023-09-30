@@ -29,7 +29,7 @@
 namespace SlimeVR {
     namespace Configuration {
         struct DeviceConfig {
-            int32_t version;
+            uint32_t version;
         };
     }
 }

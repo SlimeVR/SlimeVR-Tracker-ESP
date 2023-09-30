@@ -36,7 +36,7 @@ namespace SlimeVR {
         public:
             void setup();
 
-            void save();
+            void save(uint16_t configSize = sizeof(CalibrationConfig));
             void reset();
 
             void print();
@@ -51,8 +51,11 @@ namespace SlimeVR {
             bool saveTemperatureCalibration(uint8_t sensorId, const GyroTemperatureCalibrationConfig& config);
 
         private:
-            void loadCalibrations();
-            bool runMigrations(int32_t version);
+            void loadCalibrations(uint16_t configSize = sizeof(CalibrationConfig));
+
+            bool areSensorsUpdated(CalibrationConfig& c);
+            bool runMigrationsSensor(CalibrationConfig& c);
+            bool runMigrationsFS(uint32_t version);
 
             bool m_Loaded = false;
 

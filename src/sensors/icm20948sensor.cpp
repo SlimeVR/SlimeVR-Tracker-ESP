@@ -395,8 +395,9 @@ void ICM20948Sensor::saveCalibration(bool repeat)
         #endif
     #endif
 
-    SlimeVR::Configuration::CalibrationConfig calibration;
+    SlimeVR::Configuration::CalibrationConfig calibration = {};
     calibration.type = SlimeVR::Configuration::CalibrationConfigType::ICM20948;
+    calibration.version = SlimeVR::Configuration::ICM20948CalibrationLatestVersion;
     calibration.data.icm20948 = m_Calibration;
     configuration.setCalibration(sensorId, calibration);
     configuration.save();

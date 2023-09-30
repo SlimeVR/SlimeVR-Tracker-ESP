@@ -192,8 +192,9 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
         break;
     }
 
-    SlimeVR::Configuration::CalibrationConfig calibration;
+    SlimeVR::Configuration::CalibrationConfig calibration = {};
     calibration.type = SlimeVR::Configuration::CalibrationConfigType::MPU6050;
+    calibration.version = SlimeVR::Configuration::MPU6050CalibrationLatestVersion;
     calibration.data.mpu6050 = m_Calibration;
     configuration.setCalibration(sensorId, calibration);
     configuration.save();

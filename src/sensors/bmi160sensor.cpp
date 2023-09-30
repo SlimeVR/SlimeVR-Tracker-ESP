@@ -145,15 +145,13 @@ void BMI160Sensor::motionSetup() {
             break;
 
         case SlimeVR::Configuration::CalibrationConfigType::NONE:
-            m_Logger.warn("No calibration data found for sensor %d, resetting...", sensorId);
+            m_Logger.warn("No calibration data found for sensor %d", sensorId);
             m_Logger.info("Calibration is advised");
-            resetCalibration();
             break;
 
         default:
-            m_Logger.warn("Incompatible calibration data found for sensor %d, resetting...", sensorId);
+            m_Logger.warn("Incompatible calibration data found for sensor %d", sensorId);
             m_Logger.info("Calibration is advised");
-            resetCalibration();
         }
     }
 
@@ -209,17 +207,7 @@ void BMI160Sensor::motionSetup() {
                 ax, ay, az, (float)az / BMI160_ACCEL_TYPICAL_SENSITIVITY_LSB);
             m_Logger.warn("---------------- WARNING -----------------");
         }
-    }
-
-    #if BMI160_USE_SENSCAL
-    {
-        gscaleX = BMI160_GSCALE * m_Calibration.G_Sens[0];
-        gscaleY = BMI160_GSCALE * m_Calibration.G_Sens[1];
-        gscaleZ = BMI160_GSCALE * m_Calibration.G_Sens[2];
-        m_Logger.debug("Gyro Sens: %f, %f, %f", m_Calibration.G_Sens[0], m_Calibration.G_Sens[1], m_Calibration.G_Sens[2]);
-    }
-    #endif
-    
+    } 
 
     isGyroCalibrated = hasGyroCalibration();
     isAccelCalibrated = hasAccelCalibration();
@@ -234,6 +222,15 @@ void BMI160Sensor::motionSetup() {
     #endif
     #if !USE_6_AXIS
     m_Logger.info("Calibration data for mag: %s", isMagCalibrated ? "found" : "not found");
+    #endif
+
+    #if BMI160_USE_SENSCAL
+    {
+        gscaleX = BMI160_GSCALE * m_Calibration.G_Sens[0];
+        gscaleY = BMI160_GSCALE * m_Calibration.G_Sens[1];
+        gscaleZ = BMI160_GSCALE * m_Calibration.G_Sens[2];
+        m_Logger.debug("Gyro Sens: %f, %f, %f", m_Calibration.G_Sens[0], m_Calibration.G_Sens[1], m_Calibration.G_Sens[2]);
+    }
     #endif
 
 
@@ -641,35 +638,6 @@ void BMI160Sensor::saveTemperatureCalibration() {
     gyroTempCalibrator->saveConfig();
 }
 
-void BMI160Sensor::resetCalibration() {
-	m_Logger.info("Sensor #%d Calibration Reset", getSensorId());
-
-    for (uint8_t i = 0; i < 3; i++)
-    {
-        for (uint8_t j = 0; j < 3; j++)
-        {
-            m_Calibration.A_Ainv[i][j] = 0.0f;
-            m_Calibration.M_Ainv[i][j] = 0.0f;
-        }
-        
-        m_Calibration.A_B[i] = 0.0f;
-        m_Calibration.M_B[i] = 0.0f;
-        m_Calibration.G_off[i] = 0.0f;
-        m_Calibration.G_Sens[i] = 1.0f;
-        
-    }
-
-    gyroTempCalibrator->reset();
-
-	m_Logger.debug("Saving the calibration data");
-
-	SlimeVR::Configuration::CalibrationConfig calibration;
-	calibration.type = SlimeVR::Configuration::CalibrationConfigType::BMI160;
-	calibration.data.bmi160 = m_Calibration;
-	configuration.setCalibration(sensorId, calibration);
-	configuration.save();
-}
-
 bool BMI160Sensor::getTemperature(float* out) {
     // Middle value is 23 degrees C (0x0000)
     #define BMI160_ZERO_TEMP_OFFSET 23
@@ -751,11 +719,21 @@ bool BMI160Sensor::hasMagCalibration() {
 }
 
 bool BMI160Sensor::hasSensCalibration() {
+#if BMI160_USE_SENSCAL
     for (int i = 0; i < 3; i++) {
-        if (m_Calibration.G_Sens[i] != 1.0)
-            return true;
+        if (m_Calibration.G_Sens[i] == 0.0) {
+            m_Calibration.G_Sens[i] = 1.0;
+        }
     }
+    for (int i = 0; i < 3; i++) {
+        if (m_Calibration.G_Sens[i] == 1.0) {
+            return false;
+        }
+    }
+    return true;
+#else
     return false;
+#endif
 }
 
 void BMI160Sensor::startCalibration(int calibrationType) {
@@ -768,8 +746,9 @@ void BMI160Sensor::startCalibration(int calibrationType) {
 
     m_Logger.debug("Saving the calibration data");
 
-    SlimeVR::Configuration::CalibrationConfig calibration;
+    SlimeVR::Configuration::CalibrationConfig calibration = {};
     calibration.type = SlimeVR::Configuration::CalibrationConfigType::BMI160;
+    calibration.version = SlimeVR::Configuration::BMI160CalibrationLatestVersion;
     calibration.data.bmi160 = m_Calibration;
     configuration.setCalibration(sensorId, calibration);
     configuration.save();
@@ -1061,6 +1040,10 @@ void BMI160Sensor::maybeCalibrateSens() {
 		getIMUNameByType(sensorType),
 		addr
 	);
+    float oldSensCal[3];
+    oldSensCal[0] = m_Calibration.G_Sens[0];
+    oldSensCal[1] = m_Calibration.G_Sens[1];
+    oldSensCal[2] = m_Calibration.G_Sens[2];
 
 	m_Calibration.G_Sens[0] = 1.0f;
 	m_Calibration.G_Sens[1] = 1.0f;
@@ -1213,23 +1196,31 @@ void BMI160Sensor::maybeCalibrateSens() {
 		}
 		count++;
 	}
-	m_Calibration.G_Sens[0] = calculatedScale[0];
-	m_Calibration.G_Sens[1] = calculatedScale[1];
-	m_Calibration.G_Sens[2] = calculatedScale[2];
 
-	m_Logger.debug(
-		"Gyro Sensitivity calibration results: %f %f %f",
-		calculatedScale[0],
-		calculatedScale[1],
-		calculatedScale[2]
-	);
+    if (calculatedScale[0] != 1.0f) {
+        m_Calibration.G_Sens[0] = calculatedScale[0];
+    } else {
+        m_Calibration.G_Sens[0] = oldSensCal[0];
+    }
+
+    if (calculatedScale[1] != 1.0f) {
+        m_Calibration.G_Sens[1] = calculatedScale[1];
+    } else {
+        m_Calibration.G_Sens[1] = oldSensCal[1];
+    }
+
+    if (calculatedScale[2] != 1.0f) {
+        m_Calibration.G_Sens[2] = calculatedScale[2];
+    } else {
+        m_Calibration.G_Sens[2] = oldSensCal[2];
+    }
 
 #ifdef DEBUG_SENSOR
 	m_Logger.trace(
 		"Gyro Sensitivity calibration results: %f %f %f",
-		calculatedScale[0],
-		calculatedScale[1],
-		calculatedScale[2]
+		m_Calibration.G_Sens[0],
+		m_Calibration.G_Sens[1],
+		m_Calibration.G_Sens[2]
 	);
 #endif
 #endif // BMI160_USE_SENSCAL

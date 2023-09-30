@@ -335,8 +335,9 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 
     m_Logger.debug("Saving the calibration data");
 
-    SlimeVR::Configuration::CalibrationConfig calibration;
+    SlimeVR::Configuration::CalibrationConfig calibration = {};
     calibration.type = SlimeVR::Configuration::CalibrationConfigType::MPU9250;
+    calibration.version = SlimeVR::Configuration::MPU9250CalibrationLatestVersion;
     calibration.data.mpu9250 = m_Calibration;
     configuration.setCalibration(sensorId, calibration);
     configuration.save();
