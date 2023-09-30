@@ -24,6 +24,7 @@
 #include "serialcommands.h"
 #include "logging/Logger.h"
 #include <CmdCallback.hpp>
+#include <libb64/cdecode.h>
 #include "GlobalVars.h"
 #include "batterymonitor.h"
 #include "utils.h"
@@ -37,19 +38,37 @@ namespace SerialCommands {
 
     CmdCallback<6> cmdCallbacks;
     CmdParser cmdParser;
-    CmdBuffer<64> cmdBuffer;
+    CmdBuffer<256> cmdBuffer;
 
     void cmdSet(CmdParser * parser) {
-        if(parser->getParamCount() != 1 && parser->equalCmdParam(1, "WIFI")  ) {
-            if(parser->getParamCount() < 3) {
-                logger.error("CMD SET WIFI ERROR: Too few arguments");
-                logger.info("Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
-            } else {
-                WiFiNetwork::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
-                logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
-            }
+        if(parser->getParamCount() != 1) {
+			if (parser->equalCmdParam(1, "WIFI")) {
+				if(parser->getParamCount() < 3) {
+					logger.error("CMD SET WIFI ERROR: Too few arguments");
+					logger.info("Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
+				} else {
+					WiFiNetwork::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
+					logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
+				}
+			} else if (parser->equalCmdParam(1, "BWIFI")) {
+				if(parser->getParamCount() < 3) {
+					logger.error("CMD SET BWIFI ERROR: Too few arguments");
+					logger.info("Syntax: SET BWIFI <B64SSID> <B64PASSWORD>");
+				} else {
+					char ssid[33];
+					char pass[65];
+					const char * b64ssid = parser->getCmdParam(2);
+					const char * b64pass = parser->getCmdParam(3);
+					base64_decode_chars(b64ssid, strlen_P(b64ssid), ssid);
+					base64_decode_chars(b64pass, strlen_P(b64pass), pass);
+					WiFiNetwork::setWiFiCredentials(ssid, pass);
+					logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
+				}
+			} else {
+            	logger.error("CMD SET ERROR: Unrecognized variable to set");
+			}
         } else {
-            logger.error("CMD SET ERROR: Unrecognized variable to set");
+            logger.error("CMD SET ERROR: No variable to set");
         }
     }
 
@@ -152,6 +171,32 @@ namespace SerialCommands {
             } else {
                 logger.info("[TEST] Sensor[0] sent some data, looks working.");
             }
+        }
+
+        if (parser->equalCmdParam(1, "WIFISCAN")) {
+			logger.info("[WSCAN] Scanning for WiFi networks...");
+
+			// Scan would fail if connecting, stop connecting before scan
+			if (WiFi.status() != WL_CONNECTED) WiFi.disconnect();
+
+			WiFi.scanNetworks();
+
+			int scanRes = WiFi.scanComplete();
+			if (scanRes >= 0) {
+				logger.info("[WSCAN] Found %d networks:", scanRes);
+				for (int i = 0; i < scanRes; i++) {
+					logger.info("[WSCAN] %d:\t%02d\t%s\t(%d)\t%s",
+						i, WiFi.SSID(i).length(), WiFi.SSID(i).c_str(), WiFi.RSSI(i),
+						((WiFi.encryptionType(i) == 0) ? "OPEN" : "PASS")
+					);
+				}
+				WiFi.scanDelete();
+			} else {
+				logger.info("[WSCAN] Scan failed!");
+			}
+
+			// Restore conencting state
+			if (WiFi.status() != WL_CONNECTED) WiFi.begin();
         }
     }
 
