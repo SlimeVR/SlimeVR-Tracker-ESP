@@ -204,7 +204,6 @@ namespace SerialCommands {
 			if (WiFi.status() != WL_CONNECTED) {
 				WiFi.begin();
 			}
-
         }
     }
 
