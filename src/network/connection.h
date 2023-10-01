@@ -37,6 +37,9 @@ namespace Network {
 
 class Connection {
 public:
+	Connection()
+		: m_FirmwareFeatures(m_EnabledFirmwareFeatures) {}
+
 	void searchForServer();
 	void update();
 	void reset();
@@ -107,7 +110,7 @@ public:
 	);
 #endif
 
-	const ServerFeatures& getServerFeatureFlags() { return m_ServerFeatures; }
+	const auto getServerFeatureFlags() { return m_ServerFeatures; }
 
 	bool beginBundle();
 	bool endBundle();
@@ -166,7 +169,8 @@ private:
 
 	uint8_t m_FeatureFlagsRequestAttempts = 0;
 	unsigned long m_FeatureFlagsRequestTimestamp = millis();
-	ServerFeatures m_ServerFeatures{};
+	FeatureFlags<EServerFeatureFlags> m_ServerFeatures;
+	FeatureFlags<EFirmwareFeatureFlags> m_FirmwareFeatures;
 
 	bool m_IsBundle = false;
 	/* `53` is the maximum size of any packet that could be bundled, which is the
