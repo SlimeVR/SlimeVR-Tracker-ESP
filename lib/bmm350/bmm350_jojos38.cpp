@@ -655,7 +655,7 @@ int8_t BMM350::readUncompMagData(float *rawData) {
     rawMagZ = magData[6] + ((uint32_t)magData[7] << 8) + ((uint32_t)magData[8] << 16);
     rawTemp = magData[9] + ((uint32_t)magData[10] << 8) + ((uint32_t)magData[11] << 16);
 
-    if (this->enabledAxes & EN_X_MASK == DISABLE) {
+    if ((this->enabledAxes & EN_X_MASK) == DISABLE) {
         rawData[0] = DISABLE;
     } else {
         rawData[0] = BMM350::fixSign(rawMagX, SIGNED_24_BIT);
