@@ -410,6 +410,13 @@ namespace SlimeVR {
 
                     break;
 
+                case CalibrationConfigType::BMI323:
+                    m_Logger.info("            G_O: %d, %d, %d", UNPACK_VECTOR_ARRAY(c.data.bmi323.G_O));
+
+                    m_Logger.info("            G_G: %d, %d, %d", UNPACK_VECTOR_ARRAY(c.data.bmi323.G_G));
+
+                    break;
+
                 case CalibrationConfigType::ICM20948:
                     m_Logger.info("            G: %d, %d, %d", UNPACK_VECTOR_ARRAY(c.data.icm20948.G));
                     m_Logger.info("            A: %d, %d, %d", UNPACK_VECTOR_ARRAY(c.data.icm20948.A));

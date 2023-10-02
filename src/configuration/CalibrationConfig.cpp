@@ -31,6 +31,8 @@ namespace SlimeVR {
                 return "NONE";
             case BMI160:
                 return "BMI160";
+            case BMI323:
+                return "BMI323";
             case MPU6050:
                 return "MPU6050";
             case MPU9250:

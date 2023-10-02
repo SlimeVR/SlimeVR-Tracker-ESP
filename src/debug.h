@@ -34,6 +34,7 @@
 #define BIAS_DEBUG false // Printing BIAS Variables to serial (ICM20948 only)
 #define ENABLE_TAP false // monitor accel for (triple) tap events and send them. Uses more cpu, disable if problems. Server does nothing with value so disabled atm
 #define SEND_ACCELERATION true // send linear acceleration to the server
+#define BMI323_USE_BMM350 false // Set to true to use the data of a BMM350 magnetometer in combination with a BMI323
 
 //Debug information
 

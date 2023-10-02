@@ -44,6 +44,19 @@ namespace SlimeVR {
             float temperature;
         };
 
+        struct BMI323CalibrationConfig {
+            // accelerometer offsets and gain
+            uint16_t G_O[3];
+            uint8_t G_G[3];
+
+            // magnetometer offsets and correction matrix
+            float M_B[3];
+            float M_Ainv[3][3];
+
+            // raw offsets, determined from gyro at rest
+            float G_off[3];
+        };
+
         struct MPU6050CalibrationConfig {
             // accelerometer offsets and correction matrix
             float A_B[3];
@@ -89,7 +102,7 @@ namespace SlimeVR {
             float G_off[3];
         };
 
-        enum CalibrationConfigType { NONE, BMI160, MPU6050, MPU9250, ICM20948, ICM42688 };
+        enum CalibrationConfigType { NONE, BMI160, BMI323, MPU6050, MPU9250, ICM20948, ICM42688 };
 
         const char* calibrationConfigTypeToString(CalibrationConfigType type);
 
@@ -98,6 +111,7 @@ namespace SlimeVR {
 
             union {
                 BMI160CalibrationConfig bmi160;
+                BMI323CalibrationConfig bmi323;
                 MPU6050CalibrationConfig mpu6050;
                 MPU9250CalibrationConfig mpu9250;
                 ICM20948CalibrationConfig icm20948;
