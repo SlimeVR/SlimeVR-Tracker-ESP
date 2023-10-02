@@ -536,9 +536,9 @@ void MPU6050NoDMPSensor::calibrateAccel() {
             imu.getAcceleration(&ax, &ay, &az);
 
             sensor_real_t scaled[3];
-            scaled[0] = ax * ASCALE_2G;
-            scaled[1] = ay * ASCALE_2G;
-            scaled[2] = az * ASCALE_2G;
+            scaled[0] = ax * ASCALE;
+            scaled[1] = ay * ASCALE;
+            scaled[2] = az * ASCALE;
 
             calibrationRestDetection.updateAcc(SAMPLE_DELTA_MICROS, scaled);
 
@@ -557,7 +557,7 @@ void MPU6050NoDMPSensor::calibrateAccel() {
                 accelCalibrationChunk[i + 2] = az;
                 numCurrentPositionSamples++;
 
-                m_Logger.debug("Sample: %f %f %f", scaled[0], scaled[1], scaled[2]);
+                // m_Logger.debug("Sample: %f %f %f", scaled[0], scaled[1], scaled[2]);
 
                 if (numCurrentPositionSamples >= numSamplesPerPosition) {
                     for (int i = 0; i < numSamplesPerPosition; i++) {
