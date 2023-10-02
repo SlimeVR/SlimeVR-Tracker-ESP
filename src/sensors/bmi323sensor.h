@@ -147,12 +147,6 @@ private:
     */
     Quat lastFusedRotation = Quat(0, 0, 0, 0);
 
-    // Time before autoshutdown enables (safety timer to prevent accidental early shutdown)
-    int32_t shutdownEnabledTime = 5 * 60 * 1000; // 1 minute (MILLIS)
-    // Time before tracker shutdowns if it doesn't move
-    const uint32_t timeBeforeAutoshutdown = 60 * 0.5 * 1000; // 5 minutes (MILLIS)
-    // Time between each gyroscope + accelerometer data send
-
     // Time between each fused rotation data send
     const uint32_t rotationSendInterval = 8333; // 120Hz (MICROS)
     // Time between each temperature data send
