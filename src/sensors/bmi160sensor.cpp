@@ -260,7 +260,7 @@ void BMI160Sensor::motionLoop() {
                             restDetected,
                             numFIFODropped,
                             numFIFOFailedReads
-                        )
+                        );
                         cpuUsageMicros = 0;
                         lastCpuUsagePrinted = end;
                         gyrReads = 0;
@@ -268,7 +268,6 @@ void BMI160Sensor::motionLoop() {
                         magReads = 0;
                     }
                 }
-            }
         #else
             readFIFO();
         #endif

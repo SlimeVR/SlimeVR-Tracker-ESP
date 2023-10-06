@@ -88,6 +88,7 @@ namespace SlimeVR {
             int32_t C[3];
         };
 
+        constexpr uint32_t ICM42688CalibrationLatestVersion = 1;
         struct ICM42688CalibrationConfig {
             // accelerometer offsets and correction matrix
             float A_B[3];
@@ -123,6 +124,7 @@ namespace SlimeVR {
         static_assert(sizeof(NoneCalibrationConfig) >= sizeof(MPU6050CalibrationConfig), "The calibration file_size needs to be increased");
         static_assert(sizeof(NoneCalibrationConfig) >= sizeof(MPU9250CalibrationConfig), "The calibration file_size needs to be increased");
         static_assert(sizeof(NoneCalibrationConfig) >= sizeof(ICM20948CalibrationConfig), "The calibration file_size needs to be increased");
+        static_assert(sizeof(NoneCalibrationConfig) >= sizeof(ICM42688CalibrationConfig), "The calibration file_size needs to be increased");
     }
 }
 

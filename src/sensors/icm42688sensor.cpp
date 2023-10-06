@@ -302,6 +302,7 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
 
     SlimeVR::Configuration::CalibrationConfig calibration;
     calibration.type = SlimeVR::Configuration::CalibrationConfigType::ICM42688;
+    calibration.version = SlimeVR::Configuration::ICM42688CalibrationLatestVersion;
     calibration.data.icm42688 = m_Calibration;
     configuration.setCalibration(sensorId, calibration);
     configuration.save();

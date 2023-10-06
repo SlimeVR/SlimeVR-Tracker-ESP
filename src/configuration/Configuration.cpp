@@ -466,6 +466,13 @@ namespace SlimeVR {
                     }
                 } break;
 
+                case CalibrationConfigType::ICM42688: {
+                    if (c.version == ICM42688CalibrationLatestVersion) {
+                        return true;
+                    }
+                } break;
+
+
                 case CalibrationConfigType::MPU9250: {
                     if (c.version == MPU9250CalibrationLatestVersion) {
                         return true;
@@ -516,6 +523,14 @@ namespace SlimeVR {
 
                 case CalibrationConfigType::ICM20948: {
 
+                    if (c.version != version) {
+                        save();
+                    }
+                    return areSensorsUpdated(c);
+                } break;
+
+                case CalibrationConfigType::ICM42688: {
+                    
                     if (c.version != version) {
                         save();
                     }
