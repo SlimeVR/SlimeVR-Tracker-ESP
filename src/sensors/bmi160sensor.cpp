@@ -80,15 +80,6 @@ void BMI160Sensor::initQMC(BMI160MagRate magRate) {
 }
 
 void BMI160Sensor::motionSetup() {
-    RestDetectionParams restDetectionParams;
-	restDetectionParams.restMinTimeMicros = 2 * 1e6;
-    restDetectionParams.moveMinTimeMicros = 50000;
-	restDetectionParams.restThAcc = 0.25f;
-	restDetectionParams.restThGyr = 0.5f; //dps
-    restDetectionParams.moveThAcc = 0.20f;
-	restDetectionParams.moveThGyr = 0.10f; //dps
-	sfusion.updateRestDetectionParameters(restDetectionParams);
-
     // initialize device
     imu.initialize(
         addr,
@@ -1099,7 +1090,7 @@ void BMI160Sensor::maybeCalibrateSens() {
 		ledManager.on();
         prevLedTime = millis();
         m_Logger.info("Move the tracker to a new axis then let sit");
-		while (!sfusion.getMoveDetected())
+		while (sfusion.getRestDetected())
         {
             unsigned long now = millis();
             if (now - ledFlashDuration > prevLedTime) {
@@ -1124,7 +1115,7 @@ void BMI160Sensor::maybeCalibrateSens() {
 		gyroCount[1] = 0.0f;
 		gyroCount[2] = 0.0f;
         rawRotationInit = sfusion.getQuaternionQuat();
-		while (!sfusion.getMoveDetected())
+		while (sfusion.getRestDetected())
         {
             if (sfusion.getRestDetected() && sfusion.isUpdated()) {
                 rawRotationInit = sfusion.getQuaternionQuat();
@@ -1137,7 +1128,7 @@ void BMI160Sensor::maybeCalibrateSens() {
 		while (!sfusion.getRestDetected()) {
 			if (readFIFO()) {
 				int16_t gx, gy, gz;
-				imu.getRotation(&gx, &gy, &gz);
+				getRemappedRotation(&gx, &gy, &gz);
 				gyroCount[0] += (float)gx;
 				gyroCount[1] += (float)gy;
 				gyroCount[2] += (float)gz;
@@ -1151,34 +1142,34 @@ void BMI160Sensor::maybeCalibrateSens() {
 
 		if (abs(gyroCount[0]) > abs(gyroCount[1]) && abs(gyroCount[0]) > abs(gyroCount[2])) { //Spun in X
 			if((ax < 0 && gyroCount[0] > 0) || (ax > 0 && gyroCount[0] < 0)) {
-				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.debug("X, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
+				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.debug("X, Diff: %f", rawRotationFinal.y);
 			}
 			else {
-				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.debug("-X, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
+				calculatedScale[0] = (1.0 / (1.0 - ((-rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.debug("-X, Diff: %f", -rawRotationFinal.y);
 			}
 		}
 
 		else if (abs(gyroCount[1]) > abs(gyroCount[0]) && abs(gyroCount[1]) > abs(gyroCount[2])) { //Spun in Y
 			if((ay > 0 && gyroCount[1] > 0) || (ay < 0 && gyroCount[1] < 0)) {
-				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.debug("Y, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
+				calculatedScale[1] = (1.0 / (1.0 - ((-rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.debug("Y, Diff: %f", -rawRotationFinal.y);
 			}
 			else {
-				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.debug("-Y, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
+				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.debug("-Y, Diff: %f", rawRotationFinal.y);
 			}
 		}
 
 		else if (abs(gyroCount[2]) > abs(gyroCount[0]) && abs(gyroCount[2]) > abs(gyroCount[1])) { //Spun in Z
 			if((az > 0 && gyroCount[2] > 0) || (az < 0 && gyroCount[2] < 0)) {
-				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.debug("-Z, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
+				calculatedScale[2] = (1.0 / (1.0 - ((-rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.debug("-Z, Diff: %f", -rawRotationFinal.y);
 			}
 			else {
-				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.debug("Z, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
+				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationFinal.y)/(360.0f * BMI160_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.debug("Z, Diff: %f", rawRotationFinal.y);
 			}
 		}
 		count++;

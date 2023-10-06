@@ -37,12 +37,10 @@ namespace SlimeVR
             {}
 
             bool getRestDetected();
-            bool getMoveDetected();
 
             #if !SENSOR_FUSION_WITH_RESTDETECT
                 void updateAcc(sensor_real_t Axyz[3], sensor_real_t deltat);
                 void updateGyro(sensor_real_t Gxyz[3], sensor_real_t deltat);
-                void updateRestDetectionParameters(RestDetectionParams newParams);
             #endif
         protected:
             #if !SENSOR_FUSION_WITH_RESTDETECT
