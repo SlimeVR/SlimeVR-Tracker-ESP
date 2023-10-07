@@ -18,25 +18,19 @@
 #define NaN std::numeric_limits<sensor_real_t>::quiet_NaN()
 
 struct RestDetectionParams {
-    sensor_real_t biasClip; //dps
+    sensor_real_t biasClip;
     sensor_real_t biasSigmaRest;
     uint32_t restMinTimeMicros;
-    uint32_t moveMinTimeMicros;
     sensor_real_t restFilterTau;
-    sensor_real_t restThGyr; //dps
+    sensor_real_t restThGyr;
     sensor_real_t restThAcc;
-    sensor_real_t moveThGyr; //dps
-    sensor_real_t moveThAcc;
     RestDetectionParams():
         biasClip(2.0f),
         biasSigmaRest(0.03f),
         restMinTimeMicros(1.5 * 1e6),
-        moveMinTimeMicros(0.1 * 1e6),
         restFilterTau(0.5f),
         restThGyr(2.0f),
-        restThAcc(0.5f),
-        moveThGyr(2.0f),
-        moveThAcc(0.5f)
+        restThAcc(0.5f)
     { }
 };
 
@@ -54,13 +48,6 @@ public:
         this->gyrTs = gyrTs;
         this->accTs = accTs;
         setup();
-    }
-
-    void updateRestDetectionParameters(RestDetectionParams newParams) { 
-        params = newParams;
-#ifndef REST_DETECTION_DISABLE_LPF
-        resetState();
-#endif // REST_DETECTION_DISABLE_LPF
     }
 
 #ifndef REST_DETECTION_DISABLE_LPF
@@ -129,9 +116,6 @@ public:
                 || fabs(lastSample.gyr[2]) > biasClip) {
             restTimeMicros = 0;
             restDetected = false;
-        } else if (gyrLastSquaredDeviation <= square(params.moveThGyr*sensor_real_t(M_PI/180.0))) {
-            moveTimeMicros = 0;
-            moveDetected = false;
         }
 
         lastSample.gyr[0] = gyr[0];
@@ -152,9 +136,6 @@ public:
                 || fabs(restLastGyrLp[2]) > biasClip) {
             restTimeMicros = 0;
             restDetected = false;
-        } else if (gyrLastSquaredDeviation <= square(params.moveThGyr*sensor_real_t(M_PI/180.0))) {
-            moveTimeMicros = 0;
-            moveDetected = false;
         }
 #endif
     }
@@ -180,16 +161,6 @@ public:
             }
         }
 
-        if (accLastSquaredDeviation >= square(params.moveThAcc)) {
-            moveTimeMicros += dtMicros;
-            if (moveTimeMicros >= params.moveMinTimeMicros) {
-                moveDetected = true;
-            }
-        } else {
-            moveTimeMicros = 0;
-            moveDetected = false;
-        }
-
         lastSample.acc[0] = acc[0];
         lastSample.acc[1] = acc[1];
         lastSample.acc[2] = acc[2];
@@ -211,16 +182,6 @@ public:
                 restDetected = true;
             }
         }
-
-        if (accLastSquaredDeviation >= square(params.moveThAcc)) {
-            moveTimeMicros += dtMicros;
-            if (moveTimeMicros >= params.moveMinTimeMicros) {
-                moveDetected = true;
-            }
-        } else {
-            moveTimeMicros = 0;
-            moveDetected = false;
-        }
 #endif
     }
 
@@ -228,14 +189,9 @@ public:
         return restDetected;
     }
 
-    bool getMoveDetected() {
-        return moveDetected;
-    }
-
 #ifndef REST_DETECTION_DISABLE_LPF
     void resetState() {
         restDetected = false;
-        moveDetected = false;
 
         gyrLastSquaredDeviation = 0.0;
         accLastSquaredDeviation = 0.0;
@@ -279,9 +235,7 @@ public:
 private:
     RestDetectionParams params;
     bool restDetected;
-    bool moveDetected;
     uint32_t restTimeMicros;
-    uint32_t moveTimeMicros;
     sensor_real_t gyrLastSquaredDeviation = 0;
     sensor_real_t accLastSquaredDeviation = 0;
 
