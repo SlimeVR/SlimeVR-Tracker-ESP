@@ -24,7 +24,7 @@
 #include "serialcommands.h"
 #include "logging/Logger.h"
 #include <CmdCallback.hpp>
-#include <libb64/cdecode.h>
+#include "base64.hpp"
 #include "GlobalVars.h"
 #include "batterymonitor.h"
 #include "utils.h"
@@ -40,6 +40,20 @@ namespace SerialCommands {
     CmdParser cmdParser;
     CmdBuffer<256> cmdBuffer;
 
+
+	bool lengthCheck (const char* text, unsigned int length, const char* cmd, const char* name)
+	{
+		size_t l = 0;
+		if (text!=NULL) {
+			l = strlen(text);
+		}
+		if ( (l > length)) {
+			logger.error("%s ERROR: %s is longer than %d bytes / Characters", cmd, name, length);
+			return false;
+		}
+		return true;
+	}
+
     void cmdSet(CmdParser * parser) {
         if(parser->getParamCount() != 1) {
 			if (parser->equalCmdParam(1, "WIFI")) {
@@ -47,7 +61,17 @@ namespace SerialCommands {
 					logger.error("CMD SET WIFI ERROR: Too few arguments");
 					logger.info("Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
 				} else {
-					WiFiNetwork::setWiFiCredentials(parser->getCmdParam(2), parser->getCmdParam(3));
+					const char *sc_ssid = parser->getCmdParam(2);
+					const char *sc_pw = parser->getCmdParam(3);
+
+					if (!lengthCheck(sc_ssid, 32, "CMD SET WIFI", "SSID")) {
+						return;
+					}
+					if (!lengthCheck(sc_pw, 64, "CMD SET WIFI", "Password")) {
+						return;
+					}
+
+					WiFiNetwork::setWiFiCredentials(sc_ssid, sc_pw);
 					logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
 				}
 			} else if (parser->equalCmdParam(1, "BWIFI")) {
@@ -55,13 +79,43 @@ namespace SerialCommands {
 					logger.error("CMD SET BWIFI ERROR: Too few arguments");
 					logger.info("Syntax: SET BWIFI <B64SSID> <B64PASSWORD>");
 				} else {
-					char ssid[33];
-					char pass[65];
+                    size_t b64ssidlength = 0;
+                    size_t b64passlength = 0;
+					unsigned int ssidlength = 0;
+					unsigned int passlength = 0;
 					const char * b64ssid = parser->getCmdParam(2);
 					const char * b64pass = parser->getCmdParam(3);
-					base64_decode_chars(b64ssid, strlen_P(b64ssid), ssid);
-					base64_decode_chars(b64pass, strlen_P(b64pass), pass);
-					WiFiNetwork::setWiFiCredentials(ssid, pass);
+
+                    if (b64ssid!=NULL) {
+			            b64ssidlength = strlen(b64ssid);
+						ssidlength = decode_base64_length((unsigned char *)b64ssid, (unsigned int)b64ssidlength);
+		            }
+                    if (b64pass!=NULL) {
+			            b64passlength = strlen(b64pass);
+						passlength = decode_base64_length((unsigned char *)b64pass, (unsigned int)b64passlength);
+		            }
+					// alloc the strings and set them to 0 (null terminating)
+					char ssid[ssidlength+1];
+					memset(ssid, 0, ssidlength+1);
+					char pass[passlength+1];
+					memset(pass, 0, passlength+1);
+					// make a pointer to pass
+					char *ppass = pass;
+					decode_base64((const unsigned char *)b64ssid, (unsigned int)b64ssidlength, (unsigned char*)ssid);
+					if (!lengthCheck(ssid, 32, "CMD SET BWIFI", "SSID")) {
+						return;
+					}
+
+					if ((b64pass!=NULL) && (b64passlength > 0)) {
+						decode_base64((const unsigned char *)b64pass, (unsigned int)b64passlength, (unsigned char*)pass);
+						if (!lengthCheck(ssid, 64, "CMD SET BWIFI", "Password")) {
+							return;
+						}
+					} else {
+						// set the pointer for pass to null for no password
+						ppass = NULL;
+					}
+					WiFiNetwork::setWiFiCredentials(ssid, ppass);
 					logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
 				}
 			} else {
