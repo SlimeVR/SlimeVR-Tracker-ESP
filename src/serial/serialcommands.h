@@ -25,20 +25,6 @@
 #define SLIMEVR_SERIALCOMMANDS_H_
 
 namespace SerialCommands {
-/* lengthCheck:
- *   Description:
- *     Checks the length of a text (const char *) and to length. If the length is > than \0 terminated text, it prints a ERROR and returns false
- *     If (the pointer is Null) and (the text is smaller than length) it returns true.
- *   Parameters:
- *     text - Pointer to input const char*
- *     length - How long the text max should be
- *     cmd - Begin of the error text
- *     name - How the text should be Called in the error Message
- *   Returns:
- *     true when size is smaller or equal than lenght or pointer = NULL
- *     false when size is bigger than length error "%s ERROR: %s is longer than %d bytes / Characters"
- */
-    bool lengthCheck (const char* text, unsigned int length, const char* cmd, const char* name);
 	void setUp();
     void update();
     void printState();

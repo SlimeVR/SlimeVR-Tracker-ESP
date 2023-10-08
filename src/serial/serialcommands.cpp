@@ -51,6 +51,15 @@ namespace SerialCommands {
 		return true;
 	}
 
+	unsigned int decode_base64_length_null(const char* const b64char, unsigned int* b64ssidlength)
+	{
+		if (b64char==NULL) {
+			return 0;
+		}
+		*b64ssidlength = (unsigned int)strlen(b64char);
+		return decode_base64_length((unsigned char *)b64char, *b64ssidlength);
+	}
+
     void cmdSet(CmdParser * parser) {
         if(parser->getParamCount() != 1) {
 			if (parser->equalCmdParam(1, "WIFI")) {
@@ -61,10 +70,8 @@ namespace SerialCommands {
 					const char *sc_ssid = parser->getCmdParam(2);
 					const char *sc_pw = parser->getCmdParam(3);
 
-					if (!lengthCheck(sc_ssid, 32, "CMD SET WIFI", "SSID")) {
-						return;
-					}
-					if (!lengthCheck(sc_pw, 64, "CMD SET WIFI", "Password")) {
+					if (!lengthCheck(sc_ssid, 32, "CMD SET WIFI", "SSID") &&
+						!lengthCheck(sc_pw, 64, "CMD SET WIFI", "Password")) {
 						return;
 					}
 
@@ -76,21 +83,13 @@ namespace SerialCommands {
 					logger.error("CMD SET BWIFI ERROR: Too few arguments");
 					logger.info("Syntax: SET BWIFI <B64SSID> <B64PASSWORD>");
 				} else {
-                    unsigned int b64ssidlength = 0;
-                    unsigned int b64passlength = 0;
-					unsigned int ssidlength = 0;
-					unsigned int passlength = 0;
 					const char * b64ssid = parser->getCmdParam(2);
 					const char * b64pass = parser->getCmdParam(3);
+					unsigned int b64ssidlength = 0;
+					unsigned int b64passlength = 0;
+					unsigned int ssidlength = decode_base64_length_null(b64ssid, &b64ssidlength);
+					unsigned int passlength = decode_base64_length_null(b64pass, &b64passlength);
 
-                    if (b64ssid!=NULL) {
-			            b64ssidlength = strlen(b64ssid);
-						ssidlength = decode_base64_length((unsigned char *)b64ssid, (unsigned int)b64ssidlength);
-		            }
-                    if (b64pass!=NULL) {
-			            b64passlength = strlen(b64pass);
-						passlength = decode_base64_length((unsigned char *)b64pass, (unsigned int)b64passlength);
-		            }
 					// alloc the strings and set them to 0 (null terminating)
 					char ssid[ssidlength+1];
 					memset(ssid, 0, ssidlength+1);
@@ -98,14 +97,14 @@ namespace SerialCommands {
 					memset(pass, 0, passlength+1);
 					// make a pointer to pass
 					char *ppass = pass;
-					decode_base64((const unsigned char *)b64ssid, (unsigned int)b64ssidlength, (unsigned char*)ssid);
+					decode_base64((const unsigned char *)b64ssid, b64ssidlength, (unsigned char*)ssid);
 					if (!lengthCheck(ssid, 32, "CMD SET BWIFI", "SSID")) {
 						return;
 					}
 
 					if ((b64pass!=NULL) && (b64passlength > 0)) {
-						decode_base64((const unsigned char *)b64pass, (unsigned int)b64passlength, (unsigned char*)pass);
-						if (!lengthCheck(ssid, 64, "CMD SET BWIFI", "Password")) {
+						decode_base64((const unsigned char *)b64pass, b64passlength, (unsigned char*)pass);
+						if (!lengthCheck(pass, 64, "CMD SET BWIFI", "Password")) {
 							return;
 						}
 					} else {
@@ -228,9 +227,7 @@ namespace SerialCommands {
 			logger.info("[WSCAN] Scanning for WiFi networks...");
 
 			// Scan would fail if connecting, stop connecting before scan
-			if (WiFi.status() != WL_CONNECTED) {
-				WiFi.disconnect();
-			}
+			if (WiFi.status() != WL_CONNECTED) WiFi.disconnect();
 			if (WiFiNetwork::isProvisioning()) {
 				WiFiNetwork::stopProvisioning();
 			}
@@ -252,9 +249,7 @@ namespace SerialCommands {
 			}
 
 			// Restore conencting state
-			if (WiFi.status() != WL_CONNECTED) {
-				WiFi.begin();
-			}
+			if (WiFi.status() != WL_CONNECTED) WiFi.begin();
         }
     }
 
