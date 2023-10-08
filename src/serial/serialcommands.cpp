@@ -41,13 +41,10 @@ namespace SerialCommands {
     CmdBuffer<256> cmdBuffer;
 
 
-	bool lengthCheck (const char* text, unsigned int length, const char* cmd, const char* name)
+	bool lengthCheck (const char* const text, unsigned int length, const char* const cmd, const char* const name)
 	{
-		size_t l = 0;
-		if (text!=NULL) {
-			l = strlen(text);
-		}
-		if ( (l > length)) {
+		size_t l = text != nullptr ? strlen(text) : 0;
+		if ((l > length)) {
 			logger.error("%s ERROR: %s is longer than %d bytes / Characters", cmd, name, length);
 			return false;
 		}
@@ -79,8 +76,8 @@ namespace SerialCommands {
 					logger.error("CMD SET BWIFI ERROR: Too few arguments");
 					logger.info("Syntax: SET BWIFI <B64SSID> <B64PASSWORD>");
 				} else {
-                    size_t b64ssidlength = 0;
-                    size_t b64passlength = 0;
+                    unsigned int b64ssidlength = 0;
+                    unsigned int b64passlength = 0;
 					unsigned int ssidlength = 0;
 					unsigned int passlength = 0;
 					const char * b64ssid = parser->getCmdParam(2);
