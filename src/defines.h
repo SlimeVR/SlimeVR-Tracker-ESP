@@ -181,4 +181,12 @@ IMU_DESC_ENTRY(IMU_BMP160, PRIMARY_IMU_ADDRESS_ONE, IMU_ROTATION, PIN_IMU_SCL, P
   #define PIN_BATTERY_LEVEL 3
   #define LED_PIN LED_OFF  // RGB LED Protocol would need to be implementetet did not brother for the test, because the board ideal for tracker ifself
 //  #define LED_INVERTED false
+#elif BOARD == BOARD_WEMOSWROOM02
+  #define PIN_IMU_SDA 2
+  #define PIN_IMU_SCL 14
+  #define PIN_IMU_INT 0
+  #define PIN_IMU_INT_2 4
+  #define PIN_BATTERY_LEVEL A0
+  #define LED_PIN 16
+  #define LED_INVERTED true
 #endif
