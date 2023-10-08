@@ -60,8 +60,8 @@ namespace SerialCommands {
 		return decode_base64_length((unsigned char *)b64char, *b64ssidlength);
 	}
 
-    void cmdSet(CmdParser * parser) {
-        if(parser->getParamCount() != 1) {
+	void cmdSet(CmdParser * parser) {
+		if(parser->getParamCount() != 1) {
 			if (parser->equalCmdParam(1, "WIFI")) {
 				if(parser->getParamCount() < 3) {
 					logger.error("CMD SET WIFI ERROR: Too few arguments");
@@ -115,12 +115,12 @@ namespace SerialCommands {
 					logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
 				}
 			} else {
-            	logger.error("CMD SET ERROR: Unrecognized variable to set");
+				logger.error("CMD SET ERROR: Unrecognized variable to set");
 			}
-        } else {
-            logger.error("CMD SET ERROR: No variable to set");
-        }
-    }
+		} else {
+			logger.error("CMD SET ERROR: No variable to set");
+		}
+	}
 
     void printState() {
         logger.info(
