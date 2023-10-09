@@ -44,7 +44,6 @@ constexpr sensor_real_t ASCALE = ((32768. / ACCEL_SENSITIVITY) / 32768.) * CONST
 // Gyro scale conversion steps: LSB/°/s -> °/s -> °/s / step -> rad/s / step
 constexpr sensor_real_t GSCALE = ((32768. / GYRO_SENSITIVITY) / 32768.) * (PI / 180.0);
 
-constexpr sensor_real_t SAMPLE_DELTA = 1. / MPU6050_SAMPLE_RATE;
 constexpr int32_t SAMPLE_DELTA_MICROS = (int32_t)(1e6 / MPU6050_SAMPLE_RATE);
 
 
@@ -288,7 +287,7 @@ void MPU6050NoDMPSensor::onRawGyroSample(int16_t x, int16_t y, int16_t z) {
     sensor_real_t Gxyz[3];
 
 #if MPU6050_USE_TEMPCAL
-    bool restDetected = sfusion.getRestDetected();
+    bool restDetected = tcalRestDetect.getRestDetected();
     gyroTempCalibrator->updateGyroTemperatureCalibration(temperature, restDetected, x, y, z);
 
     float GOxyz[3];
@@ -312,6 +311,7 @@ void MPU6050NoDMPSensor::onRawGyroSample(int16_t x, int16_t y, int16_t z) {
     // 3. After a remap, feed data to sensor fusion
     remapAllAxis(AXIS_REMAP_GET_ALL_IMU(axisRemap), &Gxyz[0], &Gxyz[1], &Gxyz[2]);
     sfusion.updateGyro(Gxyz, -1);
+    tcalRestDetect.updateGyr(SAMPLE_DELTA_MICROS, Gxyz);
 
     optimistic_yield(100);
 }
@@ -336,6 +336,7 @@ void MPU6050NoDMPSensor::onRawAccelSample(int16_t x, int16_t y, int16_t z) {
 
     // Feed data to sensor fusion
     sfusion.updateAcc(Axyz, -1);
+    tcalRestDetect.updateAcc(SAMPLE_DELTA_MICROS, Axyz);
 
     optimistic_yield(100);
 }

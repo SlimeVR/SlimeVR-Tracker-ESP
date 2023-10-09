@@ -26,7 +26,8 @@
 
 #include "sensor.h"
 #include <MPU6050.h>
-#include "SensorFusionRestDetect.h"
+#include "SensorFusion.h"
+#include "motionprocessing/RestDetection.h"
 
 #include "axisremap.h"
 
@@ -48,13 +49,24 @@
 
 #endif
 
+struct MPU6050NoDMPRestDetectParams: RestDetectionParams {
+    MPU6050NoDMPRestDetectParams() : RestDetectionParams() {
+        restMinTimeMicros = 2.0f * 1e6;
+        restThGyr = 0.6f; // 400 norm
+        restThAcc = 0.1f; // TODO: Fine tune that
+    }
+};
+
 class MPU6050NoDMPSensor : public Sensor
 {
 public:
+    const sensor_real_t SAMPLE_DELTA = 1.0f / ((float)MPU6050_SAMPLE_RATE);
+
     MPU6050NoDMPSensor(uint8_t id, uint8_t type, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, int axisRemap=AXIS_REMAP_DEFAULT)
         : Sensor("MPU6050Sensor_NoDMP", type, id, address, rotation, sclPin, sdaPin),
         axisRemap(axisRemap),
-        sfusion(1.0f / ((float)MPU6050_SAMPLE_RATE))
+        sfusion(SAMPLE_DELTA),
+        tcalRestDetect(MPU6050NoDMPRestDetectParams(), SAMPLE_DELTA, SAMPLE_DELTA)
         {};
     ~MPU6050NoDMPSensor(){};
     void motionSetup() override final;
@@ -107,7 +119,8 @@ private:
     bool newTemperature;
     float temperature;
 
-    SlimeVR::Sensors::SensorFusionRestDetect sfusion;
+    SlimeVR::Sensors::SensorFusion sfusion;
+    RestDetection tcalRestDetect;
     SlimeVR::Configuration::BMI160CalibrationConfig m_Calibration;
 };
 
