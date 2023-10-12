@@ -25,7 +25,7 @@
 #define SLIMEVR_SERIALCOMMANDS_H_
 
 namespace SerialCommands {
-	void setUp();
+    void setUp();
     void update();
     void printState();
 }
