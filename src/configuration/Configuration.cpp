@@ -444,10 +444,10 @@ namespace SlimeVR {
 
                     break;
 
-                case CalibrationConfigType::LSM6DSV16X:
-                    m_Logger.info("            A_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.lsm6dsv16x.A_off));
-                    m_Logger.info("            G_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.lsm6dsv16x.G_off));
-                    m_Logger.info("            G_sen: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.lsm6dsv16x.G_sensitivity));
+                case CalibrationConfigType::LSM6DSV:
+                    m_Logger.info("            A_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.lsm6dsv.A_off));
+                    m_Logger.info("            G_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.lsm6dsv.G_off));
+                    m_Logger.info("            G_sen: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.lsm6dsv.G_sensitivity));
 
                     break;
                 }
