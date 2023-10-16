@@ -46,9 +46,9 @@
 #define LSM6DSV_GYRO_ACCEL_RATE 7680.0f
 #endif
 
-#ifndef LSM6DSV_FIFO_TEMP_DATA_RATE
-#define LSM6DSV_FIFO_TEMP_DATA_RATE 1.875f
-#endif
+//#ifndef LSM6DSV_FIFO_TEMP_DATA_RATE //We should use this instead
+//#define LSM6DSV_FIFO_TEMP_DATA_RATE 1.875f
+//#endif
 
 #ifndef LSM6DSV_TEMP_READ_INTERVAL
 #define LSM6DSV_TEMP_READ_INTERVAL 1
@@ -67,37 +67,31 @@
 #define LSM6DSV_TAP_QUITE_TIME 3 //0-3
 #endif
 
-#define LSM6DSV_TIMESTAMP_LSB 21.75e-6f
 
-// #define SELF_TEST_ON_INIT
-// #define REINIT_ON_FAILURE
- #define LSM6DSV_INTERRUPT //recommended for tap detect
+
+#define LSM6DSV_INTERRUPT //recommended for tap detect
 // #define LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
-#define LSM6DSV_ONBOARD_FUSION
-#define LSM6DSV_ESP_FUSION
 
 
 
-#ifdef LSM6DSV_ESP_FUSION
+#define LSM6DSV_FUSION_ESP 0
+#define LSM6DSV_FUSION_ONBOARD 1
+
+#define LSM6DSV_FUSION_SOURCE LSM6DSV_FUSION_ESP
+
+
+
+#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 #define LSM6DSV_GYRO_OFFSET_CAL
 #define LSM6DSV_ACCEL_OFFSET_CAL
 #define LSM6DSV_GYRO_SENSITIVITY_CAL
 #endif
 
 #ifdef LSM6DSV_GYRO_SENSITIVITY_CAL
-#define LSM6DSV_GYRO_SENSITIVITY_SPINS 5
+#define LSM6DSV_GYRO_SENSITIVITY_SPINS 2
 #endif
 
-#ifdef REINIT_ON_FAILURE
-#define REINIT_RETRY_MAX_ATTEMPTS 5
-#undef SELF_TEST_ON_INIT
-#endif
 
-#if defined(LSM6DSV_ONBOARD_FUSION) && defined(LSM6DSV_ESP_FUSION)
-#define LSM6DSV_FIFO_FRAME_SIZE 5 // X BDR, G BDR, Game, Gravity, Timestamp
-#else
-#define LSM6DSV_FIFO_FRAME_SIZE 4 // X BDR, (G BDR || Game), Gravity, Timestamp
-#endif
 
 
 
@@ -118,7 +112,7 @@ public:
 	void sendData() override final;
 	SensorStatus getSensorState() override final;
 
-#ifdef LSM6DSV_ESP_FUSION
+#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	void startCalibration(int calibrationType) override final;
 	void calibrateAccel() override final;
 	void calibrateGyro() override final;
@@ -140,20 +134,12 @@ private:
 	float temperature = 0;
 	bool newTemperature = false;
 	uint32_t lastTempRead = 0;
-	float gravityVector[3];
-	bool newGravityVector = false;
 	float rawAcceleration[3];
 	bool newRawAcceleration = false;
 	uint32_t previousDataTime = 0;
 	uint32_t currentDataTime = 0;
 
-#ifdef LSM6DSV_ONBOARD_FUSION
-	float fusedGameRotation[3];
-	Quat previousGameRotation;
-	bool newFusedGameRotation = false;
-#endif
-
-#ifdef LSM6DSV_ESP_FUSION
+#if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	LSM6DSV16XStatusTypeDef readNextFifoFrame();
 	LSM6DSV16XStatusTypeDef loadIMUCalibration();
 	void apply6DToRestDetection();
@@ -164,13 +150,6 @@ private:
 	SlimeVR::Sensors::SensorFusionRestDetect sfusion;
 	float rawGyro[3];
 	bool newRawGyro = false;
-	Quat previousEspRotation;
-	uint8_t previousTag = 0;
-#endif
-
-
-#ifdef REINIT_ON_FAILURE
-	uint8_t reinitOnFailAttempts = 0;
 #endif
 };
 
