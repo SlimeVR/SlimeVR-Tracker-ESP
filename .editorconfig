@@ -10,3 +10,7 @@ end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
+
+# the files need the trailing withe space at the end of = else it does not work
+[{platformio.ini,platformio-tools.ini}]
+trim_trailing_whitespace = false
