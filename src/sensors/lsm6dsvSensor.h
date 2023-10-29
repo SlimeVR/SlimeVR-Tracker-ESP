@@ -77,7 +77,7 @@
 #define LSM6DSV_FUSION_ESP 0
 #define LSM6DSV_FUSION_ONBOARD 1
 
-#define LSM6DSV_FUSION_SOURCE LSM6DSV_FUSION_ESP
+#define LSM6DSV_FUSION_SOURCE LSM6DSV_FUSION_ONBOARD
 
 
 
@@ -142,9 +142,6 @@ private:
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	LSM6DSVStatusTypeDef readNextFifoFrame();
 	LSM6DSVStatusTypeDef loadIMUCalibration();
-	void apply6DToRestDetection();
-	void waitForRest();
-	void waitForMovement();
 	void saveCalibration();
 	SlimeVR::Configuration::LSM6DSVCalibrationConfig m_Calibration;
 	SlimeVR::Sensors::SensorFusionRestDetect sfusion;

@@ -769,7 +769,10 @@ void LSM6DSVSensor::calibrateGyro() {
 	delay(2000);
 
 	imu.FIFO_Reset();
-	waitForRest();
+	while (!sfusion.getRestDetected()) //Wait for rest
+    {
+        readNextFifoFrame();
+    }
 	uint16_t count = 0;
 	while (count < calibrationSamples) {
 		readNextFifoFrame();
