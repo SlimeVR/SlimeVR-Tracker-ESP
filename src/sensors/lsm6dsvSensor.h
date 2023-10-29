@@ -24,7 +24,7 @@
 #ifndef SENSORS_LSM6DSV_H
 #define SENSORS_LSM6DSV_H
 
-#include "LSM6DSV16X.h"
+#include "LSM6DSV.h"
 #include "sensor.h"
 #include "SensorFusion.h"
 #include "magneto1.4.h"
@@ -123,10 +123,10 @@ public:
 	
 private:
 	Quat fusedRotationToQuaternion(float x, float y, float z);
-	LSM6DSV16XStatusTypeDef runSelfTest();
-	LSM6DSV16XStatusTypeDef readFifo(uint16_t fifo_samples);
+	LSM6DSVStatusTypeDef runSelfTest();
+	LSM6DSVStatusTypeDef readFifo(uint16_t fifo_samples);
 
-	LSM6DSV16X imu;
+	LSM6DSV imu;
 	uint8_t m_IntPin;
 	uint8_t tap = 0;
 	int8_t status = 0;
@@ -140,8 +140,8 @@ private:
 	uint32_t currentDataTime = 0;
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
-	LSM6DSV16XStatusTypeDef readNextFifoFrame();
-	LSM6DSV16XStatusTypeDef loadIMUCalibration();
+	LSM6DSVStatusTypeDef readNextFifoFrame();
+	LSM6DSVStatusTypeDef loadIMUCalibration();
 	void apply6DToRestDetection();
 	void waitForRest();
 	void waitForMovement();

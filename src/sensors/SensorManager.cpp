@@ -29,7 +29,7 @@
 #include "mpu6050sensor.h"
 #include "bmi160sensor.h"
 #include "icm20948sensor.h"
-#include "lsm6dsvsensor.h"
+#include "lsm6dsvSensor.h"
 #include "ErroneousSensor.h"
 #include "sensoraddresses.h"
 #include "GlobalVars.h"
