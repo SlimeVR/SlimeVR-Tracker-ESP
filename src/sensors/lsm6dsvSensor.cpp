@@ -804,7 +804,7 @@ void LSM6DSVSensor::calibrateGyro() {
 #endif
 
 
-#ifdef LSM6DSV_GYRO_SENSITIVITY_CAL //Redo based on the bmi implementation
+#ifdef LSM6DSV_GYRO_SENSITIVITY_CAL
 void LSM6DSVSensor::calibrateGyroSensitivity() {
 	m_Logger.info(
 		"Gyro sensitivity calibration started on sensor #%d of type %s at address 0x%02x",
@@ -812,115 +812,182 @@ void LSM6DSVSensor::calibrateGyroSensitivity() {
 		getIMUNameByType(sensorType),
 		addr
 	);
+    float oldSensCal[3];
+    oldSensCal[0] = m_Calibration.G_sensitivity[0];
+    oldSensCal[1] = m_Calibration.G_sensitivity[1];
+    oldSensCal[2] = m_Calibration.G_sensitivity[2];
 
 	m_Calibration.G_sensitivity[0] = 1.0f;
 	m_Calibration.G_sensitivity[1] = 1.0f;
 	m_Calibration.G_sensitivity[2] = 1.0f;
 
 	imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
-	Vector3 rawRotationInit;
+
+	Quat rawRotationInit;
 	Vector3 rawRotationFinal;
 	uint8_t count = 0;
 	float gyroCount[3]; //Use this to determine the axis spun
 	float calculatedScale[3] = {1.0f, 1.0f, 1.0f};
 
+    unsigned long prevLedTime = millis();
+    constexpr uint16_t ledFlashDuration = 600;
+
 	ledManager.off();
 
 	m_Logger.info("");
 	m_Logger.info(
-		"\tStep 1: Move the tracker to a corner or edge that you can get it in the "
+		"  Step 0: Let the tracker sit, the light will flash when you should reorient the tracker"
+	);
+	m_Logger.info(
+		"  Step 1: Move the tracker to a corner or edge that aligns the tracker to the "
 		"same position every time"
 	);
-	m_Logger.info("\tStep 2: Let the tracker rest until the light turns on");
 	m_Logger.info(
-		"\tStep 3: Rotate the tracker about one axis %d full rotations and align with the "
-		"previous edge.",
+		"      NOTE: You might also want to unplug the USB so it doesn't affect spins"
+	);
+	m_Logger.info(
+		"  Step 2: Let the tracker rest until the solid light turns on, you might need to hold it"
+	);
+    m_Logger.info(
+		"    against a wall depending on the case and orientation"
+	);
+	m_Logger.info(
+		"  Step 3: Rotate the tracker in the yaw axis for %d full rotations and align "
+		"it with the previous edge ",
 		LSM6DSV_GYRO_SENSITIVITY_SPINS
 	);
-	m_Logger.info("\t\tNOTE: the light will turn off after you start moving it");
+	m_Logger.info(
+		"      NOTE: The yaw axis is the direction of looking left or right with your "
+		"head, perpendicular to gravity"
+	);
+	m_Logger.info("      NOTE: The light will turn off after you start moving it");
 
 	m_Logger.info(
-		"\tStep 4: Repeat step 1 - 3 in the other 2 axis. When the light is on you should move it"
+		"  Step 4: Wait for the flashing light then rotate the tracker 90 degrees "
+		" to a new axis and "
 	);
+    m_Logger.info("    align with an edge. Repeat steps 2 and 3");
 
-	waitForRest();
+	m_Logger.info(
+		"  Step 5: Wait for the flashing light then rotate the tracker 90 degrees so the last "
+		"axis is up and"
+	);
+    m_Logger.info("    aligned with an edge. Repeat steps 2 and 3");
+
+	imu.FIFO_Reset();
+    delayMicroseconds(100);
+    while (!sfusion.getRestDetected()) //Wait for rest
+    {
+        readNextFifoFrame();
+    }
+    
+
 	while (count < 3) {
 		ledManager.on();
-		waitForMovement(); //position tracker
+        prevLedTime = millis();
+        m_Logger.info("Move the tracker to a new axis then let sit");
+		while (sfusion.getRestDetected())
+        {
+            unsigned long now = millis();
+            if (now - ledFlashDuration > prevLedTime) {
+                //ledManager.toggle();
+				ledManager.on();
+                prevLedTime = millis();
+            }
+            if (sfusion.getRestDetected() && sfusion.isUpdated()) {
+                rawRotationInit = sfusion.getQuaternionQuat();
+                sfusion.clearUpdated();
+            }
+            readNextFifoFrame();
+        }
 		ledManager.off();
-		waitForRest();
+		while (!sfusion.getRestDetected())
+        {
+            readNextFifoFrame();
+        }
 
 		ledManager.on();  // The user should rotate
 		m_Logger.info("Rotate the tracker %d times", LSM6DSV_GYRO_SENSITIVITY_SPINS);
 		gyroCount[0] = 0.0f;
 		gyroCount[1] = 0.0f;
 		gyroCount[2] = 0.0f;
-		rawRotationInit = sfusion.getQuaternionQuat().get_euler() * dpsPerRad;
-		waitForMovement();
+        rawRotationInit = sfusion.getQuaternionQuat();
+		while (sfusion.getRestDetected())
+        {
+            if (sfusion.getRestDetected() && sfusion.isUpdated()) {
+                rawRotationInit = sfusion.getQuaternionQuat();
+                sfusion.clearUpdated();
+            }
+            readNextFifoFrame();
+        }
 		ledManager.off();
 
-		
-
-		while (!sfusion.getRestDetected()) { //wait for rest
+		while (!sfusion.getRestDetected()) {
 			readNextFifoFrame();
 			gyroCount[0] += rawGyro[0];
 			gyroCount[1] += rawGyro[1];
 			gyroCount[2] += rawGyro[2];
-			apply6DToRestDetection();
 		}
-
 		uint8_t isUp;
-		rawRotationFinal = sfusion.getQuaternionQuat().get_euler() * dpsPerRad;
+		rawRotationFinal = (sfusion.getQuaternionQuat() * rawRotationInit.inverse()).get_euler() * dpsPerRad;
 
 		if (abs(gyroCount[0]) > abs(gyroCount[1]) && abs(gyroCount[0]) > abs(gyroCount[2])) { //Spun in X
 			imu.Get_6D_Orientation_XH(&isUp);
 			if((!isUp && gyroCount[0] > 0) || (isUp && gyroCount[0] < 0)) {
-				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("X, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
+				calculatedScale[0] = (1.0 / (1.0 - ((-rawRotationFinal.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.info("X, Diff: %f", -rawRotationFinal.y);
 			}
 			else {
-				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("-X, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
+				calculatedScale[0] = (1.0 / (1.0 - ((rawRotationFinal.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.info("-X, Diff: %f", rawRotationFinal.y);
 			}
 		}
 
 		else if (abs(gyroCount[1]) > abs(gyroCount[0]) && abs(gyroCount[1]) > abs(gyroCount[2])) { //Spun in Y
 			imu.Get_6D_Orientation_YH(&isUp);
 			if((isUp && gyroCount[1] > 0) || (!isUp && gyroCount[1] < 0)) {
-				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("Y, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
+				calculatedScale[1] = (1.0 / (1.0 - ((-rawRotationFinal.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.info("Y, Diff: %f", -rawRotationFinal.y);
 			}
 			else {
-				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("-Y, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
+				calculatedScale[1] = (1.0 / (1.0 - ((rawRotationFinal.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.info("-Y, Diff: %f", rawRotationFinal.y);
 			}
 		}
 
 		else if (abs(gyroCount[2]) > abs(gyroCount[0]) && abs(gyroCount[2]) > abs(gyroCount[1])) { //Spun in Z
 			imu.Get_6D_Orientation_ZH(&isUp);
 			if((isUp && gyroCount[2] > 0) || (!isUp && gyroCount[2] < 0)) {
-				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationInit.y - rawRotationFinal.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("Z, Diff: %f", rawRotationInit.y - rawRotationFinal.y);
+				calculatedScale[2] = (1.0 / (1.0 - ((-rawRotationFinal.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.info("Z, Diff: %f", -rawRotationFinal.y);
 			}
 			else {
-				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationFinal.y - rawRotationInit.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
-				m_Logger.info("-Z, Diff: %f", rawRotationFinal.y - rawRotationInit.y);
+				calculatedScale[2] = (1.0 / (1.0 - ((rawRotationInit.y)/(360.0f * LSM6DSV_GYRO_SENSITIVITY_SPINS))));
+				m_Logger.info("-Z, Diff: %f", rawRotationInit.y);
 			}
 		}
 		count++;
 	}
-	m_Calibration.G_sensitivity[0] = calculatedScale[0];
-	m_Calibration.G_sensitivity[1] = calculatedScale[1];
-	m_Calibration.G_sensitivity[2] = calculatedScale[2];
+
+    if (calculatedScale[0] != 1.0f) {
+        m_Calibration.G_sensitivity[0] = calculatedScale[0];
+    } else {
+        m_Calibration.G_sensitivity[0] = oldSensCal[0];
+    }
+
+    if (calculatedScale[1] != 1.0f) {
+        m_Calibration.G_sensitivity[1] = calculatedScale[1];
+    } else {
+        m_Calibration.G_sensitivity[1] = oldSensCal[1];
+    }
+
+    if (calculatedScale[2] != 1.0f) {
+        m_Calibration.G_sensitivity[2] = calculatedScale[2];
+    } else {
+        m_Calibration.G_sensitivity[2] = oldSensCal[2];
+    }
+	
 	saveCalibration();
-
-	m_Logger.debug(
-		"Gyro Sensitivity calibration results: %f %f %f",
-		calculatedScale[0],
-		calculatedScale[1],
-		calculatedScale[2]
-	);
-
 	imu.Disable_6D_Orientation();
 
 	lastData = millis();
@@ -928,13 +995,13 @@ void LSM6DSVSensor::calibrateGyroSensitivity() {
 #ifdef DEBUG_SENSOR
 	m_Logger.trace(
 		"Gyro Sensitivity calibration results: %f %f %f",
-		calculatedScale[0],
-		calculatedScale[1],
-		calculatedScale[2]
+		m_Calibration.G_sensitivity[0],
+		m_Calibration.G_sensitivity[1],
+		m_Calibration.G_sensitivity[2]
 	);
 #endif
 }
-#endif
+#endif // LSM6DSV_GYRO_SENSITIVITY_CAL
 
 void LSM6DSVSensor::startCalibration(int calibrationType) {
 	m_Logger.info("Flip right side up in the next 5 seconds to start calibration.");
@@ -1009,27 +1076,4 @@ void LSM6DSVSensor::saveCalibration() {
 	configuration.save();
 }
 
-void LSM6DSVSensor::apply6DToRestDetection() {
-	if (newRawGyro && newRawAcceleration) {
-		sfusion.update6D(
-			rawAcceleration,
-			rawGyro,
-			lsm6dsv_from_lsb_to_nsec(currentDataTime - previousDataTime) * 1e-9 //seconds
-		);
-	}
-	newRawAcceleration = false;
-}
-
-void LSM6DSVSensor::waitForRest() {
-	while (!sfusion.getRestDetected()) {
-		readNextFifoFrame();
-		apply6DToRestDetection();
-	}
-}
-void LSM6DSVSensor::waitForMovement() {
-	while (sfusion.getRestDetected()) {
-		readNextFifoFrame();
-		apply6DToRestDetection();
-	}
-}
 #endif // (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)

@@ -69,7 +69,7 @@
 
 
 
-#define LSM6DSV_INTERRUPT //recommended for tap detect
+#define LSM6DSV_INTERRUPT //recommended not required
 // #define LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
 
 
