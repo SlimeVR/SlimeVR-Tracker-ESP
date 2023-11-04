@@ -35,10 +35,5 @@ namespace SlimeVR
                 return vqf.getRestDetected();
             #endif
         }
-
-        void SensorFusionRestDetect::updateRestDetectionParameters(RestDetectionParams newParams)
-        {
-            restDetection.updateRestDetectionParameters(newParams);
-        }
     }
 }

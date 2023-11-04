@@ -286,7 +286,11 @@ void LSM6DSVSensor::motionLoop() {
 	}
 	lastData = millis();
 
-	sfusion.getLinearAcc(acceleration);
+	sensor_real_t linAcceleration[3];
+	sfusion.getLinearAcc(linAcceleration);
+	acceleration.x = linAcceleration[0];
+	acceleration.y = linAcceleration[1];
+	acceleration.z = linAcceleration[2];
 	newAcceleration = true;
 
 	if (newRawAcceleration && newRawGyro) {
@@ -464,7 +468,11 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readFifo(uint16_t fifo_samples) {
 				gravityVector[1] /= mgPerG;
 				gravityVector[2] /= mgPerG;
 
-				SlimeVR::Sensors::SensorFusion::calcLinearAcc(rawAcceleration, gravityVector, acceleration);
+				sensor_real_t linAcceleration[3];
+				SlimeVR::Sensors::SensorFusion::calcLinearAcc(rawAcceleration, gravityVector, linAcceleration);
+				acceleration.x = linAcceleration[0];
+				acceleration.y = linAcceleration[1];
+				acceleration.z = linAcceleration[2];
 				newAcceleration = true;
 				break;
 			}
