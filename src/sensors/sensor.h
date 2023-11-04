@@ -80,6 +80,8 @@ public:
     virtual void postSetup(){};
     virtual void motionLoop(){};
     virtual void sendData();
+    virtual void setAccelerationReady();
+    virtual void setFusedRotationReady();
     virtual void startCalibration(int calibrationType);
     virtual void calibrateAccel();
     virtual void calibrateGyro();
@@ -105,6 +107,9 @@ public:
     uint8_t getSensorType() {
         return sensorType;
     };
+    const Vector3& getAcceleration() {
+        return acceleration;
+    };
     const Quat& getFusedRotation() {
         return fusedRotation;
     };
@@ -127,7 +132,7 @@ protected:
     Quat lastFusedRotationSent{};
 
     bool newAcceleration = false;
-    float acceleration[3]{};
+    Vector3 acceleration{};
 
     SlimeVR::Logging::Logger m_Logger;
     

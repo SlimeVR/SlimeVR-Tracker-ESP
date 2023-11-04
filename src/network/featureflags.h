@@ -29,7 +29,7 @@
 
 /**
  * Bit packed flags, enum values start with 0 and indicate which bit it is.
- * 
+ *
  * Change the enums and `flagsEnabled` inside to extend.
 */
 struct ServerFeatures {
@@ -37,9 +37,9 @@ public:
     enum EServerFeatureFlags: uint32_t {
         // Server can parse bundle packets: `PACKET_BUNDLE` = 100 (0x64).
         PROTOCOL_BUNDLE_SUPPORT,
-        
+
         // Add new flags here
-        
+
         BITS_TOTAL,
     };
 
@@ -73,15 +73,17 @@ class FirmwareFeatures {
 public:
     enum EFirmwareFeatureFlags: uint32_t {
         // EXAMPLE_FEATURE,
-        
+		B64_WIFI_SCANNING = 1,
+
         // Add new flags here
-        
+
         BITS_TOTAL,
     };
 
     // Flags to send
     static constexpr const std::initializer_list<EFirmwareFeatureFlags> flagsEnabled = {
         // EXAMPLE_FEATURE,
+		B64_WIFI_SCANNING,
 
         // Add enabled flags here
     };
@@ -89,7 +91,7 @@ public:
     static constexpr auto flags = []{
         constexpr uint32_t flagsLength = EFirmwareFeatureFlags::BITS_TOTAL / 8 + 1;
         std::array<uint8_t, flagsLength> packed{};
-        
+
         for (uint32_t bit : flagsEnabled) {
             packed[bit / 8] |= 1 << (bit % 8);
         }

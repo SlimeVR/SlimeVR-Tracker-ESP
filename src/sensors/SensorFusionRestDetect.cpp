@@ -4,36 +4,32 @@ namespace SlimeVR
 {
     namespace Sensors
     {
+        #if !SENSOR_FUSION_WITH_RESTDETECT
         void SensorFusionRestDetect::updateAcc(sensor_real_t Axyz[3], sensor_real_t deltat)
         {
-            #if !SENSOR_WITH_REST_DETECT
-                if (deltat < 0) deltat = accTs;
-                restDetection.updateAcc(deltat * 1e6, Axyz);
-            #endif
+            if (deltat < 0) deltat = accTs;
+            restDetection.updateAcc(deltat * 1e6, Axyz);
             SensorFusion::updateAcc(Axyz, deltat);
         }
 
         void SensorFusionRestDetect::updateGyro(sensor_real_t Gxyz[3], sensor_real_t deltat)
         {
-            #if !SENSOR_WITH_REST_DETECT
-                if (deltat < 0) deltat = accTs;
-                restDetection.updateGyr(deltat * 1e6, Gxyz);
-            #endif
+            if (deltat < 0) deltat = gyrTs;
+            restDetection.updateGyr(deltat * 1e6, Gxyz);
             SensorFusion::updateGyro(Gxyz, deltat);
         }
 
         void SensorFusionRestDetect::update6D(sensor_real_t Axyz[3], sensor_real_t Gxyz[3], sensor_real_t deltat)
         {
-            #if !SENSOR_WITH_REST_DETECT
-                if (deltat < 0) deltat = accTs; //They need to be the same
-                restDetection.update6D(deltat * 1e6, Axyz, Gxyz);
-            #endif
+            if (deltat < 0) deltat = accTs; //They need to be the same
+            restDetection.update6D(deltat * 1e6, Axyz, Gxyz);
             SensorFusion::update6D(Axyz, Gxyz, deltat);
         }
+        #endif
 
         bool SensorFusionRestDetect::getRestDetected()
         {
-            #if !SENSOR_WITH_REST_DETECT
+            #if !SENSOR_FUSION_WITH_RESTDETECT
                 return restDetection.getRestDetected();
             #elif SENSOR_USE_VQF
                 return vqf.getRestDetected();
