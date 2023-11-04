@@ -88,7 +88,7 @@
 #endif
 
 #ifdef LSM6DSV_GYRO_SENSITIVITY_CAL
-#define LSM6DSV_GYRO_SENSITIVITY_SPINS 2
+#define LSM6DSV_GYRO_SENSITIVITY_SPINS 1
 #endif
 
 
@@ -114,8 +114,8 @@ public:
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	void startCalibration(int calibrationType) override final;
-	void calibrateAccel() override final;
 	void calibrateGyro() override final;
+	void calibrateAccel() override final;
 	void calibrateGyroSensitivity() override final;
 	void printCalibration() override final;
     void resetCalibration() override final;
@@ -143,7 +143,7 @@ private:
 	LSM6DSVStatusTypeDef readNextFifoFrame();
 	LSM6DSVStatusTypeDef loadIMUCalibration();
 	void saveCalibration();
-	SlimeVR::Configuration::LSM6DSVCalibrationConfig m_Calibration;
+	SlimeVR::Configuration::LSM6DSVCalibrationConfig m_Calibration = {};
 	SlimeVR::Sensors::SensorFusionRestDetect sfusion;
 	float rawGyro[3];
 	bool newRawGyro = false;

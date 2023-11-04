@@ -68,8 +68,6 @@
 #define LSM6DSV_MIN_ST_LIMIT_mdps   150000.0f
 #define LSM6DSV_MAX_ST_LIMIT_mdps   700000.0f
 
-#define LSM6DSV_QVAR_GAIN  78.000f
-
 #define LSM6DSV_ACC_USR_OFF_W_HIGH_LSB (float)(pow(2, -6))
 #define LSM6DSV_ACC_USR_OFF_W_LOW_LSB (float)(pow(2, -10))
 #define LSM6DSV_ACC_USR_OFF_W_HIGH_MAX LSM6DSV_ACC_USR_OFF_W_HIGH_LSB * INT8_MAX
@@ -148,7 +146,6 @@ class LSM6DSV {
     LSM6DSV(SPIClass *spi, int cs_pin, uint32_t spi_speed = 2000000);
 
     LSM6DSVStatusTypeDef begin();
-    LSM6DSVStatusTypeDef beginPreconfigured();
     LSM6DSVStatusTypeDef end();
     LSM6DSVStatusTypeDef ReadID(uint8_t *Id);
 

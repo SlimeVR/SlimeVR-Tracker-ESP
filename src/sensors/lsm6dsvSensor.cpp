@@ -22,9 +22,7 @@
 */
 
 #include "sensors/lsm6dsvSensor.h"
-
 #include "GlobalVars.h"
-#include "customConversions.h"
 #include "lsm6dsvSensor.h"
 #include "utils.h"
 
@@ -153,13 +151,23 @@ void LSM6DSVSensor::motionSetup() {
 
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
-	loadIMUCalibration();
-
 	// Calibration
 	if (isFaceDown) {
 		startCalibration(0);  // can not calibrate onboard fusion
+	} else {
+		loadIMUCalibration();
 	}
+
+#ifdef LSM6DSV_ACCEL_OFFSET_CAL
+	int8_t status = 0;
+	status |= imu.Set_X_User_Offset(
+		m_Calibration.A_off[0],
+		m_Calibration.A_off[1],
+		m_Calibration.A_off[2]
+	);
+	status |= imu.Enable_X_User_Offset();
 #endif
+#endif //LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
 	status |= imu.Disable_6D_Orientation();
 
@@ -191,6 +199,7 @@ void LSM6DSVSensor::motionSetup() {
 	working = true;
 	configured = true;
 	lastTempRead = millis();
+	printCalibration();
 }
 
 constexpr float mgPerG = 1000.0f;
@@ -557,7 +566,16 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readNextFifoFrame() {
 		return LSM6DSV_ERROR;
 		}
 	}
-	return readFifo(fifoFramSize);
+	LSM6DSVStatusTypeDef result = readFifo(fifoFramSize);
+
+	if (newRawAcceleration && newRawGyro) {
+		sfusion.update6D(
+			rawAcceleration,
+			rawGyro,
+			(lsm6dsv_from_lsb_to_nsec(currentDataTime - previousDataTime) * 1e-9)
+		);
+	}
+	return result;
 }
 
 LSM6DSVStatusTypeDef LSM6DSVSensor::loadIMUCalibration() {
@@ -577,19 +595,59 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::loadIMUCalibration() {
         m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
         m_Logger.info("Calibration is advised");
     }
-
-#ifdef LSM6DSV_ACCEL_OFFSET_CAL
-	int8_t status = 0;
-	status |= imu.Set_X_User_Offset(
-		m_Calibration.A_off[0],
-		m_Calibration.A_off[1],
-		m_Calibration.A_off[2]
-	);
-	status |= imu.Enable_X_User_Offset();
-	return (LSM6DSVStatusTypeDef)status;
-#endif
 	return LSM6DSV_OK;
 }
+
+#ifdef LSM6DSV_GYRO_OFFSET_CAL
+void LSM6DSVSensor::calibrateGyro() {
+	m_Logger.info(
+		"Gyro offset calibration started on sensor #%d of type %s at address 0x%02x",
+		getSensorId(),
+		getIMUNameByType(sensorType),
+		addr
+	);
+	ledManager.on();
+	constexpr uint16_t calibrationSamples = 300;
+	// Reset values
+	float tempGxyz[3] = {0, 0, 0};
+	
+	m_Calibration.G_off[0] = 0.0f;
+	m_Calibration.G_off[1] = 0.0f;
+	m_Calibration.G_off[2] = 0.0f;
+	
+
+	// Wait for sensor to calm down before calibration
+	m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
+	delay(2000);
+
+	imu.FIFO_Reset();
+
+	uint16_t count = 0;
+	while (count < calibrationSamples) {
+		printf("Gyro Sample");
+		readNextFifoFrame();
+		if (newRawGyro) {
+			tempGxyz[0] += rawGyro[0];
+			tempGxyz[1] += rawGyro[1];
+			tempGxyz[2] += rawGyro[2];
+			count++;
+		}
+	}
+	ledManager.off();
+	m_Calibration.G_off[0] = tempGxyz[0] / calibrationSamples;
+	m_Calibration.G_off[1] = tempGxyz[1] / calibrationSamples;
+	m_Calibration.G_off[2] = tempGxyz[2] / calibrationSamples;
+
+#ifdef DEBUG_SENSOR
+	m_Logger.trace(
+		"Gyro calibration results: %f %f %f",
+		m_Calibration.G_off[0],
+		m_Calibration.G_off[1],
+		m_Calibration.G_off[2]
+	);
+#endif //DEBUG_SENSOR
+}
+#endif //LSM6DSV_GYRO_OFFSET_CAL
 
 #ifdef LSM6DSV_ACCEL_OFFSET_CAL
 void LSM6DSVSensor::calibrateAccel() {
@@ -600,7 +658,6 @@ void LSM6DSVSensor::calibrateAccel() {
 		addr
 	);
 	MagnetoCalibration* magneto = new MagnetoCalibration();
-	imu.Disable_X_User_Offset();
 
 	m_Logger.info(
 		"Put the device into 6 unique orientations (all sides), leave it still and do "
@@ -717,94 +774,18 @@ void LSM6DSVSensor::calibrateAccel() {
 	m_Calibration.A_off[0] = A_BAinv[0][0];
 	m_Calibration.A_off[1] = A_BAinv[0][1];
 	m_Calibration.A_off[2] = A_BAinv[0][2];
-	saveCalibration();
 
-	imu.Set_X_User_Offset(
-		m_Calibration.A_off[0],
-		m_Calibration.A_off[1],
-		m_Calibration.A_off[2]
-	);
-	lastData = millis();
 
 #ifdef DEBUG_SENSOR
 	m_Logger.trace(
 		"Accel calibration results: %f %f %f",
-		A_BAinv[0][0],
-		A_BAinv[0][1],
-		A_BAinv[0][2]
+		m_Calibration.A_off[0],
+		m_Calibration.A_off[1],
+		m_Calibration.A_off[2]
 	);
-#endif
+#endif //DEBUG_SENSOR
 }
-#endif
-
-#ifdef LSM6DSV_GYRO_OFFSET_CAL
-void LSM6DSVSensor::calibrateGyro() {
-	m_Logger.info(
-		"Gyro offset calibration started on sensor #%d of type %s at address 0x%02x",
-		getSensorId(),
-		getIMUNameByType(sensorType),
-		addr
-	);
-	ledManager.on();
-	constexpr uint16_t calibrationSamples = 300;
-	// Reset values
-	float tempGxyz[3] = {0, 0, 0};
-	
-	m_Calibration.G_off[0] = 0.0f;
-	m_Calibration.G_off[1] = 0.0f;
-	m_Calibration.G_off[2] = 0.0f;
-
-	float tempGsensitivity[3];
-	tempGsensitivity[0] = m_Calibration.G_sensitivity[0];
-	tempGsensitivity[1] = m_Calibration.G_sensitivity[1];
-	tempGsensitivity[2] = m_Calibration.G_sensitivity[2];
-	
-	m_Calibration.G_sensitivity[0] = 1.0f;
-	m_Calibration.G_sensitivity[1] = 1.0f;
-	m_Calibration.G_sensitivity[2] = 1.0f;
-	
-
-	// Wait for sensor to calm down before calibration
-	m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
-	delay(2000);
-
-	imu.FIFO_Reset();
-	while (!sfusion.getRestDetected()) //Wait for rest
-    {
-        readNextFifoFrame();
-    }
-	uint16_t count = 0;
-	while (count < calibrationSamples) {
-		readNextFifoFrame();
-		if (newRawGyro) {
-			tempGxyz[0] += rawGyro[0];
-			tempGxyz[1] += rawGyro[1];
-			tempGxyz[2] += rawGyro[2];
-			count++;
-		}
-	}
-	ledManager.off();
-	m_Calibration.G_off[0] = tempGxyz[0] / calibrationSamples;
-	m_Calibration.G_off[1] = tempGxyz[1] / calibrationSamples;
-	m_Calibration.G_off[2] = tempGxyz[2] / calibrationSamples;
-
-	m_Calibration.G_sensitivity[0] = tempGsensitivity[0];
-	m_Calibration.G_sensitivity[1] = tempGsensitivity[1];
-	m_Calibration.G_sensitivity[2] = tempGsensitivity[2];
-	saveCalibration();
-	lastData = millis();
-	
-
-#ifdef DEBUG_SENSOR
-	m_Logger.trace(
-		"Gyro calibration results: %f %f %f",
-		tempGxyz[0],
-		tempGxyz[1],
-		tempGxyz[2]
-	);
-#endif
-}
-#endif
+#endif //LSM6DSV_ACCEL_OFFSET_CAL
 
 
 #ifdef LSM6DSV_GYRO_SENSITIVITY_CAL
@@ -815,16 +796,6 @@ void LSM6DSVSensor::calibrateGyroSensitivity() {
 		getIMUNameByType(sensorType),
 		addr
 	);
-    float oldSensCal[3];
-    oldSensCal[0] = m_Calibration.G_sensitivity[0];
-    oldSensCal[1] = m_Calibration.G_sensitivity[1];
-    oldSensCal[2] = m_Calibration.G_sensitivity[2];
-
-	m_Calibration.G_sensitivity[0] = 1.0f;
-	m_Calibration.G_sensitivity[1] = 1.0f;
-	m_Calibration.G_sensitivity[2] = 1.0f;
-
-	imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
 
 	Quat rawRotationInit;
 	Vector3 rawRotationFinal;
@@ -883,7 +854,6 @@ void LSM6DSVSensor::calibrateGyroSensitivity() {
     {
         readNextFifoFrame();
     }
-    
 
 	while (count < 3) {
 		ledManager.on();
@@ -972,28 +942,9 @@ void LSM6DSVSensor::calibrateGyroSensitivity() {
 		count++;
 	}
 
-    if (calculatedScale[0] != 1.0f) {
-        m_Calibration.G_sensitivity[0] = calculatedScale[0];
-    } else {
-        m_Calibration.G_sensitivity[0] = oldSensCal[0];
-    }
-
-    if (calculatedScale[1] != 1.0f) {
-        m_Calibration.G_sensitivity[1] = calculatedScale[1];
-    } else {
-        m_Calibration.G_sensitivity[1] = oldSensCal[1];
-    }
-
-    if (calculatedScale[2] != 1.0f) {
-        m_Calibration.G_sensitivity[2] = calculatedScale[2];
-    } else {
-        m_Calibration.G_sensitivity[2] = oldSensCal[2];
-    }
-	
-	saveCalibration();
-	imu.Disable_6D_Orientation();
-
-	lastData = millis();
+    m_Calibration.G_sensitivity[0] = calculatedScale[0];
+    m_Calibration.G_sensitivity[1] = calculatedScale[1];
+	m_Calibration.G_sensitivity[2] = calculatedScale[2];
 
 #ifdef DEBUG_SENSOR
 	m_Logger.trace(
@@ -1002,7 +953,7 @@ void LSM6DSVSensor::calibrateGyroSensitivity() {
 		m_Calibration.G_sensitivity[1],
 		m_Calibration.G_sensitivity[2]
 	);
-#endif
+#endif //DEBUG_SENSOR
 }
 #endif // LSM6DSV_GYRO_SENSITIVITY_CAL
 
@@ -1013,17 +964,13 @@ void LSM6DSVSensor::startCalibration(int calibrationType) {
 	imu.Get_6D_Orientation_ZH(&isFaceUp);
 
 	if (!isFaceUp) {
-		m_Logger.info("Flip the tracker over now for gyro sensitivity calibration");
-		delay(5000);
-		imu.Get_6D_Orientation_ZH(&isFaceUp);
-
-		if (!isFaceUp) {
-			return;
-		}
-		calibrateGyroSensitivity();
+		loadIMUCalibration();
 		return;
 	}
 
+	m_Calibration.G_sensitivity[0] = 1.0f;
+	m_Calibration.G_sensitivity[1] = 1.0f;
+	m_Calibration.G_sensitivity[2] = 1.0f;
 
 #ifdef LSM6DSV_GYRO_OFFSET_CAL
 	calibrateGyro();
@@ -1032,20 +979,27 @@ void LSM6DSVSensor::startCalibration(int calibrationType) {
 #ifdef LSM6DSV_ACCEL_OFFSET_CAL
 	calibrateAccel();
 #endif
+
+#ifdef LSM6DSV_GYRO_SENSITIVITY_CAL
+	calibrateGyroSensitivity();
+#endif
+
+	saveCalibration();
+
 	m_Logger.info("Calibration finished, enjoy");
 }
 
 void LSM6DSVSensor::printCalibration() {
 	m_Logger.info("Sensor #%d Calibration Data", getSensorId());
 	m_Logger.info("  Accel Offset Calibration Values for %s on 0x%02x", getIMUNameByType(sensorType), addr);
-	m_Logger.info("    X Scale: %f", m_Calibration.A_off[0]);
-	m_Logger.info("    Y Scale: %f", m_Calibration.A_off[1]);
-	m_Logger.info("    Z Scale: %f", m_Calibration.A_off[2]);
+	m_Logger.info("    X Offset: %f", m_Calibration.A_off[0]);
+	m_Logger.info("    Y Offset: %f", m_Calibration.A_off[1]);
+	m_Logger.info("    Z Offset: %f", m_Calibration.A_off[2]);
 
 	m_Logger.info("  Gyro Offset Calibration Values for %s on 0x%02x", getIMUNameByType(sensorType), addr);
-	m_Logger.info("    X Scale: %f", m_Calibration.G_off[0]);
-	m_Logger.info("    Y Scale: %f", m_Calibration.G_off[1]);
-	m_Logger.info("    Z Scale: %f", m_Calibration.G_off[2]);
+	m_Logger.info("    X Offset: %f", m_Calibration.G_off[0]);
+	m_Logger.info("    Y Offset: %f", m_Calibration.G_off[1]);
+	m_Logger.info("    Z Offset: %f", m_Calibration.G_off[2]);
 
 	m_Logger.info("  Gyro Sensitivity Calibration Values for %s on 0x%02x", getIMUNameByType(sensorType), addr);
 	m_Logger.info("    X Scale: %f", m_Calibration.G_sensitivity[0]);
