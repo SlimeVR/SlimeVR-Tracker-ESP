@@ -90,7 +90,7 @@
 // Not recommended for production
 #define ENABLE_INSPECTION false
 
-#define FIRMWARE_BUILD_NUMBER 16
-#define FIRMWARE_VERSION "0.3.3"
+#define FIRMWARE_BUILD_NUMBER 17
+#define FIRMWARE_VERSION "0.4.0"
 
 #endif // SLIMEVR_DEBUG_H_
