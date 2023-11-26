@@ -27,8 +27,8 @@
 // If only 1 out of 2 trackers has a mag, tracker without a mag should still function normally.
 // NOT USED if USE_6_AXIS == true
 // Pick one:
-#define BMI160_MAG_TYPE BMI160_MAG_TYPE_HMC
-// #define BMI160_MAG_TYPE BMI160_MAG_TYPE_QMC
+// #define BMI160_MAG_TYPE BMI160_MAG_TYPE_HMC
+#define BMI160_MAG_TYPE BMI160_MAG_TYPE_QMC
 
 // Use VQF instead of mahony sensor fusion.
 // Features: rest bias estimation, magnetic distortion rejection.
@@ -44,7 +44,7 @@
 // How long to run gyro calibration for.
 // Disables this calibration step if value is 0.
 // Default: 5
-#define BMI160_CALIBRATION_GYRO_SECONDS 5
+#define BMI160_CALIBRATION_GYRO_SECONDS 15
 
 // Calibration method options:
 // - Skip: disable this calibration step;
