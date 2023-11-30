@@ -44,7 +44,7 @@
 // How long to run gyro calibration for.
 // Disables this calibration step if value is 0.
 // Default: 5
-#define BMI160_CALIBRATION_GYRO_SECONDS 15
+#define BMI160_CALIBRATION_GYRO_SECONDS 30
 
 // Calibration method options:
 // - Skip: disable this calibration step;
