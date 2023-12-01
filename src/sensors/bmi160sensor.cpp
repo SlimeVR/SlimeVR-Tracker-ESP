@@ -530,7 +530,7 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
     }
     remapGyroAccel(&Gxyz[0], &Gxyz[1], &Gxyz[2]);
 
-    sfusion.updateGyro(Gxyz, (double)dtMicros * 1.0e-6);
+    sfusion.updateGyro(Gxyz, (float)dtMicros * 1.0e-6);
 
     optimistic_yield(100);
 }
@@ -548,7 +548,7 @@ void BMI160Sensor::onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int
     lastAxyz[1] = Axyz[1];
     lastAxyz[2] = Axyz[2];
 
-    sfusion.updateAcc(Axyz, dtMicros);
+    sfusion.updateAcc(Axyz, (float)dtMicros * 1.0e-6);
 
     optimistic_yield(100);
 }

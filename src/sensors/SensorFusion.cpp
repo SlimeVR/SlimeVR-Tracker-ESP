@@ -173,9 +173,9 @@ namespace SlimeVR
         
         void SensorFusion::calcLinearAcc(const sensor_real_t accin[3], const sensor_real_t gravVec[3], sensor_real_t accout[3])
         {
-            accout[0] = accin[0] - gravVec[0] * CONST_EARTH_GRAVITY;
-            accout[1] = accin[1] - gravVec[1] * CONST_EARTH_GRAVITY;
-            accout[2] = accin[2] - gravVec[2] * CONST_EARTH_GRAVITY;
+            accout[0] = (accin[0] - gravVec[0]) * CONST_EARTH_GRAVITY;
+            accout[1] = (accin[1] - gravVec[1]) * CONST_EARTH_GRAVITY;
+            accout[2] = (accin[2] - gravVec[2]) * CONST_EARTH_GRAVITY;
         }
     }
 }

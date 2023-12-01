@@ -8,14 +8,14 @@ namespace SlimeVR
         void SensorFusionRestDetect::updateAcc(sensor_real_t Axyz[3], sensor_real_t deltat)
         {
             if (deltat < 0) deltat = accTs;
-            restDetection.updateAcc(deltat, Axyz);
+            restDetection.updateAcc(deltat * 1e6, Axyz);
             SensorFusion::updateAcc(Axyz, deltat);
         }
 
         void SensorFusionRestDetect::updateGyro(sensor_real_t Gxyz[3], sensor_real_t deltat)
         {
             if (deltat < 0) deltat = gyrTs;
-            restDetection.updateGyr(deltat, Gxyz);
+            restDetection.updateGyr(deltat * 1e6, Gxyz);
             SensorFusion::updateGyro(Gxyz, deltat);
         }
         #endif
