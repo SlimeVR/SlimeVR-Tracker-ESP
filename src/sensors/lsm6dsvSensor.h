@@ -30,6 +30,14 @@
 #include "magneto1.4.h"
 #include "SensorFusionRestDetect.h"
 
+#define LSM6DSV_FUSION_ESP 0
+#define LSM6DSV_FUSION_ONBOARD 1
+
+// #############################################
+// ######## Begin user configuration ###########
+// #############################################
+
+// #### IMU Reading Speed ####
 #ifndef LSM6DSV_ACCEL_MAX
 #define LSM6DSV_ACCEL_MAX 16
 #endif
@@ -46,7 +54,7 @@
 #define LSM6DSV_GYRO_ACCEL_RATE 7680.0f
 #endif
 
-//#ifndef LSM6DSV_FIFO_TEMP_DATA_RATE //We should use this instead
+//#ifndef LSM6DSV_FIFO_TEMP_DATA_RATE //TODO: We should use this instead
 //#define LSM6DSV_FIFO_TEMP_DATA_RATE 1.875f
 //#endif
 
@@ -54,7 +62,7 @@
 #define LSM6DSV_TEMP_READ_INTERVAL 1
 #endif
 
-
+// #### IMU Tap Detection ####
 #ifndef LSM6DSV_TAP_THRESHOLD
 #define LSM6DSV_TAP_THRESHOLD 5 //0-32
 #endif
@@ -67,18 +75,21 @@
 #define LSM6DSV_TAP_QUITE_TIME 3 //0-3
 #endif
 
-
-
-#define LSM6DSV_INTERRUPT //recommended not required
+// #### General IMU Settings ####
+#define LSM6DSV_INTERRUPT  // interupt recommended but not required
 // #define LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
+#define LSM6DSV_FUSION_SOURCE LSM6DSV_FUSION_ONBOARD  // LSM6DSV_FUSION_ESP or LSM6DSV_FUSION_ONBOARD
 
 
+// #### IMU Calibration ####
+#ifndef LSM6DSV_GYRO_SENSITIVITY_SPINS
+#define LSM6DSV_GYRO_SENSITIVITY_SPINS 1 // Only used if LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
+#endif
 
-#define LSM6DSV_FUSION_ESP 0
-#define LSM6DSV_FUSION_ONBOARD 1
 
-#define LSM6DSV_FUSION_SOURCE LSM6DSV_FUSION_ONBOARD
-
+// #############################################
+// ######### End user configuration ############
+// #############################################
 
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
@@ -86,14 +97,6 @@
 #define LSM6DSV_ACCEL_OFFSET_CAL
 #define LSM6DSV_GYRO_SENSITIVITY_CAL
 #endif
-
-#ifdef LSM6DSV_GYRO_SENSITIVITY_CAL
-#define LSM6DSV_GYRO_SENSITIVITY_SPINS 1
-#endif
-
-
-
-
 
 class LSM6DSVSensor : public Sensor {
 public:
@@ -114,11 +117,10 @@ public:
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 	void startCalibration(int calibrationType) override final;
-	void calibrateGyro() override final;
-	void calibrateAccel() override final;
-	void calibrateGyroSensitivity() override final;
-	void printCalibration() override final;
-    void resetCalibration() override final;
+	void calibrateGyro();
+	void calibrateAccel();
+	void calibrateGyroSensitivity();
+    void resetCalibration();
 #endif
 	
 private:

@@ -268,8 +268,8 @@ void LSM6DSVSensor::motionLoop() {
 		return;
 	}
 
-	// Group all the data together //set the watermark level for nrf sleep
-	// TODO: add the interupt code to this
+	// Group all the data together
+	// TODO: add the interupt watermark code to this
 	
 	if (fifo_samples < fifoFramSize) {
 		return;
@@ -708,7 +708,7 @@ void LSM6DSVSensor::calibrateAccel() {
 		}
 		
 
-		// Group all the data together //set the watermark level here for nrf sleep
+		// Group all the data together
 		if (fifo_samples < fifoFramSize) {
 			continue;
 		}
@@ -994,24 +994,6 @@ void LSM6DSVSensor::startCalibration(int calibrationType) {
 	saveCalibration();
 
 	m_Logger.info("Calibration finished, enjoy");
-}
-
-void LSM6DSVSensor::printCalibration() {
-	m_Logger.info("Sensor #%d Calibration Data", getSensorId());
-	m_Logger.info("  Accel Offset Calibration Values for %s on 0x%02x", getIMUNameByType(sensorType), addr);
-	m_Logger.info("    X Offset: %f", m_Calibration.A_off[0]);
-	m_Logger.info("    Y Offset: %f", m_Calibration.A_off[1]);
-	m_Logger.info("    Z Offset: %f", m_Calibration.A_off[2]);
-
-	m_Logger.info("  Gyro Offset Calibration Values for %s on 0x%02x", getIMUNameByType(sensorType), addr);
-	m_Logger.info("    X Offset: %f", m_Calibration.G_off[0]);
-	m_Logger.info("    Y Offset: %f", m_Calibration.G_off[1]);
-	m_Logger.info("    Z Offset: %f", m_Calibration.G_off[2]);
-
-	m_Logger.info("  Gyro Sensitivity Calibration Values for %s on 0x%02x", getIMUNameByType(sensorType), addr);
-	m_Logger.info("    X Scale: %f", m_Calibration.G_sensitivity[0]);
-	m_Logger.info("    Y Scale: %f", m_Calibration.G_sensitivity[1]);
-	m_Logger.info("    Z Scale: %f", m_Calibration.G_sensitivity[2]);
 }
 
 void LSM6DSVSensor::resetCalibration() {
