@@ -323,102 +323,12 @@ namespace SerialCommands {
         logger.info("  Temperature calibration config saves automatically when calibration percent is at 100%");
     }
 
-    void cmdCalibration(CmdParser* parser) {
-        if (parser->getParamCount() > 1) {
-            if (parser->equalCmdParam(1, "GET")) {
-                for (auto sensor : sensorManager.getSensors()) {
-                    sensor->printCalibration();
-                }
-                return;
-            } else if (parser->equalCmdParam(1, "RESET")) {
-                for (auto sensor : sensorManager.getSensors()) {
-                    if (parser->getParamCount() > 2) {
-                        if (sensor->getSensorId() == std::atoi(parser->getCmdParam(2))) {
-                            sensor->resetCalibration();
-                            return;
-                        }
-                    } else {
-                        
-                        sensor->resetCalibration();
-                    }
-				}
-                if (parser->getParamCount() > 2) {
-                    logger.warn("Sensor with Id %d does not exist, nothing reset", std::atoi(parser->getCmdParam(2)));
-                }
-                return;
-            } else if (parser->equalCmdParam(1, "START") && parser->getParamCount() > 3) {
-                for (auto sensor : sensorManager.getSensors()) {
-                    if (sensor->getSensorId() == std::atoi(parser->getCmdParam(2))) {
-                        switch ((CalibrationType)std::atoi(parser->getCmdParam(3)))
-                        {
-                        case CalibrationType::CALIBRATION_TYPE_NONE:
-                            return;
-                        case CalibrationType::CALIBRATION_TYPE_ALL:
-                            sensor->calibrateGyro();
-                            sensor->calibrateAccel();
-                            sensor->calibrateMag();
-                            sensor->calibrateTemp();
-                            sensor->calibrateGyroSensitivity();
-                            return;
-                        case CalibrationType::CALIBRATION_TYPE_ACCEL:
-                            sensor->calibrateAccel();
-                            return;
-                        case CalibrationType::CALIBRATION_TYPE_GYRO:
-                            sensor->calibrateGyro();
-                            return;
-                        case CalibrationType::CALIBRATION_TYPE_MAG:
-                            sensor->calibrateMag();
-                            return;
-                        case CalibrationType::CALIBRATION_TYPE_6DOF:
-                            sensor->calibrateGyro();
-                            sensor->calibrateAccel();
-                            return;
-                        case CalibrationType::CALIBRATION_TYPE_9DOF:
-                            sensor->calibrateGyro();
-                            sensor->calibrateAccel();
-                            sensor->calibrateMag();
-                            return;
-                        case CalibrationType::CALIBRATION_TYPE_TEMP:
-                            sensor->calibrateTemp();
-                            return;
-                        case CalibrationType::CALIBRATION_TYPE_GYRO_SENSITIVITY:
-                            sensor->calibrateGyroSensitivity();
-                            return;
-
-						default:
-							logger.warn(
-								"The calibration type of %d can not be called from serial",
-								(CalibrationType)std::atoi(parser->getCmdParam(3))
-							);
-                            return;
-						}
-                    }
-				}
-                return;
-            }
-        }
-        logger.info("Usage:");
-        logger.info("  CALIBRATION GET: Prints out current stored calibration values");
-        logger.info("  CALIBRATION RESET: Resets the calibration values to the default");
-        logger.info("  CALIBRATION RESET \"Sensor#\": Resets the calibration values on sensor # (0 or 1) to the default");
-        logger.info("  CALIBRATION START \"Sensor#\" \"Type$$\": Starts the calibration of type $$ on sensor # (0 or 1)");
-        logger.info("    1 - All");
-        logger.info("    2 - Accel");
-        logger.info("    3 - Gyro");
-        logger.info("    4 - Mag");
-        logger.info("    5 - 6DOF");
-        logger.info("    6 - 9DOF");
-        logger.info("    7 - Temp");
-        logger.info("    8 - Gyro Sensitivity");
-    }
-
     void setUp() {
         cmdCallbacks.addCmd("SET", &cmdSet);
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REBOOT", &cmdReboot);
         cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
-        cmdCallbacks.addCmd("CALIBRATION", &cmdCalibration);
     }
 
     void update() {

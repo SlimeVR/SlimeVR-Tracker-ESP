@@ -18,11 +18,11 @@
 #define NaN std::numeric_limits<sensor_real_t>::quiet_NaN()
 
 struct RestDetectionParams {
-    sensor_real_t biasClip; //dps
+    sensor_real_t biasClip;
     sensor_real_t biasSigmaRest;
     uint32_t restMinTimeMicros;
     sensor_real_t restFilterTau;
-    sensor_real_t restThGyr; //dps
+    sensor_real_t restThGyr;
     sensor_real_t restThAcc;
     RestDetectionParams():
         biasClip(2.0f),
@@ -48,13 +48,6 @@ public:
         this->gyrTs = gyrTs;
         this->accTs = accTs;
         setup();
-    }
-
-    void updateRestDetectionParameters(RestDetectionParams newParams) { 
-        params = newParams;
-#ifndef REST_DETECTION_DISABLE_LPF
-        resetState();
-#endif // REST_DETECTION_DISABLE_LPF
     }
 
 #ifndef REST_DETECTION_DISABLE_LPF
@@ -190,11 +183,6 @@ public:
             }
         }
 #endif
-    }
-
-    void update6D(uint32_t dtMicros, sensor_real_t acc[3], sensor_real_t gyr[3]) {
-        updateAcc(dtMicros, acc);
-        updateGyr(dtMicros, gyr); //gyro doesn't set restDection to true only false
     }
 
     bool getRestDetected() {

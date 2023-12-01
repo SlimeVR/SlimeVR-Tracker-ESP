@@ -67,24 +67,6 @@ void Sensor::printDebugTemperatureCalibrationState() { printTemperatureCalibrati
 void Sensor::saveTemperatureCalibration() { printTemperatureCalibrationUnsupported(); };
 void Sensor::resetTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
 
-void Sensor::printCalibrationUnsupported(CalibrationType type) {
-	m_Logger.warn(
-		"Calibration of type %s is not supported for IMU %s, sensor # %d, skipping",
-		getCalibrationNameByType(type),
-		getIMUNameByType(sensorType),
-		getSensorId()
-	);
-}
-void Sensor::printCalibration() { printCalibrationUnsupported(CalibrationType::CALIBRATION_TYPE_ALL); };
-void Sensor::resetCalibration() { printCalibrationUnsupported(CalibrationType::CALIBRATION_TYPE_ALL); };
-void Sensor::startCalibration(int type) { printCalibrationUnsupported((CalibrationType)type); };
-void Sensor::calibrateAccel() { printCalibrationUnsupported(CalibrationType::CALIBRATION_TYPE_ACCEL); };
-void Sensor::calibrateGyro() { printCalibrationUnsupported(CalibrationType::CALIBRATION_TYPE_GYRO); };
-void Sensor::calibrateMag() { printCalibrationUnsupported(CalibrationType::CALIBRATION_TYPE_MAG); };
-void Sensor::calibrateTemp() { printCalibrationUnsupported(CalibrationType::CALIBRATION_TYPE_TEMP); };
-void Sensor::calibrateGyroSensitivity() { printCalibrationUnsupported(CalibrationType::CALIBRATION_TYPE_GYRO_SENSITIVITY); };
-
-
 const char * getIMUNameByType(int imuType) {
     switch(imuType) {
         case IMU_MPU9250:
@@ -109,30 +91,6 @@ const char * getIMUNameByType(int imuType) {
             return "ICM42688";
         case IMU_LSM6DSV:
             return "LSM6DSV";
-    }
-    return "Unknown";
-}
-
-const char * getCalibrationNameByType(CalibrationType calibrationType) {
-    switch(calibrationType) {
-        case CalibrationType::CALIBRATION_TYPE_NONE:
-            return "None";
-        case CalibrationType::CALIBRATION_TYPE_ALL:
-            return "All";
-        case CalibrationType::CALIBRATION_TYPE_ACCEL:
-            return "ACCEL";
-        case CalibrationType::CALIBRATION_TYPE_GYRO:
-            return "GYRO";
-        case CalibrationType::CALIBRATION_TYPE_MAG:
-            return "MAG";
-        case CalibrationType::CALIBRATION_TYPE_6DOF:
-            return "6DOF";
-        case CalibrationType::CALIBRATION_TYPE_9DOF:
-            return "9DOF";
-        case CalibrationType::CALIBRATION_TYPE_TEMP:
-            return "Temp";
-        case CalibrationType::CALIBRATION_TYPE_GYRO_SENSITIVITY:
-            return "Gyro Sensitivity";
     }
     return "Unknown";
 }

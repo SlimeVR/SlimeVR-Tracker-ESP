@@ -18,13 +18,6 @@ namespace SlimeVR
             restDetection.updateGyr(deltat * 1e6, Gxyz);
             SensorFusion::updateGyro(Gxyz, deltat);
         }
-
-        void SensorFusionRestDetect::update6D(sensor_real_t Axyz[3], sensor_real_t Gxyz[3], sensor_real_t deltat)
-        {
-            if (deltat < 0) deltat = accTs; //They need to be the same
-            restDetection.update6D(deltat * 1e6, Axyz, Gxyz);
-            SensorFusion::update6D(Axyz, Gxyz, deltat);
-        }
         #endif
 
         bool SensorFusionRestDetect::getRestDetected()

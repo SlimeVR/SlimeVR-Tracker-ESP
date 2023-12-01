@@ -41,28 +41,6 @@ enum class SensorStatus : uint8_t {
     SENSOR_ERROR = 2
 };
 
-enum class CalibrationType: uint8_t {
-    CALIBRATION_TYPE_NONE = 0,
-    CALIBRATION_TYPE_ALL = 1,
-    CALIBRATION_TYPE_ACCEL = 2,
-    CALIBRATION_TYPE_GYRO = 3,
-    CALIBRATION_TYPE_MAG = 4,
-    CALIBRATION_TYPE_6DOF = 5,
-    CALIBRATION_TYPE_9DOF = 6,
-
-    CALIBRATION_TYPE_TEMP = 7,
-    CALIBRATION_TYPE_GYRO_SENSITIVITY = 8
-};
-
-enum class CalibrationStatus : uint8_t {
-    CALIBRATION_STATUS_CALIBRATED = 0,
-    CALIBRATION_STATUS_FULLY_CALIBRATED = 1, //Like temp cal, not required but possible
-    CALIBRATION_STATUS_REQUIRED = 2,
-    CALIBRATION_STATUS_RECOMMENED = 3, //If temp cal is enabled then recommend
-    CALIBRATION_STATUS_IN_PROGRESS = 4,
-    CALIBRATION_STATUS_ERROR = 5
-};
-
 class Sensor
 {
 public:
@@ -82,19 +60,12 @@ public:
     virtual void sendData();
     virtual void setAccelerationReady();
     virtual void setFusedRotationReady();
-    virtual void startCalibration(int calibrationType);
-    virtual void calibrateAccel();
-    virtual void calibrateGyro();
-    virtual void calibrateMag();
-    virtual void calibrateTemp();
-    virtual void calibrateGyroSensitivity();
+    virtual void startCalibration(int calibrationType){};
     virtual SensorStatus getSensorState();
     virtual void printTemperatureCalibrationState();
     virtual void printDebugTemperatureCalibrationState();
     virtual void resetTemperatureCalibrationState();
     virtual void saveTemperatureCalibration();
-    virtual void printCalibration();
-    virtual void resetCalibration();
     bool isWorking() {
         return working;
     };
@@ -142,10 +113,8 @@ public:
 
 private:
     void printTemperatureCalibrationUnsupported();
-    void printCalibrationUnsupported(CalibrationType calibrationType);
 };
 
 const char * getIMUNameByType(int imuType);
-const char * getCalibrationNameByType(CalibrationType calibrationType);
 
 #endif // SLIMEVR_SENSOR_H_

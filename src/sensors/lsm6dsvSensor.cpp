@@ -199,7 +199,6 @@ void LSM6DSVSensor::motionSetup() {
 	working = true;
 	configured = true;
 	lastTempRead = millis();
-	printCalibration();
 }
 
 constexpr float mgPerG = 1000.0f;
