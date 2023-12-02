@@ -86,7 +86,7 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
     
     The last position has a long flash when recorded, indicating exit from calibration mode. (BMI160 Only)
 
-- **Step 3: Gyroscope Sensitivity Calibration** (LSM6DSV Only, See #281)
+- **Step 3: Gyroscope Sensitivity Calibration** (LSM6DSV Only, See Merge Request SlimeVR#281)
 
     > Step 0: Let the tracker sit, the light will flash when you should reorient the tracker.
 

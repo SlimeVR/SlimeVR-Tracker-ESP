@@ -1,8 +1,8 @@
 /**
  ******************************************************************************
  * @file    LSM6DSV.h
- * @author  SRA
- * @version V1.5.1
+ * @author  STMicroelectronics
+ * @version V1.0.0
  * @date    July 2022
  * @brief   Abstract Class of a LSM6DSV inertial measurement sensor.
  ******************************************************************************
@@ -50,6 +50,12 @@
 
 
 /* Defines -------------------------------------------------------------------*/
+/* For compatibility with ESP32 platforms */
+#ifdef ESP32
+  #ifndef MSBFIRST
+    #define MSBFIRST SPI_MSBFIRST
+  #endif
+#endif
 
 #define LSM6DSV_ACC_SENSITIVITY_FS_2G   0.061f
 #define LSM6DSV_ACC_SENSITIVITY_FS_4G   0.122f
@@ -72,12 +78,6 @@
 #define LSM6DSV_ACC_USR_OFF_W_LOW_LSB (float)(pow(2, -10))
 #define LSM6DSV_ACC_USR_OFF_W_HIGH_MAX LSM6DSV_ACC_USR_OFF_W_HIGH_LSB * INT8_MAX
 #define LSM6DSV_ACC_USR_OFF_W_LOW_MAX LSM6DSV_ACC_USR_OFF_W_LOW_LSB * INT8_MAX
-
-
-
-
-//#define ENABLE_SPI
-//#define I2C_LIB_DEBUG
 
 /* Typedefs ------------------------------------------------------------------*/
 
@@ -112,11 +112,11 @@ typedef union {
   uint8_t u8bit[2];
 } lsm6dsv_axis1bit16_t;
 
-enum LSM6DSV_Reset {
+typedef enum {
   LSM6DSV_RESET_GLOBAL = 0x1,
   LSM6DSV_RESET_CAL_PARAM = 0x2,
   LSM6DSV_RESET_CTRL_REGS = 0x4,
-};
+} LSM6DSV_Reset_t;
 
 typedef enum {
   LSM6DSV_ACC_HIGH_PERFORMANCE_MODE,
@@ -151,20 +151,19 @@ class LSM6DSV {
 
     LSM6DSVStatusTypeDef Enable_X();
     LSM6DSVStatusTypeDef Disable_X();
-    LSM6DSVStatusTypeDef Enable_X_User_Offset();
-    LSM6DSVStatusTypeDef Disable_X_User_Offset();
     LSM6DSVStatusTypeDef Get_X_Sensitivity(float *Sensitivity);
     LSM6DSVStatusTypeDef Get_X_ODR(float *Odr);
     LSM6DSVStatusTypeDef Set_X_ODR(float Odr, LSM6DSV_ACC_Operating_Mode_t Mode = LSM6DSV_ACC_HIGH_PERFORMANCE_MODE);
     LSM6DSVStatusTypeDef Get_X_FS(int32_t *FullScale);
     LSM6DSVStatusTypeDef Set_X_FS(int32_t FullScale);
     LSM6DSVStatusTypeDef Get_X_AxesRaw(int16_t *Value);
-    LSM6DSVStatusTypeDef Get_X_AxesRaw_When_Aval(int16_t *Value);
     LSM6DSVStatusTypeDef Get_X_Axes(int32_t *Acceleration);
     LSM6DSVStatusTypeDef Get_X_DRDY_Status(uint8_t *Status);
     LSM6DSVStatusTypeDef Get_X_Event_Status(LSM6DSV_Event_Status_t *Status);
     LSM6DSVStatusTypeDef Set_X_Power_Mode(uint8_t PowerMode);
     LSM6DSVStatusTypeDef Set_X_Filter_Mode(uint8_t LowHighPassFlag, uint8_t FilterMode);
+    LSM6DSVStatusTypeDef Enable_X_User_Offset();
+    LSM6DSVStatusTypeDef Disable_X_User_Offset();
     LSM6DSVStatusTypeDef Set_X_User_Offset(float x, float y, float z);
 
     LSM6DSVStatusTypeDef Enable_G();
@@ -175,23 +174,18 @@ class LSM6DSV {
     LSM6DSVStatusTypeDef Get_G_FS(int32_t *FullScale);
     LSM6DSVStatusTypeDef Set_G_FS(int32_t FullScale);
     LSM6DSVStatusTypeDef Get_G_AxesRaw(int16_t *Value);
-    LSM6DSVStatusTypeDef Get_G_AxesRaw_When_Aval(int16_t *Value);
     LSM6DSVStatusTypeDef Get_G_Axes(int32_t *AngularRate);
     LSM6DSVStatusTypeDef Get_G_DRDY_Status(uint8_t *Status);
     LSM6DSVStatusTypeDef Set_G_Power_Mode(uint8_t PowerMode);
     LSM6DSVStatusTypeDef Set_G_Filter_Mode(uint8_t LowHighPassFlag, uint8_t FilterMode);
-    LSM6DSVStatusTypeDef Set_G_Bias(float x, float y, float z);
+
+    LSM6DSVStatusTypeDef Get_Temp_ODR(float *Odr);
+    LSM6DSVStatusTypeDef Set_Temp_ODR(float Odr);
+    LSM6DSVStatusTypeDef Get_Temp_Raw(int16_t *value);
 
     LSM6DSVStatusTypeDef Test_IMU(uint8_t XTestType, uint8_t GTestType);
     LSM6DSVStatusTypeDef Test_X_IMU(uint8_t TestType);
     LSM6DSVStatusTypeDef Test_G_IMU(uint8_t TestType);
-
-    LSM6DSVStatusTypeDef Get_T_ODR(float *Odr);
-    LSM6DSVStatusTypeDef Set_T_ODR(float Odr);
-    
-    LSM6DSVStatusTypeDef Enable_SFLP_Block(bool enable = true);
-    LSM6DSVStatusTypeDef Set_SFLP_ODR(float Odr);
-    LSM6DSVStatusTypeDef Set_SFLP_GBIAS(float x, float y, float z);
 
     LSM6DSVStatusTypeDef Enable_6D_Orientation(LSM6DSV_SensorIntPin_t IntPin);
     LSM6DSVStatusTypeDef Disable_6D_Orientation();
@@ -230,7 +224,6 @@ class LSM6DSV {
     LSM6DSVStatusTypeDef Enable_Tilt_Detection(LSM6DSV_SensorIntPin_t IntPin);
     LSM6DSVStatusTypeDef Disable_Tilt_Detection();
 
-    LSM6DSVStatusTypeDef FIFO_Reset();
     LSM6DSVStatusTypeDef FIFO_Get_Num_Samples(uint16_t *NumSamples);
     LSM6DSVStatusTypeDef FIFO_Get_Full_Status(uint8_t *Status);
     LSM6DSVStatusTypeDef FIFO_Set_INT1_FIFO_Full(uint8_t Status);
@@ -244,27 +237,45 @@ class LSM6DSV {
     LSM6DSVStatusTypeDef FIFO_Set_X_BDR(float Bdr);
     LSM6DSVStatusTypeDef FIFO_Get_G_Axes(int32_t *AngularVelocity);
     LSM6DSVStatusTypeDef FIFO_Set_G_BDR(float Bdr);
-    LSM6DSVStatusTypeDef FIFO_Set_SFLP_Batch(bool GameRotation, bool Gravity, bool gBias);
     LSM6DSVStatusTypeDef FIFO_Get_Status(lsm6dsv_fifo_status_t *Status);
-    LSM6DSVStatusTypeDef FIFO_Get_Gravity_Vector(float *data);
-    LSM6DSVStatusTypeDef FIFO_Get_Game_Vector(float *data);
-    LSM6DSVStatusTypeDef FIFO_Get_GBias_Vector(float *data);
-    LSM6DSVStatusTypeDef FIFO_Get_Timestamp(uint32_t *timestamp);
+    LSM6DSVStatusTypeDef FIFO_Get_Rotation_Vector(float *rvec);
+    LSM6DSVStatusTypeDef FIFO_Get_Gravity_Vector(float *gvec);
+    LSM6DSVStatusTypeDef FIFO_Get_Gyroscope_Bias(float *gbias);
+    LSM6DSVStatusTypeDef FIFO_Enable_Timestamp();
+    LSM6DSVStatusTypeDef FIFO_Disable_Timestamp();
     LSM6DSVStatusTypeDef FIFO_Set_Timestamp_Decimation(uint8_t decimation);
-    LSM6DSVStatusTypeDef Enable_Timestamp();
+    LSM6DSVStatusTypeDef FIFO_Get_Timestamp(uint32_t *timestamp);
+    LSM6DSVStatusTypeDef FIFO_Reset();
+
+    LSM6DSVStatusTypeDef QVAR_Enable();
+    LSM6DSVStatusTypeDef QVAR_Disable();
+    LSM6DSVStatusTypeDef QVAR_GetStatus(uint8_t *val);
+    LSM6DSVStatusTypeDef QVAR_GetImpedance(uint16_t *val);
+    LSM6DSVStatusTypeDef QVAR_SetImpedance(uint16_t val);
+    LSM6DSVStatusTypeDef QVAR_GetData(float *Data);
+
+    LSM6DSVStatusTypeDef Get_MLC_Status(lsm6dsv_mlc_status_mainpage_t *status);
+    LSM6DSVStatusTypeDef Get_MLC_Output(lsm6dsv_mlc_out_t *output);
+
+    LSM6DSVStatusTypeDef Enable_Rotation_Vector();
+    LSM6DSVStatusTypeDef Disable_Rotation_Vector();
+    LSM6DSVStatusTypeDef Enable_Gravity_Vector();
+    LSM6DSVStatusTypeDef Disable_Gravity_Vector();
+    LSM6DSVStatusTypeDef Enable_Gyroscope_Bias();
+    LSM6DSVStatusTypeDef Disable_Gyroscope_Bias();
+    LSM6DSVStatusTypeDef Set_SFLP_Batch(bool GameRotation, bool Gravity, bool gBias);
+    LSM6DSVStatusTypeDef Set_SFLP_ODR(float Odr);
+    LSM6DSVStatusTypeDef Set_SFLP_GBIAS(float x, float y, float z);
+    LSM6DSVStatusTypeDef Reset_SFLP();
 
     LSM6DSVStatusTypeDef Read_Reg(uint8_t Reg, uint8_t *Data);
     LSM6DSVStatusTypeDef Write_Reg(uint8_t Reg, uint8_t Data);
 
-    LSM6DSVStatusTypeDef Reset_Set(uint8_t flags);
-
-    LSM6DSVStatusTypeDef Enable_Block_Data_Update(bool enable = true);
-    LSM6DSVStatusTypeDef Set_Auto_Increment(bool enable);
-
-    LSM6DSVStatusTypeDef Get_Temperature_Raw(int16_t *value);
-    LSM6DSVStatusTypeDef Is_New_Temperature_Data(bool *available);
-    
-    uint32_t Half_Bits_To_Float_Bits(uint16_t half_bits);
+    LSM6DSVStatusTypeDef Enable_Block_Data_Update();
+    LSM6DSVStatusTypeDef Disable_Block_Data_Update();
+    LSM6DSVStatusTypeDef Enable_Auto_Increment();
+    LSM6DSVStatusTypeDef Disable_Auto_Increment();
+    LSM6DSVStatusTypeDef Device_Reset(LSM6DSV_Reset_t flags = LSM6DSV_RESET_GLOBAL);
 
     /**
      * @brief Utility function to read data.
@@ -275,13 +286,9 @@ class LSM6DSV {
      */
     uint8_t IO_Read(uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToRead)
     {
-#ifdef ENABLE_SPI
       if (dev_spi) {
-//#ifdef esp32
-        dev_spi->beginTransaction(SPISettings(spi_speed, SPI_MSBFIRST, SPI_MODE3));
-//#else
         dev_spi->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE3));
-//#endif
+
         digitalWrite(cs_pin, LOW);
 
         /* Write Reg Address */
@@ -297,12 +304,8 @@ class LSM6DSV {
 
         return 0;
       }
-#endif
 
       if (dev_i2c) {
-#ifdef I2C_LIB_DEBUG
-        printf("\n\n[LSM LIB] Read register: 0x%02x, Byte Count: %d bytes", RegisterAddr, NumByteToRead);
-#endif
         dev_i2c->beginTransmission(((uint8_t)(((address) >> 1) & 0x7F)));
         dev_i2c->write(RegisterAddr);
         dev_i2c->endTransmission(false);
@@ -312,9 +315,6 @@ class LSM6DSV {
         int i = 0;
         while (dev_i2c->available()) {
           pBuffer[i] = dev_i2c->read();
-#ifdef I2C_LIB_DEBUG
-          printf("\n[LSM LIB] Register Read: 0x%02x, Data: 0x%02x", RegisterAddr + i, pBuffer[i]);
-#endif
           i++;
         }
 
@@ -333,13 +333,9 @@ class LSM6DSV {
      */
     uint8_t IO_Write(const uint8_t *pBuffer, uint8_t RegisterAddr, uint16_t NumByteToWrite)
     {
-#ifdef ENABLE_SPI
       if (dev_spi) {
-//#ifdef esp32
-        dev_spi->beginTransaction(SPISettings(spi_speed, SPI_MSBFIRST, SPI_MODE3));
-//#else
         dev_spi->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE3));
-//#endif
+
         digitalWrite(cs_pin, LOW);
 
         /* Write Reg Address */
@@ -355,19 +351,12 @@ class LSM6DSV {
 
         return 0;
       }
-#endif
 
       if (dev_i2c) {
-#ifdef I2C_LIB_DEBUG
-        printf("\n\n[LSM LIB] Write register: 0x%02x, Byte Count: %d bytes", RegisterAddr, NumByteToWrite);
-#endif
         dev_i2c->beginTransmission(((uint8_t)(((address) >> 1) & 0x7F)));
 
         dev_i2c->write(RegisterAddr);
         for (uint16_t i = 0 ; i < NumByteToWrite ; i++) {
-#ifdef I2C_LIB_DEBUG
-          printf("\n[LSM LIB] Register Wrote: 0x%02x, Data: 0x%02x", RegisterAddr + i, pBuffer[i]);
-#endif
           dev_i2c->write(pBuffer[i]);
         }
 
@@ -384,6 +373,11 @@ class LSM6DSV {
     LSM6DSVStatusTypeDef Set_X_ODR_When_Disabled(float Odr);
     LSM6DSVStatusTypeDef Set_G_ODR_When_Enabled(float Odr);
     LSM6DSVStatusTypeDef Set_G_ODR_When_Disabled(float Odr);
+    LSM6DSVStatusTypeDef Get_X_AxesRaw_When_Aval(int16_t *Value);
+    LSM6DSVStatusTypeDef Get_G_AxesRaw_When_Aval(int16_t *Value);
+    LSM6DSVStatusTypeDef npy_halfbits_to_floatbits(uint16_t h, uint32_t *f);
+    LSM6DSVStatusTypeDef npy_half_to_float(uint16_t h, float *f);
+    LSM6DSVStatusTypeDef sflp2q(float quat[4], uint16_t sflp[3]);
 
     float Convert_X_Sensitivity(lsm6dsv_xl_full_scale_t full_scale);
     float Convert_G_Sensitivity(lsm6dsv_gy_full_scale_t full_scale);
@@ -402,7 +396,6 @@ class LSM6DSV {
     lsm6dsv_xl_full_scale_t acc_fs;
     lsm6dsv_gy_full_scale_t gyro_fs;
     lsm6dsv_fifo_mode_t fifo_mode;
-
     uint8_t acc_is_enabled;
     uint8_t gyro_is_enabled;
     uint8_t initialized;

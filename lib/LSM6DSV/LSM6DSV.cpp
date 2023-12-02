@@ -1,8 +1,8 @@
 /**
  ******************************************************************************
  * @file    LSM6DSV.cpp
- * @author  SRA
- * @version V1.5.1
+ * @author  STMicroelectronics
+ * @version V1.0.0
  * @date    July 2022
  * @brief   Implementation of a LSM6DSV inertial measurement sensor.
  ******************************************************************************
@@ -42,7 +42,6 @@
 
 
 /* Class Implementation ------------------------------------------------------*/
-
 /** Constructor
  * @param i2c object of an helper class which handles the I2C peripheral
  * @param address the address of the component's instance
@@ -67,6 +66,7 @@ LSM6DSV::LSM6DSV(SPIClass *spi, int cs_pin, uint32_t spi_speed) : dev_spi(spi), 
 {
   reg_ctx.write_reg = LSM6DSV_io_write;
   reg_ctx.read_reg = LSM6DSV_io_read;
+  reg_ctx.mdelay = LSM6DSV_sleep;
   reg_ctx.handle = (void *)this;
   dev_i2c = NULL;
   acc_is_enabled = 0L;
@@ -97,8 +97,7 @@ LSM6DSVStatusTypeDef LSM6DSV::begin()
   }
 
   /* FIFO mode selection */
-  fifo_mode = LSM6DSV_BYPASS_MODE;
-  if (lsm6dsv_fifo_mode_set(&reg_ctx, fifo_mode) != LSM6DSV_OK) {
+  if (lsm6dsv_fifo_mode_set(&reg_ctx, LSM6DSV_BYPASS_MODE) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
 
@@ -111,8 +110,7 @@ LSM6DSVStatusTypeDef LSM6DSV::begin()
   }
 
   /* Full scale selection. */
-  acc_fs = LSM6DSV_2g;
-  if (lsm6dsv_xl_full_scale_set(&reg_ctx, acc_fs) != LSM6DSV_OK) {
+  if (lsm6dsv_xl_full_scale_set(&reg_ctx, LSM6DSV_2g) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
 
@@ -125,8 +123,7 @@ LSM6DSVStatusTypeDef LSM6DSV::begin()
   }
 
   /* Full scale selection. */
-  gyro_fs = LSM6DSV_2000dps;
-  if (lsm6dsv_gy_full_scale_set(&reg_ctx, gyro_fs) != LSM6DSV_OK) {
+  if (lsm6dsv_gy_full_scale_set(&reg_ctx, LSM6DSV_2000dps) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
 
@@ -241,6 +238,11 @@ LSM6DSVStatusTypeDef LSM6DSV::Get_X_Sensitivity(float *Sensitivity)
   return LSM6DSV_OK;
 }
 
+/**
+ * @brief  Get the LSM6DSV accelerometer sensor from type lsm6dsv_xl_full_scale_t
+ * @param  full_scale enum with type lsm6dsv_xl_full_scale_t to be converted
+ * @retval sensitivity as float
+ */
 float LSM6DSV::Convert_X_Sensitivity(lsm6dsv_xl_full_scale_t full_scale) {
   float Sensitivity = 0.0f;
   /* Store the Sensitivity based on actual full scale. */
@@ -600,25 +602,6 @@ LSM6DSVStatusTypeDef LSM6DSV::Get_X_AxesRaw(int16_t *Value)
 }
 
 /**
- * @brief  Get the LSM6DSV accelerometer sensor raw axes when avaiable (Blocking)
- * @param  Value pointer where the raw values of the axes are written
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::Get_X_AxesRaw_When_Aval(int16_t *Value) {
-  lsm6dsv_data_ready_t drdy;
-  do {
-    if (lsm6dsv_flag_data_ready_get(&reg_ctx, &drdy) != LSM6DSV_OK) {
-      return LSM6DSV_ERROR;
-    }
-  } while (!drdy.drdy_xl);
-
-  if (Get_X_AxesRaw(Value) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-  return LSM6DSV_OK;
-}
-
-/**
  * @brief  Get the LSM6DSV ACC data ready bit value
  * @param  Status the status of data ready bit
  * @retval 0 in case of success, an error code otherwise
@@ -790,295 +773,89 @@ LSM6DSVStatusTypeDef LSM6DSV::Set_X_Filter_Mode(uint8_t LowHighPassFlag, uint8_t
 }
 
 /**
- * @brief  Runs the ST specified accelerometer and gyroscope self test
- * @param XTestType LSM6DSV_XL_ST_DISABLE  = 0x0, LSM6DSV_XL_ST_POSITIVE = 0x1, LSM6DSV_XL_ST_NEGATIVE = 0x2
- * @param GTestType LSM6DSV_GY_ST_DISABLE  = 0x0, LSM6DSV_GY_ST_POSITIVE = 0x1, LSM6DSV_GY_ST_NEGATIVE = 0x2
+ * @brief  Enable acceleration offset
+ * @param  enable the acceleration offset
  * @retval 0 in case of success, an error code otherwise
  */
-LSM6DSVStatusTypeDef LSM6DSV::Test_IMU(uint8_t XTestType, uint8_t GTestType)
+LSM6DSVStatusTypeDef LSM6DSV::Enable_X_User_Offset()
 {
-  uint8_t whoamI;
-
-  if (ReadID(&whoamI) != LSM6DSV_OK) {
+  lsm6dsv_ctrl9_t ctrl9;
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
+  ctrl9.usr_off_on_out = PROPERTY_ENABLE;
 
-  if (whoamI != LSM6DSV_ID) {
-    return LSM6DSV_ERROR;
-  }
-
-  if (Test_X_IMU(XTestType) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-  
-  if (Test_G_IMU(GTestType) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-  printf("IMU Test OK\n");
-  return LSM6DSV_OK; 
-}
-
-/**
- * @brief  Runs the ST specified accelerometer self test
- * @param TestType LSM6DSV_XL_ST_DISABLE  = 0x0, LSM6DSV_XL_ST_POSITIVE = 0x1, LSM6DSV_XL_ST_NEGATIVE = 0x2
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::Test_X_IMU(uint8_t TestType)
-{
-  int16_t data_raw[3];
-  float val_st_off[3];
-  float val_st_on[3];
-  float test_val[3];
-
-  if (Reset_Set(LSM6DSV_RESTORE_CTRL_REGS) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  if (lsm6dsv_block_data_update_set(&reg_ctx, PROPERTY_ENABLE) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  /*
-   * Accelerometer Self Test
-   */
-  if (lsm6dsv_xl_data_rate_set(&reg_ctx, LSM6DSV_ODR_AT_60Hz) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  if (lsm6dsv_xl_full_scale_set(&reg_ctx, LSM6DSV_4g) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-  delay(100); //Wait for Accelerometer to stabalize;
-  memset(val_st_off, 0x00, 3 * sizeof(float));
-  memset(val_st_on, 0x00, 3 * sizeof(float));
-
-  /*Ignore First Data*/
-  if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  for (uint8_t i = 0; i < 5; i++) {
-    if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
-      return LSM6DSV_ERROR;
-    }
-
-    /*Average the data in each axis*/
-    for (uint8_t j = 0; j < 3; j++) {
-      val_st_off[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
-    }
-  }
-
-  /* Calculate the mg average values */
-  for (uint8_t i = 0; i < 3; i++) {
-    val_st_off[i] /= 5.0f;
-  }
-  
-  if (lsm6dsv_xl_self_test_set(&reg_ctx, (lsm6dsv_xl_self_test_t)TestType) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-  delay(100);
-
-  /*Ignore First Data*/
-  if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-  
-  for (uint8_t i = 0; i < 5; i++) {
-    if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
-      return LSM6DSV_ERROR;
-    }
-
-    /*Average the data in each axis*/
-    for (uint8_t j = 0; j < 3; j++) {
-      val_st_on[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
-    }
-  }
-
-  /* Calculate the mg average values */
-  for (uint8_t i = 0; i < 3; i++) {
-    val_st_on[i] /= 5.0f;
-  }
-
-  /* Calculate the mg values for self test */
-  for (uint8_t i = 0; i < 3; i++) {
-    test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
-  }
-
-  for (uint8_t i = 0; i < 3; i++) {
-    if (( LSM6DSV_MIN_ST_LIMIT_mg > test_val[i] ) || ( test_val[i] > LSM6DSV_MAX_ST_LIMIT_mg))
-      return LSM6DSV_ERROR;
-  }
-
-  if (lsm6dsv_xl_self_test_set(&reg_ctx, LSM6DSV_XL_ST_DISABLE) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  if (lsm6dsv_xl_data_rate_set(&reg_ctx, LSM6DSV_ODR_OFF) != LSM6DSV_OK) {
+  if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
   return LSM6DSV_OK;
 }
 
 /**
- * @brief  Runs the ST specified self test on the acceleration axis of the IMU
- * @param TestType LSM6DSV_GY_ST_DISABLE  = 0x0, LSM6DSV_GY_ST_POSITIVE = 0x1, LSM6DSV_GY_ST_NEGATIVE = 0x2
+ * @brief  Disable acceleration offset
  * @retval 0 in case of success, an error code otherwise
  */
-LSM6DSVStatusTypeDef LSM6DSV::Test_G_IMU(uint8_t TestType = LSM6DSV_GY_ST_POSITIVE)
+LSM6DSVStatusTypeDef LSM6DSV::Disable_X_User_Offset()
 {
-  int16_t data_raw[3];
-  float test_val[3];
-
-  if (Reset_Set(LSM6DSV_RESTORE_CTRL_REGS) != LSM6DSV_OK) {
+  lsm6dsv_ctrl9_t ctrl9;
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
+  ctrl9.usr_off_on_out = PROPERTY_DISABLE;
 
-  if (lsm6dsv_block_data_update_set(&reg_ctx, PROPERTY_ENABLE) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  /*
-   * Gyroscope Self Test
-   */
-
-  if (lsm6dsv_gy_data_rate_set(&reg_ctx, LSM6DSV_ODR_AT_240Hz) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  if (lsm6dsv_gy_full_scale_set(&reg_ctx, LSM6DSV_2000dps) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  delay(100);
-
-  /*Ignore First Data*/
-  if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  float val_st_off[3] = {0};
-  float val_st_on[3] = {0};
-  
-  for (uint8_t i = 0; i < 5; i++) {
-    if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
-      return LSM6DSV_ERROR;
-    }
-
-    /*Average the data in each axis*/
-    for (uint8_t j = 0; j < 3; j++) {
-      val_st_off[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
-    }
-  }
-
-  /* Calculate the mg average values */
-  for (uint8_t i = 0; i < 3; i++) {
-    val_st_off[i] /= 5.0f;
-  }
-
-  if (lsm6dsv_gy_self_test_set(&reg_ctx, (lsm6dsv_gy_self_test_t)TestType) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-  delay(100);
-
-  /*Ignore First Data*/
-  if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-  
-  for (uint8_t i = 0; i < 5; i++) {
-    if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
-      return LSM6DSV_ERROR;
-    }
-
-    /*Average the data in each axis*/
-    for (uint8_t j = 0; j < 3; j++) {
-      val_st_on[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
-    }
-  }
-
-  /* Calculate the mg average values */
-  for (uint8_t i = 0; i < 3; i++) {
-    val_st_on[i] /= 5.0f;
-  }
-
-  /* Calculate the mg values for self test */
-  for (uint8_t i = 0; i < 3; i++) {
-    test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
-  }
-
-  /* Check self test limit */
-  for (uint8_t i = 0; i < 3; i++) {
-    if (( LSM6DSV_MIN_ST_LIMIT_mdps > test_val[i] ) ||
-        ( test_val[i] > LSM6DSV_MAX_ST_LIMIT_mdps)) {
-      return LSM6DSV_ERROR;
-    }
-  }
-
-
-  if (lsm6dsv_gy_self_test_set(&reg_ctx, LSM6DSV_GY_ST_DISABLE) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  if (lsm6dsv_xl_data_rate_set(&reg_ctx, LSM6DSV_ODR_OFF) != LSM6DSV_OK) {
+  if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
   return LSM6DSV_OK;
 }
 
+/**
+ * @brief  Set the offset values for the acceleration
+ * @param  x the acceleration offset in the x axis to be set
+ * @param  y the acceleration offset in the y axis to be set
+ * @param  z the acceleration offset in the z axis to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Set_X_User_Offset(float x, float y, float z)
+{
+  lsm6dsv_ctrl9_t ctrl9;
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  int8_t xyz[3];
 
-LSM6DSVStatusTypeDef LSM6DSV::Get_T_ODR(float *Odr) {
-  lsm6dsv_fifo_ctrl4_t ctrl4;
+  if ( // about +- 2 G's for high and +- 0.124 G's for low
+      (x <= LSM6DSV_ACC_USR_OFF_W_LOW_MAX && x >= -LSM6DSV_ACC_USR_OFF_W_LOW_MAX) &&
+      (y <= LSM6DSV_ACC_USR_OFF_W_LOW_MAX && y >= -LSM6DSV_ACC_USR_OFF_W_LOW_MAX) &&
+      (z <= LSM6DSV_ACC_USR_OFF_W_LOW_MAX && z >= -LSM6DSV_ACC_USR_OFF_W_LOW_MAX)) { // Then we are under the low requirements
+    xyz[0] = (int8_t)(x / LSM6DSV_ACC_USR_OFF_W_LOW_LSB);
+    xyz[1] = (int8_t)(y / LSM6DSV_ACC_USR_OFF_W_LOW_LSB);
+    xyz[2] = (int8_t)(z / LSM6DSV_ACC_USR_OFF_W_LOW_LSB);
+    ctrl9.usr_off_w = false; //(0: 2^-10 g/LSB; 1: 2^-6 g/LSB)
+  }
 
-  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV_OK) {
+  else if ( // about +- 2 G's for high and +- 0.124 G's for low
+      (x <= LSM6DSV_ACC_USR_OFF_W_HIGH_MAX && x >= -LSM6DSV_ACC_USR_OFF_W_HIGH_MAX) &&
+      (y <= LSM6DSV_ACC_USR_OFF_W_HIGH_MAX && y >= -LSM6DSV_ACC_USR_OFF_W_HIGH_MAX) &&
+      (z <= LSM6DSV_ACC_USR_OFF_W_HIGH_MAX && z >= -LSM6DSV_ACC_USR_OFF_W_HIGH_MAX)) { // Then we are under the high requirements
+    xyz[0] = (int8_t)(x / LSM6DSV_ACC_USR_OFF_W_HIGH_LSB);
+    xyz[1] = (int8_t)(y / LSM6DSV_ACC_USR_OFF_W_HIGH_LSB);
+    xyz[2] = (int8_t)(z / LSM6DSV_ACC_USR_OFF_W_HIGH_LSB);
+    ctrl9.usr_off_w = true; //(0: 2^-10 g/LSB; 1: 2^-6 g/LSB)
+  }
+  else {
+    return LSM6DSV_ERROR; // Value too big
+  }
+
+  if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
 
-  switch (ctrl4.odr_t_batch)
-  {
-  case LSM6DSV_TEMP_NOT_BATCHED:
-    *Odr = 0;
-    break;
-  case LSM6DSV_TEMP_BATCHED_AT_1Hz875:
-    *Odr = 1.875f;
-    break;
-  case LSM6DSV_TEMP_BATCHED_AT_15Hz:
-    *Odr = 15;
-    break;
-  case LSM6DSV_TEMP_BATCHED_AT_60Hz:
-    *Odr = 60;
-    break;
-  default:
-    break;
+  // convert from float in G's to what it wants. Signed byte
+  if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_X_OFS_USR, (uint8_t *)&xyz, 3) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
   }
-
   return LSM6DSV_OK;
-}
-
-
-
-LSM6DSVStatusTypeDef LSM6DSV::Set_T_ODR(float Odr) {
-  lsm6dsv_fifo_ctrl4_t ctrl4;
-
-  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  if (Odr == 0.0F) {
-    ctrl4.odr_t_batch = LSM6DSV_TEMP_NOT_BATCHED;
-  } else if (Odr <= 1.875F) {
-    ctrl4.odr_t_batch = LSM6DSV_TEMP_BATCHED_AT_1Hz875;
-  } else if (Odr <= 15.0F) {
-    ctrl4.odr_t_batch = LSM6DSV_TEMP_BATCHED_AT_15Hz;
-  } else {
-    ctrl4.odr_t_batch = LSM6DSV_TEMP_BATCHED_AT_60Hz;
-  }
-
-  return (LSM6DSVStatusTypeDef)lsm6dsv_write_reg(
-    &reg_ctx,
-    LSM6DSV_FIFO_CTRL4,
-    (uint8_t *)&ctrl4,
-    1
-  );
 }
 
 /**
@@ -2227,6 +2004,7 @@ LSM6DSVStatusTypeDef LSM6DSV::Enable_Pedometer(LSM6DSV_SensorIntPin_t IntPin)
 
   /* Enable pedometer algorithm. */
   mode.step_counter_enable = PROPERTY_ENABLE;
+  mode.false_step_rej = PROPERTY_DISABLE;
 
   /* Turn on embedded features */
   if (lsm6dsv_stpcnt_mode_set(&reg_ctx, mode) != LSM6DSV_OK) {
@@ -2331,6 +2109,7 @@ LSM6DSVStatusTypeDef LSM6DSV::Disable_Pedometer()
 
   /* Enable pedometer algorithm. */
   mode.step_counter_enable = PROPERTY_DISABLE;
+  mode.false_step_rej = PROPERTY_DISABLE;
 
   /* Turn off embedded features */
   if (lsm6dsv_stpcnt_mode_set(&reg_ctx, mode) != LSM6DSV_OK) {
@@ -2626,8 +2405,12 @@ LSM6DSVStatusTypeDef LSM6DSV::Disable_Tilt_Detection()
   return ret;
 }
 
-
-LSM6DSVStatusTypeDef LSM6DSV::FIFO_Reset() { 
+/**
+ * @brief  Resets the fifo to an empty state
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::FIFO_Reset()
+{
   if (lsm6dsv_fifo_mode_set(&reg_ctx, LSM6DSV_BYPASS_MODE) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
@@ -2646,11 +2429,13 @@ LSM6DSVStatusTypeDef LSM6DSV::FIFO_Reset() {
   */
 LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Num_Samples(uint16_t *NumSamples)
 {
-    lsm6dsv_fifo_status_t fifo_status;
-    LSM6DSVStatusTypeDef result = 
-        (LSM6DSVStatusTypeDef) lsm6dsv_fifo_status_get(&reg_ctx, &fifo_status);
-    *NumSamples = fifo_status.fifo_level;
-    return result;
+  lsm6dsv_fifo_status_t status;
+  if (lsm6dsv_fifo_status_get(&reg_ctx, &status) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  *NumSamples = status.fifo_level;
+
+  return LSM6DSV_OK;
 }
 
 /**
@@ -2770,7 +2555,7 @@ LSM6DSVStatusTypeDef LSM6DSV::FIFO_Set_Mode(uint8_t Mode)
       newMode = LSM6DSV_BYPASS_TO_FIFO_MODE;
       break;
     default:
-      return LSM6DSV_ERROR;
+    return LSM6DSV_ERROR;
   }
   fifo_mode = newMode;
   if (lsm6dsv_fifo_mode_set(&reg_ctx, fifo_mode) != LSM6DSV_OK) {
@@ -2900,7 +2685,6 @@ LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_G_Axes(int32_t *AngularVelocity)
 
 /**
   * @brief  Set the LSM6DSV FIFO gyro BDR value
-
   * @param  Bdr FIFO gyro BDR value
   * @retval 0 in case of success, an error code otherwise
   */
@@ -2925,67 +2709,106 @@ LSM6DSVStatusTypeDef LSM6DSV::FIFO_Set_G_BDR(float Bdr)
   return (LSM6DSVStatusTypeDef) lsm6dsv_fifo_gy_batch_set(&reg_ctx, new_bdr);
 }
 
-LSM6DSVStatusTypeDef LSM6DSV::FIFO_Set_SFLP_Batch(bool GameRotation, bool Gravity, bool gBias)
+/**
+ * @brief  Get the LSM6DSV FIFO status
+ * @param  Status pointer for FIFO status
+ * @retval 0 in case of success, an error code otherwise
+*/
+LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Status(lsm6dsv_fifo_status_t *Status)
 {
-    lsm6dsv_fifo_sflp_raw_t fifo_sflp;
-    fifo_sflp.game_rotation = GameRotation;
-    fifo_sflp.gravity = Gravity;
-    fifo_sflp.gbias = gBias;
-    return (LSM6DSVStatusTypeDef)lsm6dsv_fifo_sflp_batch_set(&reg_ctx, fifo_sflp);
+  return (LSM6DSVStatusTypeDef)lsm6dsv_fifo_status_get(&reg_ctx, Status);
 }
 
-LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Status(lsm6dsv_fifo_status_t * Status)
+/**
+  * @brief  Get the Rotation Vector values
+  * @param  rvec pointer where the Rotation Vector values are written
+  * @retval 0 in case of success, an error code otherwise
+  */
+LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Rotation_Vector(float *rvec)
 {
-    return (LSM6DSVStatusTypeDef) lsm6dsv_fifo_status_get(&reg_ctx, Status);
+  lsm6dsv_axis3bit16_t data_raw;
+
+  if (FIFO_Get_Data(data_raw.u8bit) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  sflp2q(rvec, (uint16_t *)&data_raw.i16bit[0]);
+
+  return LSM6DSV_OK;
 }
 
-LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Gravity_Vector(float * data)
+/**
+  * @brief  Get the Gravity Vector values
+  * @param  gvec pointer where the Gravity Vector values are written
+  * @retval 0 in case of success, an error code otherwise
+  */
+LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Gravity_Vector(float *gvec)
 {
-    uint16_t raw_data[6];
-    if (FIFO_Get_Data((uint8_t *)raw_data) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
+  lsm6dsv_axis3bit16_t data_raw;
 
-    data[0] = lsm6dsv_from_sflp_to_mg(raw_data[0]);
-    data[1] = lsm6dsv_from_sflp_to_mg(raw_data[1]);
-    data[2] = lsm6dsv_from_sflp_to_mg(raw_data[2]);
-    return LSM6DSV_OK;
+  if (FIFO_Get_Data(data_raw.u8bit) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  gvec[0] = lsm6dsv_from_sflp_to_mg(data_raw.i16bit[0]);
+  gvec[1] = lsm6dsv_from_sflp_to_mg(data_raw.i16bit[1]);
+  gvec[2] = lsm6dsv_from_sflp_to_mg(data_raw.i16bit[2]);
+
+  return LSM6DSV_OK;
 }
 
-LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Game_Vector(float * data)
+/**
+  * @brief  Get the Gravity Bias values
+  * @param  gbias pointer where the Gravity Bias values are written
+  * @retval 0 in case of success, an error code otherwise
+  */
+LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Gyroscope_Bias(float *gbias)
 {
-    uint16_t raw_data[3];
-    if (FIFO_Get_Data((uint8_t *)raw_data) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
+  lsm6dsv_axis3bit16_t data_raw;
 
-    union bits_to_float {
-        uint32_t bits;
-        float value;
-    };
+  if (FIFO_Get_Data(data_raw.u8bit) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
 
-    bits_to_float float_bits[3];
-    float_bits[0].bits = Half_Bits_To_Float_Bits(raw_data[0]);
-    float_bits[1].bits = Half_Bits_To_Float_Bits(raw_data[1]);
-    float_bits[2].bits = Half_Bits_To_Float_Bits(raw_data[2]);
-    data[0] = float_bits[0].value;
-    data[1] = float_bits[1].value;
-    data[2] = float_bits[2].value;
-    return LSM6DSV_OK;
+  gbias[0] = lsm6dsv_from_fs125_to_mdps(data_raw.i16bit[0]);
+  gbias[1] = lsm6dsv_from_fs125_to_mdps(data_raw.i16bit[1]);
+  gbias[2] = lsm6dsv_from_fs125_to_mdps(data_raw.i16bit[2]);
+
+  return LSM6DSV_OK;
 }
 
-LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_GBias_Vector(float * data)
+/**
+ * @brief Enable the LSM6DSV FIFO Timestamp
+ * @retval 0 in case of success, an error code otherwise
+*/
+LSM6DSVStatusTypeDef LSM6DSV::FIFO_Enable_Timestamp()
 {
-    uint16_t raw_data[3];
-    if (FIFO_Get_Data((uint8_t *)raw_data) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
-    data[0] = lsm6dsv_from_fs125_to_mdps(raw_data[0]);
-    data[1] = lsm6dsv_from_fs125_to_mdps(raw_data[1]);
-    data[2] = lsm6dsv_from_fs125_to_mdps(raw_data[2]);
-    return LSM6DSV_OK;
+  return (LSM6DSVStatusTypeDef)lsm6dsv_timestamp_set(&reg_ctx, PROPERTY_ENABLE);
 }
 
+/**
+ * @brief Disable the LSM6DSV FIFO Timestamp
+ * @retval 0 in case of success, an error code otherwise
+*/
+LSM6DSVStatusTypeDef LSM6DSV::FIFO_Disable_Timestamp()
+{
+  return (LSM6DSVStatusTypeDef)lsm6dsv_timestamp_set(&reg_ctx, PROPERTY_DISABLE);
+}
+
+/**
+ * @brief  Set the decimation of timestamp for how often FIFO will be updated with timestamp value 
+ * @param  decimation FIFO Timestamp Decimation
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::FIFO_Set_Timestamp_Decimation(uint8_t decimation)
+{
+  return (LSM6DSVStatusTypeDef)lsm6dsv_fifo_timestamp_batch_set(&reg_ctx, (lsm6dsv_fifo_timestamp_batch_t)decimation);
+}
+
+/**
+ * @brief  Get the LSM6DSV FIFO Timestamp
+ * @param  timestamp FIFO Timestamp
+ * @retval 0 in case of success, an error code otherwise
+ */
 LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Timestamp(uint32_t *timestamp)
 {
   uint32_t raw_data[2]; //first is timestamp second is half full of meta data
@@ -2995,18 +2818,6 @@ LSM6DSVStatusTypeDef LSM6DSV::FIFO_Get_Timestamp(uint32_t *timestamp)
   *timestamp = raw_data[0];
   return LSM6DSV_OK;
 }
-
-LSM6DSVStatusTypeDef LSM6DSV::FIFO_Set_Timestamp_Decimation(uint8_t decimation)
-{
-  return (LSM6DSVStatusTypeDef)lsm6dsv_fifo_timestamp_batch_set(&reg_ctx, (lsm6dsv_fifo_timestamp_batch_t)decimation);
-
-}
-
-LSM6DSVStatusTypeDef LSM6DSV::Enable_Timestamp()
-{
-  return (LSM6DSVStatusTypeDef)lsm6dsv_timestamp_set(&reg_ctx, 1);
-}
-
 
 /**
  * @brief  Enable the LSM6DSV gyroscope sensor
@@ -3073,12 +2884,11 @@ LSM6DSVStatusTypeDef LSM6DSV::Get_G_Sensitivity(float *Sensitivity)
   if (*Sensitivity == 0.0f) {
     return LSM6DSV_ERROR;
   }
-  
   return LSM6DSV_OK;
 }
 
-
-float LSM6DSV::Convert_G_Sensitivity(lsm6dsv_gy_full_scale_t full_scale) { 
+float LSM6DSV::Convert_G_Sensitivity(lsm6dsv_gy_full_scale_t full_scale)
+{
   float Sensitivity = 0.0f;
   /* Store the sensitivity based on actual full scale. */
   switch (full_scale) {
@@ -3377,25 +3187,6 @@ LSM6DSVStatusTypeDef LSM6DSV::Get_G_AxesRaw(int16_t *Value)
 }
 
 /**
- * @brief  Get the LSM6DSV gyroscope sensor raw axes when data available (Blocking)
- * @param  Value pointer where the raw values of the axes are written
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::Get_G_AxesRaw_When_Aval(int16_t *Value) {
-  lsm6dsv_data_ready_t drdy;
-  do {
-    if (lsm6dsv_flag_data_ready_get(&reg_ctx, &drdy) != LSM6DSV_OK) {
-      return LSM6DSV_ERROR;
-    }
-  } while (!drdy.drdy_gy);
-
-  if (Get_G_AxesRaw(Value) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-  return LSM6DSV_OK;
-}
-
-/**
  * @brief  Get the LSM6DSV gyroscope sensor axes
  * @param  AngularRate pointer where the values of the axes are written
  * @retval 0 in case of success, an error code otherwise
@@ -3447,10 +3238,10 @@ LSM6DSVStatusTypeDef LSM6DSV::Get_G_DRDY_Status(uint8_t *Status)
  */
 LSM6DSVStatusTypeDef LSM6DSV::Set_G_Power_Mode(uint8_t PowerMode)
 {
-    return (LSM6DSVStatusTypeDef)lsm6dsv_gy_mode_set(
-        &reg_ctx,
-        (lsm6dsv_gy_mode_t)PowerMode
-    );
+  if (lsm6dsv_gy_mode_set(&reg_ctx, (lsm6dsv_gy_mode_t)PowerMode) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
 }
 
 /**
@@ -3483,32 +3274,855 @@ LSM6DSVStatusTypeDef LSM6DSV::Set_G_Filter_Mode(uint8_t LowHighPassFlag, uint8_t
   return LSM6DSV_OK;
 }
 
-LSM6DSVStatusTypeDef LSM6DSV::Set_G_Bias(float x, float y, float z)
+/**
+ * @brief  Get the LSM6DSV temperature sensor output data rate
+ * @param  Odr pointer where the output data rate is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Get_Temp_ODR(float *Odr)
 {
-    lsm6dsv_sflp_gbias_t gbias;
-    gbias.gbias_x = x;
-    gbias.gbias_y = y;
-    gbias.gbias_z = z;
-    return (LSM6DSVStatusTypeDef)lsm6dsv_sflp_game_gbias_set(
-        &reg_ctx,
-        &gbias
-    );
+  lsm6dsv_fifo_ctrl4_t ctrl4;
+
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  switch (ctrl4.odr_t_batch) {
+  case LSM6DSV_TEMP_NOT_BATCHED:
+    *Odr = 0;
+    break;
+  case LSM6DSV_TEMP_BATCHED_AT_1Hz875:
+    *Odr = 1.875f;
+    break;
+  case LSM6DSV_TEMP_BATCHED_AT_15Hz:
+    *Odr = 15;
+    break;
+  case LSM6DSV_TEMP_BATCHED_AT_60Hz:
+    *Odr = 60;
+    break;
+  default:
+    break;
+  }
+
+  return LSM6DSV_OK;
 }
 
-LSM6DSVStatusTypeDef LSM6DSV::Set_SFLP_ODR(float odr) {
-    lsm6dsv_sflp_data_rate_t rate = odr <= 15 ? LSM6DSV_SFLP_15Hz
-        : odr <= 30 ? LSM6DSV_SFLP_30Hz
-        : odr <= 60 ? LSM6DSV_SFLP_60Hz
-        : odr <= 120 ? LSM6DSV_SFLP_120Hz
-        : odr <= 240 ? LSM6DSV_SFLP_240Hz
-        : LSM6DSV_SFLP_480Hz;
+/**
+ * @brief  Set the LSM6DSV temperature sensor output data rate
+ * @param  Odr the output data rate value to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Set_Temp_ODR(float Odr)
+{
+  lsm6dsv_fifo_ctrl4_t ctrl4;
 
-    return (LSM6DSVStatusTypeDef)lsm6dsv_sflp_data_rate_set(
-        &reg_ctx,
-         rate
-    );
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_FIFO_CTRL4, (uint8_t *)&ctrl4, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (Odr == 0.0F) {
+    ctrl4.odr_t_batch = LSM6DSV_TEMP_NOT_BATCHED;
+  }
+  else if (Odr <= 1.875F) {
+    ctrl4.odr_t_batch = LSM6DSV_TEMP_BATCHED_AT_1Hz875;
+  }
+  else if (Odr <= 15.0F) {
+    ctrl4.odr_t_batch = LSM6DSV_TEMP_BATCHED_AT_15Hz;
+  }
+  else {
+    ctrl4.odr_t_batch = LSM6DSV_TEMP_BATCHED_AT_60Hz;
+  }
+
+  return (LSM6DSVStatusTypeDef)lsm6dsv_write_reg(
+      &reg_ctx,
+      LSM6DSV_FIFO_CTRL4,
+      (uint8_t *)&ctrl4,
+      1);
 }
 
+/**
+ * @brief  Returns the raw temperature value from the imu
+ * @param  value pointer where the temperature value is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Get_Temp_Raw(int16_t *value)
+{
+  return (LSM6DSVStatusTypeDef)lsm6dsv_temperature_raw_get(&reg_ctx, value);
+}
+
+/**
+ * @brief  Runs the ST specified accelerometer and gyroscope self test
+ * @param XTestType LSM6DSV_XL_ST_DISABLE  = 0x0, LSM6DSV_XL_ST_POSITIVE = 0x1, LSM6DSV_XL_ST_NEGATIVE = 0x2
+ * @param GTestType LSM6DSV_GY_ST_DISABLE  = 0x0, LSM6DSV_GY_ST_POSITIVE = 0x1, LSM6DSV_GY_ST_NEGATIVE = 0x2
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Test_IMU(uint8_t XTestType, uint8_t GTestType)
+{
+  uint8_t whoamI;
+
+  if (ReadID(&whoamI) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (whoamI != LSM6DSV_ID) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (Test_X_IMU(XTestType) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (Test_G_IMU(GTestType) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Runs the ST specified accelerometer self test
+ * @param TestType LSM6DSV_XL_ST_DISABLE  = 0x0, LSM6DSV_XL_ST_POSITIVE = 0x1, LSM6DSV_XL_ST_NEGATIVE = 0x2
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Test_X_IMU(uint8_t TestType)
+{
+  int16_t data_raw[3];
+  float val_st_off[3];
+  float val_st_on[3];
+  float test_val[3];
+
+  if (Device_Reset(LSM6DSV_RESET_CTRL_REGS) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_block_data_update_set(&reg_ctx, PROPERTY_ENABLE) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  /*
+   * Accelerometer Self Test
+   */
+  if (lsm6dsv_xl_data_rate_set(&reg_ctx, LSM6DSV_ODR_AT_60Hz) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_xl_full_scale_set(&reg_ctx, LSM6DSV_4g) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  delay(100); // Wait for Accelerometer to stabalize;
+  memset(val_st_off, 0x00, 3 * sizeof(float));
+  memset(val_st_on, 0x00, 3 * sizeof(float));
+
+  /*Ignore First Data*/
+  if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  for (uint8_t i = 0; i < 5; i++) {
+    if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
+      return LSM6DSV_ERROR;
+    }
+
+    /*Average the data in each axis*/
+    for (uint8_t j = 0; j < 3; j++) {
+      val_st_off[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
+    }
+  }
+
+  /* Calculate the mg average values */
+  for (uint8_t i = 0; i < 3; i++) {
+    val_st_off[i] /= 5.0f;
+  }
+
+  if (lsm6dsv_xl_self_test_set(&reg_ctx, (lsm6dsv_xl_self_test_t)TestType) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  delay(100);
+
+  /*Ignore First Data*/
+  if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  for (uint8_t i = 0; i < 5; i++) {
+    if (Get_X_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
+      return LSM6DSV_ERROR;
+    }
+
+    /*Average the data in each axis*/
+    for (uint8_t j = 0; j < 3; j++) {
+      val_st_on[j] += lsm6dsv_from_fs4_to_mg(data_raw[j]);
+    }
+  }
+
+  /* Calculate the mg average values */
+  for (uint8_t i = 0; i < 3; i++) {
+    val_st_on[i] /= 5.0f;
+  }
+
+  /* Calculate the mg values for self test */
+  for (uint8_t i = 0; i < 3; i++) {
+    test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+  }
+
+  for (uint8_t i = 0; i < 3; i++) {
+    if ((LSM6DSV_MIN_ST_LIMIT_mg > test_val[i]) || (test_val[i] > LSM6DSV_MAX_ST_LIMIT_mg))
+      return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_xl_self_test_set(&reg_ctx, LSM6DSV_XL_ST_DISABLE) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_xl_data_rate_set(&reg_ctx, LSM6DSV_ODR_OFF) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV accelerometer sensor raw axes when avaiable (Blocking)
+ * @param  Value pointer where the raw values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Get_X_AxesRaw_When_Aval(int16_t *Value)
+{
+  lsm6dsv_data_ready_t drdy;
+  do {
+    if (lsm6dsv_flag_data_ready_get(&reg_ctx, &drdy) != LSM6DSV_OK) {
+      return LSM6DSV_ERROR;
+    }
+  } while (!drdy.drdy_xl);
+
+  if (Get_X_AxesRaw(Value) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Runs the ST specified self test on the acceleration axis of the IMU
+ * @param TestType LSM6DSV_GY_ST_DISABLE  = 0x0, LSM6DSV_GY_ST_POSITIVE = 0x1, LSM6DSV_GY_ST_NEGATIVE = 0x2
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Test_G_IMU(uint8_t TestType = LSM6DSV_GY_ST_POSITIVE)
+{
+  int16_t data_raw[3];
+  float test_val[3];
+
+  if (Device_Reset(LSM6DSV_RESET_CTRL_REGS) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_block_data_update_set(&reg_ctx, PROPERTY_ENABLE) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  /*
+   * Gyroscope Self Test
+   */
+
+  if (lsm6dsv_gy_data_rate_set(&reg_ctx, LSM6DSV_ODR_AT_240Hz) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_gy_full_scale_set(&reg_ctx, LSM6DSV_2000dps) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  delay(100);
+
+  /*Ignore First Data*/
+  if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  float val_st_off[3] = {0};
+  float val_st_on[3] = {0};
+
+  for (uint8_t i = 0; i < 5; i++) {
+    if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
+      return LSM6DSV_ERROR;
+    }
+
+    /*Average the data in each axis*/
+    for (uint8_t j = 0; j < 3; j++) {
+      val_st_off[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
+    }
+  }
+
+  /* Calculate the mg average values */
+  for (uint8_t i = 0; i < 3; i++) {
+    val_st_off[i] /= 5.0f;
+  }
+
+  if (lsm6dsv_gy_self_test_set(&reg_ctx, (lsm6dsv_gy_self_test_t)TestType) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  delay(100);
+
+  /*Ignore First Data*/
+  if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  for (uint8_t i = 0; i < 5; i++) {
+    if (Get_G_AxesRaw_When_Aval(data_raw) != LSM6DSV_OK) {
+      return LSM6DSV_ERROR;
+    }
+
+    /*Average the data in each axis*/
+    for (uint8_t j = 0; j < 3; j++) {
+      val_st_on[j] += lsm6dsv_from_fs2000_to_mdps(data_raw[j]);
+    }
+  }
+
+  /* Calculate the mg average values */
+  for (uint8_t i = 0; i < 3; i++) {
+    val_st_on[i] /= 5.0f;
+  }
+
+  /* Calculate the mg values for self test */
+  for (uint8_t i = 0; i < 3; i++) {
+    test_val[i] = fabs((val_st_on[i] - val_st_off[i]));
+  }
+
+  /* Check self test limit */
+  for (uint8_t i = 0; i < 3; i++) {
+    if ((LSM6DSV_MIN_ST_LIMIT_mdps > test_val[i]) || (test_val[i] > LSM6DSV_MAX_ST_LIMIT_mdps)) {
+      return LSM6DSV_ERROR;
+    }
+  }
+
+  if (lsm6dsv_gy_self_test_set(&reg_ctx, LSM6DSV_GY_ST_DISABLE) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_xl_data_rate_set(&reg_ctx, LSM6DSV_ODR_OFF) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get the LSM6DSV gyroscope sensor raw axes when data available (Blocking)
+ * @param  Value pointer where the raw values of the axes are written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Get_G_AxesRaw_When_Aval(int16_t *Value)
+{
+  lsm6dsv_data_ready_t drdy;
+  do {
+    if (lsm6dsv_flag_data_ready_get(&reg_ctx, &drdy) != LSM6DSV_OK) {
+      return LSM6DSV_ERROR;
+    }
+  } while (!drdy.drdy_gy);
+
+  if (Get_G_AxesRaw(Value) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Enable the LSM6DSV QVAR feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::QVAR_Enable()
+{
+  lsm6dsv_ctrl7_t ctrl7;
+
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL7, (uint8_t *)&ctrl7, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  ctrl7.ah_qvar_en = 1;
+  ctrl7.int2_drdy_ah_qvar = 1;
+
+  if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL7, (uint8_t *)&ctrl7, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Disable the LSM6DSV QVAR feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::QVAR_Disable()
+{
+  lsm6dsv_ctrl7_t ctrl7;
+
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL7, (uint8_t *)&ctrl7, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  ctrl7.ah_qvar_en = 0;
+  ctrl7.int2_drdy_ah_qvar = 0;
+
+  if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL7, (uint8_t *)&ctrl7, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Read LSM6DSV QVAR output data
+ * @param  Data pointer where the value is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::QVAR_GetData(float *Data)
+{
+  lsm6dsv_axis1bit16_t data_raw;
+  (void)memset(data_raw.u8bit, 0x00, sizeof(int16_t));
+
+  if (lsm6dsv_ah_qvar_raw_get(&reg_ctx, &data_raw.i16bit) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  *Data = ((float)data_raw.i16bit) / LSM6DSV_QVAR_GAIN;
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get LSM6DSV QVAR equivalent input impedance
+ * @param  val pointer where the value is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::QVAR_GetImpedance(uint16_t *val)
+{
+  LSM6DSVStatusTypeDef ret = LSM6DSV_OK;
+  lsm6dsv_ah_qvar_zin_t imp;
+
+  if (lsm6dsv_ah_qvar_zin_get(&reg_ctx, &imp) != LSM6DSV_OK) {
+    ret = LSM6DSV_ERROR;
+  }
+  switch (imp) {
+    case LSM6DSV_2400MOhm:
+      *val = 2400;
+      break;
+    case LSM6DSV_730MOhm:
+      *val = 730;
+      break;
+    case LSM6DSV_300MOhm:
+      *val = 300;
+      break;
+    case LSM6DSV_255MOhm:
+      *val = 255;
+      break;
+    default:
+      ret = LSM6DSV_ERROR;
+      break;
+  }
+
+  return ret;
+}
+
+/**
+ * @brief  Set LSM6DSV QVAR equivalent input impedance
+ * @param  val impedance in MOhm (2400MOhm, 730MOhm, 300MOhm, 255MOhm)
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::QVAR_SetImpedance(uint16_t val)
+{
+  LSM6DSVStatusTypeDef ret = LSM6DSV_OK;
+  lsm6dsv_ah_qvar_zin_t imp;
+  switch (val) {
+    case 2400:
+      imp = LSM6DSV_2400MOhm;
+      break;
+    case 730:
+      imp = LSM6DSV_730MOhm;
+      break;
+    case 300:
+      imp = LSM6DSV_300MOhm;
+      break;
+    case 255:
+      imp = LSM6DSV_255MOhm;
+      break;
+    default:
+      ret = LSM6DSV_ERROR;
+      break;
+  }
+  if (ret != LSM6DSV_ERROR) {
+    if (lsm6dsv_ah_qvar_zin_set(&reg_ctx, imp) != LSM6DSV_OK) {
+      ret = LSM6DSV_ERROR;
+    }
+  }
+  return ret;
+}
+
+/**
+ * @brief  Read LSM6DSV QVAR status
+ * @param  val pointer where the value is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::QVAR_GetStatus(uint8_t *val)
+{
+  lsm6dsv_status_reg_t status;
+
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_STATUS_REG, (uint8_t *)&status, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  *val = status.ah_qvarda;
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get MLC status
+ * @param  status pointer where the MLC status is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Get_MLC_Status(lsm6dsv_mlc_status_mainpage_t *status)
+{
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_MLC_STATUS_MAINPAGE, (uint8_t *)status, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Get MLC output
+ * @param  output pointer where the MLC output is written
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Get_MLC_Output(lsm6dsv_mlc_out_t *output)
+{
+  if (lsm6dsv_mlc_out_get(&reg_ctx, output) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Enable Rotation Vector SFLP feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Enable_Rotation_Vector()
+{
+  lsm6dsv_fifo_sflp_raw_t fifo_sflp;
+
+  if (lsm6dsv_fifo_sflp_batch_get(&reg_ctx, &fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+  /* Enable Rotation Vector SFLP feature */
+  fifo_sflp.game_rotation = 1;
+
+  if (lsm6dsv_fifo_sflp_batch_set(&reg_ctx, fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+
+
+  /* Enable SFLP low power */
+  if (lsm6dsv_sflp_game_rotation_set(&reg_ctx, PROPERTY_ENABLE)) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Disable Rotation Vector SFLP feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Disable_Rotation_Vector()
+{
+  lsm6dsv_fifo_sflp_raw_t fifo_sflp;
+
+  if (lsm6dsv_fifo_sflp_batch_get(&reg_ctx, &fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+  /* Disable Rotation Vector SFLP feature */
+  fifo_sflp.game_rotation = 0;
+
+  if (lsm6dsv_fifo_sflp_batch_set(&reg_ctx, fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Check if all SFLP features are disabled */
+  if (!fifo_sflp.game_rotation && !fifo_sflp.gravity && !fifo_sflp.gbias) {
+    /* Disable SFLP */
+    if (lsm6dsv_sflp_game_rotation_set(&reg_ctx, PROPERTY_DISABLE)) {
+      return LSM6DSV_ERROR;
+    }
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Enable Gravity Vector SFLP feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Enable_Gravity_Vector()
+{
+  lsm6dsv_fifo_sflp_raw_t fifo_sflp;
+
+
+  if (lsm6dsv_fifo_sflp_batch_get(&reg_ctx, &fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+  /* Enable Gravity Vector SFLP feature */
+  fifo_sflp.gravity = 1;
+
+  if (lsm6dsv_fifo_sflp_batch_set(&reg_ctx, fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+
+
+  /* Enable SFLP low power */
+  if (lsm6dsv_sflp_game_rotation_set(&reg_ctx, PROPERTY_ENABLE)) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Disable Gravity Vector SFLP feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Disable_Gravity_Vector()
+{
+  lsm6dsv_fifo_sflp_raw_t fifo_sflp;
+
+  /* Set full scale */
+  if (lsm6dsv_xl_full_scale_set(&reg_ctx, LSM6DSV_4g)) {
+    return LSM6DSV_ERROR;
+  }
+  if (lsm6dsv_gy_full_scale_set(&reg_ctx, LSM6DSV_2000dps)) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_fifo_sflp_batch_get(&reg_ctx, &fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+  /* Disable Gravity Vector SFLP feature */
+  fifo_sflp.gravity = 0;
+
+  if (lsm6dsv_fifo_sflp_batch_set(&reg_ctx, fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Check if all SFLP features are disabled */
+  if (!fifo_sflp.game_rotation && !fifo_sflp.gravity && !fifo_sflp.gbias) {
+    /* Disable SFLP */
+    if (lsm6dsv_sflp_game_rotation_set(&reg_ctx, PROPERTY_DISABLE)) {
+      return LSM6DSV_ERROR;
+    }
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Enable Gyroscope Bias SFLP feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Enable_Gyroscope_Bias()
+{
+  lsm6dsv_fifo_sflp_raw_t fifo_sflp;
+
+  if (lsm6dsv_fifo_sflp_batch_get(&reg_ctx, &fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+  /* Enable Gyroscope Bias SFLP feature */
+  fifo_sflp.gbias = 1;
+
+  if (lsm6dsv_fifo_sflp_batch_set(&reg_ctx, fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Enable SFLP low power */
+  if (lsm6dsv_sflp_game_rotation_set(&reg_ctx, PROPERTY_ENABLE)) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Disable Gyroscope Bias SFLP feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Disable_Gyroscope_Bias()
+{
+  lsm6dsv_fifo_sflp_raw_t fifo_sflp;
+
+
+  if (lsm6dsv_fifo_sflp_batch_get(&reg_ctx, &fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+  /* Disable Gyroscope Bias SFLP feature */
+  fifo_sflp.gbias = 0;
+
+  if (lsm6dsv_fifo_sflp_batch_set(&reg_ctx, fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Check if all SFLP features are disabled */
+  if (!fifo_sflp.game_rotation && !fifo_sflp.gravity && !fifo_sflp.gbias) {
+    /* Disable SFLP */
+    if (lsm6dsv_sflp_game_rotation_set(&reg_ctx, PROPERTY_DISABLE)) {
+      return LSM6DSV_ERROR;
+    }
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Bulk set SFLP feature
+ * @param  GameRotation enable/disable Game Rotation Vector SFLP feature
+ * @param  Gravity enable/disable Gravity Vector SFLP feature
+ * @param  gBias enable/disable Gyroscope Bias SFLP feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Set_SFLP_Batch(bool GameRotation, bool Gravity, bool gBias)
+{
+  lsm6dsv_fifo_sflp_raw_t fifo_sflp;
+  fifo_sflp.game_rotation = GameRotation;
+  fifo_sflp.gravity = Gravity;
+  fifo_sflp.gbias = gBias;
+  if (lsm6dsv_fifo_sflp_batch_set(&reg_ctx, fifo_sflp)) {
+    return LSM6DSV_ERROR;
+  }
+
+  /* Check if all SFLP features are disabled */
+  if (!fifo_sflp.game_rotation && !fifo_sflp.gravity && !fifo_sflp.gbias) {
+    /* Disable SFLP */
+    if (lsm6dsv_sflp_game_rotation_set(&reg_ctx, PROPERTY_DISABLE)) {
+      return LSM6DSV_ERROR;
+    }
+  }
+  else {
+    /* Enable SFLP low power */
+    if (lsm6dsv_sflp_game_rotation_set(&reg_ctx, PROPERTY_ENABLE)) {
+      return LSM6DSV_ERROR;
+    }
+  }
+  return LSM6DSV_OK;
+}
+
+
+/**
+ * @brief  Set the LSM6DSV sensor fusion low power (sflp) output data rate
+ * @param  Odr the output data rate value to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Set_SFLP_ODR(float odr)
+{
+  lsm6dsv_sflp_data_rate_t rate = odr <= 15    ? LSM6DSV_SFLP_15Hz
+                                     : odr <= 30  ? LSM6DSV_SFLP_30Hz
+                                     : odr <= 60  ? LSM6DSV_SFLP_60Hz
+                                     : odr <= 120 ? LSM6DSV_SFLP_120Hz
+                                     : odr <= 240 ? LSM6DSV_SFLP_240Hz
+                                                  : LSM6DSV_SFLP_480Hz;
+
+  return (LSM6DSVStatusTypeDef)lsm6dsv_sflp_data_rate_set(&reg_ctx, rate);
+}
+
+/**
+ * @brief  Set the LSM6DSV sflp G bias
+ * @param  x the gyro bias in the x axis to be set
+ * @param  y the gyro bias in the y axis to be set
+ * @param  z the gyro bias in the z axis to be set
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Set_SFLP_GBIAS(float x, float y, float z)
+{
+  lsm6dsv_sflp_gbias_t val = {0, 0, 0};
+  val.gbias_x = x;
+  val.gbias_y = y;
+  val.gbias_z = z;
+  if (lsm6dsv_sflp_game_gbias_set(&reg_ctx, &val) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+  * @brief Reset SFLP
+  * @retval 0 in case of success, an error code otherwise
+  */
+LSM6DSVStatusTypeDef LSM6DSV::Reset_SFLP(void)
+{
+  lsm6dsv_emb_func_init_a_t emb_func_init_a;
+
+  if (lsm6dsv_mem_bank_set(&reg_ctx, LSM6DSV_EMBED_FUNC_MEM_BANK) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_EMB_FUNC_INIT_A, (uint8_t *)&emb_func_init_a, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  emb_func_init_a.sflp_game_init = 1;
+
+  if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_EMB_FUNC_INIT_A, (uint8_t *)&emb_func_init_a, 1) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  if (lsm6dsv_mem_bank_set(&reg_ctx, LSM6DSV_MAIN_MEM_BANK) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+  return LSM6DSV_OK;
+}
+
+/**
+ * @brief  Enable the LSM6DSV block update feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Enable_Block_Data_Update()
+{
+    return (LSM6DSVStatusTypeDef)lsm6dsv_block_data_update_set(&reg_ctx, PROPERTY_ENABLE);
+}
+
+/**
+ * @brief  Disable the LSM6DSV block update feature
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Disable_Block_Data_Update()
+{
+    return (LSM6DSVStatusTypeDef)lsm6dsv_block_data_update_set(&reg_ctx, PROPERTY_DISABLE);
+}
+
+/**
+ * @brief  Enable register address automatically incremented during a multiple byte access with a serial interface.
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Enable_Auto_Increment()
+{
+  return (LSM6DSVStatusTypeDef)lsm6dsv_auto_increment_set(&reg_ctx, PROPERTY_ENABLE);
+}
+
+/**
+ * @brief  Disable register address automatically incremented during a multiple byte access with a serial interface.
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Disable_Auto_Increment()
+{
+  return (LSM6DSVStatusTypeDef)lsm6dsv_auto_increment_set(&reg_ctx, PROPERTY_DISABLE);
+}
+
+/**
+ * @brief Preform a full reset of the LSM6DSV
+ * @param  flags lsm6dsv_reset_t flags for what to reset
+ * @retval 0 in case of success, an error code otherwise
+ */
+LSM6DSVStatusTypeDef LSM6DSV::Device_Reset(LSM6DSV_Reset_t flags)
+{
+  if (lsm6dsv_reset_set(&reg_ctx, (lsm6dsv_reset_t)flags) != LSM6DSV_OK) {
+    return LSM6DSV_ERROR;
+  }
+
+  lsm6dsv_reset_t rst;
+  do {
+    if (lsm6dsv_reset_get(&reg_ctx, &rst) != LSM6DSV_OK) {
+      return LSM6DSV_ERROR;
+    }
+  } while (rst != LSM6DSV_READY);
+  return LSM6DSV_OK;
+}
 
 /**
  * @brief  Get the LSM6DSV register value
@@ -3554,201 +4168,91 @@ void LSM6DSV_sleep(uint32_t ms) {
     delay(ms);
 }
 
-LSM6DSVStatusTypeDef LSM6DSV::Reset_Set(uint8_t flags)
+/**
+ * @brief  Converts uint16_t half-precision number into a uint32_t single-precision number.
+ * @param  h half-precision number
+ * @param  f pointer where the result of the conversion is written
+ * @retval 0
+ */
+LSM6DSVStatusTypeDef LSM6DSV::npy_halfbits_to_floatbits(uint16_t h, uint32_t *f)
 {
-    if (lsm6dsv_reset_set(&reg_ctx, (lsm6dsv_reset_t)flags) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
+  uint16_t h_exp, h_sig;
+  uint32_t f_sgn, f_exp, f_sig;
 
-    lsm6dsv_reset_t rst;
-    do {
-        if (lsm6dsv_reset_get(&reg_ctx, &rst) != LSM6DSV_OK) {
-            return LSM6DSV_ERROR;
-        }
-    } while (rst != LSM6DSV_READY); 
-    return LSM6DSV_OK;
-}
-
-LSM6DSVStatusTypeDef LSM6DSV::Enable_SFLP_Block(bool enable)
-{
-    return (LSM6DSVStatusTypeDef)lsm6dsv_sflp_game_rotation_set(
-        &reg_ctx,
-         enable ? PROPERTY_ENABLE : PROPERTY_DISABLE
-    );
-}
-
-LSM6DSVStatusTypeDef LSM6DSV::Enable_Block_Data_Update(bool enable)
-{
-    return (LSM6DSVStatusTypeDef)lsm6dsv_block_data_update_set(
-        &reg_ctx,
-         enable ? PROPERTY_ENABLE : PROPERTY_DISABLE
-    );
+  h_exp = (h & 0x7c00u);
+  f_sgn = ((uint32_t)h & 0x8000u) << 16;
+  switch (h_exp) {
+    case 0x0000u: /* 0 or subnormal */
+      h_sig = (h & 0x03ffu);
+      /* Signed zero */
+      if (h_sig == 0) {
+        *f = f_sgn;
+        return LSM6DSV_OK;
+      }
+      /* Subnormal */
+      h_sig <<= 1;
+      while ((h_sig & 0x0400u) == 0) {
+        h_sig <<= 1;
+        h_exp++;
+      }
+      f_exp = ((uint32_t)(127 - 15 - h_exp)) << 23;
+      f_sig = ((uint32_t)(h_sig & 0x03ffu)) << 13;
+      *f = f_sgn + f_exp + f_sig;
+      return LSM6DSV_OK;
+    case 0x7c00u: /* inf or NaN */
+      /* All-ones exponent and a copy of the significand */
+      *f = f_sgn + 0x7f800000u + (((uint32_t)(h & 0x03ffu)) << 13);
+      return LSM6DSV_OK;
+    default: /* normalized */
+      /* Just need to adjust the exponent and shift */
+      *f = f_sgn + (((uint32_t)(h & 0x7fffu) + 0x1c000u) << 13);
+      return LSM6DSV_OK;
+  }
 }
 
 /**
- * @brief  Enable register address automatically incremented during a multiple byte
-  access with a serial interface.
- * @retval 0 in case of success, an error code otherwise
+ * @brief  Converts uint16_t half-precision number into a float single-precision number.
+ * @param  h half-precision number
+ * @param  f pointer where the result of the conversion is written
+ * @retval 0
  */
-LSM6DSVStatusTypeDef LSM6DSV::Set_Auto_Increment(bool enable)
+LSM6DSVStatusTypeDef LSM6DSV::npy_half_to_float(uint16_t h, float *f)
 {
-  return (LSM6DSVStatusTypeDef)lsm6dsv_auto_increment_set(
-        &reg_ctx,
-         enable ? PROPERTY_ENABLE : PROPERTY_DISABLE
-    );
+  union {
+    float ret;
+    uint32_t retbits;
+  } conv;
+  npy_halfbits_to_floatbits(h, &conv.retbits);
+  *f = conv.ret;
+  return LSM6DSV_OK;
 }
 
-LSM6DSVStatusTypeDef LSM6DSV::Get_Temperature_Raw(int16_t * value)
+/**
+ * @brief  Compute quaternions.
+ * @param  quat results of the computation
+ * @param  sflp raw value of the quaternions
+ * @retval 0
+ */
+LSM6DSVStatusTypeDef LSM6DSV::sflp2q(float quat[4], uint16_t sflp[3])
 {
-    return (LSM6DSVStatusTypeDef)lsm6dsv_temperature_raw_get(
-        &reg_ctx,
-        value
-    );
-}
+  float sumsq = 0;
 
-LSM6DSVStatusTypeDef LSM6DSV::Is_New_Temperature_Data(bool * available)
-{
-    lsm6dsv_status_reg_t status;
-    if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_STATUS_REG, (uint8_t *)&status, 1) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
+  npy_half_to_float(sflp[0], &quat[0]);
+  npy_half_to_float(sflp[1], &quat[1]);
+  npy_half_to_float(sflp[2], &quat[2]);
 
-    *available = status.tda;
-    return LSM6DSV_OK;
-}
+  for (uint8_t i = 0; i < 3; i++) {
+    sumsq += quat[i] * quat[i];
+  }
 
-LSM6DSVStatusTypeDef LSM6DSV::Set_SFLP_GBIAS(float x, float y, float z) {
-    lsm6dsv_sflp_gbias_t val = {0, 0, 0};
-    val.gbias_x = x;
-    val.gbias_y = y;
-    val.gbias_z = z;
-    if(lsm6dsv_sflp_game_gbias_set(&reg_ctx, &val) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
-    return LSM6DSV_OK;
-}
+  if (sumsq > 1.0f) {
+    float n = sqrtf(sumsq);
+    quat[0] /= n;
+    quat[1] /= n;
+    quat[2] /= n;
+    sumsq = 1.0f;
+  }
 
-LSM6DSVStatusTypeDef LSM6DSV::Enable_X_User_Offset() {
-    lsm6dsv_ctrl9_t ctrl9;
-    if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
-    ctrl9.usr_off_on_out = true; //1 On, 0 Off
-
-    if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
-
-    // lsm6dsv_wake_up_ths_t wake_up_ths;
-    // if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&wake_up_ths, 1) != LSM6DSV_OK) {
-    //    return LSM6DSV_ERROR;
-    //}
-    //wake_up_ths.usr_off_on_wu = true; //1 On, 0 Off
-
-    //if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&wake_up_ths, 1) != LSM6DSV_OK) {
-    //    return LSM6DSV_ERROR;
-    //}
-
-    return LSM6DSV_OK;
-}
-
-LSM6DSVStatusTypeDef LSM6DSV::Disable_X_User_Offset() {
-    lsm6dsv_ctrl9_t ctrl9;
-    if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
-    ctrl9.usr_off_on_out = false; //1 On, 0 Off
-
-    if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
-
-    // lsm6dsv_wake_up_ths_t wake_up_ths;
-    // if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&wake_up_ths, 1) != LSM6DSV_OK) {
-    //    return LSM6DSV_ERROR;
-    //}
-    //wake_up_ths.usr_off_on_wu = false; //1 On, 0 Off
-
-    //if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&wake_up_ths, 1) != LSM6DSV_OK) {
-    //    return LSM6DSV_ERROR;
-    //}
-
-    return LSM6DSV_OK;
-}
-
-LSM6DSVStatusTypeDef LSM6DSV::Set_X_User_Offset(float x, float y, float z) {
-    lsm6dsv_ctrl9_t ctrl9;
-    if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
-    int8_t xyz[3];
-
-    if ( // about +- 2 G's for high and +- 0.124 G's for low
-      (x <= LSM6DSV_ACC_USR_OFF_W_LOW_MAX && x >= -LSM6DSV_ACC_USR_OFF_W_LOW_MAX) &&
-      (y <= LSM6DSV_ACC_USR_OFF_W_LOW_MAX && y >= -LSM6DSV_ACC_USR_OFF_W_LOW_MAX) &&
-      (z <= LSM6DSV_ACC_USR_OFF_W_LOW_MAX && z >= -LSM6DSV_ACC_USR_OFF_W_LOW_MAX)
-    ) { //Then we are under the low requirements
-      xyz[0] = (int8_t)(x / LSM6DSV_ACC_USR_OFF_W_LOW_LSB);
-      xyz[1] = (int8_t)(y / LSM6DSV_ACC_USR_OFF_W_LOW_LSB);
-      xyz[2] = (int8_t)(z / LSM6DSV_ACC_USR_OFF_W_LOW_LSB);
-      ctrl9.usr_off_w = false;  //(0: 2^-10 g/LSB; 1: 2^-6 g/LSB)
-    }
-
-    else if ( // about +- 2 G's for high and +- 0.124 G's for low
-      (x <= LSM6DSV_ACC_USR_OFF_W_HIGH_MAX && x >= -LSM6DSV_ACC_USR_OFF_W_HIGH_MAX) &&
-      (y <= LSM6DSV_ACC_USR_OFF_W_HIGH_MAX && y >= -LSM6DSV_ACC_USR_OFF_W_HIGH_MAX) &&
-      (z <= LSM6DSV_ACC_USR_OFF_W_HIGH_MAX && z >= -LSM6DSV_ACC_USR_OFF_W_HIGH_MAX)
-    ) { //Then we are under the high requirements
-      xyz[0] = (int8_t)(x / LSM6DSV_ACC_USR_OFF_W_HIGH_LSB);
-      xyz[1] = (int8_t)(y / LSM6DSV_ACC_USR_OFF_W_HIGH_LSB);
-      xyz[2] = (int8_t)(z / LSM6DSV_ACC_USR_OFF_W_HIGH_LSB);
-      ctrl9.usr_off_w = true;  //(0: 2^-10 g/LSB; 1: 2^-6 g/LSB)
-    } else {
-      return LSM6DSV_ERROR; //Value too big
-    }
-
-
-    if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL9, (uint8_t *)&ctrl9, 1) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
-
-
-    //convert from float in G's to what it wants. Signed byte
-    printf("x: %d, y: %d, z: %d", xyz[0], xyz[1], xyz[2]);
-    if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_X_OFS_USR, (uint8_t*)&xyz, 3) != LSM6DSV_OK) {
-        return LSM6DSV_ERROR;
-    }
-    return LSM6DSV_OK;
-}
-
-uint32_t LSM6DSV::Half_Bits_To_Float_Bits(uint16_t h)
-{
-    uint16_t h_exp, h_sig;
-    uint32_t f_sgn, f_exp, f_sig;
-
-    h_exp = (h&0x7c00u);
-    f_sgn = ((uint32_t)h&0x8000u) << 16;
-    switch (h_exp) {
-        case 0x0000u: /* 0 or subnormal */
-            h_sig = (h&0x03ffu);
-            /* Signed zero */
-            if (h_sig == 0) {
-                return f_sgn;
-            }
-            /* Subnormal */
-            h_sig <<= 1;
-            while ((h_sig&0x0400u) == 0) {
-                h_sig <<= 1;
-                h_exp++;
-            }
-            f_exp = ((uint32_t)(127 - 15 - h_exp)) << 23;
-            f_sig = ((uint32_t)(h_sig&0x03ffu)) << 13;
-            return f_sgn + f_exp + f_sig;
-        case 0x7c00u: /* inf or NaN */
-            /* All-ones exponent and a copy of the significand */
-            return f_sgn + 0x7f800000u + (((uint32_t)(h&0x03ffu)) << 13);
-        default: /* normalized */
-            /* Just need to adjust the exponent and shift */
-            return f_sgn + (((uint32_t)(h&0x7fffu) + 0x1c000u) << 13);
-    }
+  quat[3] = sqrtf(1.0f - sumsq);
+  return LSM6DSV_OK;
 }
