@@ -105,11 +105,11 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.begin();
 
 	// Restore defaults
-	status |= imu.Reset_Set(LSM6DSV_RESET_CTRL_REGS);
+	status |= imu.Device_Reset(LSM6DSV_RESET_CTRL_REGS);
 
 	// Enable Block Data Update
 	status |= imu.Enable_Block_Data_Update();
-	status |= imu.Set_Auto_Increment(true);
+	status |= imu.Enable_Auto_Increment();
 
 	// Set maximums
 	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
@@ -129,7 +129,7 @@ void LSM6DSVSensor::motionSetup() {
 	);
 
 	// Enable IMU
-	status |= imu.Enable_Timestamp();
+	status |= imu.FIFO_Enable_Timestamp();
 	status |= imu.Enable_X();
 	status |= imu.Enable_G();
 
@@ -143,9 +143,8 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.FIFO_Set_Mode(LSM6DSV_STREAM_MODE);
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ONBOARD)
-	status |= imu.FIFO_Set_SFLP_Batch(true, true, false);
 	status |= imu.Set_SFLP_ODR(LSM6DSV_FIFO_DATA_RATE);
-	status |= imu.Enable_SFLP_Block();
+	status |= imu.Set_SFLP_Batch(true, true, false);
 #endif
 	
 
@@ -230,7 +229,7 @@ void LSM6DSVSensor::motionLoop() {
 		lastTempRead = millis();
 
 		int16_t rawTemp;
-		if (imu.Get_Temperature_Raw(&rawTemp) != LSM6DSV_OK) {
+		if (imu.Get_Temp_Raw(&rawTemp) != LSM6DSV_OK) {
 			m_Logger.error(
 				"Error getting temperature on %s at address 0x%02x",
 				getIMUNameByType(sensorType),
@@ -326,21 +325,6 @@ SensorStatus LSM6DSVSensor::getSensorState() {
 			 ? (status == LSM6DSV_OK ? SensorStatus::SENSOR_OK
 										: SensorStatus::SENSOR_ERROR)
 			 : SensorStatus::SENSOR_OFFLINE;
-}
-
-Quat LSM6DSVSensor::fusedRotationToQuaternion(float x, float y, float z) {
-	float length2 = x * x + y * y + z * z;
-
-	if (length2 > 1) {
-		float length = sqrt(length2);
-		x /= length;
-		y /= length;
-		z /= length;
-		length2 = 1;
-	}
-
-	float w = sqrt(1 - length2);
-	return Quat(x, y, z, w);
 }
 
 LSM6DSVStatusTypeDef LSM6DSVSensor::runSelfTest() {
@@ -515,8 +499,8 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readFifo(uint16_t fifo_samples) {
 
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ONBOARD)
 			case lsm6dsv_fifo_out_raw_t::LSM6DSV_SFLP_GAME_ROTATION_VECTOR_TAG: {
-				float fusedGameRotation[3];
-				if (imu.FIFO_Get_Game_Vector(fusedGameRotation) != LSM6DSV_OK) {
+				float quat[4];
+				if (imu.FIFO_Get_Rotation_Vector(quat) != LSM6DSV_OK) {
 					m_Logger.error(
 						"Failed to get game rotation vector on %s at address 0x%02x",
 						getIMUNameByType(sensorType),
@@ -525,12 +509,7 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readFifo(uint16_t fifo_samples) {
 					return LSM6DSV_ERROR;
 				}
 
-				fusedRotation = fusedRotationToQuaternion(
-									fusedGameRotation[0],
-									fusedGameRotation[1],
-									fusedGameRotation[2]
-								)
-							  * sensorOffset;
+				fusedRotation = Quat(quat[0], quat[1], quat[2], quat[3]) * sensorOffset;
 				if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES
 					|| !lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
 					newFusedRotation = true;

@@ -247,16 +247,6 @@ class LSM6DSV {
     LSM6DSVStatusTypeDef FIFO_Get_Timestamp(uint32_t *timestamp);
     LSM6DSVStatusTypeDef FIFO_Reset();
 
-    LSM6DSVStatusTypeDef QVAR_Enable();
-    LSM6DSVStatusTypeDef QVAR_Disable();
-    LSM6DSVStatusTypeDef QVAR_GetStatus(uint8_t *val);
-    LSM6DSVStatusTypeDef QVAR_GetImpedance(uint16_t *val);
-    LSM6DSVStatusTypeDef QVAR_SetImpedance(uint16_t val);
-    LSM6DSVStatusTypeDef QVAR_GetData(float *Data);
-
-    LSM6DSVStatusTypeDef Get_MLC_Status(lsm6dsv_mlc_status_mainpage_t *status);
-    LSM6DSVStatusTypeDef Get_MLC_Output(lsm6dsv_mlc_out_t *output);
-
     LSM6DSVStatusTypeDef Enable_Rotation_Vector();
     LSM6DSVStatusTypeDef Disable_Rotation_Vector();
     LSM6DSVStatusTypeDef Enable_Gravity_Vector();

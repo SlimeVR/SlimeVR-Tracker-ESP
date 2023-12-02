@@ -2004,7 +2004,6 @@ LSM6DSVStatusTypeDef LSM6DSV::Enable_Pedometer(LSM6DSV_SensorIntPin_t IntPin)
 
   /* Enable pedometer algorithm. */
   mode.step_counter_enable = PROPERTY_ENABLE;
-  mode.false_step_rej = PROPERTY_DISABLE;
 
   /* Turn on embedded features */
   if (lsm6dsv_stpcnt_mode_set(&reg_ctx, mode) != LSM6DSV_OK) {
@@ -2109,7 +2108,6 @@ LSM6DSVStatusTypeDef LSM6DSV::Disable_Pedometer()
 
   /* Enable pedometer algorithm. */
   mode.step_counter_enable = PROPERTY_DISABLE;
-  mode.false_step_rej = PROPERTY_DISABLE;
 
   /* Turn off embedded features */
   if (lsm6dsv_stpcnt_mode_set(&reg_ctx, mode) != LSM6DSV_OK) {
@@ -3620,182 +3618,6 @@ LSM6DSVStatusTypeDef LSM6DSV::Get_G_AxesRaw_When_Aval(int16_t *Value)
   if (Get_G_AxesRaw(Value) != LSM6DSV_OK) {
     return LSM6DSV_ERROR;
   }
-  return LSM6DSV_OK;
-}
-
-/**
- * @brief  Enable the LSM6DSV QVAR feature
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::QVAR_Enable()
-{
-  lsm6dsv_ctrl7_t ctrl7;
-
-  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL7, (uint8_t *)&ctrl7, 1) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  ctrl7.ah_qvar_en = 1;
-  ctrl7.int2_drdy_ah_qvar = 1;
-
-  if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL7, (uint8_t *)&ctrl7, 1) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  return LSM6DSV_OK;
-}
-
-/**
- * @brief  Disable the LSM6DSV QVAR feature
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::QVAR_Disable()
-{
-  lsm6dsv_ctrl7_t ctrl7;
-
-  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_CTRL7, (uint8_t *)&ctrl7, 1) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  ctrl7.ah_qvar_en = 0;
-  ctrl7.int2_drdy_ah_qvar = 0;
-
-  if (lsm6dsv_write_reg(&reg_ctx, LSM6DSV_CTRL7, (uint8_t *)&ctrl7, 1) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  return LSM6DSV_OK;
-}
-
-/**
- * @brief  Read LSM6DSV QVAR output data
- * @param  Data pointer where the value is written
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::QVAR_GetData(float *Data)
-{
-  lsm6dsv_axis1bit16_t data_raw;
-  (void)memset(data_raw.u8bit, 0x00, sizeof(int16_t));
-
-  if (lsm6dsv_ah_qvar_raw_get(&reg_ctx, &data_raw.i16bit) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  *Data = ((float)data_raw.i16bit) / LSM6DSV_QVAR_GAIN;
-  return LSM6DSV_OK;
-}
-
-/**
- * @brief  Get LSM6DSV QVAR equivalent input impedance
- * @param  val pointer where the value is written
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::QVAR_GetImpedance(uint16_t *val)
-{
-  LSM6DSVStatusTypeDef ret = LSM6DSV_OK;
-  lsm6dsv_ah_qvar_zin_t imp;
-
-  if (lsm6dsv_ah_qvar_zin_get(&reg_ctx, &imp) != LSM6DSV_OK) {
-    ret = LSM6DSV_ERROR;
-  }
-  switch (imp) {
-    case LSM6DSV_2400MOhm:
-      *val = 2400;
-      break;
-    case LSM6DSV_730MOhm:
-      *val = 730;
-      break;
-    case LSM6DSV_300MOhm:
-      *val = 300;
-      break;
-    case LSM6DSV_255MOhm:
-      *val = 255;
-      break;
-    default:
-      ret = LSM6DSV_ERROR;
-      break;
-  }
-
-  return ret;
-}
-
-/**
- * @brief  Set LSM6DSV QVAR equivalent input impedance
- * @param  val impedance in MOhm (2400MOhm, 730MOhm, 300MOhm, 255MOhm)
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::QVAR_SetImpedance(uint16_t val)
-{
-  LSM6DSVStatusTypeDef ret = LSM6DSV_OK;
-  lsm6dsv_ah_qvar_zin_t imp;
-  switch (val) {
-    case 2400:
-      imp = LSM6DSV_2400MOhm;
-      break;
-    case 730:
-      imp = LSM6DSV_730MOhm;
-      break;
-    case 300:
-      imp = LSM6DSV_300MOhm;
-      break;
-    case 255:
-      imp = LSM6DSV_255MOhm;
-      break;
-    default:
-      ret = LSM6DSV_ERROR;
-      break;
-  }
-  if (ret != LSM6DSV_ERROR) {
-    if (lsm6dsv_ah_qvar_zin_set(&reg_ctx, imp) != LSM6DSV_OK) {
-      ret = LSM6DSV_ERROR;
-    }
-  }
-  return ret;
-}
-
-/**
- * @brief  Read LSM6DSV QVAR status
- * @param  val pointer where the value is written
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::QVAR_GetStatus(uint8_t *val)
-{
-  lsm6dsv_status_reg_t status;
-
-  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_STATUS_REG, (uint8_t *)&status, 1) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  *val = status.ah_qvarda;
-
-  return LSM6DSV_OK;
-}
-
-/**
- * @brief  Get MLC status
- * @param  status pointer where the MLC status is written
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::Get_MLC_Status(lsm6dsv_mlc_status_mainpage_t *status)
-{
-  if (lsm6dsv_read_reg(&reg_ctx, LSM6DSV_MLC_STATUS_MAINPAGE, (uint8_t *)status, 1) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
-  return LSM6DSV_OK;
-}
-
-/**
- * @brief  Get MLC output
- * @param  output pointer where the MLC output is written
- * @retval 0 in case of success, an error code otherwise
- */
-LSM6DSVStatusTypeDef LSM6DSV::Get_MLC_Output(lsm6dsv_mlc_out_t *output)
-{
-  if (lsm6dsv_mlc_out_get(&reg_ctx, output) != LSM6DSV_OK) {
-    return LSM6DSV_ERROR;
-  }
-
   return LSM6DSV_OK;
 }
 
