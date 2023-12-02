@@ -25,10 +25,10 @@
 #define SENSORS_LSM6DSV_H
 
 #include "LSM6DSV.h"
-#include "sensor.h"
 #include "SensorFusion.h"
-#include "magneto1.4.h"
 #include "SensorFusionRestDetect.h"
+#include "magneto1.4.h"
+#include "sensor.h"
 
 #define LSM6DSV_FUSION_ESP 0
 #define LSM6DSV_FUSION_ONBOARD 1
@@ -40,63 +40,60 @@
 // #### IMU Reading Speed ####
 #ifndef LSM6DSV_ACCEL_MAX
 #define LSM6DSV_ACCEL_MAX 16
-#endif
+#endif  // LSM6DSV_ACCEL_MAX
 
 #ifndef LSM6DSV_GYRO_MAX
 #define LSM6DSV_GYRO_MAX 2000
-#endif
+#endif  // LSM6DSV_GYRO_MAX
 
 #ifndef LSM6DSV_FIFO_DATA_RATE
 #define LSM6DSV_FIFO_DATA_RATE 120
-#endif
+#endif  // LSM6DSV_FIFO_DATA_RATE
 
 #ifndef LSM6DSV_GYRO_ACCEL_RATE
 #define LSM6DSV_GYRO_ACCEL_RATE 7680.0f
-#endif
+#endif  // LSM6DSV_GYRO_ACCEL_RATE
 
-//#ifndef LSM6DSV_FIFO_TEMP_DATA_RATE //TODO: We should use this instead
-//#define LSM6DSV_FIFO_TEMP_DATA_RATE 1.875f
-//#endif
+// #ifndef LSM6DSV_FIFO_TEMP_DATA_RATE //TODO: We should use this instead
+// #define LSM6DSV_FIFO_TEMP_DATA_RATE 1.875f
+// #endif
 
 #ifndef LSM6DSV_TEMP_READ_INTERVAL
 #define LSM6DSV_TEMP_READ_INTERVAL 1
-#endif
+#endif  // LSM6DSV_TEMP_READ_INTERVAL
 
 // #### IMU Tap Detection ####
 #ifndef LSM6DSV_TAP_THRESHOLD
-#define LSM6DSV_TAP_THRESHOLD 5 //0-32
-#endif
+#define LSM6DSV_TAP_THRESHOLD 5  // 0-32
+#endif  // LSM6DSV_TAP_THRESHOLD
 
 #ifndef LSM6DSV_TAP_SHOCK_TIME
-#define LSM6DSV_TAP_SHOCK_TIME 3 //0-3
-#endif
+#define LSM6DSV_TAP_SHOCK_TIME 3  // 0-3
+#endif  // LSM6DSV_TAP_SHOCK_TIME
 
 #ifndef LSM6DSV_TAP_QUITE_TIME
-#define LSM6DSV_TAP_QUITE_TIME 3 //0-3
-#endif
+#define LSM6DSV_TAP_QUITE_TIME 3  // 0-3
+#endif  // LSM6DSV_TAP_QUITE_TIME
 
 // #### General IMU Settings ####
 #define LSM6DSV_INTERRUPT  // interupt recommended but not required
 // #define LSM6DSV_NO_SELF_TEST_ON_FACEDOWN
-#define LSM6DSV_FUSION_SOURCE LSM6DSV_FUSION_ONBOARD  // LSM6DSV_FUSION_ESP or LSM6DSV_FUSION_ONBOARD
-
+#define LSM6DSV_FUSION_SOURCE LSM6DSV_FUSION_ESP  // LSM6DSV_FUSION_ESP or LSM6DSV_FUSION_ONBOARD
 
 // #### IMU Calibration ####
 #ifndef LSM6DSV_GYRO_SENSITIVITY_SPINS
-#define LSM6DSV_GYRO_SENSITIVITY_SPINS 1 // Only used if LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
-#endif
-
+#define LSM6DSV_GYRO_SENSITIVITY_SPINS 2  // Only used if LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
+#endif  // LSM6DSV_GYRO_SENSITIVITY_SPINS
 
 // #############################################
 // ######### End user configuration ############
 // #############################################
 
-
 #if (LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP)
 #define LSM6DSV_GYRO_OFFSET_CAL
 #define LSM6DSV_ACCEL_OFFSET_CAL
 #define LSM6DSV_GYRO_SENSITIVITY_CAL
-#endif
+#endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
 class LSM6DSVSensor : public Sensor {
 public:
@@ -120,9 +117,9 @@ public:
 	void calibrateGyro();
 	void calibrateAccel();
 	void calibrateGyroSensitivity();
-    void resetCalibration();
-#endif
-	
+	void resetCalibration();
+#endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
+
 private:
 	Quat fusedRotationToQuaternion(float x, float y, float z);
 	LSM6DSVStatusTypeDef runSelfTest();
@@ -149,7 +146,7 @@ private:
 	SlimeVR::Sensors::SensorFusionRestDetect sfusion;
 	float rawGyro[3];
 	bool newRawGyro = false;
-#endif
+#endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 };
 
-#endif
+#endif  // SENSORS_LSM6DSV_H
