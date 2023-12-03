@@ -117,11 +117,9 @@ public:
 	void calibrateGyro();
 	void calibrateAccel();
 	void calibrateGyroSensitivity();
-	void resetCalibration();
 #endif  // LSM6DSV_FUSION_SOURCE == LSM6DSV_FUSION_ESP
 
 private:
-	Quat fusedRotationToQuaternion(float x, float y, float z);
 	LSM6DSVStatusTypeDef runSelfTest();
 	LSM6DSVStatusTypeDef readFifo(uint16_t fifo_samples);
 

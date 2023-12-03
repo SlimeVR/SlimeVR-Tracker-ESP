@@ -101,14 +101,9 @@ void LSM6DSVSensor::motionSetup() {
 
 	m_Logger.info("Connected to %s on 0x%02x", getIMUNameByType(sensorType), addr);
 
-	status |= imu.begin();
-
-	// Restore defaults
 	status |= imu.Device_Reset(LSM6DSV_RESET_GLOBAL);
 
-	// Enable Block Data Update
-	status |= imu.Enable_Block_Data_Update();
-	status |= imu.Enable_Auto_Increment();
+	status |= imu.begin();
 
 	// Set maximums
 	status |= imu.Set_X_FS(LSM6DSV_ACCEL_MAX);
@@ -131,6 +126,8 @@ void LSM6DSVSensor::motionSetup() {
 	status |= imu.FIFO_Enable_Timestamp();
 	status |= imu.Enable_X();
 	status |= imu.Enable_G();
+
+	status |= imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
 
 	// status |= imu.Set_X_Filter_Mode(1, LSM6DSV_XL_LIGHT);
 	// status |= imu.Set_G_Filter_Mode(1, LSM6DSV_XL_LIGHT);
@@ -169,11 +166,9 @@ void LSM6DSVSensor::motionSetup() {
 
 #ifdef LSM6DSV_INTERRUPT
 	attachInterrupt(m_IntPin, interruptHandler, RISING);
-	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT1_PIN
-	);  // Tap recommends an interrupt
+	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT1_PIN);  // Tap recommends an interrupt
 #else
-	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT2_PIN
-	);  // Just poll to see if an event happened jank but works
+	status |= imu.Enable_Single_Tap_Detection(LSM6DSV_INT2_PIN);  // Just poll to see if an event happened jank but works
 #endif  // LSM6DSV_INTERRUPT
 
 	status |= imu.Set_Tap_Threshold(LSM6DSV_TAP_THRESHOLD);
@@ -201,7 +196,7 @@ void LSM6DSVSensor::motionSetup() {
 constexpr float mgPerG = 1000.0f;
 constexpr float mdpsPerDps = 1000.0f;
 constexpr float dpsPerRad = 57.295779578552f;
-constexpr uint8_t fifoFramSize = 4;  // X BDR, (G BDR || Game), Gravity, Timestamp
+constexpr uint8_t fifoFrameSize = 4;  // X BDR, (G BDR || Rotation), Gravity, Timestamp
 
 void LSM6DSVSensor::motionLoop() {
 #ifdef LSM6DSV_INTERRUPT
@@ -268,7 +263,7 @@ void LSM6DSVSensor::motionLoop() {
 	// Group all the data together
 	// TODO: add the interupt watermark code to this
 
-	if (fifo_samples < fifoFramSize) {
+	if (fifo_samples < fifoFrameSize) {
 		return;
 	}
 
@@ -395,7 +390,7 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readFifo(uint16_t fifo_samples) {
 
 		switch (tag) {
 			case lsm6dsv_fifo_out_raw_t::LSM6DSV_TIMESTAMP_TAG: {
-				if (i % fifoFramSize != 0) {
+				if (i % fifoFrameSize != 0) {
 					return LSM6DSV_OK;  // If we are not requesting a full data set
 										// then stop reading
 				}
@@ -490,11 +485,11 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readFifo(uint16_t fifo_samples) {
 				rawGyro[1] -= m_Calibration.G_off[1];
 				rawGyro[2] -= m_Calibration.G_off[2];
 #endif  // LSM6DSV_GYRO_OFFSET_CAL
-#ifdef LSM6DSV_GYRO_SCALE_CAL
+#ifdef LSM6DSV_GYRO_SENSITIVITY_CAL
 				rawGyro[0] *= m_Calibration.G_sensitivity[0];
 				rawGyro[1] *= m_Calibration.G_sensitivity[1];
 				rawGyro[2] *= m_Calibration.G_sensitivity[2];
-#endif  // LSM6DSV_GYRO_SCALE_CAL
+#endif  // LSM6DSV_GYRO_SENSITIVITY_CAL
 
 				newRawGyro = true;
 				break;
@@ -544,7 +539,7 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readFifo(uint16_t fifo_samples) {
 // Used for calibration (Blocking)
 LSM6DSVStatusTypeDef LSM6DSVSensor::readNextFifoFrame() {
 	uint16_t fifo_samples = 0;
-	while (fifo_samples < fifoFramSize) {
+	while (fifo_samples < fifoFrameSize) {
 		if (imu.FIFO_Get_Num_Samples(&fifo_samples) == LSM6DSV_ERROR) {
 			m_Logger.error(
 				"Error getting number of samples in FIFO on %s at address 0x%02x",
@@ -554,7 +549,7 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readNextFifoFrame() {
 			return LSM6DSV_ERROR;
 		}
 	}
-	LSM6DSVStatusTypeDef result = readFifo(fifoFramSize);
+	LSM6DSVStatusTypeDef result = readFifo(fifoFrameSize);
 
 	if (newRawAcceleration && newRawGyro) {
 		sfusion.update6D(
@@ -567,8 +562,7 @@ LSM6DSVStatusTypeDef LSM6DSVSensor::readNextFifoFrame() {
 }
 
 LSM6DSVStatusTypeDef LSM6DSVSensor::loadIMUCalibration() {
-	SlimeVR::Configuration::CalibrationConfig sensorCalibration
-		= configuration.getCalibration(sensorId);
+	SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
 	// If no compatible calibration data is found, the calibration data will just be
 	// zero-ed out
 	switch (sensorCalibration.type) {
@@ -619,7 +613,6 @@ void LSM6DSVSensor::calibrateGyro() {
 
 	uint16_t count = 0;
 	while (count < calibrationSamples) {
-		printf("Gyro Sample");
 		readNextFifoFrame();
 		if (newRawGyro) {
 			tempGxyz[0] += rawGyro[0];
@@ -696,7 +689,7 @@ void LSM6DSVSensor::calibrateAccel() {
 		}
 
 		// Group all the data together
-		if (fifo_samples < fifoFramSize) {
+		if (fifo_samples < fifoFrameSize) {
 			continue;
 		}
 
@@ -975,10 +968,10 @@ void LSM6DSVSensor::calibrateGyroSensitivity() {
 void LSM6DSVSensor::startCalibration(int calibrationType) {
 	m_Logger.info("Flip right side up in the next 5 seconds to start calibration.");
 	delay(5000);
-	uint8_t isFaceUp;
-	imu.Get_6D_Orientation_ZH(&isFaceUp);
+	uint8_t isFaceDown;
+	imu.Get_6D_Orientation_ZL(&isFaceDown);
 
-	if (!isFaceUp) {
+	if (isFaceDown) {
 		loadIMUCalibration();
 		return;
 	}
@@ -1002,22 +995,6 @@ void LSM6DSVSensor::startCalibration(int calibrationType) {
 	saveCalibration();
 
 	m_Logger.info("Calibration finished, enjoy");
-}
-
-void LSM6DSVSensor::resetCalibration() {
-	m_Logger.info("Sensor #%d Calibration Reset", getSensorId());
-	m_Calibration.A_off[0] = 0.0f;
-	m_Calibration.A_off[1] = 0.0f;
-	m_Calibration.A_off[2] = 0.0f;
-
-	m_Calibration.G_off[0] = 0.0f;
-	m_Calibration.G_off[1] = 0.0f;
-	m_Calibration.G_off[2] = 0.0f;
-
-	m_Calibration.G_sensitivity[0] = 1.0f;
-	m_Calibration.G_sensitivity[1] = 1.0f;
-	m_Calibration.G_sensitivity[2] = 1.0f;
-	saveCalibration();
 }
 
 void LSM6DSVSensor::saveCalibration() {
