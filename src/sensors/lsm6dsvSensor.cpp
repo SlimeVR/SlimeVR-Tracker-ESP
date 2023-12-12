@@ -129,11 +129,8 @@ void LSM6DSVSensor::motionSetup() {
 
 	status |= imu.Enable_6D_Orientation(LSM6DSV_INT2_PIN);
 
-	// status |= imu.Set_X_Filter_Mode(1, LSM6DSV_XL_LIGHT);
-	// status |= imu.Set_G_Filter_Mode(1, LSM6DSV_XL_LIGHT);
-
-	// status |= imu.Set_X_Filter_Mode(0, LSM6DSV_XL_ULTRA_LIGHT);
-	// status |= imu.Set_G_Filter_Mode(0, LSM6DSV_XL_ULTRA_LIGHT);
+	status |= imu.Set_X_Filter_Mode(0, LSM6DSV_XL_LIGHT);
+	status |= imu.Set_G_Filter_Mode(0, LSM6DSV_GY_LIGHT);
 
 	// Set FIFO mode to "continuous", so old data gets thrown away
 	status |= imu.FIFO_Set_Mode(LSM6DSV_STREAM_MODE);
