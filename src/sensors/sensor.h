@@ -88,7 +88,6 @@ public:
         return newFusedRotation || newAcceleration;
     };
 
-    bool hadData = false;
 protected:
     uint8_t addr = 0;
     uint8_t sensorId = 0;
