@@ -39,6 +39,8 @@ namespace SlimeVR {
                 return "ICM20948";
             case ICM42688:
                 return "ICM42688";
+            case SFUSION:
+                return "SoftFusion (common)";
             default:
                 return "UNKNOWN";
             }

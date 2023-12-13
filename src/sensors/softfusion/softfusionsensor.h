@@ -13,7 +13,9 @@ class SoftFusionSensor : public Sensor
 {
     using imu = T;
     using i2c = typename imu::i2c;
+    using RawVectorT = std::array<int16_t, 3>;
 
+    static constexpr auto UpsideDownCalibrationInit = true;
     static constexpr auto GyroCalibDelaySeconds = 5;
     static constexpr auto GyroCalibSeconds = 5;
     static constexpr auto SampleRateCalibDelaySeconds = 1;
@@ -86,11 +88,11 @@ class SoftFusionSensor : public Sensor
     }
 
     void eatSamplesForSeconds(const size_t seconds) {
-        const auto calibTargetDelay = millis() + 1000 * seconds;
+        const auto targetDelay = millis() + 1000 * seconds;
         auto lastSecondsRemaining = seconds;
-        while (millis() < calibTargetDelay)
+        while (millis() < targetDelay)
         {
-            auto currentSecondsRemaining = (calibTargetDelay - millis()) / 1000;
+            auto currentSecondsRemaining = (targetDelay - millis()) / 1000;
             if (currentSecondsRemaining != lastSecondsRemaining) {
                 m_Logger.info("%d...", currentSecondsRemaining + 1);
                 lastSecondsRemaining = currentSecondsRemaining;
@@ -100,6 +102,29 @@ class SoftFusionSensor : public Sensor
                 [](const int16_t xyz[3], const sensor_real_t timeDelta) { }
             );
         }
+    }
+
+    std::pair<RawVectorT, RawVectorT> eatSamplesReturnLast(const size_t seconds)
+    {
+        RawVectorT accel = {0};
+        RawVectorT gyro = {0};
+        const auto targetDelay = millis() + 1000 * seconds;
+        while (millis() < targetDelay)
+        {
+            m_sensor.bulkRead(
+                [&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+                    accel[0] = xyz[0];
+                    accel[1] = xyz[1];
+                    accel[2] = xyz[2];
+                },
+                [&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+                    gyro[0] = xyz[0];
+                    gyro[1] = xyz[1];
+                    gyro[2] = xyz[2];
+                }
+            );
+        }
+        return std::make_pair(accel, gyro);
     }
 
 public:
@@ -171,15 +196,34 @@ public:
             case SlimeVR::Configuration::CalibrationConfigType::NONE:
                 m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
                 m_Logger.info("Calibration is advised");
-            // passtrough
+                break;
             default:
                 m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
                 m_Logger.info("Calibration is advised");
-                startCalibration(0);
         }
 
         m_status = SensorStatus::SENSOR_OK;
         working = true;
+        [[maybe_unused]] auto lastRawSample = eatSamplesReturnLast(1);
+        if constexpr(UpsideDownCalibrationInit) {
+            auto gravity = static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(lastRawSample.first[2]));
+            m_Logger.info("Gravity read: %.1f (need < -7.5 to start calibration)", gravity);
+            if (gravity < -7.5f) {
+                ledManager.on();
+                m_Logger.info("Flip front in 5 seconds to start calibration");
+                lastRawSample = eatSamplesReturnLast(5);
+                gravity = static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(lastRawSample.first[2]));
+                if (gravity > 7.5f) {
+                    m_Logger.debug("Starting calibration...");
+                    startCalibration(0);
+                }
+                else {
+                    m_Logger.info("Flip not detected. Skipping calibration.");
+                }
+
+                ledManager.off();
+            }
+        }
     }
 
 
@@ -301,8 +345,6 @@ public:
                         if (!calibrationRestDetection.getRestDetected()) {
                             waitForMotion = false;
                         }
-                        // TODO: delay adjustment if it's needed at all
-                        //delayMicroseconds(BMI160_ODR_ACC_MICROS);
                         return;
                     }
 
@@ -338,10 +380,6 @@ public:
                     {
                         samplesGathered = true;
                     }
-
-                    //todo: adjust delay if delay is needed at all
-                    //delayMicroseconds(BMI160_ODR_ACC_MICROS);
-
                 },
                 [](const int16_t xyz[3], const sensor_real_t timeDelta) { }
             );
