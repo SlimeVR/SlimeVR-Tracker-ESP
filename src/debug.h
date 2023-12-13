@@ -81,11 +81,17 @@
 
 #define I2C_SPEED 400000
 
+#define COMPLIANCE_MODE true
+#define USE_ATTENUATION COMPLIANCE_MODE && ESP8266
+#define ATTENUATION_N 10.0 / 4.0
+#define ATTENUATION_G 14.0 / 4.0
+#define ATTENUATION_B 40.0 / 4.0
+
 // Send inspection packets over the network to a profiler
 // Not recommended for production
 #define ENABLE_INSPECTION false
 
-#define FIRMWARE_BUILD_NUMBER 16
-#define FIRMWARE_VERSION "0.3.3"
+#define FIRMWARE_BUILD_NUMBER 17
+#define FIRMWARE_VERSION "0.4.0"
 
 #endif // SLIMEVR_DEBUG_H_

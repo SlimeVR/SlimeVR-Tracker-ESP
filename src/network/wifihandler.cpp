@@ -76,6 +76,9 @@ void WiFiNetwork::setUp() {
     WiFi.persistent(true);
     WiFi.mode(WIFI_STA);
     #if ESP8266
+        #if USE_ATTENUATION
+            WiFi.setOutputPower(20.0 -  ATTENUATION_N);
+        #endif
     WiFi.setPhyMode(WIFI_PHY_MODE_11N);
     #endif
     WiFi.hostname("SlimeVR FBT Tracker");
@@ -149,6 +152,9 @@ void WiFiNetwork::upkeep() {
                         // But only if there are credentials, otherwise we just waste time before
                         // switching to hardcoded credentials.
                         if (WiFi.SSID().length() > 0) {
+                            #if USE_ATTENUATION
+                                WiFi.setOutputPower(20.0 -  ATTENUATION_G);
+                            #endif
                             WiFi.setPhyMode(WIFI_PHY_MODE_11G);
                             setStaticIPIfDefined();
                             WiFi.begin();
@@ -165,6 +171,9 @@ void WiFiNetwork::upkeep() {
                     #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
                         // Try hardcoded credentials now
                         #if ESP8266
+                            #if USE_ATTENUATION
+                                WiFi.setOutputPower(20.0 -  ATTENUATION_N);
+                            #endif
                             WiFi.setPhyMode(WIFI_PHY_MODE_11N);
                         #endif
                         setStaticIPIfDefined();
@@ -178,6 +187,9 @@ void WiFiNetwork::upkeep() {
                 case SLIME_WIFI_HARDCODE_ATTEMPT: // Couldn't connect with second set of credentials
                     #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD) && ESP8266
                         // Try hardcoded credentials again, but with PHY Mode G
+                        #if USE_ATTENUATION
+                            WiFi.setOutputPower(20.0 -  ATTENUATION_G);
+                        #endif
                         WiFi.setPhyMode(WIFI_PHY_MODE_11G);
                         setStaticIPIfDefined();
                         WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
@@ -190,6 +202,9 @@ void WiFiNetwork::upkeep() {
                 case SLIME_WIFI_SERVER_CRED_ATTEMPT: // Couldn't connect with server-sent credentials.
                     #if ESP8266
                         // Try again silently but with 11G
+                        #if USE_ATTENUATION
+                            WiFi.setOutputPower(20.0 -  ATTENUATION_G);
+                        #endif
                         WiFi.setPhyMode(WIFI_PHY_MODE_11G);
                         setStaticIPIfDefined();
                         WiFi.begin();
@@ -201,6 +216,9 @@ void WiFiNetwork::upkeep() {
                 case SLIME_WIFI_SERVER_CRED_G_ATTEMPT: // Or if couldn't connect with server-sent credentials
                     // Return to the default PHY Mode N.
                     #if ESP8266
+                        #if USE_ATTENUATION
+                            WiFi.setOutputPower(20.0 -  ATTENUATION_N);
+                        #endif
                         WiFi.setPhyMode(WIFI_PHY_MODE_11N);
                     #endif
                     // Start smart config
