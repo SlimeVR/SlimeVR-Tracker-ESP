@@ -32,17 +32,17 @@
 #include "../motionprocessing/RestDetection.h"
 
 
-// 500 deg/s
-#define GYRO_SENSITIVITY 65.5
-// 2G
-#define ACCEL_SENSITIVITY 16384.0
+// 1000 deg/s
+#define GYRO_SENSITIVITY_1000 32.8
+// 8G
+#define ACCEL_SENSITIVITY_8G 4096.0
 
 
 // Accel scale conversion steps: LSB/G -> G -> m/s^2
-constexpr sensor_real_t ASCALE = ((32768. / ACCEL_SENSITIVITY) / 32768.) * CONST_EARTH_GRAVITY;
+constexpr sensor_real_t ASCALE = ((32768. / ACCEL_SENSITIVITY_8G) / 32768.) * CONST_EARTH_GRAVITY;
 
 // Gyro scale conversion steps: LSB/°/s -> °/s -> °/s / step -> rad/s / step
-constexpr sensor_real_t GSCALE = ((32768. / GYRO_SENSITIVITY) / 32768.) * (PI / 180.0);
+constexpr sensor_real_t GSCALE = ((32768. / GYRO_SENSITIVITY_1000) / 32768.) * (PI / 180.0);
 
 constexpr int32_t SAMPLE_DELTA_MICROS = (int32_t)(1e6 / MPU6050_SAMPLE_RATE);
 
@@ -113,8 +113,8 @@ void MPU6050NoDMPSensor::motionSetup()
     // imu.setClockSource(1); // PLL with X Gyro
     imu.setIntEnabled(0);                             // Disable all interrupts
     imu.setIntFIFOBufferOverflowEnabled(true);        // Only leave FIFO overflow
-    imu.setFullScaleAccelRange(MPU6050_ACCEL_FS_2);   // +-2G accel range
-    imu.setFullScaleGyroRange(MPU6050_GYRO_FS_500);  // +-500deg/sec
+    imu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);   // +-8G accel range
+    imu.setFullScaleGyroRange(MPU6050_GYRO_FS_1000);  // +-1000deg/sec
     
     #if HIGH_SPEED
     imu.setDLPFMode(MPU6050_DLPF_BW_256);             // don't low-pass gyro(it's bandwith is 256Hz now and sample rate is 8KHz)
@@ -166,11 +166,11 @@ void MPU6050NoDMPSensor::motionSetup()
     gyroTempCalibrator = new GyroTemperatureCalibrator(
         SlimeVR::Configuration::CalibrationConfigType::MPU6050,
         sensorId,
-        GYRO_SENSITIVITY,
+        GYRO_SENSITIVITY_1000,
         samplesPerStep
     );
 
-    gyroTempCalibrator->loadConfig(GYRO_SENSITIVITY);
+    gyroTempCalibrator->loadConfig(GYRO_SENSITIVITY_1000);
     if (gyroTempCalibrator->config.hasCoeffs) {
         float offsetAtCalibTemp[3];
         gyroTempCalibrator->approximateOffset(m_Calibration.temperature, offsetAtCalibTemp);
@@ -634,11 +634,11 @@ void MPU6050NoDMPSensor::printDebugTemperatureCalibrationState() {
     m_Logger.info("Sensor %i gyro odr %f hz, sensitivity %f lsb",
         sensorId,
         MPU6050_SAMPLE_RATE,
-        GYRO_SENSITIVITY
+        GYRO_SENSITIVITY_1000
     );
     m_Logger.info("Sensor %i temperature calibration matrix (tempC x y z):", sensorId);
     m_Logger.info("BUF %i %i", sensorId, TEMP_CALIBRATION_BUFFER_SIZE);
-    m_Logger.info("SENS %i %f", sensorId, GYRO_SENSITIVITY);
+    m_Logger.info("SENS %i %f", sensorId, GYRO_SENSITIVITY_1000);
     m_Logger.info("DATA %i", sensorId);
     for (int i = 0; i < TEMP_CALIBRATION_BUFFER_SIZE; i++) {
         m_Logger.info("%f %f %f %f",
