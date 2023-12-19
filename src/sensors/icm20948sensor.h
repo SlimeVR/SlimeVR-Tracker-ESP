@@ -47,6 +47,13 @@ private:
     unsigned long lastData = 0;
     unsigned long lastDataSent = 0;
     int bias_save_counter = 0;
+    bool hasdata = false;
+// Performance test
+/*
+    uint8_t cntbuf = 0;
+    int32_t cntrounds = 0;
+    unsigned long lastData2 = 0;
+*/
 
     #define DMPNUMBERTODOUBLECONVERTER 1073741824.0;
 
@@ -55,7 +62,7 @@ private:
     icm_20948_DMP_data_t dmpData{};
     icm_20948_DMP_data_t dmpDataTemp{};
 
-    SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration;
+    SlimeVR::Configuration::ICM20948CalibrationConfig m_Calibration = {};
 
     SlimeVR::Sensors::SensorFusionDMP sfusion;
 

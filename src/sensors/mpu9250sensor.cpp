@@ -165,7 +165,7 @@ void MPU9250Sensor::motionLoop() {
 
     fusedRotation = sfusion.getQuaternionQuat();
 
-#if SEND_ACCELERATION
+    #if SEND_ACCELERATION
     {
         int16_t atemp[3];
         this->imu.dmpGetAccel(atemp, dmpPacket);
@@ -173,10 +173,10 @@ void MPU9250Sensor::motionLoop() {
 
         sfusion.updateAcc(Axyz);
 
-        sfusion.getLinearAcc(this->acceleration);
-		this->newAcceleration = true;
+        acceleration = sfusion.getLinearAccVec();
+		setAccelerationReady();
     }
-#endif
+    #endif
 
 #else
     union fifo_sample_raw buf;
@@ -200,16 +200,12 @@ void MPU9250Sensor::motionLoop() {
     fusedRotation = sfusion.getQuaternionQuat();
 
     #if SEND_ACCELERATION
-    sfusion.getLinearAcc(this->acceleration);
-	this->newAcceleration = true;
+    acceleration = sfusion.getLinearAccVec();
+	setAccelerationReady();
     #endif
 #endif
     fusedRotation *= sensorOffset;
-
-    if(!lastFusedRotationSent.equalsWithEpsilon(fusedRotation)) {
-        newFusedRotation = true;
-        lastFusedRotationSent = fusedRotation;
-    }
+    setFusedRotationReady();
 }
 
 void MPU9250Sensor::startCalibration(int calibrationType) {
@@ -364,6 +360,9 @@ void MPU9250Sensor::parseMagData(int16_t data[3]) {
     //apply offsets and scale factors from Magneto
     for (unsigned i = 0; i < 3; i++) {
         temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+    }
+    
+    for (unsigned i = 0; i < 3; i++) {
         #if useFullCalibrationMatrix == true
             Mxyz[i] = m_Calibration.M_Ainv[i][0] * temp[0] + m_Calibration.M_Ainv[i][1] * temp[1] + m_Calibration.M_Ainv[i][2] * temp[2];
         #else
@@ -386,6 +385,9 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
     for (unsigned i = 0; i < 3; i++) {
         #if !MPU_USE_DMPMAG
         temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
+    }
+    
+    for (unsigned i = 0; i < 3; i++) {
         #if useFullCalibrationMatrix == true
             Axyz[i] = m_Calibration.A_Ainv[i][0] * temp[0] + m_Calibration.A_Ainv[i][1] * temp[1] + m_Calibration.A_Ainv[i][2] * temp[2];
         #else

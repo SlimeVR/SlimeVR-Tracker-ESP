@@ -54,21 +54,21 @@ void BNO080Sensor::motionSetup()
     this->imu.enableLinearAccelerometer(10);
 
 #if USE_6_AXIS
-    #if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
-    imu.enableARVRStabilizedGameRotationVector(10);
-    #else
-    imu.enableGameRotationVector(10);
-    #endif
+    if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
+        imu.enableARVRStabilizedGameRotationVector(10);
+    } else {
+        imu.enableGameRotationVector(10);
+    }  
 
     #if BNO_USE_MAGNETOMETER_CORRECTION
     imu.enableRotationVector(1000);
     #endif
 #else
-    #if (IMU == IMU_BNO085 || IMU == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION
-    imu.enableARVRStabilizedRotationVector(10);
-    #else
-    imu.enableRotationVector(10);
-    #endif
+    if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
+        imu.enableARVRStabilizedRotationVector(10);
+    } else {
+        imu.enableRotationVector(10);
+    }
 #endif
 
 #if ENABLE_INSPECTION
@@ -119,11 +119,7 @@ void BNO080Sensor::motionLoop()
             imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
             fusedRotation *= sensorOffset;
 
-            if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
-            {
-                newFusedRotation = true;
-                lastFusedRotationSent = fusedRotation;
-            }
+            setFusedRotationReady();
             // Leave new quaternion if context open, it's closed later
 
 #else // USE_6_AXIS
@@ -133,11 +129,7 @@ void BNO080Sensor::motionLoop()
             imu.getQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, magneticAccuracyEstimate, calibrationAccuracy);
             fusedRotation *= sensorOffset;
 
-            if (ENABLE_INSPECTION || !OPTIMIZE_UPDATES || !lastFusedRotationSent.equalsWithEpsilon(fusedRotation))
-            {
-                newFusedRotation = true;
-                lastFusedRotationSent = fusedRotation;
-            }
+            setFusedRotationReady();
             // Leave new quaternion if context open, it's closed later
 #endif // USE_6_AXIS
 
@@ -145,8 +137,8 @@ void BNO080Sensor::motionLoop()
 #if SEND_ACCELERATION
             {
                 uint8_t acc;
-                this->imu.getLinAccel(this->acceleration[0], this->acceleration[1], this->acceleration[2], acc);
-                this->newAcceleration = true;
+                imu.getLinAccel(acceleration.x, acceleration.y, acceleration.z, acc);
+                setAccelerationReady();
             }
 #endif // SEND_ACCELERATION
         } // Closing new quaternion if context
@@ -214,15 +206,15 @@ void BNO080Sensor::sendData()
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
 #endif
-    }
 
 #if SEND_ACCELERATION
-    if(newAcceleration)
-    {
-        newAcceleration = false;
-        networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
-    }
+        if (newAcceleration)
+        {
+            newAcceleration = false;
+            networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
+        }
 #endif
+    }
 
 #if !USE_6_AXIS
         networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);

@@ -32,8 +32,6 @@
 
 namespace SlimeVR {
     namespace Configuration {
-        CalibrationConfig Configuration::m_EmptyCalibration = {NONE};
-
         void Configuration::setup() {
             if (m_Loaded) {
                 return;
@@ -140,7 +138,7 @@ namespace SlimeVR {
 
         CalibrationConfig Configuration::getCalibration(size_t sensorID) const {
             if (sensorID >= m_Calibrations.size()) {
-                return m_EmptyCalibration;
+                return {};
             }
 
             return m_Calibrations.at(sensorID);
@@ -150,7 +148,7 @@ namespace SlimeVR {
             size_t currentCalibrations = m_Calibrations.size();
 
             if (sensorID >= currentCalibrations) {
-                m_Calibrations.resize(sensorID + 1, m_EmptyCalibration);
+                m_Calibrations.resize(sensorID + 1);
             }
 
             m_Calibrations[sensorID] = config;
@@ -441,6 +439,25 @@ namespace SlimeVR {
                 case CalibrationConfigType::MPU6050:
                     m_Logger.info("            A_B  : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.mpu6050.A_B));
                     m_Logger.info("            G_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.mpu6050.G_off));
+
+                    break;
+
+                case CalibrationConfigType::ICM42688:
+                    m_Logger.info("            A_B   : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.A_B));
+
+                    m_Logger.info("            A_Ainv:");
+                    for (uint8_t i = 0; i < 3; i++) {
+                        m_Logger.info("                    %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.A_Ainv[i]));
+                    }
+
+                    m_Logger.info("            M_B   : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.M_B));
+
+                    m_Logger.info("            M_Ainv:");
+                    for (uint8_t i = 0; i < 3; i++) {
+                        m_Logger.info("                    %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.M_Ainv[i]));
+                    }
+
+                    m_Logger.info("            G_off  : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.G_off));
 
                     break;
                 }

@@ -230,16 +230,16 @@ void Connection::sendHeartbeat() {
 }
 
 // PACKET_ACCEL 4
-void Connection::sendSensorAcceleration(uint8_t sensorId, float* vector) {
+void Connection::sendSensorAcceleration(uint8_t sensorId, Vector3 vector) {
 	MUST(m_Connected);
 
 	MUST(beginPacket());
 
 	MUST(sendPacketType(PACKET_ACCEL));
 	MUST(sendPacketNumber());
-	MUST(sendFloat(vector[0]));
-	MUST(sendFloat(vector[1]));
-	MUST(sendFloat(vector[2]));
+	MUST(sendFloat(vector.x));
+	MUST(sendFloat(vector.y));
+	MUST(sendFloat(vector.z));
 	MUST(sendByte(sensorId));
 
 	MUST(endPacket());

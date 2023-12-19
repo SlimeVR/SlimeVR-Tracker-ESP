@@ -13,6 +13,16 @@
 #define SENSOR_FUSION_BASICVQF 3
 #define SENSOR_FUSION_VQF 4
 
+#if SENSOR_FUSION_TYPE == SENSOR_FUSION_MAHONY
+    #define SENSOR_FUSION_TYPE_STRING "mahony"
+#elif SENSOR_FUSION_TYPE == SENSOR_FUSION_MADGWICK
+    #define SENSOR_FUSION_TYPE_STRING "madgwick"
+#elif SENSOR_FUSION_TYPE == SENSOR_FUSION_BASICVQF
+    #define SENSOR_FUSION_TYPE_STRING "bvqf"
+#elif SENSOR_FUSION_TYPE == SENSOR_FUSION_VQF
+    #define SENSOR_FUSION_TYPE_STRING "vqf"
+#endif
+
 #define SENSOR_USE_MAHONY (SENSOR_FUSION_TYPE == SENSOR_FUSION_MAHONY)
 #define SENSOR_USE_MADGWICK (SENSOR_FUSION_TYPE == SENSOR_FUSION_MADGWICK)
 #define SENSOR_USE_BASICVQF (SENSOR_FUSION_TYPE == SENSOR_FUSION_BASICVQF)
@@ -47,7 +57,7 @@ namespace SlimeVR
         class SensorFusion
         {
         public:
-            SensorFusion(float gyrTs, float accTs=-1.0, float magTs=-1.0)
+            SensorFusion(sensor_real_t gyrTs, sensor_real_t accTs=-1.0, sensor_real_t magTs=-1.0)
                 : gyrTs(gyrTs), 
                   accTs( (accTs<0) ? gyrTs : accTs ), 
                   magTs( (magTs<0) ? gyrTs : magTs )
@@ -75,6 +85,7 @@ namespace SlimeVR
             sensor_real_t const * getGravityVec();
             sensor_real_t const * getLinearAcc();
             void getLinearAcc(sensor_real_t outLinAccel[3]);
+            Vector3 getLinearAccVec();
 
             static void calcGravityVec(const sensor_real_t qwxyz[4], sensor_real_t gravVec[3]);
             static void calcLinearAcc(const sensor_real_t accin[3], const sensor_real_t gravVec[3], sensor_real_t accout[3]);

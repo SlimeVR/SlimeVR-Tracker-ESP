@@ -57,34 +57,36 @@ namespace SlimeVR
         {
             if (deltat < 0) deltat = gyrTs;
 
+            #if SENSOR_USE_MAHONY || SENSOR_USE_MADGWICK
+                sensor_real_t Axyz[3] {0.0f, 0.0f, 0.0f};
+                if (accelUpdated) {
+                    std::copy(bAxyz, bAxyz+3, Axyz);
+                    accelUpdated = false;
+                }
+            #endif
+
             #if SENSOR_USE_MAHONY
-                if (accelUpdated) {
-                    if (magExist) {
-                        mahony.update(qwxyz, bAxyz[0], bAxyz[1], bAxyz[2],
-                                            Gxyz[0],  Gxyz[1],  Gxyz[2],
-                                    deltat);
-                    } else {
-                        mahony.update(qwxyz, bAxyz[0], bAxyz[1], bAxyz[2],
-                                            Gxyz[0],  Gxyz[1],  Gxyz[2],
-                                            bMxyz[0], bMxyz[1], bMxyz[2],
-                                    deltat);
-                    }
+                if (!magExist) {
+                    mahony.update(qwxyz, Axyz[0], Axyz[1], Axyz[2],
+                                         Gxyz[0], Gxyz[1], Gxyz[2],
+                                         deltat);
+                } else {
+                    mahony.update(qwxyz,  Axyz[0],  Axyz[1],  Axyz[2],
+                                          Gxyz[0],  Gxyz[1],  Gxyz[2],
+                                         bMxyz[0], bMxyz[1], bMxyz[2],
+                                         deltat);
                 }
-                accelUpdated = false;
             #elif SENSOR_USE_MADGWICK
-                if (accelUpdated) {
-                    if (magExist) {
-                        madgwick.update(qwxyz, bAxyz[0], bAxyz[1], bAxyz[2],
-                                                Gxyz[0],  Gxyz[1],  Gxyz[2],
-                                        deltat);
-                    } else {
-                        madgwick.update(qwxyz, bAxyz[0], bAxyz[1], bAxyz[2],
-                                                Gxyz[0],  Gxyz[1],  Gxyz[2],
-                                            bMxyz[0], bMxyz[1], bMxyz[2],
-                                        deltat);
-                    }
+                if (!magExist) {
+                    madgwick.update(qwxyz, Axyz[0], Axyz[1], Axyz[2],
+                                           Gxyz[0], Gxyz[1], Gxyz[2],
+                                           deltat);
+                } else {
+                    madgwick.update(qwxyz,  Axyz[0],  Axyz[1],  Axyz[2],
+                                            Gxyz[0],  Gxyz[1],  Gxyz[2],
+                                           bMxyz[0], bMxyz[1], bMxyz[2],
+                                           deltat);
                 }
-                accelUpdated = false;
             #elif SENSOR_USE_BASICVQF
                 basicvqf.updateGyr(Gxyz, deltat);
             #elif SENSOR_USE_VQF
@@ -154,6 +156,12 @@ namespace SlimeVR
         {
             getLinearAcc();
             std::copy(linAccel, linAccel+3, outLinAccel);
+        }
+
+        Vector3 SensorFusion::getLinearAccVec()
+        {
+            getLinearAcc();
+            return Vector3(linAccel[0], linAccel[1], linAccel[2]);
         }
 
         void SensorFusion::calcGravityVec(const sensor_real_t qwxyz[4], sensor_real_t gravVec[3])
