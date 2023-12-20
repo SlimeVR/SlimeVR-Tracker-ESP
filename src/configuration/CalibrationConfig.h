@@ -55,6 +55,9 @@ namespace SlimeVR {
 
             // raw offsets, determined from gyro at rest
             float G_off[3];
+
+            // calibration temperature for dynamic compensation
+            float temperature;
         };
 
         struct MPU6050CalibrationConfig {

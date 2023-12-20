@@ -104,7 +104,7 @@ private:
      *  <ACCEL_Z_MSB>, <GYRO_X_LSB>, <GYRO_X_MSB>, <GYRO_Y_LSB>, <GYRO_Y_MSB>,
      *  <GYRO_Z_LSB>, <GYRO_Z_MSB>, <TEMP_LSB>, <TEMP_MSB>, <TIME_LSB>, <TIME_MSB>]
     */
-    uint8_t extractFrame(uint8_t *data, uint8_t index, float *accelData, float *gyroData);
+    uint8_t extractFrame(uint8_t *data, uint8_t index, float *accelData, float *gyroData, float *tempData);
 
     /**
      * @brief Print calibration data
@@ -122,24 +122,32 @@ private:
     float getTemperature();
 
     /**
+     * @brief Saves temperature calibration data
+    */
+    void saveTemperatureCalibration() override final;
+
+    /**
      * SlimeVR Stuff
     */
     SlimeVR::Sensors::SensorFusionRestDetect m_sfusion;
     SlimeVR::Configuration::BMI323CalibrationConfig m_calibration;
     SlimeVR::Configuration::Configuration m_configuration;
 
+    GyroTemperatureCalibrator* gyroTempCalibrator = nullptr;
+    float GOxyzStaticTempCompensated[3] = {0.0, 0.0, 0.0};
+
     /**
      * BMI323 FIFO reading
     */
     const uint8_t ACCEL_VALID = 0x01;   // Bit 0 represents accelerometer data validity
     const uint8_t GYRO_VALID = 0x02;    // Bit 1 represents gyroscope data validity
+    const uint8_t TEMP_VALID = 0x04;    // Bit 2 represents temperature data validity
 
     uint8_t fifoData[I2C_BUFFER_LENGTH] = { 0 }; // 2048 is the maximum size of the FIFO
     uint8_t frameLength = 0;
-    uint8_t defaultAccelIndex = 0;
-    uint8_t defaultGyroIndex = 0;
     float accelData[3] = { 0 };
     float gyroData[3] = { 0 };
+    float temperatureData = 0;
     float magData[3] = { 0 };
 
     /**

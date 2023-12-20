@@ -91,8 +91,8 @@ void BMI323Sensor::delayUs(uint32_t period, void *) {
  * @note The indexes (accelIndex, gyroIndex, tempIndex, timeIndex) needs to
  * be reset before the first call
 */
-uint8_t BMI323Sensor::extractFrame(uint8_t *data, uint8_t index, float *accelData, float *gyroData) {
-    uint8_t dataValidity = ACCEL_VALID | GYRO_VALID;
+uint8_t BMI323Sensor::extractFrame(uint8_t *data, uint8_t index, float *accelData, float *gyroData, float *tempData) {
+    uint8_t dataValidity = ACCEL_VALID | GYRO_VALID | TEMP_VALID;
     
     // Unpack accelerometer
     uint8_t accelIndex = index * frameLength + BMI323::DUMMY_BYTE;
@@ -100,7 +100,7 @@ uint8_t BMI323Sensor::extractFrame(uint8_t *data, uint8_t index, float *accelDat
     if (isValid == BMI323::FIFO_ACCEL_DUMMY_FRAME) {
         dataValidity &= ~ACCEL_VALID;
     } else {
-        accelData[0] = lsbToMps2((int16_t)((data[accelIndex + 1] << 8) | data[accelIndex]));
+        accelData[0] = lsbToMps2(isValid);
         accelData[1] = lsbToMps2((int16_t)((data[accelIndex + 3] << 8) | data[accelIndex + 2]));
         accelData[2] = lsbToMps2((int16_t)((data[accelIndex + 5] << 8) | data[accelIndex + 4]));
         // accelData.sensor_time = (int16_t)((data[accelIndex + 13] << 8) | data[accelIndex + 12]);
@@ -112,10 +112,25 @@ uint8_t BMI323Sensor::extractFrame(uint8_t *data, uint8_t index, float *accelDat
     if (isValid == BMI323::FIFO_GYRO_DUMMY_FRAME) {
         dataValidity &= ~GYRO_VALID;
     } else {
-        gyroData[0] = lsbToDps((int16_t)((data[gyroIndex + 1] << 8) | data[gyroIndex]));
-        gyroData[1] = lsbToDps((int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2]));
-        gyroData[2] = lsbToDps((int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4]));
+        #if BMI323_USE_TEMP_CAL
+            gyroData[0] = isValid;
+            gyroData[1] = (int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2]);
+            gyroData[2] = (int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4]);
+        #else
+            gyroData[0] = lsbToDps(isValid);
+            gyroData[1] = lsbToDps((int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2]));
+            gyroData[2] = lsbToDps((int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4]));
+         #endif
         // gyroData.sensor_time = (int16_t)((data[gyroIndex + 7] << 8) | data[gyroIndex + 6]);
+    }
+
+    // Unpack temperature data
+    uint8_t tempIndex = gyroIndex + BMI323::LENGTH_FIFO_GYRO;
+    uint16_t isTempValid = (uint16_t)((data[tempIndex + 1] << 8) | data[tempIndex]);
+    if (isTempValid == BMI323::FIFO_TEMP_DUMMY_FRAME) {
+        dataValidity &= ~TEMP_VALID;
+    } else {
+        tempData[0] = (isTempValid / 512.0f) + 23.0f;
     }
 
     return dataValidity;
@@ -178,9 +193,9 @@ void BMI323Sensor::motionSetup() {
     result = bmi323.setGyroConfig(
         BMI323::GYRO_ODR_400HZ,
         BMI323::GYRO_BANDWIDTH_ODR_HALF,
-        BMI323::GYRO_MODE_NORMAL,
+        BMI323::GYRO_MODE_HIGH_PERF,
         BMI323::GYRO_RANGE_1000DPS,
-        BMI323::GYRO_AVG_4
+        BMI323::GYRO_AVG_2
     );
     if (result == BMI323::SUCCESS) {
         m_Logger.info("BMI323 Gyroscope configured");
@@ -193,9 +208,9 @@ void BMI323Sensor::motionSetup() {
     result = bmi323.setAccelConfig(
         BMI323::ACCEL_ODR_200HZ,
         BMI323::ACCEL_BANDWIDTH_ODR_HALF,
-        BMI323::ACCEL_MODE_NORMAL,
+        BMI323::ACCEL_MODE_HIGH_PERF,
         BMI323::ACCEL_RANGE_8G,
-        BMI323::ACCEL_AVG_4
+        BMI323::ACCEL_AVG_2
     );
     if (result == BMI323::SUCCESS) {
         m_Logger.info("BMI323 Accelerometer configured");
@@ -205,7 +220,7 @@ void BMI323Sensor::motionSetup() {
     }
 
     // Set FIFO configuration
-    bmi323.setFifoConfig(BMI323::FIFO_ACCEL_EN | BMI323::FIFO_GYRO_EN | BMI323::FIFO_TIME_EN, BMI323::ENABLE);
+    bmi323.setFifoConfig(BMI323::FIFO_ACCEL_EN | BMI323::FIFO_GYRO_EN | BMI323::FIFO_TEMP_EN, BMI323::ENABLE);
     if (result == BMI323::SUCCESS) {
         m_Logger.info("BMI323 FIFO enabled");
     } else {
@@ -214,9 +229,7 @@ void BMI323Sensor::motionSetup() {
     }
 
     // Calculate variables for BMI323 FIFO
-    frameLength = BMI323::LENGTH_FIFO_ACCEL + BMI323::LENGTH_FIFO_GYRO + BMI323::LENGTH_SENSOR_TIME ;
-    defaultAccelIndex = 0 + BMI323::DUMMY_BYTE;
-    defaultGyroIndex = BMI323::LENGTH_FIFO_ACCEL + BMI323::DUMMY_BYTE;
+    frameLength = BMI323::LENGTH_FIFO_ACCEL + BMI323::LENGTH_FIFO_GYRO + BMI323::LENGTH_TEMPERATURE;
 
     #if BMI323_USE_BMM350
         // BMM350
@@ -257,6 +270,22 @@ void BMI323Sensor::motionSetup() {
         }
     #endif
 
+    #if BMI323_USE_TEMP_CAL
+        // allocate temperature memory after calibration because OOM
+        gyroTempCalibrator = new GyroTemperatureCalibrator(
+            SlimeVR::Configuration::CalibrationConfigType::BMI323,
+            sensorId,
+            GyroSensitivity,
+            (uint32_t)(0.2f / (1.0f / 200.0f))
+        );
+
+        gyroTempCalibrator->loadConfig(GyroSensitivity);
+        if (gyroTempCalibrator->config.hasCoeffs) {
+            float GOxyzAtTemp[3];
+            gyroTempCalibrator->approximateOffset(m_calibration.temperature, GOxyzStaticTempCompensated);
+        }
+    #endif
+
     if (calibrate) {
         startCalibration(0);
     }
@@ -278,9 +307,9 @@ void BMI323Sensor::motionLoop() {
     uint16_t availableFifoLength;
     bmi323.getFifoLength(&availableFifoLength);
 
-    /* if (availableFifoLength >= 127) {
+    if (availableFifoLength >= 127) {
         m_Logger.error("FIFO OVERFLOW");
-    } */
+    }
 
     // Get the current time
     uint32_t timeMicros = micros();
@@ -294,7 +323,7 @@ void BMI323Sensor::motionLoop() {
             // Feed sensor fusion
             const uint8_t frameCount = fifoReadLength / frameLength;
             for (int i = 0; i < frameCount; i++) {
-                uint8_t dataValidity = extractFrame(fifoData, i, accelData, gyroData);
+                uint8_t dataValidity = extractFrame(fifoData, i, accelData, gyroData, &temperatureData);
 
                 if (dataValidity & ACCEL_VALID) {
                     // Serial.println("Accel: " + String(accelData[0]) + ", " + String(accelData[1]) + ", " + String(accelData[2]));
@@ -303,6 +332,22 @@ void BMI323Sensor::motionLoop() {
 
                 if (dataValidity & GYRO_VALID) {
                     // Serial.println("Gyro: " + String(gyroData[0]) + ", " + String(gyroData[1]) + ", " + String(gyroData[2]));
+                    #if BMI323_USE_TEMP_CAL
+                        bool restDetected = m_sfusion.getRestDetected();
+                        gyroTempCalibrator->updateGyroTemperatureCalibration(temperatureData, restDetected, gyroData[0], gyroData[1], gyroData[2]);
+
+                        float GOxyz[3];
+                        if (gyroTempCalibrator->approximateOffset(temperatureData, GOxyz)) {
+                            gyroData[0] = lsbToDps(gyroData[0] - GOxyz[0] - GOxyzStaticTempCompensated[0]);
+                            gyroData[1] = lsbToDps(gyroData[1] - GOxyz[1] - GOxyzStaticTempCompensated[1]);
+                            gyroData[2] = lsbToDps(gyroData[2] - GOxyz[2] - GOxyzStaticTempCompensated[2]);
+                        } else {
+                            gyroData[0] = lsbToDps(gyroData[0]);
+                            gyroData[1] = lsbToDps(gyroData[1]);
+                            gyroData[2] = lsbToDps(gyroData[2]);
+                        }
+                    #endif
+
                     m_sfusion.updateGyro(gyroData, -1);
                 }
             }            
@@ -334,9 +379,7 @@ void BMI323Sensor::motionLoop() {
     // Check if temperature needs to be sent (2 Hz)
     if (timeMicros - lastTempSendTime > tempSendInterval) {
         lastTempSendTime = timeMicros;
-        float temperature;
-        bmi323.getTemperatureCelcius(&temperature);
-        networkConnection.sendTemperature(sensorId, temperature);
+        networkConnection.sendTemperature(sensorId, temperatureData);
     }
 
     // Check if mag needs to be fused
@@ -451,4 +494,9 @@ void BMI323Sensor::startCalibration(int calibrationType) {
 
     m_Logger.info("Calibration done");
     ledManager.off();
+}
+
+void BMI323Sensor::saveTemperatureCalibration() {
+    gyroTempCalibrator->saveConfig();
+    Serial.println("Config saved");
 }

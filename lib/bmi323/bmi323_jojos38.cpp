@@ -620,8 +620,8 @@ int8_t BMI323::performGyroCalibration(uint8_t calibrationType, uint8_t applyCali
     // rslt = disable_alt_conf_acc_gyr_mode(dev); // TODO Too lazy to implement for now
 
     // Get and set the self-calibration mode given by the user in the self-calibration dma register.
-    result = this->getSetCalibrationDMA(calibrationType, applyCalibration);
-    if (result != SUCCESS) return result;
+    // result = this->getSetCalibrationDMA(calibrationType, applyCalibration);
+    // if (result != SUCCESS) return result;
 
     // Trigger the self-calibration command
     result = this->setCommandRegister(COMMAND_SELF_CALIB_TRIGGER);
@@ -703,10 +703,9 @@ int8_t BMI323::getSetCalibrationDMA(uint8_t calibrationType, uint8_t applyCalibr
     result = this->setRegisters(REGISTER_FEATURE_DATA_ADDRESS, calibrationBaseAddress, 2);
     if (result != SUCCESS) return result;
 
-
     result = this->setRegisters(REGISTER_FEATURE_DATA_TX, registerData, 2);
     if (result != SUCCESS) return result;
-            
+
     return SUCCESS;
 }
 
