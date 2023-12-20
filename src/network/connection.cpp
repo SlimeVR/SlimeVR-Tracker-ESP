@@ -288,16 +288,16 @@ void Connection::sendSensorError(uint8_t sensorId, uint8_t error) {
 }
 
 // PACKET_SENSOR_INFO 15
-void Connection::sendSensorInfo(Sensor* sensor) {
+void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(m_Connected);
 
 	MUST(beginPacket());
 
 	MUST(sendPacketType(PACKET_SENSOR_INFO));
 	MUST(sendPacketNumber());
-	MUST(sendByte(sensor->getSensorId()));
-	MUST(sendByte((uint8_t)sensor->getSensorState()));
-	MUST(sendByte(sensor->getSensorType()));
+	MUST(sendByte(sensor.getSensorId()));
+	MUST(sendByte((uint8_t)sensor.getSensorState()));
+	MUST(sendByte(sensor.getSensorType()));
 
 	MUST(endPacket());
 }
@@ -511,7 +511,7 @@ void Connection::returnLastPacket(int len) {
 	MUST(endPacket());
 }
 
-void Connection::updateSensorState(std::vector<Sensor *> & sensors) {
+void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>> & sensors) {
 	if (millis() - m_LastSensorInfoPacketTimestamp <= 1000) {
 		return;
 	}
@@ -520,7 +520,7 @@ void Connection::updateSensorState(std::vector<Sensor *> & sensors) {
 
 	for (int i = 0; i < (int)sensors.size(); i++) {
 		if (m_AckedSensorState[i] != sensors[i]->getSensorState()) {
-			sendSensorInfo(sensors[i]);
+			sendSensorInfo(*sensors[i]);
 		}
 	}
 }
@@ -611,7 +611,7 @@ void Connection::reset() {
 }
 
 void Connection::update() {
-	std::vector<Sensor *> & sensors = sensorManager.getSensors();
+	auto & sensors = sensorManager.getSensors();
 
 	updateSensorState(sensors);
 	maybeRequestFeatureFlags();

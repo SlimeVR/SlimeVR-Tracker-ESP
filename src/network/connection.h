@@ -125,7 +125,7 @@ public:
 	bool endBundle();
 
 private:
-	void updateSensorState(std::vector<Sensor *> & sensors);
+	void updateSensorState(std::vector<std::unique_ptr<Sensor>> & sensors);
 	void maybeRequestFeatureFlags();
 
 	bool beginPacket();
@@ -156,7 +156,7 @@ private:
 	void sendTrackerDiscovery();
 
 	// PACKET_SENSOR_INFO 15
-	void sendSensorInfo(Sensor* sensor);
+	void sendSensorInfo(Sensor& sensor);
 
 	bool m_Connected = false;
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("UDPConnection");

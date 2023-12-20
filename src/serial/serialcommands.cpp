@@ -134,7 +134,7 @@ namespace SerialCommands {
             statusManager.getStatus(),
             WiFiNetwork::getWiFiState()
         );
-        for (auto sensor : sensorManager.getSensors()) {
+        for (auto &sensor : sensorManager.getSensors()) {
             logger.info(
                 "Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s",
                 sensor->getSensorId(),
@@ -209,7 +209,7 @@ namespace SerialCommands {
                 statusManager.getStatus(),
                 WiFiNetwork::getWiFiState()
             );
-            Sensor* sensor0 = sensorManager.getSensors()[0];
+            auto& sensor0 = sensorManager.getSensors()[0];
             sensor0->motionLoop();
             logger.info(
                 "[TEST] Sensor[0]: %s (%.3f %.3f %.3f %.3f) is working: %s",
@@ -286,22 +286,22 @@ namespace SerialCommands {
     void cmdTemperatureCalibration(CmdParser* parser) {
         if (parser->getParamCount() > 1) {
             if (parser->equalCmdParam(1, "PRINT")) {
-                for (auto sensor : sensorManager.getSensors()) {
+                for (auto &sensor : sensorManager.getSensors()) {
                     sensor->printTemperatureCalibrationState();
                 }
                 return;
             } else if (parser->equalCmdParam(1, "DEBUG")) {
-                for (auto sensor : sensorManager.getSensors()) {
+                for (auto &sensor : sensorManager.getSensors()) {
                     sensor->printDebugTemperatureCalibrationState();
                 }
                 return;
             } else if (parser->equalCmdParam(1, "RESET")) {
-                for (auto sensor : sensorManager.getSensors()) {
+                for (auto &sensor : sensorManager.getSensors()) {
                     sensor->resetTemperatureCalibrationState();
                 }
                 return;
             } else if (parser->equalCmdParam(1, "SAVE")) {
-                for (auto sensor : sensorManager.getSensors()) {
+                for (auto &sensor : sensorManager.getSensors()) {
                     sensor->saveTemperatureCalibration();
                 }
                 return;
