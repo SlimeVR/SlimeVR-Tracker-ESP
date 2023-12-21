@@ -28,6 +28,10 @@ constexpr float AccelSensitivity = 4096.0f;
 constexpr double GScale = ((32768. / GyroSensitivity) / 32768.) * (PI / 180.0);
 constexpr double AScale = CONST_EARTH_GRAVITY / AccelSensitivity;
 
+double gScaleX = GScale;
+double gScaleY = GScale;
+double gScaleZ = GScale;
+
 /**
  * @brief This function converts lsb to meter per second squared for 16 bit accelerometer at
  * range 2G, 4G, 8G or 16G.
@@ -40,9 +44,9 @@ static float lsbToMps2(int16_t val) {
  * @brief This function converts lsb to degree per second for 16 bit gyro at
  * range 125, 250, 500, 1000 or 2000dps.
  */
-static float lsbToDps(int16_t val) {
+/*static float lsbToDps(int16_t val) {
     return GScale * val;
-}
+}*/
 
 /**
  * @brief Thanks Github Copilot
@@ -117,9 +121,9 @@ uint8_t BMI323Sensor::extractFrame(uint8_t *data, uint8_t index, float *accelDat
             gyroData[1] = (int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2]);
             gyroData[2] = (int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4]);
         #else
-            gyroData[0] = lsbToDps(isValid);
-            gyroData[1] = lsbToDps((int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2]));
-            gyroData[2] = lsbToDps((int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4]));
+            gyroData[0] = (isValid) * gScaleX;
+            gyroData[1] = ((int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2])) * gScaleY;
+            gyroData[2] = ((int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4])) * gScaleZ;
          #endif
         // gyroData.sensor_time = (int16_t)((data[gyroIndex + 7] << 8) | data[gyroIndex + 6]);
     }
@@ -130,7 +134,7 @@ uint8_t BMI323Sensor::extractFrame(uint8_t *data, uint8_t index, float *accelDat
     if (isTempValid == BMI323::FIFO_TEMP_DUMMY_FRAME) {
         dataValidity &= ~TEMP_VALID;
     } else {
-        tempData[0] = (isTempValid / 512.0f) + 23.0f;
+        tempData[0] = ((int16_t)((data[tempIndex + 1] << 8) | data[tempIndex]) / 512.0f) + 23.0f;
     }
 
     return dataValidity;
@@ -286,6 +290,22 @@ void BMI323Sensor::motionSetup() {
         }
     #endif
 
+    #if BMI323_USE_SENSCAL
+        String localDevice = WiFi.macAddress();
+        for (auto const& offsets : sensitivityOffsets) {
+            if (!localDevice.equals(offsets.mac)) continue;
+            if (offsets.sensorId != sensorId) continue;
+            #define BMI323_CALCULATE_SENSITIVTY_MUL(degrees) (1.0 / (1.0 - ((degrees)/(360.0 * offsets.spins))))
+            gScaleX = GScale * BMI323_CALCULATE_SENSITIVTY_MUL(offsets.x);
+            gScaleY = GScale * BMI323_CALCULATE_SENSITIVTY_MUL(offsets.y);
+            gScaleZ = GScale * BMI323_CALCULATE_SENSITIVTY_MUL(offsets.z);
+            m_Logger.debug("Custom sensitivity offset enabled: %s %s",
+                offsets.mac,
+                offsets.sensorId == SENSORID_PRIMARY ? "primary" : "aux"
+            );
+        }
+    #endif
+
     if (calibrate) {
         startCalibration(0);
     }
@@ -338,13 +358,13 @@ void BMI323Sensor::motionLoop() {
 
                         float GOxyz[3];
                         if (gyroTempCalibrator->approximateOffset(temperatureData, GOxyz)) {
-                            gyroData[0] = lsbToDps(gyroData[0] - GOxyz[0] - GOxyzStaticTempCompensated[0]);
-                            gyroData[1] = lsbToDps(gyroData[1] - GOxyz[1] - GOxyzStaticTempCompensated[1]);
-                            gyroData[2] = lsbToDps(gyroData[2] - GOxyz[2] - GOxyzStaticTempCompensated[2]);
+                            gyroData[0] = (gyroData[0] - GOxyz[0] /*- GOxyzStaticTempCompensated[0]*/) * gScaleX;
+                            gyroData[1] = (gyroData[1] - GOxyz[1] /*- GOxyzStaticTempCompensated[1]*/) * gScaleY;
+                            gyroData[2] = (gyroData[2] - GOxyz[2] /*- GOxyzStaticTempCompensated[2]*/) * gScaleZ;
                         } else {
-                            gyroData[0] = lsbToDps(gyroData[0]);
-                            gyroData[1] = lsbToDps(gyroData[1]);
-                            gyroData[2] = lsbToDps(gyroData[2]);
+                            gyroData[0] = (gyroData[0]) * gScaleX;
+                            gyroData[1] = (gyroData[1]) * gScaleY;
+                            gyroData[2] = (gyroData[2]) * gScaleZ;
                         }
                     #endif
 
@@ -387,8 +407,7 @@ void BMI323Sensor::motionLoop() {
                 autoCalibrationRestSecondsTimer += uint32_t(tempSendInterval / 1000000);
                 if (autoCalibrationRestSecondsTimer >= autoCalibrationRestSeconds) {
                     m_Logger.info("Auto calibration starting");
-                    this->saveTemperatureCalibration();
-                    this->startCalibration(1);
+                    // this->startCalibration(1);
                     autoCalibrationRestSecondsTimer = 0;
                     lastAutomaticCalibration = timeMicros;
                 }

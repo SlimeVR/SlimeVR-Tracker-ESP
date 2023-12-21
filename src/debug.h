@@ -36,6 +36,7 @@
 #define SEND_ACCELERATION true // send linear acceleration to the server
 #define BMI323_USE_BMM350 false // Set to true to use the data of a BMM350 magnetometer in combination with a BMI323
 #define BMI323_USE_TEMP_CAL true // Set to true to enable temperature compensation for BMI323
+#define BMI323_USE_SENSCAL true // Set to true to enable spin scale compensation
 
 //Debug information
 
