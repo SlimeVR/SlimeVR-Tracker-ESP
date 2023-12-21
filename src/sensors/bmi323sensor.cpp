@@ -149,6 +149,7 @@ void BMI323Sensor::printCalibrationData() {
         m_Logger.debug(String("  " + String(m_calibration.M_B[i]) + ", " + String(m_calibration.M_Ainv[i][0]) + ", " + String(m_calibration.M_Ainv[i][1]) + ", " + String(m_calibration.M_Ainv[i][2])).c_str());
     }
     m_Logger.debug("}");
+    m_Logger.debug(String("Temperature calibration data:" + String(m_calibration.temperature)).c_str());
 }
 
 void BMI323Sensor::motionSetup() {
@@ -281,7 +282,6 @@ void BMI323Sensor::motionSetup() {
 
         gyroTempCalibrator->loadConfig(GyroSensitivity);
         if (gyroTempCalibrator->config.hasCoeffs) {
-            float GOxyzAtTemp[3];
             gyroTempCalibrator->approximateOffset(m_calibration.temperature, GOxyzStaticTempCompensated);
         }
     #endif
@@ -307,12 +307,13 @@ void BMI323Sensor::motionLoop() {
     uint16_t availableFifoLength;
     bmi323.getFifoLength(&availableFifoLength);
 
-    if (availableFifoLength >= 127) {
+    /* if (availableFifoLength >= 127) {
         m_Logger.error("FIFO OVERFLOW");
-    }
+    } */
 
     // Get the current time
     uint32_t timeMicros = micros();
+    bool restDetected = m_sfusion.getRestDetected();
 
     // If there is enough data in the FIFO to get at least a single frame
     if (availableFifoLength >= frameLength) {        
@@ -333,7 +334,6 @@ void BMI323Sensor::motionLoop() {
                 if (dataValidity & GYRO_VALID) {
                     // Serial.println("Gyro: " + String(gyroData[0]) + ", " + String(gyroData[1]) + ", " + String(gyroData[2]));
                     #if BMI323_USE_TEMP_CAL
-                        bool restDetected = m_sfusion.getRestDetected();
                         gyroTempCalibrator->updateGyroTemperatureCalibration(temperatureData, restDetected, gyroData[0], gyroData[1], gyroData[2]);
 
                         float GOxyz[3];
@@ -380,6 +380,22 @@ void BMI323Sensor::motionLoop() {
     if (timeMicros - lastTempSendTime > tempSendInterval) {
         lastTempSendTime = timeMicros;
         networkConnection.sendTemperature(sensorId, temperatureData);
+
+        // Rest detect for auto-calibration
+        if (timeMicros - lastAutomaticCalibration > autoCalibrationInterval) {
+            if (restDetected) {
+                autoCalibrationRestSecondsTimer += uint32_t(tempSendInterval / 1000000);
+                if (autoCalibrationRestSecondsTimer >= autoCalibrationRestSeconds) {
+                    m_Logger.info("Auto calibration starting");
+                    this->saveTemperatureCalibration();
+                    this->startCalibration(1);
+                    autoCalibrationRestSecondsTimer = 0;
+                    lastAutomaticCalibration = timeMicros;
+                }
+            } else {
+                autoCalibrationRestSecondsTimer = 0;
+            }
+        }
     }
 
     // Check if mag needs to be fused
@@ -410,42 +426,44 @@ void BMI323Sensor::applyMagCalibrationAndScale(float Mxyz[3]) {
 
 void BMI323Sensor::startCalibration(int calibrationType) {
     #if BMI323_USE_BMM350
-        // with DMP, we just need mag data
-        constexpr int calibrationSamples = 600;
+        if (calibrationType == 0) {
+            // with DMP, we just need mag data
+            constexpr int calibrationSamples = 600;
 
-        // Blink calibrating led before user should rotate the sensor
-        m_Logger.info("Gently rotate the device while it's gathering magnetometer data, calibration will start in 3 seconds...");
-        delay(3000);
-        ledManager.pattern(15, 300, 3000/310);
-        MagnetoCalibration *magneto = new MagnetoCalibration();
-        for (int i = 0; i < calibrationSamples; i++) {
-            ledManager.on();
-            
-            float magData[4];
-            bmm350.getCompensatedMagData(magData);
-            magneto->sample((double)magData[0], (double)magData[1], (double)magData[2]);
-            m_Logger.debug(String("Sample " + String(i) + "/" + String(calibrationSamples) + " - " + String(magData[0]) + ", " + String(magData[1]) + ", " + String(magData[2])).c_str());
+            // Blink calibrating led before user should rotate the sensor
+            m_Logger.info("Gently rotate the device while it's gathering magnetometer data, calibration will start in 3 seconds...");
+            delay(3000);
+            ledManager.pattern(15, 300, 3000/310);
+            MagnetoCalibration *magneto = new MagnetoCalibration();
+            for (int i = 0; i < calibrationSamples; i++) {
+                ledManager.on();
+                
+                float magData[4];
+                bmm350.getCompensatedMagData(magData);
+                magneto->sample((double)magData[0], (double)magData[1], (double)magData[2]);
+                m_Logger.debug(String("Sample " + String(i) + "/" + String(calibrationSamples) + " - " + String(magData[0]) + ", " + String(magData[1]) + ", " + String(magData[2])).c_str());
 
-            ledManager.off();
-            delay(50);
-        }
-        m_Logger.debug("Calculating calibration data...");
+                ledManager.off();
+                delay(50);
+            }
+            m_Logger.debug("Calculating calibration data...");
 
-        float M_BAinv[4][3];
-        magneto->current_calibration(M_BAinv);
-        delete magneto;
+            float M_BAinv[4][3];
+            magneto->current_calibration(M_BAinv);
+            delete magneto;
 
-        for (int i = 0; i < 3; i++) {
-            m_calibration.M_B[i] = M_BAinv[0][i];
-            m_calibration.M_Ainv[0][i] = M_BAinv[1][i];
-            m_calibration.M_Ainv[1][i] = M_BAinv[2][i];
-            m_calibration.M_Ainv[2][i] = M_BAinv[3][i];
+            for (int i = 0; i < 3; i++) {
+                m_calibration.M_B[i] = M_BAinv[0][i];
+                m_calibration.M_Ainv[0][i] = M_BAinv[1][i];
+                m_calibration.M_Ainv[1][i] = M_BAinv[2][i];
+                m_calibration.M_Ainv[2][i] = M_BAinv[3][i];
+            }
         }
     #endif
 
     // Calibrate sensitivity (ALWAYS FIRST)
     m_Logger.info("Calibrating gyroscope sensitivity in 5 seconds... Please do not move the device");
-    delay(5000);
+    if (calibrationType == 0) delay(5000);
     ledManager.on();
     struct BMI323::SelfCalibResult calibSensitivityResult;
     uint8_t result = bmi323.performGyroCalibration(BMI323::CALIBRATION_SENSITIVITY, BMI323::CALIBRATION_APPLY_TRUE, &calibSensitivityResult);
@@ -498,5 +516,5 @@ void BMI323Sensor::startCalibration(int calibrationType) {
 
 void BMI323Sensor::saveTemperatureCalibration() {
     gyroTempCalibrator->saveConfig();
-    Serial.println("Config saved");
+    m_Logger.info("Temperature configuration saved");
 }

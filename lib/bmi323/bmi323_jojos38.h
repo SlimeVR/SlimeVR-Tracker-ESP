@@ -286,6 +286,9 @@ class BMI323 {
         int8_t getFifoLength(uint16_t *fifoAvailableLength);
         int8_t readFifoData(uint8_t *data, const uint16_t length);
         int8_t getTemperatureCelcius(float *temperature);
+        int8_t setCommandRegister(uint16_t command);
+        int8_t setRegisters(uint8_t registerAddress, const uint8_t *data, uint16_t length);
+        int8_t getRegisters(uint8_t registerAddress, uint8_t *data, uint16_t length);
         
         /**
          * @brief Set accelerometer configuration (Output data rate, bandwidth, mode, range and averaging)
@@ -421,9 +424,6 @@ class BMI323 {
         int8_t getSetCalibrationDMA(uint8_t calibrationType, uint8_t applyCalibration);
         int8_t getFeatureEngineErrorStatus(uint8_t *featureEngineErrRegLsb, uint8_t *featureEngineErrRegMsb);
         int8_t getGyroCalibrationResult(struct SelfCalibResult *calibrationResult);
-        int8_t setCommandRegister(uint16_t command);
-        int8_t setRegisters(uint8_t registerAddress, const uint8_t *data, uint16_t length);
-        int8_t getRegisters(uint8_t registerAddress, uint8_t *data, uint16_t length);
 
         /******************************************************************************************
          *                                  PRIVATE VARIABLES
