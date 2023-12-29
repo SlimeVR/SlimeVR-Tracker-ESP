@@ -35,7 +35,7 @@ The following IMUs and their corresponding `IMU` values are supported by the fir
   * Using fusion in internal DMP for 6Dof or 9DoF, 9DoF mode requires good magnetic environment.
   * Comment out `USE_6DOF` in `debug.h` for 9DoF mode.
   * Experimental support!\
-* LSM6DSV (IMU_ICM20948)
+* LSM6DSV (IMU_LSM6DSV)
   * Supports the LSM6DSV, LSM6DSV16X, LSM6DSV16B, LSM6DSV16XB
   * Using fusion in internal DMP for 6Dof or support for VQF fusion on the esp using accelerometer and gyroscope data.
   * **See Sensor calibration** below for info on calibrating this sensor in VQF fusion mode.
