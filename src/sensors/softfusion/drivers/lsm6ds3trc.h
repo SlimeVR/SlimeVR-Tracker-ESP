@@ -14,9 +14,9 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 template <template<uint8_t> typename I2CImpl>
 struct LSM6DS3TRC
 {
-    static constexpr uint8_t DevAddr = 0x6a;
+    static constexpr uint8_t Address = 0x6a;
     static constexpr auto Name = "LSM6DS3TR-C";
-    static constexpr auto Type = 12;
+    static constexpr auto Type = ImuID::LSM6DS3TRC;
 
     static constexpr float Freq = 416;
 
@@ -27,7 +27,7 @@ struct LSM6DS3TRC
     static constexpr float GyroSensitivity = 28.571428571f;
     static constexpr float AccelSensitivity = 4098.360655738f;
 
-    using i2c = I2CImpl<DevAddr>;
+    using i2c = I2CImpl<Address>;
 
     struct Regs {
         struct WhoAmI {

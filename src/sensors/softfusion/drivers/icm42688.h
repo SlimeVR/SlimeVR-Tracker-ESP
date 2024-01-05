@@ -13,11 +13,11 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 template <template<uint8_t> typename I2CImpl>
-struct ICM42688P
+struct ICM42688
 {
-    static constexpr uint8_t DevAddr = 0x68;
-    static constexpr auto Name = "ICM-42688-P";
-    static constexpr auto Type = 13;
+    static constexpr uint8_t Address = 0x68;
+    static constexpr auto Name = "ICM-42688";
+    static constexpr auto Type = ImuID::ICM42688;
 
     static constexpr float GyrTs=1.0/500.0;
     static constexpr float AccTs=1.0/100.0;
@@ -27,7 +27,7 @@ struct ICM42688P
     static constexpr float GyroSensitivity = 32.8f;
     static constexpr float AccelSensitivity = 4096.0f;
 
-    using i2c = I2CImpl<DevAddr>;
+    using i2c = I2CImpl<Address>;
  
     struct Regs {
         struct WhoAmI {

@@ -29,7 +29,13 @@
 #include "EmptySensor.h"
 #include "logging/Logger.h"
 
+#include "ErroneousSensor.h"
+#include "EmptySensor.h"
+
+#include <i2cscan.h>
+
 #include <memory>
+
 
 namespace SlimeVR
 {
@@ -46,13 +52,55 @@ namespace SlimeVR
             void update();
             
             std::vector<std::unique_ptr<Sensor>> & getSensors() { return m_Sensors; };
+            ImuID getSensorType(size_t id) {
+                if(id < m_Sensors.size()) {
+                    return m_Sensors[id]->getSensorType();
+                }
+                return ImuID::Unknown;
+            }
 
         private:
             SlimeVR::Logging::Logger m_Logger;
 
             std::vector<std::unique_ptr<Sensor>> m_Sensors;
-            std::unique_ptr<Sensor> buildSensor(uint8_t sensorID, uint8_t imuType, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, bool optional = false, int extraParam = 0);
-            
+
+            template <typename ImuType>
+            std::unique_ptr<Sensor> buildSensor(uint8_t sensorID, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, bool optional = false, int extraParam = 0)
+            {
+                const uint8_t address = ImuType::Address + addrSuppl;
+                m_Logger.trace("Building IMU with: id=%d,\n\
+                                address=0x%02X, rotation=%f,\n\
+                                sclPin=%d, sdaPin=%d, extraParam=%d, optional=%d",
+                                sensorID, address, rotation,
+                                sclPin, sdaPin, extraParam, optional);
+
+                // Now start detecting and building the IMU
+                std::unique_ptr<Sensor> sensor;
+
+                // Clear and reset I2C bus for each sensor upon startup
+                I2CSCAN::clearBus(sdaPin, sclPin);
+                swapI2C(sclPin, sdaPin);
+
+                if (I2CSCAN::hasDevOnBus(address)) {
+                    m_Logger.trace("Sensor %d found at address 0x%02X", sensorID + 1, address);
+                } else {
+                    if (!optional) {
+                        m_Logger.error("Mandatory sensor %d not found at address 0x%02X", sensorID + 1, address);
+                        sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
+                    }
+                    else {
+                        m_Logger.debug("Optional sensor %d not found at address 0x%02X", sensorID + 1, address);
+                        sensor = std::make_unique<EmptySensor>(sensorID);
+                    }
+                    return sensor;
+                }
+
+                uint8_t intPin = extraParam;
+                sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, sclPin, sdaPin, intPin);
+
+                sensor->motionSetup();
+                return sensor;
+            }            
             uint8_t activeSCL = 0;
             uint8_t activeSDA = 0;
             bool running = false;
@@ -64,3 +112,65 @@ namespace SlimeVR
 }
 
 #endif // SLIMEVR_SENSORFACTORY_H_
+
+
+#if 0
+
+                switch (imuType) {
+                case IMU_BNO080: case IMU_BNO085: case IMU_BNO086:
+                    // Extra param used as interrupt pin
+                    {
+                    }
+                    break;
+                case IMU_BNO055:
+                    sensor = std::make_unique<BNO055Sensor>(sensorID, address, rotation, sclPin, sdaPin);
+                    break;
+                case IMU_MPU9250:
+                    sensor = std::make_unique<MPU9250Sensor>(sensorID, address, rotation, sclPin, sdaPin);
+                    break;
+                case IMU_BMI160:
+                    // Extra param used as axis remap descriptor
+                    {
+                    int axisRemap = extraParam;
+                    // Valid remap will use all axes, so there will be non-zero term in upper 9 mag bits
+                    // Used to avoid default INT_PIN misinterpreted as axis mapping
+                    if (axisRemap < 256) {
+                        sensor = std::make_unique<BMI160Sensor>(sensorID, address, rotation, sclPin, sdaPin);
+                    } else {
+                        sensor = std::make_unique<BMI160Sensor>(sensorID, address, rotation, sclPin, sdaPin, axisRemap);
+                    }
+                    }
+                    break;
+                case IMU_MPU6500: case IMU_MPU6050:
+                    sensor = std::make_unique<MPU6050Sensor>(sensorID, imuType, address, rotation, sclPin, sdaPin);
+                    break;
+                case IMU_ICM20948:
+                    sensor = std::make_unique<ICM20948Sensor>(sensorID, address, rotation, sclPin, sdaPin);
+                    break;
+                case IMU_ICM42688:
+                    sensor = std::make_unique<ICM42688Sensor>(sensorID, address, rotation, sclPin, sdaPin);
+                    break;
+                case IMU_BMI270:
+                    // Extra param used as axis remap descriptor
+                    {
+                    int axisRemap = extraParam;
+                    // Valid remap will use all axes, so there will be non-zero term in upper 9 mag bits
+                    // Used to avoid default INT_PIN misinterpreted as axis mapping
+                    if (axisRemap < 256) {
+                        sensor = std::make_unique<BMI270Sensor>(sensorID, address, rotation, sclPin, sdaPin);
+                    } else {
+                        sensor = std::make_unique<BMI270Sensor>(sensorID, address, rotation, sclPin, sdaPin, axisRemap);
+                    }
+                    }
+                    break;
+                case IMU_LSM6DS3TRC:
+                    sensor = std::make_unique<SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC<SoftFusion::I2CImpl>>>(sensorID, sclPin, sdaPin, rotation);
+                    break;
+                case IMU_ICM42688P:
+                    sensor = std::make_unique<SoftFusionSensor<SoftFusion::Drivers::ICM42688P<SoftFusion::I2CImpl>>>(sensorID, sclPin, sdaPin, rotation);
+                    break;
+                default:
+                    sensor = std::make_unique<ErroneousSensor>(sensorID, imuType);
+                    break;
+                }
+#endif

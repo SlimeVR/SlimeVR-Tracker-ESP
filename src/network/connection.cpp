@@ -297,7 +297,7 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(sendPacketNumber());
 	MUST(sendByte(sensor.getSensorId()));
 	MUST(sendByte((uint8_t)sensor.getSensorState()));
-	MUST(sendByte(sensor.getSensorType()));
+	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
 
 	MUST(endPacket());
 }
@@ -396,7 +396,7 @@ void Connection::sendTrackerDiscovery() {
 	// This is kept for backwards compatibility,
 	// but the latest SlimeVR server will not initialize trackers
 	// with firmware build > 8 until it recieves a sensor info packet
-	MUST(sendInt(IMU));
+	MUST(sendInt(static_cast<int>(sensorManager.getSensorType(0))));
 	MUST(sendInt(HARDWARE_MCU));
 	MUST(sendInt(0));
 	MUST(sendInt(0));

@@ -114,7 +114,7 @@ namespace SlimeVR {
             float G_off[3];
         };
 
-        enum CalibrationConfigType { NONE, BMI160, MPU6050, MPU9250, ICM20948, ICM42688, SFUSION };
+        enum CalibrationConfigType { NONE, BMI160, MPU6050, MPU9250, ICM20948, SFUSION };
 
         const char* calibrationConfigTypeToString(CalibrationConfigType type);
 
@@ -127,7 +127,6 @@ namespace SlimeVR {
                 MPU6050CalibrationConfig mpu6050;
                 MPU9250CalibrationConfig mpu9250;
                 ICM20948CalibrationConfig icm20948;
-                ICM42688CalibrationConfig icm42688;
             } data;
         };
     }

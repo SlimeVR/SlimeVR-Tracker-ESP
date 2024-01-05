@@ -179,8 +179,8 @@ namespace SerialCommands {
             Serial.printf(
                 str.c_str(),
                 BOARD,
-                IMU,
-                SECOND_IMU,
+                static_cast<int>(sensorManager.getSensorType(0)),
+                static_cast<int>(sensorManager.getSensorType(1)),
                 IMU_ROTATION,
                 SECOND_IMU_ROTATION,
                 BATTERY_MONITOR,

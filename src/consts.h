@@ -24,20 +24,37 @@
 #define SLIMEVR_CONSTS_H_
 
 // List of constants used in other places
-#define IMU_UNKNOWN 0
-#define IMU_MPU9250 1
-#define IMU_MPU6500 2
-#define IMU_BNO080 3
-#define IMU_BNO085 4
-#define IMU_BNO055 5
-#define IMU_MPU6050 6
-#define IMU_BNO086 7
-#define IMU_BMI160 8
-#define IMU_ICM20948 9
-#define IMU_ICM42688 10
-#define IMU_BMI270 11
-#define IMU_LSM6DS3TRC 12
-#define IMU_ICM42688P 13
+
+enum class ImuID {
+    Unknown = 0,
+    MPU9250,
+    MPU6500,
+    BNO080,
+    BNO085,
+    BNO055,
+    MPU6050,
+    BNO086,
+    BMI160,
+    ICM20948,
+    ICM42688,
+    BMI270,
+    LSM6DS3TRC,
+    Empty = 255
+};
+
+#define IMU_UNKNOWN ErroneousSensor
+#define IMU_MPU9250 MPU9250Sensor
+#define IMU_MPU6500 MPU6050Sensor
+#define IMU_BNO080 BNO055Sensor
+#define IMU_BNO085 BNO055Sensor
+#define IMU_BNO055 BNO055Sensor
+#define IMU_MPU6050 MPU6050Sensor
+#define IMU_BNO086 BNO055Sensor
+#define IMU_BMI160 BMI160Sensor
+#define IMU_ICM20948 ICM20948Sensor
+#define IMU_ICM42688 SoftFusionICM42688P
+#define IMU_BMI270 BMI270Sensor
+#define IMU_LSM6DS3TRC SoftFusionLSM6DS3TRC
 
 #define IMU_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
 

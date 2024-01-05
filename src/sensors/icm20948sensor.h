@@ -31,7 +31,7 @@ class ICM20948Sensor : public Sensor
 {
 public:
     ICM20948Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin)
-        : Sensor("ICM20948Sensor", IMU_ICM20948, id, address, rotation, sclPin, sdaPin) {}
+        : Sensor("ICM20948Sensor", ImuID::ICM20948, id, address, rotation, sclPin, sdaPin) {}
     ~ICM20948Sensor() override = default;
     void motionSetup() override final;
     void postSetup() override {

@@ -2,8 +2,10 @@
 
 #include "../sensor.h"
 #include "drivers/lsm6ds3trc.h"
-#include "drivers/icm42688p.h"
+#include "drivers/icm42688.h"
 #include "../SensorFusionRestDetect.h"
+
+#include "GlobalVars.h"
 
 namespace SlimeVR::Sensors
 {
@@ -14,7 +16,6 @@ class SoftFusionSensor : public Sensor
     using imu = T;
     using i2c = typename imu::i2c;
     using RawVectorT = std::array<int16_t, 3>;
-
     static constexpr auto UpsideDownCalibrationInit = true;
     static constexpr auto GyroCalibDelaySeconds = 5;
     static constexpr auto GyroCalibSeconds = 5;
@@ -128,8 +129,11 @@ class SoftFusionSensor : public Sensor
     }
 
 public:
-    SoftFusionSensor(uint8_t id, uint8_t sclPin, uint8_t sdaPin, float rotation)
-    : Sensor(imu::Name, imu::Type, id, imu::DevAddr, rotation, sclPin, sdaPin),
+    static constexpr auto TypeID = imu::Type;
+    static constexpr uint8_t Address = imu::Address;
+
+    SoftFusionSensor(uint8_t id, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t)
+    : Sensor(imu::Name, imu::Type, id, imu::Address + addrSuppl, rotation, sclPin, sdaPin),
       m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs) {}
     ~SoftFusionSensor(){}
 
