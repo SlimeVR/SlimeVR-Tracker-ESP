@@ -1,103 +1,102 @@
+
 /*
-    SlimeVR Code is placed under the MIT license
-    Copyright (c) 2023 SlimeVR Contributors
+   SlimeVR Code is placed under the MIT license
+   Copyright (c) 2023 SlimeVR Contributors
 
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   THE SOFTWARE.
 */
 
 #ifndef SLIMEVR_FEATURE_FLAGS_H_
 #define SLIMEVR_FEATURE_FLAGS_H_
 
-#include <cstring>
 #include <algorithm>
+#include <cinttypes>
+#include <cstring>
+#include <unordered_map>
 
-/**
- * Bit packed flags, enum values start with 0 and indicate which bit it is.
- *
- * Change the enums and `flagsEnabled` inside to extend.
-*/
-struct ServerFeatures {
-public:
-    enum EServerFeatureFlags: uint32_t {
-        // Server can parse bundle packets: `PACKET_BUNDLE` = 100 (0x64).
-        PROTOCOL_BUNDLE_SUPPORT,
-
-        // Add new flags here
-
-        BITS_TOTAL,
-    };
-
-    bool has(EServerFeatureFlags flag) {
-        uint32_t bit = static_cast<uint32_t>(flag);
-        return m_Available && (m_Flags[bit / 8] & (1 << (bit % 8)));
-    }
-
-    /**
-     * Whether the server supports the "feature flags" feature,
-     * set to true when we've received flags packet from the server.
-    */
-    bool isAvailable() {
-        return m_Available;
-    }
-
-    static ServerFeatures from(uint8_t* received, uint32_t length) {
-        ServerFeatures res;
-        res.m_Available = true;
-        memcpy(res.m_Flags, received, std::min(static_cast<uint32_t>(sizeof(res.m_Flags)), length));
-        return res;
-    }
-
-private:
-    bool m_Available = false;
-
-    uint8_t m_Flags[static_cast<uint32_t>(EServerFeatureFlags::BITS_TOTAL) / 8 + 1];
+// I hate C++11 - they fixed this in C++14, but our compilers are old as the iceage
+struct EnumClassHash {
+	template <typename T>
+	std::size_t operator()(T t) const {
+		return static_cast<std::size_t>(t);
+	}
 };
 
-class FirmwareFeatures {
+enum EServerFeatureFlags : uint32_t {
+	// Server can parse bundle packets: `PACKET_BUNDLE` = 100 (0x64).
+	PROTOCOL_BUNDLE_SUPPORT,
+
+	BITS_TOTAL,
+};
+
+enum class EFirmwareFeatureFlags : uint32_t {
+	// EXAMPLE_FEATURE,
+	B64_WIFI_SCANNING = 1,
+
+	BITS_TOTAL,
+};
+
+static const std::unordered_map<EFirmwareFeatureFlags, bool, EnumClassHash>
+	m_EnabledFirmwareFeatures = {{EFirmwareFeatureFlags::B64_WIFI_SCANNING, true}};
+
+template <typename Flags>
+class FeatureFlags {
 public:
-    enum EFirmwareFeatureFlags: uint32_t {
-        // EXAMPLE_FEATURE,
-		B64_WIFI_SCANNING = 1,
+	static constexpr auto FLAG_BYTES
+		= ((static_cast<size_t>(Flags::BITS_TOTAL)) + 7) / 8;
 
-        // Add new flags here
+	FeatureFlags()
+		: m_Available(false) {}
+	FeatureFlags(uint8_t* packed, uint32_t length)
+		: m_Available(true) {
+		for (uint32_t bit = 0; bit < length * 8; bit++) {
+			auto posInPacked = bit / 8;
+			auto posInByte = bit % 8;
 
-        BITS_TOTAL,
-    };
+			m_Flags[static_cast<Flags>(bit)] = packed[posInPacked] & (1 << posInByte);
+		}
+	}
+	FeatureFlags(std::unordered_map<Flags, bool, EnumClassHash> flags)
+		: m_Available(true)
+		, m_Flags(flags) {}
 
-    // Flags to send
-    static constexpr const std::initializer_list<EFirmwareFeatureFlags> flagsEnabled = {
-        // EXAMPLE_FEATURE,
-		B64_WIFI_SCANNING,
+	std::array<uint8_t, FLAG_BYTES> pack() {
+		std::array<uint8_t, FLAG_BYTES> packed{};
 
-        // Add enabled flags here
-    };
+		for (auto& [flag, value] : m_Flags) {
+			auto posInPacked = static_cast<size_t>(flag) / 8;
+			auto posInByte = static_cast<size_t>(flag) % 8;
 
-    static constexpr auto flags = []{
-        constexpr uint32_t flagsLength = EFirmwareFeatureFlags::BITS_TOTAL / 8 + 1;
-        std::array<uint8_t, flagsLength> packed{};
+			if (value) {
+				packed[posInPacked] |= 1 << posInByte;
+			}
+		}
 
-        for (uint32_t bit : flagsEnabled) {
-            packed[bit / 8] |= 1 << (bit % 8);
-        }
+		return packed;
+	};
 
-        return packed;
-    }();
+	bool has(Flags flag) { return m_Flags[flag]; }
+	bool isAvailable() { return m_Available; }
+
+private:
+	bool m_Available = false;
+	std::unordered_map<Flags, bool, EnumClassHash> m_Flags{};
 };
 
 #endif
