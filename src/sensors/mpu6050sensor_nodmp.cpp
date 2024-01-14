@@ -66,6 +66,17 @@ struct fifo_sample {
 
 void MPU6050NoDMPSensor::motionSetup()
 {
+    switch (sensorType) {
+        case IMU_MPU6050_NODMP:
+            sensorType = IMU_MPU6050;
+            break;
+        case IMU_MPU6500_NODMP:
+            sensorType = IMU_MPU6500;
+            break;
+        default:
+            m_Logger.warn("MPU6050 No-DMP driver used with unknown IMU type - this shouldn't happen!");
+    }
+    
     imu.initialize(addr);
     if (!imu.testConnection())
     {
