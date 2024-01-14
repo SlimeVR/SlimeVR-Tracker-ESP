@@ -30,11 +30,11 @@
 #include "logging/Logger.h"
 
 #if ESP8266
-    #define ADCResulution 1023.0  // ESP8266 has 10bit ADC
+    #define ADCResolution 1023.0  // ESP8266 has 10bit ADC
     #define ADCVoltageMax 1.0     // ESP8266 input is 1.0 V = 1023.0
 #endif
-#ifndef ADCResulution
-    #define ADCResulution 1023.0
+#ifndef ADCResolution
+    #define ADCResolution 1023.0
 #endif
 #ifndef ADCVoltageMax
     #define ADCVoltageMax 1.0
