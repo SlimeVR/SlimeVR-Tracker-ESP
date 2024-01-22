@@ -30,15 +30,11 @@
 #include "logging/Logger.h"
 
 #if ESP8266
-    #define ADCResulution 1023.0  // ESP8266 has 12bit ADC
+    #define ADCResolution 1023.0  // ESP8266 has 10bit ADC
     #define ADCVoltageMax 1.0     // ESP8266 input is 1.0 V = 1023.0
 #endif
-#if ESP32
-    #define ADCResulution 4095.0  // ESP32 has 12bit ADC
-    #define ADCVoltageMax 3.3     // ESP32 input is 3.3 V = 4095.0
-#endif
-#ifndef ADCResulution
-    #define ADCResulution 1023.0
+#ifndef ADCResolution
+    #define ADCResolution 1023.0
 #endif
 #ifndef ADCVoltageMax
     #define ADCVoltageMax 1.0
@@ -64,10 +60,10 @@
     // Diagramm:
     //   (Battery)--- [BATTERY_SHIELD_RESISTANCE] ---(INPUT_BOARD)---  [BATTERY_SHIELD_R2] ---(ESP_INPUT)--- [BATTERY_SHIELD_R1] --- (GND)
     // SlimeVR Board can handle max 5V > so analogRead of 5.0V input will result in 1023.0
-  #define batteryADCMultiplier ADCVoltageMax / ADCResulution * (BATTERY_SHIELD_R1 + BATTERY_SHIELD_R2 + BATTERY_SHIELD_RESISTANCE) / BATTERY_SHIELD_R1
+  #define ADCMultiplier (BATTERY_SHIELD_R1 + BATTERY_SHIELD_R2 + BATTERY_SHIELD_RESISTANCE) / BATTERY_SHIELD_R1
 #elif BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
   // Default recommended resistors are 9.1k and 5.1k
-  #define batteryADCMultiplier 3.3 / 1023.0 * 14.2 / 9.1
+  #define ADCMultiplier 3.3 / 1023.0 * 14.2 / 9.1
 #endif
 
 class BatteryMonitor

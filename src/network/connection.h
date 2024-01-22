@@ -37,6 +37,16 @@ namespace Network {
 
 class Connection {
 public:
+	Connection() {
+#ifdef SERVER_IP
+		m_ServerHost.fromString(SERVER_IP);
+#endif
+
+#ifdef SERVER_PORT
+		m_ServerPort = SERVER_PORT;
+#endif
+	}
+
 	void searchForServer();
 	void update();
 	void reset();
