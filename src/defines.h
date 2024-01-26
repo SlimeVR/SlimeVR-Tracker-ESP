@@ -26,11 +26,11 @@
 // ================================================
 
 // Set parameters of IMU and board used
-#define IMU IMU_BMI160
+#define IMU IMU_MPU6050
 #define SECOND_IMU IMU
-#define BOARD BOARD_WROOM32
-#define IMU_ROTATION DEG_180
-#define SECOND_IMU_ROTATION DEG_180
+#define BOARD BOARD_WEMOSD1MINI
+#define IMU_ROTATION DEG_90
+#define SECOND_IMU_ROTATION DEG_90
 
 #define PRIMARY_IMU_OPTIONAL false
 #define SECONDARY_IMU_OPTIONAL true
