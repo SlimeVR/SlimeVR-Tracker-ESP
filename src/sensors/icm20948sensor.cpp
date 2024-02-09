@@ -79,7 +79,7 @@ void ICM20948Sensor::motionLoop()
         cntbuf = 0;
         cntrounds = 0;
     }
-*/  
+*/
 }
 
 void ICM20948Sensor::readFIFOToEnd()
@@ -104,9 +104,8 @@ void ICM20948Sensor::readFIFOToEnd()
 
 void ICM20948Sensor::sendData()
 {
-    if(newFusedRotation && lastDataSent + 7 < millis())
+    if(newFusedRotation)
     {
-        lastDataSent = millis();
         newFusedRotation = false;
 
         #if(USE_6_AXIS)
@@ -320,6 +319,7 @@ void ICM20948Sensor::startMotionLoop()
 {
     lastData = millis();
     working = true;
+	hadData = true;
 }
 
 void ICM20948Sensor::checkSensorTimeout()
