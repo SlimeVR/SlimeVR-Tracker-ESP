@@ -18,7 +18,7 @@ namespace SlimeVR
         #if !SENSOR_FUSION_WITH_RESTDETECT
         struct SensorRestDetectionParams: RestDetectionParams {
             SensorRestDetectionParams() : RestDetectionParams() {
-                restMinTimeMicros = 2.0f * 1e6;
+                restMinTime = 2.0f;
                 restThGyr = 0.6f; // 400 norm
                 restThAcc = 0.06f; // 100 norm
             }
