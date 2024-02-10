@@ -95,13 +95,6 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
 
   - Calibration data is written to the flash of your MCU and is unique for each BMI160, keep that in mind if you have detachable aux trackers.
 
-## Infos about ESP32-C3 with direct connection to USB
-
-The ESP32-C3 has two ways to connect the serial port. One is directly via the onboard USB CDC or via the onboard UART.
-When the chip is connected to the USB CDC, the serial port shows as `USB Serial Port` in Device Manager. The SlimeVR server will currently not connect to this port.
-If you want to set your WiFi credentials, you can use the PlatformIO serial console.
-There you have to enter the following: `SET WIFI "SSID" "PASSWORD"`
-
 ## Uploading On Linux
 
 Follow the instructions in this link [PlatformIO](https://docs.platformio.org/en/latest//faq.html#platformio-udev-rules), this should solve any permission denied errors
