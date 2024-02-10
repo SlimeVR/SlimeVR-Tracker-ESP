@@ -11,7 +11,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 416Hz, accel ODR = 416Hz
 
-template <template<uint8_t> typename I2CImpl>
+template <typename I2CImpl>
 struct LSM6DS3TRC
 {
     static constexpr uint8_t Address = 0x6a;
@@ -27,7 +27,9 @@ struct LSM6DS3TRC
     static constexpr float GyroSensitivity = 28.571428571f;
     static constexpr float AccelSensitivity = 4098.360655738f;
 
-    using i2c = I2CImpl<Address>;
+    I2CImpl i2c;
+    LSM6DS3TRC(I2CImpl i2c)
+    : i2c(i2c) {}
 
     struct Regs {
         struct WhoAmI {
@@ -64,19 +66,19 @@ struct LSM6DS3TRC
     bool initialize()
     {
         // perform initialization step
-        i2c::writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+        i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
         delay(20);
-        i2c::writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
-        i2c::writeReg(Regs::Ctrl2G::reg, Regs::Ctrl2G::value);
-        i2c::writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
-        i2c::writeReg(Regs::FifoCtrl3::reg, Regs::FifoCtrl3::value);
-        i2c::writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
+        i2c.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
+        i2c.writeReg(Regs::Ctrl2G::reg, Regs::Ctrl2G::value);
+        i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
+        i2c.writeReg(Regs::FifoCtrl3::reg, Regs::FifoCtrl3::value);
+        i2c.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
         return true;
     }
 
     float getDirectTemp() const
     {
-        const auto value = static_cast<int16_t>(i2c::readReg16(Regs::OutTemp));
+        const auto value = static_cast<int16_t>(i2c.readReg16(Regs::OutTemp));
         float result = ((float)value / 256.0f) + 25.0f;
 
         return result;
@@ -84,12 +86,12 @@ struct LSM6DS3TRC
 
     template <typename AccelCall, typename GyroCall>
     void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
-        const auto read_result = i2c::readReg16(Regs::FifoStatus);
+        const auto read_result = i2c.readReg16(Regs::FifoStatus);
         if (read_result & 0x4000) { // overrun!
             // disable and re-enable fifo to clear it
             printf("Fifo overrun, resetting\n");
-            i2c::writeReg(Regs::FifoCtrl5::reg, 0);
-            i2c::writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
+            i2c.writeReg(Regs::FifoCtrl5::reg, 0);
+            i2c.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
             return;
         }
         const auto unread_entries = read_result & 0x7ff;
@@ -100,7 +102,7 @@ struct LSM6DS3TRC
         const auto bytes_to_read = std::min(static_cast<size_t>(read_buffer.size()), static_cast<size_t>(unread_entries)) \
                      * sizeof(uint16_t) / single_measurement_bytes * single_measurement_bytes;
 
-        i2c::readBytes(Regs::FifoData, bytes_to_read, reinterpret_cast<uint8_t *>(read_buffer.data()));
+        i2c.readBytes(Regs::FifoData, bytes_to_read, reinterpret_cast<uint8_t *>(read_buffer.data()));
         for (uint16_t i=0; i<bytes_to_read/sizeof(uint16_t); i+=single_measurement_words) {
             processGyroSample(reinterpret_cast<const int16_t *>(&read_buffer[i]), GyrTs);
             processAccelSample(reinterpret_cast<const int16_t *>(&read_buffer[i+3]), AccTs);

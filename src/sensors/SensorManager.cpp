@@ -41,8 +41,8 @@ namespace SlimeVR
 {
     namespace Sensors
     {
-        using SoftFusionLSM6DS3TRC = SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC<SoftFusion::I2CImpl>>;
-        using SoftFusionICM42688 = SoftFusionSensor<SoftFusion::Drivers::ICM42688<SoftFusion::I2CImpl>>;
+        using SoftFusionLSM6DS3TRC = SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC, SoftFusion::I2CImpl>;
+        using SoftFusionICM42688 = SoftFusionSensor<SoftFusion::Drivers::ICM42688, SoftFusion::I2CImpl>;
 
         // TODO Make it more generic in the future and move another place (abstract sensor interface)
         void SensorManager::swapI2C(uint8_t sclPin, uint8_t sdaPin)

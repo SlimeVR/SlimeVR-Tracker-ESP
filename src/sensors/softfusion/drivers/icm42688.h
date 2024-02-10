@@ -12,7 +12,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 // Gyroscope ODR = 500Hz, accel ODR = 100Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
-template <template<uint8_t> typename I2CImpl>
+template <typename I2CImpl>
 struct ICM42688
 {
     static constexpr uint8_t Address = 0x68;
@@ -27,8 +27,10 @@ struct ICM42688
     static constexpr float GyroSensitivity = 32.8f;
     static constexpr float AccelSensitivity = 4096.0f;
 
-    using i2c = I2CImpl<Address>;
- 
+    I2CImpl i2c;
+    ICM42688(I2CImpl i2c)
+    : i2c(i2c) {}
+
     struct Regs {
         struct WhoAmI {
             static constexpr uint8_t reg = 0x75;
@@ -93,15 +95,15 @@ struct ICM42688
     bool initialize()
     {
         // perform initialization step
-        i2c::writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
+        i2c.writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
         delay(20);
 
-        i2c::writeReg(Regs::IntfConfig0::reg, Regs::IntfConfig0::value);
-        i2c::writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
-        i2c::writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
-        i2c::writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
-        i2c::writeReg(Regs::FifoConfig1::reg, Regs::FifoConfig1::value);
-        i2c::writeReg(Regs::PwrMgmt::reg, Regs::PwrMgmt::value);
+        i2c.writeReg(Regs::IntfConfig0::reg, Regs::IntfConfig0::value);
+        i2c.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
+        i2c.writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
+        i2c.writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
+        i2c.writeReg(Regs::FifoConfig1::reg, Regs::FifoConfig1::value);
+        i2c.writeReg(Regs::PwrMgmt::reg, Regs::PwrMgmt::value);
         delay(1);
 
         return true;
@@ -109,19 +111,19 @@ struct ICM42688
 
     float getDirectTemp() const
     {
-        const auto value = static_cast<int16_t>(i2c::readReg16(Regs::TempData));
+        const auto value = static_cast<int16_t>(i2c.readReg16(Regs::TempData));
         float result = ((float)value / 132.48f) + 25.0f;
         return result;
     }
 
     template <typename AccelCall, typename GyroCall>
     void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
-        const auto fifo_bytes = i2c::readReg16(Regs::FifoCount);
+        const auto fifo_bytes = i2c.readReg16(Regs::FifoCount);
         
         std::array<uint8_t, FullFifoEntrySize * 8> read_buffer; // max 8 readings
         const auto bytes_to_read = std::min(static_cast<size_t>(read_buffer.size()),
             static_cast<size_t>(fifo_bytes)) / FullFifoEntrySize * FullFifoEntrySize;
-        i2c::readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
+        i2c.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
         for (auto i=0u; i<bytes_to_read; i+=FullFifoEntrySize) {
             FifoEntryAligned entry;
             memcpy(entry.raw, &read_buffer[i+0x1], sizeof(FifoEntryAligned)); // skip fifo header

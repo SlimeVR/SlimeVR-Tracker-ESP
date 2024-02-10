@@ -10,11 +10,10 @@
 namespace SlimeVR::Sensors
 {
 
-template <typename T>
+template <template<typename I2CImpl> typename T, typename I2CImpl>
 class SoftFusionSensor : public Sensor
 {
-    using imu = T;
-    using i2c = typename imu::i2c;
+    using imu = T<I2CImpl>;
     using RawVectorT = std::array<int16_t, 3>;
     static constexpr auto UpsideDownCalibrationInit = true;
     static constexpr auto GyroCalibDelaySeconds = 5;
@@ -33,7 +32,7 @@ class SoftFusionSensor : public Sensor
 
 
     bool detected() const {
-        const auto value = i2c::readReg(imu::Regs::WhoAmI::reg);
+        const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
         if (imu::Regs::WhoAmI::value != value) {
             m_Logger.error("Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
                 imu::Regs::WhoAmI::reg, imu::Regs::WhoAmI::value, value);
@@ -134,7 +133,7 @@ public:
 
     SoftFusionSensor(uint8_t id, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t)
     : Sensor(imu::Name, imu::Type, id, imu::Address + addrSuppl, rotation, sclPin, sdaPin),
-      m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs) {}
+      m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs), m_sensor(I2CImpl(imu::Address + addrSuppl)) {}
     ~SoftFusionSensor(){}
 
     void motionLoop() override final
@@ -445,8 +444,8 @@ public:
         return m_status;
     }
 
-    T m_sensor;
     SensorFusionRestDetect m_fusion;
+    T<I2CImpl> m_sensor;
     SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration = {
         // let's create here transparent calibration that doesn't affect input data
         .A_B = {0.0, 0.0, 0.0},
