@@ -189,4 +189,21 @@ IMU_DESC_ENTRY(IMU_BMP160, PRIMARY_IMU_ADDRESS_ONE, IMU_ROTATION, PIN_IMU_SCL, P
   #define PIN_BATTERY_LEVEL A0
   #define LED_PIN 16
   #define LED_INVERTED true
+#elif BOARD == BOARD_XIAO_ESP32C3
+  #define PIN_IMU_SDA 6 // D4
+  #define PIN_IMU_SCL 7 // D5
+  #define PIN_IMU_INT 5 // D3
+  #define PIN_IMU_INT_2 10 // D10
+  #define LED_PIN 4 // D2
+  #define LED_INVERTED false
+  #define PIN_BATTERY_LEVEL 2 // D0 / A0
+  #ifndef BATTERY_SHIELD_RESISTANCE
+    #define BATTERY_SHIELD_RESISTANCE 0
+  #endif
+  #ifndef BATTERY_SHIELD_R1
+    #define BATTERY_SHIELD_R1 100
+  #endif
+  #ifndef BATTERY_SHIELD_R2
+    #define BATTERY_SHIELD_R2 100
+  #endif
 #endif
