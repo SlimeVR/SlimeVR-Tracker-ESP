@@ -70,6 +70,8 @@
   #define ADCMultiplier 3.3 / 1023.0 * 14.2 / 9.1
 #endif
 
+#define MAP(x, in_min, in_max, out_min, out_max) ((x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min)
+
 class BatteryMonitor
 {
 public:
