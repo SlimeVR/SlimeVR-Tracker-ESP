@@ -30,33 +30,75 @@ SensorStatus Sensor::getSensorState() {
 }
 
 void Sensor::setAcceleration(Vector3 a) {
+#if ESP32
+    xSemaphoreTake(updateMutex, portMAX_DELAY);
+#endif
     acceleration = a;
     newAcceleration = true;
+#if ESP32
+    xSemaphoreGive(updateMutex);
+#endif
 }
 
 void Sensor::setFusedRotation(Quat r) {
+#if ESP32
+    xSemaphoreTake(updateMutex, portMAX_DELAY);
+#endif
     fusedRotation = r * sensorOffset;
     bool changed = OPTIMIZE_UPDATES ? !lastFusedRotationSent.equalsWithEpsilon(fusedRotation) : true;
     if (ENABLE_INSPECTION || changed) {
         newFusedRotation = true;
         lastFusedRotationSent = fusedRotation;
     }
+#if ESP32
+    xSemaphoreGive(updateMutex);
+#endif
 }
 
 void Sensor::sendData() {
+#if ESP32
+    Quat lquat;
+    xSemaphoreTake(updateMutex, portMAX_DELAY);
     if (newFusedRotation) {
         newFusedRotation = false;
+        lquat = fusedRotation;
+        xSemaphoreGive(updateMutex);
+    } else {
+        xSemaphoreGive(updateMutex);
+        return;
+    }
+
+    {
         networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
+#else
+	if (newFusedRotation) {
+        newFusedRotation = false;
+        networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
+#endif
 
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
 #endif
 
 #if SEND_ACCELERATION
+    #if ESP32
+        Vector3 laccel;
+        xSemaphoreTake(updateMutex, portMAX_DELAY);
+        if (newAcceleration) {
+            newAcceleration = false;
+            laccel = acceleration;
+            xSemaphoreGive(updateMutex);
+        } else {
+            xSemaphoreGive(updateMutex);
+            return;
+        }
+        networkConnection.sendSensorAcceleration(sensorId, laccel);
+    #else
         if (newAcceleration) {
             newAcceleration = false;
             networkConnection.sendSensorAcceleration(sensorId, acceleration);
         }
+    #endif
 #endif
     }
 }
