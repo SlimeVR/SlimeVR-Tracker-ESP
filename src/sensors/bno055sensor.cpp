@@ -60,16 +60,10 @@ void BNO055Sensor::motionLoop() {
 #endif
 
     // TODO Optimize a bit with setting rawQuat directly
-    Quat quat = imu.getQuat();
-    fusedRotation.set(quat.x, quat.y, quat.z, quat.w);
-    fusedRotation *= sensorOffset;
-    setFusedRotationReady();
+    setFusedRotation(imu.getQuat());
 
 #if SEND_ACCELERATION
-    {
-        acceleration = this->imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
-        setAccelerationReady();
-    }
+    setAcceleration(imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL));
 #endif
 }
 
