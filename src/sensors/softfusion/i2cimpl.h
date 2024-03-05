@@ -9,6 +9,8 @@ namespace SlimeVR::Sensors::SoftFusion
 
 struct I2CImpl
 {
+    static constexpr size_t MaxTransactionLength = I2C_BUFFER_LENGTH - 2;
+
     I2CImpl(uint8_t devAddr)
         : m_devAddr(devAddr) {}
 
@@ -28,8 +30,16 @@ struct I2CImpl
         I2Cdev::writeByte(m_devAddr, regAddr, value);
     }
 
+    void writeReg16(uint8_t regAddr, uint16_t value) const {
+        I2Cdev::writeBytes(m_devAddr, regAddr, sizeof(value), reinterpret_cast<uint8_t*>(&value));
+    }
+
     void readBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const {
         I2Cdev::readBytes(m_devAddr, regAddr, size, buffer);
+    }
+
+    void writeBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const {
+        I2Cdev::writeBytes(m_devAddr, regAddr, size, buffer);
     }
 
     private:
