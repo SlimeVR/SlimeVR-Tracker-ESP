@@ -308,6 +308,8 @@ public:
   void enterSuspendMode();
   void enterNormalMode();
 
+  adafruit_bno055_opmode_t getMode() { return _mode; }
+
 private:
   byte read8(adafruit_bno055_reg_t);
   bool readLen(adafruit_bno055_reg_t, byte *buffer, uint8_t len);
