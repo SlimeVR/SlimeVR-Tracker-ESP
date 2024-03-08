@@ -20,14 +20,14 @@
 struct RestDetectionParams {
     sensor_real_t biasClip;
     sensor_real_t biasSigmaRest;
-    uint32_t restMinTimeMicros;
+    sensor_real_t restMinTime;
     sensor_real_t restFilterTau;
     sensor_real_t restThGyr;
     sensor_real_t restThAcc;
     RestDetectionParams():
         biasClip(2.0f),
         biasSigmaRest(0.03f),
-        restMinTimeMicros(1.5 * 1e6),
+        restMinTime(1.5),
         restFilterTau(0.5f),
         restThGyr(2.0f),
         restThAcc(0.5f)
@@ -103,7 +103,7 @@ public:
     }
 #endif
 
-    void updateGyr(uint32_t dtMicros, sensor_real_t gyr[3]) {
+    void updateGyr(sensor_real_t gyr[3]) {
 #ifdef REST_DETECTION_DISABLE_LPF
         gyrLastSquaredDeviation =
             square(gyr[0] - lastSample.gyr[0]) +
@@ -114,7 +114,7 @@ public:
         if (gyrLastSquaredDeviation >= square(params.restThGyr*sensor_real_t(M_PI/180.0))
                 || fabs(lastSample.gyr[0]) > biasClip || fabs(lastSample.gyr[1]) > biasClip
                 || fabs(lastSample.gyr[2]) > biasClip) {
-            restTimeMicros = 0;
+            restTime = 0;
             restDetected = false;
         }
 
@@ -134,13 +134,13 @@ public:
         if (gyrLastSquaredDeviation >= square(params.restThGyr*sensor_real_t(M_PI/180.0))
                 || fabs(restLastGyrLp[0]) > biasClip || fabs(restLastGyrLp[1]) > biasClip
                 || fabs(restLastGyrLp[2]) > biasClip) {
-            restTimeMicros = 0;
+            restTime = 0;
             restDetected = false;
         }
 #endif
     }
 
-    void updateAcc(uint32_t dtMicros, sensor_real_t acc[3]) {
+    void updateAcc(sensor_real_t dt, sensor_real_t acc[3]) {
         if (acc[0] == sensor_real_t(0.0) && acc[1] == sensor_real_t(0.0) && acc[2] == sensor_real_t(0.0)) {
             return;
         }
@@ -152,11 +152,11 @@ public:
             square(acc[2] - lastSample.acc[2]);
 
         if (accLastSquaredDeviation >= square(params.restThAcc)) {
-            restTimeMicros = 0;
+            restTime = 0;
             restDetected = false;
         } else {
-            restTimeMicros += dtMicros;
-            if (restTimeMicros >= params.restMinTimeMicros) {
+            restTime += dt;
+            if (restTime >= params.restMinTime) {
                 restDetected = true;
             }
         }
@@ -174,11 +174,11 @@ public:
             square(acc[2] - restLastAccLp[2]);
 
         if (accLastSquaredDeviation >= square(params.restThAcc)) {
-            restTimeMicros = 0;
+            restTime = 0;
             restDetected = false;
         } else {
-            restTimeMicros += dtMicros;
-            if (restTimeMicros >= params.restMinTimeMicros) {
+            restTime += dt;
+            if (restTime >= params.restMinTime) {
                 restDetected = true;
             }
         }
@@ -195,7 +195,7 @@ public:
 
         gyrLastSquaredDeviation = 0.0;
         accLastSquaredDeviation = 0.0;
-        restTimeMicros = 0.0;
+        restTime = 0.0;
         std::fill(restLastGyrLp, restLastGyrLp + 3, 0.0);
         std::fill(restGyrLpState, restGyrLpState + 3*2, NaN);
         std::fill(restLastAccLp, restLastAccLp + 3, 0.0);
@@ -235,7 +235,7 @@ public:
 private:
     RestDetectionParams params;
     bool restDetected;
-    uint32_t restTimeMicros;
+    sensor_real_t restTime;
     sensor_real_t gyrLastSquaredDeviation = 0;
     sensor_real_t accLastSquaredDeviation = 0;
 
