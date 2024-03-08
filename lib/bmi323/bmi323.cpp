@@ -21,7 +21,7 @@
     THE SOFTWARE.
 */
 
-#include "bmi323"
+#include "bmi323.h"
 
 /**
  * @brief Entry point for bmi323 sensor. It reads and validates the chip-id of the sensor.
