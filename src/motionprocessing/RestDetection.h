@@ -20,7 +20,7 @@
 struct RestDetectionParams {
     sensor_real_t biasClip;
     sensor_real_t biasSigmaRest;
-    uint32_t restMinTime;
+    sensor_real_t restMinTime;
     sensor_real_t restFilterTau;
     sensor_real_t restThGyr;
     sensor_real_t restThAcc;
@@ -140,7 +140,7 @@ public:
 #endif
     }
 
-    void updateAcc(uint32_t dt, sensor_real_t acc[3]) {
+    void updateAcc(sensor_real_t dt, sensor_real_t acc[3]) {
         if (acc[0] == sensor_real_t(0.0) && acc[1] == sensor_real_t(0.0) && acc[2] == sensor_real_t(0.0)) {
             return;
         }
@@ -235,7 +235,7 @@ public:
 private:
     RestDetectionParams params;
     bool restDetected;
-    uint32_t restTime;
+    sensor_real_t restTime;
     sensor_real_t gyrLastSquaredDeviation = 0;
     sensor_real_t accLastSquaredDeviation = 0;
 
