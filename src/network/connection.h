@@ -158,6 +158,9 @@ private:
 	// PACKET_SENSOR_INFO 15
 	void sendSensorInfo(Sensor* sensor);
 
+	// PACKET_TOGGLE_MAGNETOMETER 21
+	void sendToggleMagnetometerResult(uint8_t sensorId, bool result);
+
 	bool m_Connected = false;
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("UDPConnection");
 
