@@ -89,7 +89,7 @@ bool Connection::endPacket() {
 		MUST_TRANSFER_BOOL((innerPacketSize > 0));
 
 		m_IsBundle = false;
-		
+
 		if (m_BundlePacketInnerCount == 0) {
 			sendPacketType(PACKET_BUNDLE);
 			sendPacketNumber();
@@ -128,7 +128,7 @@ bool Connection::endBundle() {
 	MUST_TRANSFER_BOOL(m_IsBundle);
 
 	m_IsBundle = false;
-	
+
 	MUST_TRANSFER_BOOL((m_BundlePacketInnerCount > 0));
 
 	return endPacket();
@@ -540,7 +540,7 @@ void Connection::updateSensorState(std::vector<Sensor *> & sensors) {
 	}
 }
 
-void Connection::maybeRequestFeatureFlags() {	
+void Connection::maybeRequestFeatureFlags() {
 	if (m_ServerFeatures.isAvailable() || m_FeatureFlagsRequestAttempts >= 15) {
 		return;
 	}
@@ -572,6 +572,8 @@ void Connection::searchForServer() {
 			m_UDP.remotePort()
 		);
 		m_Logger.traceArray("UDP packet contents: ", m_Packet, len);
+#else
+		(void)len;
 #endif
 
 		// Handshake is different, it has 3 in the first byte, not the 4th, and data
@@ -586,7 +588,7 @@ void Connection::searchForServer() {
 			m_ServerPort = m_UDP.remotePort();
 			m_LastPacketTimestamp = millis();
 			m_Connected = true;
-			
+
 			m_FeatureFlagsRequestAttempts = 0;
 			m_ServerFeatures = ServerFeatures { };
 
@@ -704,7 +706,7 @@ void Connection::update() {
 
 			break;
 
-		case PACKET_FEATURE_FLAGS:
+		case PACKET_FEATURE_FLAGS: {
 			// Packet type (4) + Packet number (8) + flags (len - 12)
 			if (len < 13) {
 				m_Logger.warn("Invalid feature flags packet: too short");
@@ -712,7 +714,7 @@ void Connection::update() {
 			}
 
 			bool hadFlags = m_ServerFeatures.isAvailable();
-			
+
 			uint32_t flagsLength = len - 12;
 			m_ServerFeatures = ServerFeatures::from(&m_Packet[12], flagsLength);
 
@@ -725,7 +727,9 @@ void Connection::update() {
 			}
 
 			break;
-		case PACKET_SET_CONFIG_FLAG:
+		}
+
+		case PACKET_SET_CONFIG_FLAG: {
 			// Packet type (4) + Packet number (8) + sensor_id(1) + flag_id (2) + state (1)
 			if (len < 16) {
 				m_Logger.warn("Invalid sensor config flag packet: too short");
@@ -740,9 +744,12 @@ void Connection::update() {
 				std::vector<Sensor *> & sensors = sensorManager.getSensors();
 				if(sensorId < sensors.size()) {
 					Sensor * sensor = sensors[sensorId];
+					sensor->setFlag(flagId, newState);
 				}
 			}
 			sendAcknowledgeConfigChange(sensorId, flagId);
+			break;
+		}
 	}
 }
 

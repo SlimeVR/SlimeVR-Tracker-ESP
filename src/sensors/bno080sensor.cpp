@@ -62,6 +62,7 @@ void BNO080Sensor::motionSetup()
         break;
     default:
         // Ignore lack of config for BNO, byt default use from FW build
+        break;
     }
 
     if(!m_magEnabled) {
@@ -132,7 +133,7 @@ void BNO080Sensor::motionLoop()
 
                     setFusedRotationReady();
                     // Leave new quaternion if context open, it's closed later
-
+                }
         } else {
 
                 if (imu.hasNewQuat()) // New quaternion if context
@@ -142,6 +143,7 @@ void BNO080Sensor::motionLoop()
 
                     setFusedRotationReady();
                     // Leave new quaternion if context open, it's closed later
+                } // Closing new quaternion if context
         }
 
         // Continuation of the new quaternion if context, used for both 6 and 9 axis
@@ -152,9 +154,9 @@ void BNO080Sensor::motionLoop()
             setAccelerationReady();
         }
 #endif // SEND_ACCELERATION
-        } // Closing new quaternion if context
-
-        if(BNO_USE_MAGNETOMETER_CORRECTION && !m_magEnabled) {
+        
+#if BNO_USE_MAGNETOMETER_CORRECTION
+        if(!m_magEnabled) {
                 if (imu.hasNewMagQuat())
                 {
                     imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
@@ -169,6 +171,7 @@ void BNO080Sensor::motionLoop()
                     newMagData = true;
                 }
         }
+#endif
 
         if (imu.getTapDetected())
         {
@@ -203,7 +206,8 @@ void BNO080Sensor::motionLoop()
     }
 }
 
-SensorStatus BNO080Sensor::getSensorState() {
+SensorStatus BNO080Sensor::getSensorState()
+{
     return lastReset > 0 ? SensorStatus::SENSOR_ERROR : isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_OFFLINE;
 }
 
@@ -247,11 +251,11 @@ void BNO080Sensor::sendData()
     }
 }
 
-void BNO080Sensor::setFlag(uint16_t flagId, bool state) {
+void BNO080Sensor::setFlag(uint16_t flagId, bool state)
+{
     if(flagId == FLAG_SENSOR_BNO0XX_MAG_ENABLED) {
         m_Calibration.magEnabled = state;
         m_magEnabled = state;
-        configuration.setCalibration(sensorId, m_Calibration);
         if(state) {
             if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
                 imu.enableARVRStabilizedRotationVector(10);
