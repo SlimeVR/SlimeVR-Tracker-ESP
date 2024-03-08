@@ -25,8 +25,8 @@
 #define SENSORS_BMI323_H
 
 #include "sensor.h" // Base class Sensor
-#include "bmi323_jojos38.h" // BMI323 custom library
-#include "bmm350_jojos38.h" // BMM350 custom library
+#include "bmi323.h" // BMI323 custom library
+#include "bmm350.h" // BMM350 custom library
 #include "Wire.h" // Used for I2C communication
 #include "SensorFusionRestDetect.h" // Used for sensor fusion
 #include "logging/Logger.h" // Used for logging
