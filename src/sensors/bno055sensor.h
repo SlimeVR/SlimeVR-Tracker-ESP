@@ -40,6 +40,7 @@ public:
 
 private:
     Adafruit_BNO055 imu;
+    SlimeVR::Configuration::BNO0XXCalibrationConfig m_Calibration = {};
 };
 
 #endif

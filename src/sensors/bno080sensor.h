@@ -27,6 +27,8 @@
 #include "sensor.h"
 #include <BNO080.h>
 
+#define FLAG_SENSOR_BNO0XX_MAG_ENABLED 1
+
 class BNO080Sensor : public Sensor
 {
 public:
@@ -42,7 +44,7 @@ public:
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
     SensorStatus getSensorState() override final;
-
+    void setFlag(uint16_t flagId, bool state) override final;
 private:
     BNO080 imu{};
 
@@ -52,6 +54,8 @@ private:
     unsigned long lastData = 0;
     uint8_t lastReset = 0;
     BNO080Error lastError{};
+    bool m_magEnabled = !USE_6_AXIS;
+    SlimeVR::Configuration::BNO0XXCalibrationConfig m_Calibration = {};
 
     // Magnetometer specific members
     Quat magQuaternion{};

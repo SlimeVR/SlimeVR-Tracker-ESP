@@ -66,6 +66,7 @@ public:
     virtual void printDebugTemperatureCalibrationState();
     virtual void resetTemperatureCalibrationState();
     virtual void saveTemperatureCalibration();
+    virtual void setFlag(uint16_t flagId, bool state){};
     bool isWorking() {
         return working;
     };

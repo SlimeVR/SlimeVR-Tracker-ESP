@@ -381,6 +381,21 @@ void Connection::sendFeatureFlags() {
 	MUST(endPacket());
 }
 
+// PACKET_ACKNOWLEDGE_CONFIG_CHANGE 23
+
+void Connection::sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configType) {
+	MUST(m_Connected);
+
+	MUST(beginPacket());
+
+	MUST(sendPacketType(PACKET_ACKNOWLEDGE_CONFIG_CHANGE));
+	MUST(sendPacketNumber());
+	MUST(sendByte(sensorId));
+	MUST(sendShort(configType));
+
+	MUST(endPacket());
+}
+
 void Connection::sendTrackerDiscovery() {
 	MUST(!m_Connected);
 
@@ -710,6 +725,24 @@ void Connection::update() {
 			}
 
 			break;
+		case PACKET_SET_CONFIG_FLAG:
+			// Packet type (4) + Packet number (8) + sensor_id(1) + flag_id (2) + state (1)
+			if (len < 16) {
+				m_Logger.warn("Invalid sensor config flag packet: too short");
+				break;
+			}
+			uint8_t sensorId = m_Packet[12];
+			uint16_t flagId = m_Packet[13] << 8 | m_Packet[14];
+			bool newState = m_Packet[15] > 0;
+			if(sensorId == 255) {
+				// Apply the flag to the whole device
+			} else {
+				std::vector<Sensor *> & sensors = sensorManager.getSensors();
+				if(sensorId < sensors.size()) {
+					Sensor * sensor = sensors[sensorId];
+				}
+			}
+			sendAcknowledgeConfigChange(sensorId, flagId);
 	}
 }
 

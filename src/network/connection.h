@@ -158,6 +158,8 @@ private:
 	// PACKET_SENSOR_INFO 15
 	void sendSensorInfo(Sensor* sensor);
 
+	void sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configType);
+
 	bool m_Connected = false;
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("UDPConnection");
 

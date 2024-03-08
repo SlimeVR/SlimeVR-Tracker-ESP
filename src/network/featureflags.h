@@ -74,7 +74,7 @@ public:
     enum EFirmwareFeatureFlags: uint32_t {
         // EXAMPLE_FEATURE,
 		B64_WIFI_SCANNING = 1,
-
+        SENSOR_CONFIG = 2,
         // Add new flags here
 
         BITS_TOTAL,
@@ -84,7 +84,7 @@ public:
     static constexpr const std::initializer_list<EFirmwareFeatureFlags> flagsEnabled = {
         // EXAMPLE_FEATURE,
 		B64_WIFI_SCANNING,
-
+        SENSOR_CONFIG
         // Add enabled flags here
     };
 

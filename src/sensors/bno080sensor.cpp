@@ -53,23 +53,34 @@ void BNO080Sensor::motionSetup()
 
     this->imu.enableLinearAccelerometer(10);
 
-#if USE_6_AXIS
-    if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
-        imu.enableARVRStabilizedGameRotationVector(10);
-    } else {
-        imu.enableGameRotationVector(10);
-    }  
-
-    #if BNO_USE_MAGNETOMETER_CORRECTION
-    imu.enableRotationVector(1000);
-    #endif
-#else
-    if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
-        imu.enableARVRStabilizedRotationVector(10);
-    } else {
-        imu.enableRotationVector(10);
+    SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+    // If no compatible calibration data is found, the calibration data will just be zero-ed out
+    switch (sensorCalibration.type) {
+    case SlimeVR::Configuration::CalibrationConfigType::BNO0XX:
+        m_Calibration = sensorCalibration.data.bno0XX;
+        m_magEnabled = m_Calibration.magEnabled;
+        break;
+    default:
+        // Ignore lack of config for BNO, byt default use from FW build
     }
-#endif
+
+    if(!m_magEnabled) {
+        if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
+            imu.enableARVRStabilizedGameRotationVector(10);
+        } else {
+            imu.enableGameRotationVector(10);
+        }  
+
+        #if BNO_USE_MAGNETOMETER_CORRECTION
+        imu.enableRotationVector(1000);
+        #endif
+    } else {
+        if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
+            imu.enableARVRStabilizedRotationVector(10);
+        } else {
+            imu.enableRotationVector(10);
+        }
+    }
 
 #if ENABLE_INSPECTION
     imu.enableRawGyro(10);
@@ -113,51 +124,51 @@ void BNO080Sensor::motionLoop()
         lastReset = 0;
         lastData = millis();
 
-#if USE_6_AXIS
-        if (imu.hasNewGameQuat()) // New quaternion if context
-        {
-            imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
-            fusedRotation *= sensorOffset;
+        if(!m_magEnabled) {
+                if (imu.hasNewGameQuat()) // New quaternion if context
+                {
+                    imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
+                    fusedRotation *= sensorOffset;
 
-            setFusedRotationReady();
-            // Leave new quaternion if context open, it's closed later
+                    setFusedRotationReady();
+                    // Leave new quaternion if context open, it's closed later
 
-#else // USE_6_AXIS
+        } else {
 
-        if (imu.hasNewQuat()) // New quaternion if context
-        {
-            imu.getQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, magneticAccuracyEstimate, calibrationAccuracy);
-            fusedRotation *= sensorOffset;
+                if (imu.hasNewQuat()) // New quaternion if context
+                {
+                    imu.getQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, magneticAccuracyEstimate, calibrationAccuracy);
+                    fusedRotation *= sensorOffset;
 
-            setFusedRotationReady();
-            // Leave new quaternion if context open, it's closed later
-#endif // USE_6_AXIS
+                    setFusedRotationReady();
+                    // Leave new quaternion if context open, it's closed later
+        }
 
-            // Continuation of the new quaternion if context, used for both 6 and 9 axis
+        // Continuation of the new quaternion if context, used for both 6 and 9 axis
 #if SEND_ACCELERATION
-            {
-                uint8_t acc;
-                imu.getLinAccel(acceleration.x, acceleration.y, acceleration.z, acc);
-                setAccelerationReady();
-            }
+        {
+            uint8_t acc;
+            imu.getLinAccel(acceleration.x, acceleration.y, acceleration.z, acc);
+            setAccelerationReady();
+        }
 #endif // SEND_ACCELERATION
         } // Closing new quaternion if context
 
-#if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
-        if (imu.hasNewMagQuat())
-        {
-            imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
-            magQuaternion *= sensorOffset;
+        if(BNO_USE_MAGNETOMETER_CORRECTION && !m_magEnabled) {
+                if (imu.hasNewMagQuat())
+                {
+                    imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
+                    magQuaternion *= sensorOffset;
 
-    #if ENABLE_INSPECTION
-            {
-                networkConnection.sendInspectionCorrectionData(sensorId, quaternion);
-            }
-    #endif // ENABLE_INSPECTION
+            #if ENABLE_INSPECTION
+                    {
+                        networkConnection.sendInspectionCorrectionData(sensorId, quaternion);
+                    }
+            #endif // ENABLE_INSPECTION
 
-            newMagData = true;
+                    newMagData = true;
+                }
         }
-#endif // USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
 
         if (imu.getTapDetected())
         {
@@ -216,23 +227,49 @@ void BNO080Sensor::sendData()
 #endif
     }
 
-#if !USE_6_AXIS
-        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
-#endif
-
-#if USE_6_AXIS && BNO_USE_MAGNETOMETER_CORRECTION
-    if (newMagData)
-    {
-        newMagData = false;
-        networkConnection.sendRotationData(sensorId, &magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy);
+    if(m_magEnabled) {
         networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
     }
-#endif
+
+    if(BNO_USE_MAGNETOMETER_CORRECTION && !m_magEnabled) {
+        if (newMagData)
+        {
+            newMagData = false;
+            networkConnection.sendRotationData(sensorId, &magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy);
+            networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
+        }
+    }
 
     if (tap != 0)
     {
         networkConnection.sendSensorTap(sensorId, tap);
         tap = 0;
+    }
+}
+
+void BNO080Sensor::setFlag(uint16_t flagId, bool state) {
+    if(flagId == FLAG_SENSOR_BNO0XX_MAG_ENABLED) {
+        m_Calibration.magEnabled = state;
+        m_magEnabled = state;
+        configuration.setCalibration(sensorId, m_Calibration);
+        if(state) {
+            if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
+                imu.enableARVRStabilizedRotationVector(10);
+            } else {
+                imu.enableRotationVector(10);
+            }
+        } else {
+            if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
+                imu.enableARVRStabilizedGameRotationVector(10);
+            } else {
+                imu.enableGameRotationVector(10);
+            }  
+
+            #if BNO_USE_MAGNETOMETER_CORRECTION
+            imu.enableRotationVector(1000);
+            #endif
+        }
+        imu.softReset();
     }
 }
 

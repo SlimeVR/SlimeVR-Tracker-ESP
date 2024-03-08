@@ -322,6 +322,10 @@ namespace SlimeVR {
                     m_Logger.info("            G_off  : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.G_off));
 
                     break;
+                case CalibrationConfigType::BNO0XX:
+                    m_Logger.info("            Mag enabled   : %s", c.data.bno0XX.magEnabled ? "true" : "false");
+
+                    break;
                 }
             }
         }
