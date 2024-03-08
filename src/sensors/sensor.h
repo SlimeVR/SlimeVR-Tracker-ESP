@@ -66,6 +66,12 @@ public:
     virtual void printDebugTemperatureCalibrationState();
     virtual void resetTemperatureCalibrationState();
     virtual void saveTemperatureCalibration();
+
+    // TODO: Replace with feature flags
+    virtual bool supportsTogglingMagnetometer() { return false; };
+    virtual bool hasMagnetometerEnabled() { return false; };
+    virtual bool toggleMagnetometer(bool enabled);
+
     bool isWorking() {
         return working;
     };
@@ -106,7 +112,7 @@ protected:
     Vector3 acceleration{};
 
     SlimeVR::Logging::Logger m_Logger;
-    
+
 public:
     uint8_t sclPin = 0;
     uint8_t sdaPin = 0;
