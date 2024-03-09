@@ -530,9 +530,9 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
     }
     remapGyroAccel(&Gxyz[0], &Gxyz[1], &Gxyz[2]);
 
-    sfusion.updateGyro(Gxyz, (double)dtMicros * 1.0e-6);
+	sfusion.updateGyro(Gxyz, (sensor_real_t)dtMicros * 1.0e-6);
 
-    optimistic_yield(100);
+	optimistic_yield(100);
 }
 void BMI160Sensor::onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z) {
     #if BMI160_DEBUG
@@ -548,9 +548,9 @@ void BMI160Sensor::onAccelRawSample(uint32_t dtMicros, int16_t x, int16_t y, int
     lastAxyz[1] = Axyz[1];
     lastAxyz[2] = Axyz[2];
 
-    sfusion.updateAcc(Axyz, dtMicros);
+	sfusion.updateAcc(Axyz, (sensor_real_t)dtMicros * 1.0e-6);
 
-    optimistic_yield(100);
+	optimistic_yield(100);
 }
 void BMI160Sensor::onMagRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16_t z) {
     #if BMI160_DEBUG
@@ -825,12 +825,12 @@ void BMI160Sensor::maybeCalibrateAccel() {
         m_Logger.debug("Calculating accelerometer calibration data...");
     #elif BMI160_ACCEL_CALIBRATION_METHOD == ACCEL_CALIBRATION_METHOD_6POINT
         RestDetectionParams calibrationRestDetectionParams;
-        calibrationRestDetectionParams.restMinTimeMicros = 3 * 1e6;
+        calibrationRestDetectionParams.restMinTime = 3;
         calibrationRestDetectionParams.restThAcc = 0.25f;
         RestDetection calibrationRestDetection(
             calibrationRestDetectionParams,
-            BMI160_ODR_GYR_MICROS / 1e6f,
-            BMI160_ODR_ACC_MICROS / 1e6f
+            BMI160_ODR_GYR_MICROS * 1.0e-6,
+            BMI160_ODR_ACC_MICROS * 1.0e-6
         );
 
         constexpr uint16_t expectedPositions = 6;
@@ -853,9 +853,9 @@ void BMI160Sensor::maybeCalibrateAccel() {
             scaled[1] = ay * BMI160_ASCALE;
             scaled[2] = az * BMI160_ASCALE;
 
-            calibrationRestDetection.updateAcc(BMI160_ODR_ACC_MICROS, scaled);
+			calibrationRestDetection.updateAcc(BMI160_ODR_ACC_MICROS * 1.0e-6, scaled);
 
-            if (waitForMotion) {
+			if (waitForMotion) {
                 if (!calibrationRestDetection.getRestDetected()) {
                     waitForMotion = false;
                 }
