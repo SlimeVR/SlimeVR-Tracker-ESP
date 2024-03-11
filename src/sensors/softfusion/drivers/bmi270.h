@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <array>
 #include <algorithm>
+#include <limits>
 #include "bmi270fw.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers
@@ -28,9 +29,17 @@ struct BMI270
     static constexpr float GyroSensitivity = 32.768f;
     static constexpr float AccelSensitivity = 2048.0f;
 
+    struct MotionlessCalibrationData
+    {
+        bool valid;
+        uint8_t x, y, z;
+    };
+
     I2CImpl i2c;
-    BMI270(I2CImpl i2c)
-    : i2c(i2c) {}
+    SlimeVR::Logging::Logger &logger;
+    int8_t zxFactor;
+    BMI270(I2CImpl i2c, SlimeVR::Logging::Logger &logger)
+    : i2c(i2c), logger(logger), zxFactor(0) {}
 
     struct Regs {
         struct WhoAmI {
@@ -43,6 +52,7 @@ struct BMI270
             static constexpr uint8_t reg = 0x7e;
             static constexpr uint8_t valueSwReset = 0xb6;
             static constexpr uint8_t valueFifoFlush = 0xb0;
+            static constexpr uint8_t valueGTrigger = 0x02;            
         };
 
         struct PwrConf {
@@ -55,7 +65,7 @@ struct BMI270
             static constexpr uint8_t reg = 0x7d;
             static constexpr uint8_t valueOff = 0x0;
             static constexpr uint8_t valueGyrAccTempOn = 0b1110; // aux off
-            static constexpr uint8_t valueAccTempOn = 0b1100; // aux, gyr off
+            static constexpr uint8_t valueAccOn = 0b0100; // aux, gyr, temp off
         };
 
         struct InitCtrl {
@@ -153,8 +163,34 @@ struct BMI270
             static constexpr uint8_t value = (1 << 4) | (1 << 6) | (1 << 7); // header en, acc en, gyr en
         };
 
+        struct GyrCrtConf {
+            static constexpr uint8_t reg = 0x69;
+            static constexpr uint8_t valueRunning = (1 << 2); // crt_running = 1
+            static constexpr uint8_t valueStopped = 0x0; // crt_running = 0
+        };
+
+        struct GTrig1 { // on feature page 1!
+            static constexpr uint8_t reg = 0x32;
+            static constexpr uint16_t valueTriggerCRT = (1 << 8); // select=crt
+        };
+
+        struct GyrGainStatus { // on feature page 0!
+            static constexpr uint8_t reg = 0x38;
+            static constexpr uint8_t statusOffset = 3;
+        };
+
+        struct Offset6 { // on feature page 0!
+            static constexpr uint8_t reg = 0x77;
+            static constexpr uint8_t value = (1 << 7); // gyr_gain_en = 1
+        };
+
+        static constexpr uint8_t FeatPage = 0x2f;
+
+        static constexpr uint8_t GyrUserGain = 0x78; // undocumented reg, got from official bmi270 driver
+
         static constexpr uint8_t FifoCount = 0x24;
         static constexpr uint8_t FifoData = 0x26;
+        static constexpr uint8_t RaGyrCas = 0x3c; // on feature page 0!
     };
 
     struct Fifo {
@@ -166,8 +202,7 @@ struct BMI270
         static constexpr uint8_t AccelDataBit = 0b00000100;
     };
 
-    bool initialize()
-    {
+    bool restartAndInit() {
         // perform initialization step
         i2c.writeReg(Regs::Cmd::reg, Regs::Cmd::valueSwReset);
         delay(12);
@@ -195,6 +230,7 @@ struct BMI270
         }
         i2c.writeReg(Regs::InitCtrl::reg, Regs::InitCtrl::valueEndInit);
         delay(140);
+
         // leave fifo_self_wakeup enabled
         i2c.writeReg(Regs::PwrConf::reg, Regs::PwrConf::valueFifoSelfWakeup);
         // check if IMU initialized correctly
@@ -204,11 +240,26 @@ struct BMI270
             return false;
         }
 
+        // read zx factor used to reduce gyro cross-sensitivity error
+        const uint8_t zx_factor_reg = i2c.readReg(Regs::RaGyrCas);
+        const uint8_t sign_byte = (zx_factor_reg << 1) & 0x80;
+        zxFactor = static_cast<int8_t>(zx_factor_reg | sign_byte);
+        return true;
+    }
+
+    void setNormalConfig(MotionlessCalibrationData &gyroSensitivity)
+    {
         i2c.writeReg(Regs::GyrConf::reg, Regs::GyrConf::value);
         i2c.writeReg(Regs::GyrRange::reg, Regs::GyrRange::value);
 
         i2c.writeReg(Regs::AccConf::reg, Regs::AccConf::value);
         i2c.writeReg(Regs::AccRange::reg, Regs::AccRange::value);
+
+        if (gyroSensitivity.valid)
+        {
+            i2c.writeReg(Regs::Offset6::reg, Regs::Offset6::value);
+            i2c.writeBytes(Regs::GyrUserGain, 3, &gyroSensitivity.x);
+        }
 
         i2c.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueGyrAccTempOn);
         delay(100); // power up delay
@@ -218,10 +269,62 @@ struct BMI270
         delay(4);
         i2c.writeReg(Regs::Cmd::reg, Regs::Cmd::valueFifoFlush);
         delay(2);
+    }
 
-        // todo: handle errors
+    bool initialize(MotionlessCalibrationData &gyroSensitivity)
+    {
+        if (!restartAndInit()) {
+            return false;
+        }
+
+        setNormalConfig(gyroSensitivity);
 
         return true;
+    }
+
+    void motionlessCalibration(MotionlessCalibrationData &gyroSensitivity)
+    {
+        // perfrom gyroscope motionless sensitivity calibration (CRT)
+        // need to start from clean state according to spec
+        restartAndInit();
+        // only Accel ON
+        i2c.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueAccOn);
+        delay(100);
+        i2c.writeReg(Regs::GyrCrtConf::reg, Regs::GyrCrtConf::valueRunning);
+        i2c.writeReg(Regs::FeatPage, 1);
+        i2c.writeReg16(Regs::GTrig1::reg, Regs::GTrig1::valueTriggerCRT);
+        i2c.writeReg(Regs::Cmd::reg, Regs::Cmd::valueGTrigger);
+        delay(200);
+
+        while(i2c.readReg(Regs::GyrCrtConf::reg) == Regs::GyrCrtConf::valueRunning) {
+            logger.info("CRT running. Do not move tracker!");
+            delay(200);
+        }
+
+        i2c.writeReg(Regs::FeatPage, 0);
+
+        uint8_t status = i2c.readReg(Regs::GyrGainStatus::reg) >> Regs::GyrGainStatus::statusOffset;
+        // turn gyroscope back on
+        i2c.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueGyrAccTempOn);
+        delay(100);
+
+        if (status != 0) {
+            logger.error("CRT failed with status 0x%x. Recalibrate again to enable CRT.", status);
+            if (status == 0x03) {
+                logger.error("Reason: tracker was moved during CRT!");
+            }
+        }
+        else {
+            std::array<uint8_t, 3> crt_values;
+            i2c.readBytes(Regs::GyrUserGain, crt_values.size(), crt_values.data());
+            logger.debug("CRT finished successfully, result 0x%x, 0x%x, 0x%x", crt_values[0], crt_values[1], crt_values[2]);
+            gyroSensitivity.valid = true;
+            gyroSensitivity.x = crt_values[0];
+            gyroSensitivity.y = crt_values[1];
+            gyroSensitivity.z = crt_values[2];
+        }
+
+        setNormalConfig(gyroSensitivity);
     }
 
     float getDirectTemp() const
@@ -239,7 +342,7 @@ struct BMI270
     template<typename T>
     inline T getFromFifo(uint32_t &position, FifoBuffer& fifo) {
         T to_ret;
-        memcpy(&to_ret, &fifo[position], sizeof(T));
+        std::memcpy(&to_ret, &fifo[position], sizeof(T));
         position += sizeof(T);
         return to_ret;
     }
@@ -270,6 +373,10 @@ struct BMI270
                     gyro[0] = getFromFifo<uint16_t>(i, read_buffer);
                     gyro[1] = getFromFifo<uint16_t>(i, read_buffer);
                     gyro[2] = getFromFifo<uint16_t>(i, read_buffer);
+                    using ShortLimit = std::numeric_limits<int16_t>;
+                    // apply zx factor, todo: this awful line should be simplified and validated
+                    gyro[0] = std::clamp(static_cast<int32_t>(gyro[0]) - static_cast<int16_t>((static_cast<int32_t>(zxFactor) * gyro[2]) / 512),
+                                         static_cast<int32_t>(ShortLimit::min()), static_cast<int32_t>(ShortLimit::max()));
                     processGyroSample(gyro, GyrTs);
                 }
 

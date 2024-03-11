@@ -50,11 +50,11 @@
 struct SensitivityOffsetXYZ { const char* mac; unsigned char sensorId; double spins; double x; double y; double z; };
 const SensitivityOffsetXYZ sensitivityOffsets[] = {
     // example values
-    { "A4:E5:7C:B6:00:01", SENSORID_PRIMARY, .spins = 10, .x = 2.63, .y = 37.82, .z = 31.11 },
-    { "A4:E5:7C:B6:00:02", SENSORID_PRIMARY, .spins = 10, .x = -2.38, .y = -26.8, .z = -42.78 },
-    { "A4:E5:7C:B6:00:03", SENSORID_PRIMARY, .spins = 10, .x = 11, .y =  2.2, .z =  -1 },
-    { "A4:E5:7C:B6:00:04", SENSORID_PRIMARY, .spins = 10, .x = -7, .y = -53.7, .z = -57 },
-    { "A4:E5:7C:B6:00:05", SENSORID_PRIMARY, .spins = 10, .x = -10.63, .y = -8.25, .z = -18.6 },
+    { .mac = "A4:E5:7C:B6:00:01", .sensorId = SENSORID_PRIMARY, .spins = 10, .x = 2.63, .y = 37.82, .z = 31.11 },
+    { .mac = "A4:E5:7C:B6:00:02", .sensorId = SENSORID_PRIMARY, .spins = 10, .x = -2.38, .y = -26.8, .z = -42.78 },
+    { .mac = "A4:E5:7C:B6:00:03", .sensorId = SENSORID_PRIMARY, .spins = 10, .x = 11, .y =  2.2, .z =  -1 },
+    { .mac = "A4:E5:7C:B6:00:04", .sensorId = SENSORID_PRIMARY, .spins = 10, .x = -7, .y = -53.7, .z = -57 },
+    { .mac = "A4:E5:7C:B6:00:05", .sensorId = SENSORID_PRIMARY, .spins = 10, .x = -10.63, .y = -8.25, .z = -18.6 },
 };
 
 #endif

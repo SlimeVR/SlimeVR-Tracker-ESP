@@ -28,8 +28,9 @@ struct ICM42688
     static constexpr float AccelSensitivity = 4096.0f;
 
     I2CImpl i2c;
-    ICM42688(I2CImpl i2c)
-    : i2c(i2c) {}
+    SlimeVR::Logging::Logger &logger;
+    ICM42688(I2CImpl i2c, SlimeVR::Logging::Logger &logger)
+    : i2c(i2c), logger(logger) {}
 
     struct Regs {
         struct WhoAmI {

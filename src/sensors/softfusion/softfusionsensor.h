@@ -27,9 +27,18 @@ class SoftFusionSensor : public Sensor
 
     static constexpr float GyrOdrMicros = imu::GyrTs * 1e6f;
     static constexpr float AccOdrMicros = imu::AccTs * 1e6f;
+    static constexpr bool HasMotionlessCalib = requires(imu& i){ typename imu::MotionlessCalibrationData; };
+    static constexpr size_t MotionlessCalibDataSize() {
+        if constexpr(HasMotionlessCalib) {
+            return sizeof(typename imu::MotionlessCalibrationData);
+        }
+        else {
+            return 0;
+        }
+    }
 
-
-    bool detected() const {
+    bool detected() const
+    {
         const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
         if (imu::Regs::WhoAmI::value != value) {
             m_Logger.error("Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
@@ -41,7 +50,8 @@ class SoftFusionSensor : public Sensor
     }
 
 
-    void sendTempIfNeeded() {
+    void sendTempIfNeeded()
+    {
         uint32_t now = micros();
         constexpr float maxSendRateHz = 2.0f;
         constexpr uint32_t sendInterval = 1.0f/maxSendRateHz * 1e6;
@@ -131,7 +141,7 @@ public:
 
     SoftFusionSensor(uint8_t id, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t)
     : Sensor(imu::Name, imu::Type, id, imu::Address + addrSuppl, rotation, sclPin, sdaPin),
-      m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs), m_sensor(I2CImpl(imu::Address + addrSuppl)) {}
+      m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs), m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger) {}
     ~SoftFusionSensor(){}
 
     void motionLoop() override final
@@ -180,27 +190,39 @@ public:
             return;
         }
 
-        if (!m_sensor.initialize()) {
+        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+
+        // If no compatible calibration data is found, the calibration data will just be zero-ed out
+        if (sensorCalibration.type == SlimeVR::Configuration::CalibrationConfigType::SFUSION
+            && (sensorCalibration.data.sfusion.ImuType == imu::Type)
+            && (sensorCalibration.data.sfusion.MotionlessDataLen == MotionlessCalibDataSize())) {
+            m_calibration = sensorCalibration.data.sfusion;
+            recalcFusion();
+        }
+        else if (sensorCalibration.type == SlimeVR::Configuration::CalibrationConfigType::NONE) {
+            m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Calibration is advised");
+        }
+        else {
+            m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
+            m_Logger.info("Please recalibrate");
+        }
+
+        bool initResult = false;
+        
+        if constexpr(HasMotionlessCalib) {
+            typename imu::MotionlessCalibrationData calibData;
+            std::memcpy(&calibData, m_calibration.MotionlessData, sizeof(calibData));
+            initResult = m_sensor.initialize(calibData);
+        }
+        else {
+            initResult = m_sensor.initialize();
+        }
+
+        if (!initResult) {
             m_Logger.error("Sensor failed to initialize!");
             m_status = SensorStatus::SENSOR_ERROR;
             return;
-        }
-
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
-        // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        switch (sensorCalibration.type) {
-            case SlimeVR::Configuration::CalibrationConfigType::SFUSION:
-                m_calibration = sensorCalibration.data.sfusion;
-                recalcFusion();
-                break;
-
-            case SlimeVR::Configuration::CalibrationConfigType::NONE:
-                m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
-                m_Logger.info("Calibration is advised");
-                break;
-            default:
-                m_Logger.warn("Incompatible calibration data found for sensor %d, ignoring...", sensorId);
-                m_Logger.info("Calibration is advised");
         }
 
         m_status = SensorStatus::SENSOR_OK;
@@ -227,13 +249,17 @@ public:
         }
     }
 
-
     void startCalibration(int calibrationType) override final
     {
         if (calibrationType == 0) {
             // ALL
             calibrateSampleRate();
             calibrateGyroOffset();
+            if constexpr(HasMotionlessCalib) {
+                typename imu::MotionlessCalibrationData calibData;
+                m_sensor.motionlessCalibration(calibData);
+                std::memcpy(m_calibration.MotionlessData, &calibData, sizeof(calibData));
+            }
             calibrateAccel();
         }
         else if (calibrationType == 1)
@@ -247,6 +273,15 @@ public:
         else if (calibrationType == 3)
         {
             calibrateAccel();
+        }
+        else if (calibrationType == 4) {
+            if constexpr(HasMotionlessCalib) {
+                typename imu::MotionlessCalibrationData calibData;
+                m_sensor.motionlessCalibration(calibData);
+                std::memcpy(m_calibration.MotionlessData, &calibData, sizeof(calibData));
+            } else {
+                m_Logger.info("Sensor doesn't provide any custom motionless calibration");
+            }
         }
 
         saveCalibration();
@@ -446,6 +481,8 @@ public:
     T<I2CImpl> m_sensor;
     SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration = {
         // let's create here transparent calibration that doesn't affect input data
+        .ImuType = {imu::Type},
+        .MotionlessDataLen = {MotionlessCalibDataSize()},
         .A_B = {0.0, 0.0, 0.0},
         .A_Ainv = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
         .M_B = {0.0, 0.0, 0.0},
@@ -455,7 +492,8 @@ public:
         .A_Ts = imu::AccTs,
         .G_Ts = imu::GyrTs,
         .M_Ts = imu::MagTs,
-        .G_Sens = {1.0, 1.0, 1.0}
+        .G_Sens = {1.0, 1.0, 1.0},
+        .MotionlessData = {}
     };
 
     SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;

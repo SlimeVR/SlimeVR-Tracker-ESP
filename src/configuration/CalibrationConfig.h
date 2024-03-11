@@ -25,6 +25,7 @@
 #define SLIMEVR_CONFIGURATION_CALIBRATIONCONFIG_H
 
 #include <stdint.h>
+#include "consts.h"
 
 namespace SlimeVR {
     namespace Configuration {
@@ -45,6 +46,9 @@ namespace SlimeVR {
         };
 
         struct SoftFusionCalibrationConfig {
+            ImuID ImuType;
+            uint16_t MotionlessDataLen; 
+
             // accelerometer offsets and correction matrix
             float A_B[3];
             float A_Ainv[3][3];
@@ -66,6 +70,8 @@ namespace SlimeVR {
 
             // gyro sensitivity multiplier
             float G_Sens[3];
+
+            uint8_t MotionlessData[60];
         };
 
 

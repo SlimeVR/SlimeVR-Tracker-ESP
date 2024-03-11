@@ -28,8 +28,9 @@ struct LSM6DS3TRC
     static constexpr float AccelSensitivity = 4098.360655738f;
 
     I2CImpl i2c;
-    LSM6DS3TRC(I2CImpl i2c)
-    : i2c(i2c) {}
+    SlimeVR::Logging::Logger logger;
+    LSM6DS3TRC(I2CImpl i2c, SlimeVR::Logging::Logger &logger)
+    : i2c(i2c), logger(logger) {}
 
     struct Regs {
         struct WhoAmI {
@@ -89,7 +90,7 @@ struct LSM6DS3TRC
         const auto read_result = i2c.readReg16(Regs::FifoStatus);
         if (read_result & 0x4000) { // overrun!
             // disable and re-enable fifo to clear it
-            printf("Fifo overrun, resetting\n");
+            logger.debug("Fifo overrun, resetting...");
             i2c.writeReg(Regs::FifoCtrl5::reg, 0);
             i2c.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
             return;
