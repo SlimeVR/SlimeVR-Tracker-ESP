@@ -31,6 +31,7 @@
 #include "sensors/sensor.h"
 #include "wifihandler.h"
 #include "featureflags.h"
+#include "remotecmd.h"
 
 namespace SlimeVR {
 namespace Network {
@@ -123,6 +124,8 @@ public:
 
 	bool beginBundle();
 	bool endBundle();
+
+	friend RemoteCmd;
 
 private:
 	void updateSensorState(std::vector<Sensor *> & sensors);

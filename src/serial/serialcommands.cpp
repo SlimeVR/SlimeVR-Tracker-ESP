@@ -39,6 +39,7 @@ namespace SerialCommands {
     CmdCallback<6> cmdCallbacks;
     CmdParser cmdParser;
     CmdBuffer<256> cmdBuffer;
+	bool cmdFromRemote = false;
 
 
 	bool lengthCheck (const char* const text, unsigned int length, const char* const cmd, const char* const name)
@@ -147,6 +148,10 @@ namespace SerialCommands {
     }
 
     void cmdGet(CmdParser * parser) {
+#if USE_REMOTE_COMMAND && ALLOW_REMOTE_WIFI_PROV
+		if (cmdFromRemote && !networkConnection.isConnected()) return;
+#endif
+
         if (parser->getParamCount() < 2) {
             return;
         }
@@ -159,43 +164,22 @@ namespace SerialCommands {
         }
 
         if (parser->equalCmdParam(1, "CONFIG")) {
-            String str =
-                "BOARD=%d\n"
-                "IMU=%d\n"
-                "SECOND_IMU=%d\n"
-                "IMU_ROTATION=%f\n"
-                "SECOND_IMU_ROTATION=%f\n"
-                "BATTERY_MONITOR=%d\n"
-                "BATTERY_SHIELD_RESISTANCE=%d\n"
-                "BATTERY_SHIELD_R1=%d\n"
-                "BATTERY_SHIELD_R2=%d\n"
-                "PIN_IMU_SDA=%d\n"
-                "PIN_IMU_SCL=%d\n"
-                "PIN_IMU_INT=%d\n"
-                "PIN_IMU_INT_2=%d\n"
-                "PIN_BATTERY_LEVEL=%d\n"
-                "LED_PIN=%d\n"
-                "LED_INVERTED=%d\n";
-
-            Serial.printf(
-                str.c_str(),
-                BOARD,
-                IMU,
-                SECOND_IMU,
-                IMU_ROTATION,
-                SECOND_IMU_ROTATION,
-                BATTERY_MONITOR,
-                BATTERY_SHIELD_RESISTANCE,
-                BATTERY_SHIELD_R1,
-                BATTERY_SHIELD_R2,
-                PIN_IMU_SDA,
-                PIN_IMU_SCL,
-                PIN_IMU_INT,
-                PIN_IMU_INT_2,
-                PIN_BATTERY_LEVEL,
-                LED_PIN,
-                LED_INVERTED
-            );
+            logger.info("BOARD=%d", BOARD);
+            logger.info("IMU=%d", IMU);
+            logger.info("SECOND_IMU=%d", SECOND_IMU);
+            logger.info("IMU_ROTATION=%f", IMU_ROTATION);
+            logger.info("SECOND_IMU_ROTATION=%f", SECOND_IMU_ROTATION);
+            logger.info("BATTERY_MONITOR=%d", BATTERY_MONITOR);
+            logger.info("BATTERY_SHIELD_RESISTANCE=%d", BATTERY_SHIELD_RESISTANCE);
+            logger.info("BATTERY_SHIELD_R1=%d", BATTERY_SHIELD_R1);
+            logger.info("BATTERY_SHIELD_R2=%d", BATTERY_SHIELD_R2);
+            logger.info("PIN_IMU_SDA=%d", PIN_IMU_SDA);
+            logger.info("PIN_IMU_SCL=%d", PIN_IMU_SCL);
+            logger.info("PIN_IMU_INT=%d", PIN_IMU_INT);
+            logger.info("PIN_IMU_INT_2=%d", PIN_IMU_INT_2);
+            logger.info("PIN_BATTERY_LEVEL=%d", PIN_BATTERY_LEVEL);
+            logger.info("LED_PIN=%d", LED_PIN);
+            logger.info("LED_INVERTED=%d", LED_INVERTED);
         }
 
         if (parser->equalCmdParam(1, "TEST")) {
@@ -261,11 +245,19 @@ namespace SerialCommands {
     }
 
     void cmdReboot(CmdParser * parser) {
+#if USE_REMOTE_COMMAND && ALLOW_REMOTE_WIFI_PROV
+		if (cmdFromRemote && !networkConnection.isConnected()) return;
+#endif
+
         logger.info("REBOOT");
         ESP.restart();
     }
 
     void cmdFactoryReset(CmdParser * parser) {
+#if USE_REMOTE_COMMAND && ALLOW_REMOTE_WIFI_PROV
+		if (cmdFromRemote && !networkConnection.isConnected()) return;
+#endif
+
         logger.info("FACTORY RESET");
 
         configuration.reset();
@@ -291,6 +283,10 @@ namespace SerialCommands {
     }
 
     void cmdTemperatureCalibration(CmdParser* parser) {
+#if USE_REMOTE_COMMAND && ALLOW_REMOTE_WIFI_PROV
+		if (cmdFromRemote && !networkConnection.isConnected()) return;
+#endif
+
         if (parser->getParamCount() > 1) {
             if (parser->equalCmdParam(1, "PRINT")) {
                 for (auto sensor : sensorManager.getSensors()) {
@@ -333,5 +329,15 @@ namespace SerialCommands {
 
     void update() {
         cmdCallbacks.updateCmdProcessing(&cmdParser, &cmdBuffer, &Serial);
+        #if USE_REMOTE_COMMAND
+        if (networkRemoteCmd.isConnected()) {
+			Stream & networkStream = networkRemoteCmd.getStream();
+			cmdFromRemote = true;
+			while (networkStream.available()) {
+				cmdCallbacks.updateCmdProcessing(&cmdParser, &cmdBuffer, &networkStream);
+			}
+			cmdFromRemote = false;
+		}
+        #endif
     }
 }

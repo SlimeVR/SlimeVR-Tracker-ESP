@@ -577,6 +577,9 @@ void Connection::searchForServer() {
 
 			statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, false);
 			ledManager.off();
+#if USE_REMOTE_COMMAND
+			networkRemoteCmd.reset();
+#endif
 
 			m_Logger.debug(
 				"Handshake successful, server is %s:%d",

@@ -4,6 +4,7 @@
 #include "Level.h"
 #include "debug.h"
 #include <Arduino.h>
+#include "RemoteLogHelper.h"
 
 namespace SlimeVR
 {
@@ -98,6 +99,21 @@ namespace SlimeVR
         }
 
         Serial.println();
+
+        #if USE_REMOTE_COMMAND
+        if (getRemoteCmdConncted())
+		{
+		  Stream & networkStream = getRemoteCmdStream();
+          networkStream.printf("[%-5s] [%s] %s", levelToString(level), buf, str);
+
+          for (size_t i = 0; i < size; i++)
+          {
+            networkStream.print(array[i]);
+          }
+
+          networkStream.println();
+        }
+        #endif
       }
 
       const char *const m_Prefix;
