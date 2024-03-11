@@ -50,6 +50,10 @@
     #define BATTERY_SHIELD_R2 220.0
 #endif
 
+#ifndef BATTERY_REGULATOR
+    #define BATTERY_REGULATOR REG_LDO
+#endif
+
 #if BATTERY_MONITOR == BAT_EXTERNAL
     #ifndef PIN_BATTERY_LEVEL
         #error Internal ADC enabled without pin! Please select a pin.
@@ -65,6 +69,8 @@
   // Default recommended resistors are 9.1k and 5.1k
   #define ADCMultiplier 3.3 / 1023.0 * 14.2 / 9.1
 #endif
+
+#define MAP(x, in_min, in_max, out_min, out_max) ((x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min)
 
 class BatteryMonitor
 {
