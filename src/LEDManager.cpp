@@ -72,8 +72,18 @@ namespace SlimeVR
         unsigned long time = millis();
         unsigned long diff = time - m_LastUpdate;
 
+        // Consider the offset if it is set
+        if (m_Offset > 0 && m_CurrentStage == OFF)
+        {
+            if (diff < m_Offset) {
+                // Wait until the offset has passed
+                return;
+            }
+            
+            m_Offset = 0;
+        }
         // Don't tick the LEDManager *too* often
-        if (diff < 10)
+        else if (diff < 10)
         {
             return;
         }
@@ -208,5 +218,17 @@ namespace SlimeVR
         {
             m_Timer += diff;
         }
+    }
+
+    void LEDManager::resetPatternWithOffset(unsigned long offset)
+    {
+        // Turn off the LED
+        off();
+        // Reset the pattern state
+        m_CurrentStage = OFF;
+        // Reset the timer
+        m_Timer = 0;
+        // Set the offset
+        m_Offset = offset;
     }
 }
