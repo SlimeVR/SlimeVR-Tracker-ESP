@@ -25,8 +25,6 @@ class SoftFusionSensor : public Sensor
     static constexpr double GScale = ((32768. / imu::GyroSensitivity) / 32768.) * (PI / 180.0);
     static constexpr double AScale = CONST_EARTH_GRAVITY / imu::AccelSensitivity;
 
-    static constexpr float GyrOdrMicros = imu::GyrTs * 1e6f;
-    static constexpr float AccOdrMicros = imu::AccTs * 1e6f;
     static constexpr bool HasMotionlessCalib = requires(imu& i){ typename imu::MotionlessCalibrationData; };
     static constexpr size_t MotionlessCalibDataSize() {
         if constexpr(HasMotionlessCalib) {
@@ -346,7 +344,7 @@ public:
         ledManager.off();
 
         RestDetectionParams calibrationRestDetectionParams;
-        calibrationRestDetectionParams.restMinTimeMicros = AccelCalibRestSeconds * 1e6;
+        calibrationRestDetectionParams.restMinTime = AccelCalibRestSeconds;
         calibrationRestDetectionParams.restThAcc = 0.25f;
 
         RestDetection calibrationRestDetection(
@@ -376,7 +374,7 @@ public:
                         static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(xyz[1])),
                         static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(xyz[2]))};
 
-                    calibrationRestDetection.updateAcc(AccOdrMicros, scaledData);
+                    calibrationRestDetection.updateAcc(imu::AccTs, scaledData);
                     if (waitForMotion) {
                         if (!calibrationRestDetection.getRestDetected()) {
                             waitForMotion = false;

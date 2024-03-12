@@ -46,11 +46,11 @@ enum class ImuID {
 #define IMU_UNKNOWN ErroneousSensor
 #define IMU_MPU9250 MPU9250Sensor
 #define IMU_MPU6500 MPU6050Sensor
-#define IMU_BNO080 BNO055Sensor
-#define IMU_BNO085 BNO055Sensor
+#define IMU_BNO080 BNO080Sensor
+#define IMU_BNO085 BNO080Sensor
 #define IMU_BNO055 BNO055Sensor
 #define IMU_MPU6050 MPU6050Sensor
-#define IMU_BNO086 BNO055Sensor
+#define IMU_BNO086 BNO080Sensor
 #define IMU_BMI160 BMI160Sensor
 #define IMU_ICM20948 ICM20948Sensor
 #define IMU_ICM42688 SoftFusionICM42688
