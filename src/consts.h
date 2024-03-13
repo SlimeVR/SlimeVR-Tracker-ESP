@@ -83,7 +83,7 @@
 #define PACKET_BUNDLING_BUFFERED 2
 
 // Get radian for a given angle from 0° to 360° (2*PI*r, solve for r given an angle, range -180° to 180°)
-#define DEG_X(deg) (float)((((deg) < 180.0f ? 0 : 360.0f) - deg) * PI / 180.0f)
+#define DEG_X(deg) (float)((((deg) < 180.0f ? 0 : 360.0f) - (deg)) * PI / 180.0f)
 
 #define DEG_0 DEG_X(0.0f)
 #define DEG_90 DEG_X(90.0f)
