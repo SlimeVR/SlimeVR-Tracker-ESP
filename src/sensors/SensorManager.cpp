@@ -57,21 +57,14 @@ namespace SlimeVR
             if (sclPin != activeSCL || sdaPin != activeSDA || !running) {
                 Wire.flush();
                 #if ESP32
-                    if (running) {}
-                    else {
-                        // Reset HWI2C to avoid being affected by I2CBUS reset
-                        Wire.end();
-                    }
+                    // Reset HWI2C to avoid being affected by I2CBUS reset
+                    Wire.end();
                     // Disconnect pins from HWI2C
                     pinMode(activeSCL, INPUT);
                     pinMode(activeSDA, INPUT);
 
-                    if (running) {
-                        i2c_set_pin(I2C_NUM_0, sdaPin, sclPin, false, false, I2C_MODE_MASTER);
-                    } else {
-                        Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin), I2C_SPEED);
-                        Wire.setTimeOut(150);
-                    }
+                    Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin), I2C_SPEED);
+                    Wire.setTimeOut(150);
                 #else
                     Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin));
                 #endif
