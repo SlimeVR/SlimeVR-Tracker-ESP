@@ -57,8 +57,7 @@ Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set y
   * LED will turn off when calibration is complete
   * You don't have to calibrate next time you power it on, calibration values will be saved for the next use
 
-### BMI160
-#### (or MPU6050 in no-DMP mode)
+### BMI160 or MPU6050 in no-DMP mode
   If you have any problems with this procedure, connect the device via USB and open the serial console to check for any warnings or errors that may indicate hardware problems.
 
   - **Step 0: Power up with the chip facing down.** Or press the reset/reboot button.
