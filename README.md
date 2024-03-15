@@ -19,12 +19,12 @@ The following IMUs and their corresponding `IMU` values are supported by the fir
   * Using internal DMP to fuse Gyroscope and Accelerometer. Can drift substantially.
   * NOTE: Currently the MPU will auto calibrate when powered on. You *must* place it on the ground and *DO NOT* move it until calibration is complete (for a few seconds). **LED on the ESP will blink 5 times after calibration is over.**
 * No-DMP MPU-6500 (IMU_MPU6500_NODMP) & MPU-6050 (IMU_MPU6050_NODMP)
-  * Works with the same IMU, but doesn't use the DMP. Can still drift substantially(perhaps even more, depends on calibration, needs more testing)
-  * Enable by changing IMU type(append `_NODMP` at the end)
-  * For decent results, you **have** to perform gyro/accel calibration(Ideally at the same temperature the tracker would be operating at)
-  * Change calibration config in `defines_mpu6050.h`
-  * The calibration process itself is basically identical to that of BMI160, so refer to it's section for details
-  * You can also perform temperature calibration for better results in variable temperature(slowly heat up the tracker from below 10 degrees C to above 45, keeping it very still)
+  * Works with the same IMU, but doesn't use the DMP. Can still drift substantially (perhaps even more, depends on calibration, needs more testing).
+  * Enable by changing IMU type (append `_NODMP` at the end)
+  * For decent results, you **must** perform gyro/accel calibration (ideally at the same temperature the tracker would be operating at)
+  * Modify calibration config in `defines_mpu6050.h`
+  * The calibration process itself is basically identical to that of BMI160, so refer to its section for details
+  * You can also perform temperature calibration for better results in variable temperature (slowly heat up the tracker from below 10 degrees C to above 45, keeping it very still)
 * BNO055 (IMU_BNO055)
   * Performs much worse than BNO080, despite having the same hardware. Not recommended for use.
 * MPU-9250 (IMU_MPU9250)
