@@ -36,8 +36,8 @@
 #define IMU_ICM20948 9
 #define IMU_ICM42688 10
 
-#define IMU_MPU6500_NODMP 102
-#define IMU_MPU6050_NODMP 106
+#define IMU_MPU6500_NODMP 13
+#define IMU_MPU6050_NODMP 14
 
 #define IMU_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
 
