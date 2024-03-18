@@ -18,11 +18,13 @@ struct LSM6DSV
     static constexpr auto Name = "LSM6DSV";
     static constexpr auto Type = ImuID::LSM6DSV;
 
-    static constexpr float Freq = 480;
+    static constexpr float GyrFreq = 480;
+    static constexpr float AccFreq = 120;
+    static constexpr float MagFreq = 120;
 
-    static constexpr float GyrTs=1.0/Freq;
-    static constexpr float AccTs=1.0/Freq;
-    static constexpr float MagTs=1.0/Freq;
+    static constexpr float GyrTs=1.0/GyrFreq;
+    static constexpr float AccTs=1.0/AccFreq;
+    static constexpr float MagTs=1.0/MagFreq;
 
     static constexpr float GyroSensitivity = 28.571428571f;
     static constexpr float AccelSensitivity = 4098.360655738f;
