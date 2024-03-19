@@ -30,6 +30,9 @@
 class BNO080Sensor : public Sensor
 {
 public:
+    static constexpr auto TypeID = ImuID::BNO080;
+    static constexpr uint8_t Address = 0x4a;
+
     BNO080Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
         : Sensor("BNO080Sensor", ImuID::BNO080, id, address, rotation, sclPin, sdaPin), m_IntPin(intPin) {};
     ~BNO080Sensor(){};

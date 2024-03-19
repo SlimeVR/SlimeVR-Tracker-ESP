@@ -44,7 +44,10 @@ constexpr float MPU9250_ODR_TS = ( 1.0f / MPU9250_DEFAULT_ODR_HZ) * (1+MPU9250_S
 class MPU9250Sensor : public Sensor
 {
 public:
-    MPU9250Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin)
+    static constexpr auto TypeID = ImuID::MPU9250;
+    static constexpr uint8_t Address = 0x68;
+
+    MPU9250Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t)
         : Sensor("MPU9250Sensor", ImuID::MPU9250, id, address, rotation, sclPin, sdaPin)
     #if !MPU_USE_DMPMAG
         , sfusion(MPU9250_ODR_TS)

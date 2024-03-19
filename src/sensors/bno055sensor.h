@@ -31,7 +31,10 @@
 class BNO055Sensor : public Sensor
 {
 public:
-    BNO055Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin) 
+    static constexpr auto TypeID = ImuID::BNO055;
+    static constexpr uint8_t Address = 0x28;
+
+    BNO055Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t) 
         : Sensor("BNO055Sensor", ImuID::BNO055, id, address, rotation, sclPin, sdaPin){};
     ~BNO055Sensor(){};
     void motionSetup() override final;

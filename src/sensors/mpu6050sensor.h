@@ -31,7 +31,10 @@
 class MPU6050Sensor : public Sensor
 {
 public:
-    MPU6050Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin)
+    static constexpr auto TypeID = ImuID::MPU6050;
+    static constexpr uint8_t Address = 0x68;
+
+    MPU6050Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t)
         : Sensor("MPU6050Sensor", ImuID::MPU6050, id, address, rotation, sclPin, sdaPin){};
     ~MPU6050Sensor(){};
     void motionSetup() override final;
