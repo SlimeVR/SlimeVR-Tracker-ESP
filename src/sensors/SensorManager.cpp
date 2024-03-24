@@ -35,6 +35,8 @@
 #include "softfusion/drivers/icm42688.h"
 #include "softfusion/drivers/bmi270.h"
 #include "softfusion/drivers/lsm6dsv.h"
+#include "softfusion/drivers/lsm6dso.h"
+#include "softfusion/drivers/lsm6dsr.h"
 
 #include "softfusion/i2cimpl.h"
 
@@ -50,6 +52,8 @@ namespace SlimeVR
         using SoftFusionICM42688 = SoftFusionSensor<SoftFusion::Drivers::ICM42688, SoftFusion::I2CImpl>;
         using SoftFusionBMI270 = SoftFusionSensor<SoftFusion::Drivers::BMI270, SoftFusion::I2CImpl>;
         using SoftFusionLSM6DSV = SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, SoftFusion::I2CImpl>;
+        using SoftFusionLSM6DSO = SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::I2CImpl>;
+        using SoftFusionLSM6DSR = SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;
 
         // TODO Make it more generic in the future and move another place (abstract sensor interface)
         void SensorManager::swapI2C(uint8_t sclPin, uint8_t sdaPin)

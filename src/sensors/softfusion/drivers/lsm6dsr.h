@@ -11,17 +11,17 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 
 // Driver uses acceleration range at 8g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 480Hz, accel ODR = 120Hz
+// Gyroscope ODR = 416Hz, accel ODR = 104Hz
 
 template <typename I2CImpl>
-struct LSM6DSV : LSM6DSOutputHandler<I2CImpl>
+struct LSM6DSR : LSM6DSOutputHandler<I2CImpl>
 {
     static constexpr uint8_t Address = 0x6a;
-    static constexpr auto Name = "LSM6DSV";
-    static constexpr auto Type = ImuID::LSM6DSV;
+    static constexpr auto Name = "LSM6DSR";
+    static constexpr auto Type = ImuID::LSM6DSR;
 
-    static constexpr float GyrFreq = 480;
-    static constexpr float AccFreq = 120;
+    static constexpr float GyrFreq = 416;
+    static constexpr float AccFreq = 104;
     static constexpr float MagFreq = 120;
 
     static constexpr float GyrTs=1.0/GyrFreq;
@@ -36,48 +36,36 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl>
     struct Regs {
         struct WhoAmI {
             static constexpr uint8_t reg = 0x0f;
-            static constexpr uint8_t value = 0x70;
+            static constexpr uint8_t value = 0x6b;
         };
         static constexpr uint8_t OutTemp = 0x20;
-        struct HAODRCFG {
-            static constexpr uint8_t reg = 0x62;
-            static constexpr uint8_t value = (0b00); //1st ODR table
-        };
-        struct Ctrl1XLODR {
+        struct Ctrl1XL {
             static constexpr uint8_t reg = 0x10;
-            static constexpr uint8_t value = (0b0010110); //120Hz, HAODR
+            static constexpr uint8_t value = (0b01001100); // XL at 104 Hz, 8g FS
         };
-        struct Ctrl2GODR {
+        struct Ctrl2GY {
             static constexpr uint8_t reg = 0x11;
-            static constexpr uint8_t value = (0b0011000); //480Hz, HAODR
+            static constexpr uint8_t value = (0b01101000); //GY at 416 Hz, 1000dps FS
         };
         struct Ctrl3C {
             static constexpr uint8_t reg = 0x12;
             static constexpr uint8_t valueSwReset = 1;
             static constexpr uint8_t value = (1 << 6) | (1 << 2); //BDU = 1, IF_INC = 1
         };
-        struct Ctrl6GFS {
-            static constexpr uint8_t reg = 0x15;
-            static constexpr uint8_t value = (0b0011); //1000dps
-        };
-        struct Ctrl8XLFS {
-            static constexpr uint8_t reg = 0x17;
-            static constexpr uint8_t value = (0b10); //8g
-        };
         struct FifoCtrl3BDR {
             static constexpr uint8_t reg = 0x09;
-            static constexpr uint8_t value = (0b1000) | (0b1000 << 4); //gyro and accel batched at 480Hz
+            static constexpr uint8_t value = (0b0110) | (0b0110 << 4); //gyro and accel batched at 417Hz
         };
         struct FifoCtrl4Mode {
             static constexpr uint8_t reg = 0x0a;
             static constexpr uint8_t value = (0b110); //continuous mode
         };
 
-        static constexpr uint8_t FifoStatus = 0x1b;
+        static constexpr uint8_t FifoStatus = 0x3a;
         static constexpr uint8_t FifoData = 0x78;
     };
 
-    LSM6DSV(I2CImpl i2c, SlimeVR::Logging::Logger &logger)
+    LSM6DSR(I2CImpl i2c, SlimeVR::Logging::Logger &logger)
         : LSM6DSOutputHandler<I2CImpl>(i2c, logger) {
     }
 
@@ -86,12 +74,9 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl>
         // perform initialization step
         i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
         delay(20);
-        i2c.writeReg(Regs::HAODRCFG::reg, Regs::HAODRCFG::value);
-        i2c.writeReg(Regs::Ctrl1XLODR::reg, Regs::Ctrl1XLODR::value);
-        i2c.writeReg(Regs::Ctrl2GODR::reg, Regs::Ctrl2GODR::value);
+        i2c.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
+        i2c.writeReg(Regs::Ctrl2GY::reg, Regs::Ctrl2GY::value);
         i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
-        i2c.writeReg(Regs::Ctrl6GFS::reg, Regs::Ctrl6GFS::value);
-        i2c.writeReg(Regs::Ctrl8XLFS::reg, Regs::Ctrl8XLFS::value);
         i2c.writeReg(Regs::FifoCtrl3BDR::reg, Regs::FifoCtrl3BDR::value);
         i2c.writeReg(Regs::FifoCtrl4Mode::reg, Regs::FifoCtrl4Mode::value);
         return true;
