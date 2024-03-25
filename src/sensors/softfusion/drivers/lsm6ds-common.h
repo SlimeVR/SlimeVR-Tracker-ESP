@@ -37,8 +37,8 @@ struct LSM6DSOutputHandler
 
     static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
-    template <typename AccelCall, typename GyroCall, float GyrTs, float AccTs, typename Regs>
-    void bulkRead(AccelCall &processAccelSample, GyroCall &processGyroSample) {
+    template <typename AccelCall, typename GyroCall, typename Regs>
+    void bulkRead(AccelCall &processAccelSample, GyroCall &processGyroSample, float GyrTs, float AccTs) {
         const auto fifo_status = i2c.readReg16(Regs::FifoStatus);
         const auto available_axes = fifo_status & 0x3ff;
         const auto fifo_bytes = available_axes * 7;

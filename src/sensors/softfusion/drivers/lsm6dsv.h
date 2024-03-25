@@ -104,7 +104,7 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl>
 
     template <typename AccelCall, typename GyroCall>
     void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
-        LSM6DSOutputHandler<I2CImpl>::template bulkRead<AccelCall, GyroCall, GyrTs, AccTs, Regs>(processAccelSample, processGyroSample);
+        LSM6DSOutputHandler<I2CImpl>::template bulkRead<AccelCall, GyroCall, Regs>(processAccelSample, processGyroSample, GyrTs, AccTs);
     }
 
 };
