@@ -322,6 +322,13 @@ namespace SlimeVR {
                     m_Logger.info("            G_off  : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.G_off));
 
                     break;
+
+                case CalibrationConfigType::LSM6DSV:
+                    m_Logger.info("            A_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.lsm6dsv.A_off));
+                    m_Logger.info("            G_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.lsm6dsv.G_off));
+                    m_Logger.info("            G_sen: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.lsm6dsv.G_sensitivity));
+
+                    break;
                 }
             }
         }

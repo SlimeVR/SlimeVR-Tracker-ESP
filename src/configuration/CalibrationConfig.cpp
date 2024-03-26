@@ -39,6 +39,8 @@ namespace SlimeVR {
                 return "ICM20948";
             case ICM42688:
                 return "ICM42688";
+            case LSM6DSV:
+                return "LSM6DSV";
             default:
                 return "UNKNOWN";
             }
