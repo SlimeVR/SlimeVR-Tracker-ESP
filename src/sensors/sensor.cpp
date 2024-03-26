@@ -67,6 +67,12 @@ void Sensor::printDebugTemperatureCalibrationState() { printTemperatureCalibrati
 void Sensor::saveTemperatureCalibration() { printTemperatureCalibrationUnsupported(); };
 void Sensor::resetTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
 
+bool Sensor::toggleMagnetometer(bool enabled) {
+    m_Logger.error("Toggling the magnetometer is not supported or implemented for IMU %s", getIMUNameByType(sensorType));
+
+    return false;
+};
+
 const char * getIMUNameByType(int imuType) {
     switch(imuType) {
         case IMU_MPU9250:

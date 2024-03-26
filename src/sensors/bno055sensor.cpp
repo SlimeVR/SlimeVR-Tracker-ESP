@@ -24,6 +24,27 @@
 #include "globals.h"
 #include "GlobalVars.h"
 
+/*
+	Info:
+
+	Check the datasheet for the BNO055 for more information on the different
+	operation modes.
+
+	OPERATION_MODE_IMUPLUS = OPR_MODE 0x08
+		In the IMU mode the relative orientation of the BNO055 in space is
+		calculated from the accelerometer and gyroscope data. The calculation
+		is fast.
+
+	OPERATION_MODE_NDOF = OPR_MODE 0x0C
+		This is a fusion mode with 9 degrees of freedom where the fused
+		absolute orientation data is calculated from accelerometer, gyroscope
+		and the magnetometer. The advantages of combining all three sensors are
+		a fast calculation, resulting in high output data rate, and high
+		robustness from magnetic field distortions. In this mode the
+		Fast Magnetometer calibration is turned ON and thereby resulting in
+		quick calibration of the magnetometer and higher output data accuracy.
+*/
+
 void BNO055Sensor::motionSetup() {
     imu = Adafruit_BNO055(sensorId, addr);
     delay(3000);
@@ -75,4 +96,14 @@ void BNO055Sensor::motionLoop() {
 
 void BNO055Sensor::startCalibration(int calibrationType) {
 
+}
+
+bool BNO055Sensor::hasMagnetometerEnabled() {
+    return imu.getMode() == Adafruit_BNO055::OPERATION_MODE_NDOF;
+}
+
+bool BNO055Sensor::toggleMagnetometer(bool enabled) {
+    imu.setMode(enabled ? Adafruit_BNO055::OPERATION_MODE_NDOF : Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
+
+    return true;
 }

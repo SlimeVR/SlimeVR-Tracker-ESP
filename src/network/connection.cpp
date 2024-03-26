@@ -299,6 +299,15 @@ void Connection::sendSensorInfo(Sensor* sensor) {
 	MUST(sendByte((uint8_t)sensor->getSensorState()));
 	MUST(sendByte(sensor->getSensorType()));
 
+	// 0b00000000
+	//         ^^
+	//         |`- supportsMagToggle
+	//         `-- hasMagEnabled
+	const bool supportsMagToggle = sensor->supportsTogglingMagnetometer();
+	const bool hasMagEnabled = sensor->hasMagnetometerEnabled();
+	const uint8_t magInfo = (supportsMagToggle << 1) | hasMagEnabled;
+	MUST(sendByte(magInfo));
+
 	MUST(endPacket());
 }
 
@@ -405,6 +414,19 @@ void Connection::sendTrackerDiscovery() {
 	MUST(sendShortString(FIRMWARE_VERSION));
 	// MAC address string
 	MUST(sendBytes(mac, 6));
+
+	MUST(endPacket());
+}
+
+void Connection::sendToggleMagnetometerResult(uint8_t sensorId, bool result) {
+	MUST(m_Connected);
+
+	MUST(beginPacket());
+
+	MUST(sendPacketType(PACKET_TOGGLE_MAGNETOMETER));
+	MUST(sendPacketNumber());
+	MUST(sendByte(sensorId));
+	MUST(sendByte(result));
 
 	MUST(endPacket());
 }
@@ -708,6 +730,35 @@ void Connection::update() {
 					}
 				#endif
 			}
+
+			break;
+
+		case PACKET_TOGGLE_MAGNETOMETER:
+			constexpr size_t PACKET_TOGGLE_MAGNETOMETER_SIZE = 4 + 8 + 1 + 1;
+
+			// Packet type (4) + Packet number (8) + sensor ID (1) + enabled (1)
+			if (len < PACKET_TOGGLE_MAGNETOMETER_SIZE) {
+				m_Logger.warn("Invalid toggle magnetometer packet: too short");
+				break;
+			}
+
+			const auto sensorId = m_Packet[12];
+			const auto enabled = m_Packet[13];
+
+			const auto sensor = sensorManager.getSensors().at(sensorId);
+			if (sensor == nullptr) {
+				m_Logger.warn("Invalid sensor ID in toggle magnetometer packet");
+				break;
+			} 
+
+			bool result = false;
+			if (sensor->supportsTogglingMagnetometer()) {
+				result = sensor->toggleMagnetometer(enabled);
+			} else {
+				m_Logger.warn("Received toggle magnetometer packet for sensor that doesn't support it");
+			}
+
+			sendToggleMagnetometerResult(sensorId, result);
 
 			break;
 	}
