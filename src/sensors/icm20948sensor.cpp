@@ -403,32 +403,32 @@ void ICM20948Sensor::saveCalibration(bool repeat)
     m_Logger.trace("Saving Bias");
     #endif
 
-    imu.GetBiasGyroX(&m_Calibration.G[0]);
-    imu.GetBiasGyroY(&m_Calibration.G[1]);
-    imu.GetBiasGyroZ(&m_Calibration.G[2]);
+    imu.GetBiasGyroX(&m_Config.G[0]);
+    imu.GetBiasGyroY(&m_Config.G[1]);
+    imu.GetBiasGyroZ(&m_Config.G[2]);
 
-    imu.GetBiasAccelX(&m_Calibration.A[0]);
-    imu.GetBiasAccelY(&m_Calibration.A[1]);
-    imu.GetBiasAccelZ(&m_Calibration.A[2]);
+    imu.GetBiasAccelX(&m_Config.A[0]);
+    imu.GetBiasAccelY(&m_Config.A[1]);
+    imu.GetBiasAccelZ(&m_Config.A[2]);
 
     #if !USE_6_AXIS
-    imu.GetBiasCPassX(&m_Calibration.C[0]);
-    imu.GetBiasCPassY(&m_Calibration.C[1]);
-    imu.GetBiasCPassZ(&m_Calibration.C[2]);
+    imu.GetBiasCPassX(&m_Config.C[0]);
+    imu.GetBiasCPassY(&m_Config.C[1]);
+    imu.GetBiasCPassZ(&m_Config.C[2]);
     #endif
 
     #ifdef DEBUG_SENSOR
-    m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
-    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
+    m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.G));
+    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.A));
         #if !USE_6_AXIS
-    m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
+    m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.C));
         #endif
     #endif
 
-    SlimeVR::Configuration::CalibrationConfig calibration;
-    calibration.type = SlimeVR::Configuration::CalibrationConfigType::ICM20948;
-    calibration.data.icm20948 = m_Calibration;
-    configuration.setCalibration(sensorId, calibration);
+    SlimeVR::Configuration::SensorConfig config;
+    config.type = SlimeVR::Configuration::SensorConfigType::ICM20948;
+    config.data.icm20948 = m_Config;
+    configuration.setSensor(sensorId, config);
     configuration.save();
 
     if (repeat) {
@@ -454,14 +454,14 @@ void ICM20948Sensor::loadCalibration()
     }
     #endif
 
-    SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+    SlimeVR::Configuration::SensorConfig sensorCalibration = configuration.getSensor(sensorId);
     // If no compatible calibration data is found, the calibration data will just be zero-ed out
     switch (sensorCalibration.type) {
-    case SlimeVR::Configuration::CalibrationConfigType::ICM20948:
-        m_Calibration = sensorCalibration.data.icm20948;
+    case SlimeVR::Configuration::SensorConfigType::ICM20948:
+        m_Config = sensorCalibration.data.icm20948;
         break;
 
-    case SlimeVR::Configuration::CalibrationConfigType::NONE:
+    case SlimeVR::Configuration::SensorConfigType::NONE:
         m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
         m_Logger.info("Calibration is advised");
         break;
@@ -472,25 +472,25 @@ void ICM20948Sensor::loadCalibration()
     }
 
     #ifdef DEBUG_SENSOR
-    m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.G));
-    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.A));
+    m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.G));
+    m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.A));
     #if !USE_6_AXIS
-    m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Calibration.C));
+    m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.C));
     #endif
     #endif
 
-    imu.SetBiasGyroX(m_Calibration.G[0]);
-    imu.SetBiasGyroY(m_Calibration.G[1]);
-    imu.SetBiasGyroZ(m_Calibration.G[2]);
+    imu.SetBiasGyroX(m_Config.G[0]);
+    imu.SetBiasGyroY(m_Config.G[1]);
+    imu.SetBiasGyroZ(m_Config.G[2]);
 
-    imu.SetBiasAccelX(m_Calibration.A[0]);
-    imu.SetBiasAccelY(m_Calibration.A[1]);
-    imu.SetBiasAccelZ(m_Calibration.A[2]);
+    imu.SetBiasAccelX(m_Config.A[0]);
+    imu.SetBiasAccelY(m_Config.A[1]);
+    imu.SetBiasAccelZ(m_Config.A[2]);
 
     #if !USE_6_AXIS
-    imu.SetBiasCPassX(m_Calibration.C[0]);
-    imu.SetBiasCPassY(m_Calibration.C[1]);
-    imu.SetBiasCPassZ(m_Calibration.C[2]);
+    imu.SetBiasCPassX(m_Config.C[0]);
+    imu.SetBiasCPassY(m_Config.C[1]);
+    imu.SetBiasCPassZ(m_Config.C[2]);
     #endif
 }
 

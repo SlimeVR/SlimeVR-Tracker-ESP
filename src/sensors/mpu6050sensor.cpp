@@ -57,7 +57,7 @@ void MPU6050Sensor::motionSetup()
         // If no compatible calibration data is found, the calibration data will just be zero-ed out
         switch (sensorCalibration.type) {
         case SlimeVR::Configuration::CalibrationConfigType::MPU6050:
-            m_Calibration = sensorCalibration.data.mpu6050;
+            m_Config = sensorCalibration.data.mpu6050;
             break;
 
         case SlimeVR::Configuration::CalibrationConfigType::NONE:
@@ -180,21 +180,21 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
     {
     case CALIBRATION_TYPE_INTERNAL_ACCEL:
         imu.CalibrateAccel(10);
-        m_Calibration.A_B[0] = imu.getXAccelOffset();
-        m_Calibration.A_B[1] = imu.getYAccelOffset();
-        m_Calibration.A_B[2] = imu.getZAccelOffset();
+        m_Config.A_B[0] = imu.getXAccelOffset();
+        m_Config.A_B[1] = imu.getYAccelOffset();
+        m_Config.A_B[2] = imu.getZAccelOffset();
         break;
     case CALIBRATION_TYPE_INTERNAL_GYRO:
         imu.CalibrateGyro(10);
-        m_Calibration.G_off[0] = imu.getXGyroOffset();
-        m_Calibration.G_off[1] = imu.getYGyroOffset();
-        m_Calibration.G_off[2] = imu.getZGyroOffset();
+        m_Config.G_off[0] = imu.getXGyroOffset();
+        m_Config.G_off[1] = imu.getYGyroOffset();
+        m_Config.G_off[2] = imu.getZGyroOffset();
         break;
     }
 
     SlimeVR::Configuration::CalibrationConfig calibration;
     calibration.type = SlimeVR::Configuration::CalibrationConfigType::MPU6050;
-    calibration.data.mpu6050 = m_Calibration;
+    calibration.data.mpu6050 = m_Config;
     configuration.setCalibration(sensorId, calibration);
     configuration.save();
 

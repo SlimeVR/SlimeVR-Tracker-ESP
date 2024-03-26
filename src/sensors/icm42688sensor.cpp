@@ -100,14 +100,14 @@ void ICM42688Sensor::motionSetup() {
 
     // Initialize the configuration
     {
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        SlimeVR::Configuration::SensorConfig sensorConfig = configuration.getSensor(sensorId);
         // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        switch (sensorCalibration.type) {
-        case SlimeVR::Configuration::CalibrationConfigType::ICM42688:
-            m_Calibration = sensorCalibration.data.icm42688;
+        switch (sensorConfig.type) {
+        case SlimeVR::Configuration::SensorConfigType::ICM42688:
+            m_Config = sensorConfig.data.icm42688;
             break;
 
-        case SlimeVR::Configuration::CalibrationConfigType::NONE:
+        case SlimeVR::Configuration::SensorConfigType::NONE:
             m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
             m_Logger.info("Calibration is advised");
             break;
@@ -171,7 +171,7 @@ void ICM42688Sensor::motionLoop() {
 
     if (magExists)
         sfusion.updateMag(Mxyz);
-    
+
     fusedRotation = sfusion.getQuaternionQuat();
     fusedRotation *= sensorOffset;
     acceleration = sfusion.getLinearAccVec();
@@ -239,9 +239,9 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
 #endif
 
     // TODO: use offset registers?
-    m_Calibration.G_off[0] = GxyzC[0];
-    m_Calibration.G_off[1] = GxyzC[1];
-    m_Calibration.G_off[2] = GxyzC[2];
+    m_Config.G_off[0] = GxyzC[0];
+    m_Config.G_off[1] = GxyzC[1];
+    m_Config.G_off[2] = GxyzC[2];
 
     // Blink calibrating led before user should rotate the sensor
     m_Logger.info("Gently rotate the device while it's gathering accelerometer and magnetometer data");
@@ -278,10 +278,10 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
     m_Logger.debug("{");
     for (int i = 0; i < 3; i++)
     {
-        m_Calibration.A_B[i] = A_BAinv[0][i];
-        m_Calibration.A_Ainv[0][i] = A_BAinv[1][i];
-        m_Calibration.A_Ainv[1][i] = A_BAinv[2][i];
-        m_Calibration.A_Ainv[2][i] = A_BAinv[3][i];
+        m_Config.A_B[i] = A_BAinv[0][i];
+        m_Config.A_Ainv[0][i] = A_BAinv[1][i];
+        m_Config.A_Ainv[1][i] = A_BAinv[2][i];
+        m_Config.A_Ainv[2][i] = A_BAinv[3][i];
         m_Logger.debug("  %f, %f, %f, %f", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
     m_Logger.debug("}");
@@ -289,10 +289,10 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
         m_Logger.debug("[INFO] Magnetometer calibration matrix:");
         m_Logger.debug("{");
         for (int i = 0; i < 3; i++) {
-            m_Calibration.M_B[i] = M_BAinv[0][i];
-            m_Calibration.M_Ainv[0][i] = M_BAinv[1][i];
-            m_Calibration.M_Ainv[1][i] = M_BAinv[2][i];
-            m_Calibration.M_Ainv[2][i] = M_BAinv[3][i];
+            m_Config.M_B[i] = M_BAinv[0][i];
+            m_Config.M_Ainv[0][i] = M_BAinv[1][i];
+            m_Config.M_Ainv[1][i] = M_BAinv[2][i];
+            m_Config.M_Ainv[2][i] = M_BAinv[3][i];
             m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
         }
         m_Logger.debug("}");
@@ -300,10 +300,10 @@ void ICM42688Sensor::startCalibration(int calibrationType) {
 
     m_Logger.debug("Saving the calibration data");
 
-    SlimeVR::Configuration::CalibrationConfig calibration;
-    calibration.type = SlimeVR::Configuration::CalibrationConfigType::ICM42688;
-    calibration.data.icm42688 = m_Calibration;
-    configuration.setCalibration(sensorId, calibration);
+    SlimeVR::Configuration::SensorConfig config;
+    config.type = SlimeVR::Configuration::SensorConfigType::ICM42688;
+    config.data.icm42688 = m_Config;
+    configuration.setSensor(sensorId, config);
     configuration.save();
 
     ledManager.off();
@@ -318,9 +318,9 @@ void ICM42688Sensor::parseMagData() {
 
     //apply offsets and scale factors from Magneto
     for (unsigned i = 0; i < 3; i++) {
-        temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+        temp[i] = (Mxyz[i] - m_Config.M_B[i]);
         #if useFullCalibrationMatrix == true
-            Mxyz[i] = m_Calibration.M_Ainv[i][0] * temp[0] + m_Calibration.M_Ainv[i][1] * temp[1] + m_Calibration.M_Ainv[i][2] * temp[2];
+            Mxyz[i] = m_Config.M_Ainv[i][0] * temp[0] + m_Config.M_Ainv[i][1] * temp[1] + m_Config.M_Ainv[i][2] * temp[2];
         #else
             Mxyz[i] = temp[i];
         #endif
@@ -332,9 +332,9 @@ void ICM42688Sensor::parseAccelData() {
 
     //apply offsets (bias) and scale factors from Magneto
     for (unsigned i = 0; i < 3; i++) {
-        temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
+        temp[i] = (Axyz[i] - m_Config.A_B[i]);
         #if useFullCalibrationMatrix == true
-            Axyz[i] = m_Calibration.A_Ainv[i][0] * temp[0] + m_Calibration.A_Ainv[i][1] * temp[1] + m_Calibration.A_Ainv[i][2] * temp[2];
+            Axyz[i] = m_Config.A_Ainv[i][0] * temp[0] + m_Config.A_Ainv[i][1] * temp[1] + m_Config.A_Ainv[i][2] * temp[2];
         #else
             Axyz[i] = temp[i];
         #endif
@@ -342,7 +342,7 @@ void ICM42688Sensor::parseAccelData() {
 }
 
 void ICM42688Sensor::parseGyroData() {
-    Gxyz[0] = (Gxyz[0] - m_Calibration.G_off[0]);
-    Gxyz[1] = (Gxyz[1] - m_Calibration.G_off[1]);
-    Gxyz[2] = (Gxyz[2] - m_Calibration.G_off[2]);
+    Gxyz[0] = (Gxyz[0] - m_Config.G_off[0]);
+    Gxyz[1] = (Gxyz[1] - m_Config.G_off[1]);
+    Gxyz[2] = (Gxyz[2] - m_Config.G_off[2]);
 }

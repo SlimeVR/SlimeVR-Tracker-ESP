@@ -53,12 +53,12 @@ void BNO080Sensor::motionSetup()
 
     this->imu.enableLinearAccelerometer(10);
 
-    SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+    SlimeVR::Configuration::SensorConfig sensorConfig = configuration.getSensor(sensorId);
     // If no compatible calibration data is found, the calibration data will just be zero-ed out
-    switch (sensorCalibration.type) {
-    case SlimeVR::Configuration::CalibrationConfigType::BNO0XX:
-        m_Calibration = sensorCalibration.data.bno0XX;
-        m_magEnabled = m_Calibration.magEnabled;
+    switch (sensorConfig.type) {
+    case SlimeVR::Configuration::SensorConfigType::BNO0XX:
+        m_Config = sensorConfig.data.bno0XX;
+        m_magEnabled = m_Config.magEnabled;
         break;
     default:
         // Ignore lack of config for BNO, byt default use from FW build
@@ -70,7 +70,7 @@ void BNO080Sensor::motionSetup()
             imu.enableARVRStabilizedGameRotationVector(10);
         } else {
             imu.enableGameRotationVector(10);
-        }  
+        }
 
         #if BNO_USE_MAGNETOMETER_CORRECTION
         imu.enableRotationVector(1000);
@@ -154,7 +154,7 @@ void BNO080Sensor::motionLoop()
             setAccelerationReady();
         }
 #endif // SEND_ACCELERATION
-        
+
 #if BNO_USE_MAGNETOMETER_CORRECTION
         if(!m_magEnabled) {
                 if (imu.hasNewMagQuat())
@@ -254,7 +254,7 @@ void BNO080Sensor::sendData()
 void BNO080Sensor::setFlag(uint16_t flagId, bool state)
 {
     if(flagId == FLAG_SENSOR_BNO0XX_MAG_ENABLED) {
-        m_Calibration.magEnabled = state;
+        m_Config.magEnabled = state;
         m_magEnabled = state;
         if(state) {
             if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
@@ -267,7 +267,7 @@ void BNO080Sensor::setFlag(uint16_t flagId, bool state)
                 imu.enableARVRStabilizedGameRotationVector(10);
             } else {
                 imu.enableGameRotationVector(10);
-            }  
+            }
 
             #if BNO_USE_MAGNETOMETER_CORRECTION
             imu.enableRotationVector(1000);

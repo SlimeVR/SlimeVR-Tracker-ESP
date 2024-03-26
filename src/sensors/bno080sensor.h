@@ -55,7 +55,7 @@ private:
     uint8_t lastReset = 0;
     BNO080Error lastError{};
     bool m_magEnabled = !USE_6_AXIS;
-    SlimeVR::Configuration::BNO0XXCalibrationConfig m_Calibration = {};
+    SlimeVR::Configuration::BNO0XXSensorConfig m_Config = {};
 
     // Magnetometer specific members
     Quat magQuaternion{};

@@ -55,7 +55,7 @@ private:
 
     SlimeVR::Sensors::SensorFusion sfusion;
 
-    SlimeVR::Configuration::ICM42688CalibrationConfig m_Calibration;
+    SlimeVR::Configuration::ICM42688SensorConfig m_Config;
 
     void accel_read();
     void gyro_read();

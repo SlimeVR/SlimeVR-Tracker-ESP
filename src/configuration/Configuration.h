@@ -43,21 +43,21 @@ namespace SlimeVR {
 
             int32_t getVersion() const;
 
-            size_t getCalibrationCount() const;
-            CalibrationConfig getCalibration(size_t sensorID) const;
-            void setCalibration(size_t sensorID, const CalibrationConfig& config);
+            size_t getSensorCount() const;
+            SensorConfig getSensor(size_t sensorID) const;
+            void setSensor(size_t sensorID, const SensorConfig& config);
 
             bool loadTemperatureCalibration(uint8_t sensorId, GyroTemperatureCalibrationConfig& config);
             bool saveTemperatureCalibration(uint8_t sensorId, const GyroTemperatureCalibrationConfig& config);
 
         private:
-            void loadCalibrations();
+            void loadSensors();
             bool runMigrations(int32_t version);
 
             bool m_Loaded = false;
 
             DeviceConfig m_Config{};
-            std::vector<CalibrationConfig> m_Calibrations;
+            std::vector<SensorConfig> m_Sensors;
 
             Logging::Logger m_Logger = Logging::Logger("Configuration");
         };

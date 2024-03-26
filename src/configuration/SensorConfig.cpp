@@ -21,15 +21,29 @@
 	THE SOFTWARE.
 */
 
-#ifndef SLIMEVR_CONFIGURATION_DEVICECONFIG_H
-#define SLIMEVR_CONFIGURATION_DEVICECONFIG_H
+#include "SensorConfig.h"
 
 namespace SlimeVR {
 namespace Configuration {
-struct DeviceConfig {
-	int32_t version;
-};
+const char* calibrationConfigTypeToString(SensorConfigType type) {
+	switch (type) {
+		case SensorConfigType::NONE:
+			return "NONE";
+		case SensorConfigType::BMI160:
+			return "BMI160";
+		case SensorConfigType::MPU6050:
+			return "MPU6050";
+		case SensorConfigType::MPU9250:
+			return "MPU9250";
+		case SensorConfigType::ICM20948:
+			return "ICM20948";
+		case SensorConfigType::ICM42688:
+			return "ICM42688";
+		case SensorConfigType::BNO0XX:
+			return "BNO0XX";
+		default:
+			return "UNKNOWN";
+	}
+}
 }  // namespace Configuration
 }  // namespace SlimeVR
-
-#endif
