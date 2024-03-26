@@ -547,7 +547,7 @@ void Connection::searchForServer() {
 		}
 
 		// receive incoming UDP packets
-		int len = m_UDP.read(m_Packet, sizeof(m_Packet));
+		[[maybe_unused]] int len = m_UDP.read(m_Packet, sizeof(m_Packet));
 
 #ifdef DEBUG_NETWORK
 		m_Logger.trace(
