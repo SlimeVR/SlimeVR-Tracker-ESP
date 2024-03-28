@@ -41,11 +41,6 @@ bool ensureDirectory(const char* directory) {
 	auto dir = LittleFS.open(directory);
 	auto isDirectory = dir.isDirectory();
 	dir.close();
-#else
-	auto dir = LittleFS.openDir(directory);
-	auto isDirectory = dir.isDirectory();
-#endif
-
 	if (!isDirectory) {
 		if (!LittleFS.remove(directory)) {
 			m_Logger.error("Failed to remove directory: %s", directory);
@@ -57,7 +52,7 @@ bool ensureDirectory(const char* directory) {
 			return false;
 		}
 	}
-
+#endif
 	return true;
 }
 
