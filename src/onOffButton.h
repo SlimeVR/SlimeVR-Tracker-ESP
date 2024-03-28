@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,45 +20,30 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_ONOFFBUTTON_H_
+#define SLIMEVR_ONOFFBUTTON_H_
 
-#ifndef SENSORS_BNO080SENSOR_H
-#define SENSORS_BNO080SENSOR_H
+#include "logging/Logger.h"
+#include "globals.h"
 
-#include "sensor.h"
-#include <BNO080.h>
+#ifndef ON_OFF_BUTTON_ACTIVE_LEVEL
+#define ON_OFF_BUTTON_ACTIVE_LEVEL LOW
+#endif
 
-class BNO080Sensor : public Sensor
-{
+#ifndef ON_OFF_BUTTON_HOLD_TIME_MS
+#define ON_OFF_BUTTON_HOLD_TIME_MS 1000
+#endif
+
+namespace SlimeVR {
+
+class OnOffButton {
 public:
-    BNO080Sensor(uint8_t id, uint8_t type, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
-        : Sensor("BNO080Sensor", type, id, address, rotation, sclPin, sdaPin), m_IntPin(intPin) {};
-    ~BNO080Sensor(){};
-    void motionSetup() override final;
-    void postSetup() override {
-        lastData = millis();
-    }
-
-    void motionLoop() override final;
-    void sendData() override final;
-    void startCalibration(int calibrationType) override final;
-    SensorStatus getSensorState() override final;
-    void deinitialize() override final;
-
+    void setup();
+    void update();
 private:
-    BNO080 imu{};
-
-    uint8_t m_IntPin;
-
-    uint8_t tap;
-    unsigned long lastData = 0;
-    uint8_t lastReset = 0;
-    BNO080Error lastError{};
-
-    // Magnetometer specific members
-    Quat magQuaternion{};
-    uint8_t magCalibrationAccuracy = 0;
-    float magneticAccuracyEstimate = 999;
-    bool newMagData = false;
+    SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("OnOffButton");
 };
+
+}
 
 #endif

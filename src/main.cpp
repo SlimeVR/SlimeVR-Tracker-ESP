@@ -30,6 +30,7 @@
 #include "serial/serialcommands.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
+#include "onOffButton.h"
 
 Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
@@ -39,6 +40,10 @@ SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
 SlimeVR::Network::Manager networkManager;
 SlimeVR::Network::Connection networkConnection;
+
+#ifdef ON_OFF_BUTTON
+SlimeVR::OnOffButton onOffButton;
+#endif
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -93,6 +98,10 @@ void setup()
 #endif
     Wire.setClock(I2C_SPEED);
 
+    #ifdef ON_OFF_BUTTON
+    onOffButton.setup();
+    #endif
+
     // Wait for IMU to boot
     delay(500);
 
@@ -118,6 +127,10 @@ void loop()
     sensorManager.update();
     battery.Loop();
     ledManager.update();
+
+    #ifdef ON_OFF_BUTTON
+    onOffButton.update();
+    #endif
 #ifdef TARGET_LOOPTIME_MICROS
     long elapsed = (micros() - loopTime);
     if (elapsed < TARGET_LOOPTIME_MICROS)

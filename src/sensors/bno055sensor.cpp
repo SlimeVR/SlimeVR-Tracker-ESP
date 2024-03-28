@@ -70,3 +70,7 @@ void BNO055Sensor::motionLoop() {
 void BNO055Sensor::startCalibration(int calibrationType) {
 
 }
+
+void BNO055Sensor::deinitialize() {
+    imu.enterSuspendMode();
+}

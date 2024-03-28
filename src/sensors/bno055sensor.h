@@ -37,6 +37,7 @@ public:
     void motionSetup() override final;
     void motionLoop() override final;
     void startCalibration(int calibrationType) override final;
+    void deinitialize() override final;
 
 private:
     Adafruit_BNO055 imu;

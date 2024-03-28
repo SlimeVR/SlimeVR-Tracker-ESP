@@ -109,6 +109,12 @@ void BMI160::initialize(uint8_t addr,
     // I2CdevMod::writeByte(devAddr, BMI160_RA_INT_MAP_2, 0x00);
 }
 
+void BMI160::deinitialize() {
+    /* Issue a soft-reset to bring the device into a clean state */
+    setRegister(BMI160_RA_CMD, BMI160_CMD_SOFT_RESET);
+    delay(12);
+}
+
 bool BMI160::getErrReg(uint8_t* out) {
     bool ok = I2CdevMod::readByte(devAddr, BMI160_RA_ERR, buffer) >= 0;
     if (!ok) return false;

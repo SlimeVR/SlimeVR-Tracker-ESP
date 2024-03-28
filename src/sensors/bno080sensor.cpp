@@ -243,3 +243,8 @@ void BNO080Sensor::startCalibration(int calibrationType)
     // it's always enabled except accelerometer
     // that is disabled 30 seconds after startup
 }
+
+void BNO080Sensor::deinitialize() 
+{
+    imu.softReset();
+}

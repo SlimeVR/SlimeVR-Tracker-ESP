@@ -74,6 +74,7 @@ private:
     void checkSensorTimeout();
     void readRotation();
     void readFIFOToEnd();
+    void deinitialize() override final;
 
 #define OVERRIDEDMPSETUP true
     // TapDetector tapDetector;

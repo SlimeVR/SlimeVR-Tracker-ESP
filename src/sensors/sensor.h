@@ -87,6 +87,7 @@ public:
     bool hasNewDataToSend() {
         return newFusedRotation || newAcceleration;
     };
+    virtual void deinitialize();
 
     bool hadData = false;
 protected:

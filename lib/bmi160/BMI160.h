@@ -564,6 +564,7 @@ class BMI160 {
             BMI160AccelRange accelRange = BMI160_ACCEL_RANGE_4G,
             BMI160DLPFMode accelFilterMode = BMI160_DLPF_MODE_OSR4
         );
+        void deinitialize();
         bool testConnection();
 
         uint8_t getGyroRate();

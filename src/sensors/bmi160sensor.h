@@ -167,6 +167,8 @@ class BMI160Sensor : public Sensor {
         void getRemappedAcceleration(int16_t* x, int16_t* y, int16_t* z);
 
         bool getTemperature(float* out);
+
+        void deinitialize() override final;
     private:
         BMI160 imu {};
         int axisRemap;

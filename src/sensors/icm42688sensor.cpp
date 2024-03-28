@@ -343,3 +343,7 @@ void ICM42688Sensor::parseGyroData() {
     Gxyz[1] = (Gxyz[1] - m_Calibration.G_off[1]);
     Gxyz[2] = (Gxyz[2] - m_Calibration.G_off[2]);
 }
+
+void ICM42688Sensor::deinitialize() {
+    I2Cdev::writeByte(addr, ICM42688_DEVICE_CONFIG, 1); // reset
+}

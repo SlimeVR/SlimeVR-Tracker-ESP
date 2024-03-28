@@ -43,6 +43,7 @@ public:
     void motionSetup() override final;
     void motionLoop() override final;
     void startCalibration(int calibrationType) override final;
+    void deinitialize() override final;
 
 private:
     uint8_t addr_mag = 0x30;
