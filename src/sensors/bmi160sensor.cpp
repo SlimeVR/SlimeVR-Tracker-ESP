@@ -361,13 +361,8 @@ void BMI160Sensor::motionLoop() {
         if (elapsed >= sendInterval) {
             lastRotationPacketSent = now - (elapsed - sendInterval);
 
-            fusedRotation = sfusion.getQuaternionQuat();
-            setFusedRotationReady();
-
-            acceleration = sfusion.getLinearAccVec();
-            setAccelerationReady();
-
-            fusedRotation *= sensorOffset;
+            setFusedRotation(sfusion.getQuaternionQuat());
+            setAcceleration(sfusion.getLinearAccVec());
 
             optimistic_yield(100);
         }

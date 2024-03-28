@@ -58,8 +58,8 @@ public:
     virtual void postSetup(){};
     virtual void motionLoop(){};
     virtual void sendData();
-    virtual void setAccelerationReady();
-    virtual void setFusedRotationReady();
+    virtual void setAcceleration(Vector3 a);
+    virtual void setFusedRotation(Quat r);
     virtual void startCalibration(int calibrationType){};
     virtual SensorStatus getSensorState();
     virtual void printTemperatureCalibrationState();
