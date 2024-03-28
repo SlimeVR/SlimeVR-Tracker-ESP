@@ -30,18 +30,18 @@ SensorStatus Sensor::getSensorState() {
 }
 
 void Sensor::setAcceleration(Vector3 a) {
-#if ESP32
+#if ESP32 && SENSOR_THREADING
     xSemaphoreTake(updateMutex, portMAX_DELAY);
 #endif
     acceleration = a;
     newAcceleration = true;
-#if ESP32
+#if ESP32 && SENSOR_THREADING
     xSemaphoreGive(updateMutex);
 #endif
 }
 
 void Sensor::setFusedRotation(Quat r) {
-#if ESP32
+#if ESP32 && SENSOR_THREADING
     xSemaphoreTake(updateMutex, portMAX_DELAY);
 #endif
     fusedRotation = r * sensorOffset;
@@ -50,13 +50,13 @@ void Sensor::setFusedRotation(Quat r) {
         newFusedRotation = true;
         lastFusedRotationSent = fusedRotation;
     }
-#if ESP32
+#if ESP32 && SENSOR_THREADING
     xSemaphoreGive(updateMutex);
 #endif
 }
 
 void Sensor::sendData() {
-#if ESP32
+#if ESP32 && SENSOR_THREADING
     Quat lquat;
     xSemaphoreTake(updateMutex, portMAX_DELAY);
     if (newFusedRotation) {
@@ -81,7 +81,7 @@ void Sensor::sendData() {
 #endif
 
 #if SEND_ACCELERATION
-    #if ESP32
+    #if ESP32 && SENSOR_THREADING
         Vector3 laccel;
         xSemaphoreTake(updateMutex, portMAX_DELAY);
         if (newAcceleration) {

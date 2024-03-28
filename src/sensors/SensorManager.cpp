@@ -186,7 +186,7 @@ namespace SlimeVR
                     sensor->postSetup();
                 }
             }
-#if ESP32
+#if ESP32 && SENSOR_THREADING
             for (auto & sensor : m_Sensors) {
                 sensor->updateMutex = xSemaphoreCreateMutex();
             }
@@ -194,7 +194,7 @@ namespace SlimeVR
 #endif
         }
         
-#if ESP32
+#if ESP32 && SENSOR_THREADING
         void SensorManager::updateSensors(void * pxParameter) {
             SensorManager *pthis = (SensorManager *)pxParameter;
             for (;;) {
@@ -217,7 +217,7 @@ namespace SlimeVR
 
         void SensorManager::update()
         {
-#if !ESP32
+#if !(ESP32 && SENSOR_THREADING)
             // Gather IMU data
             bool allIMUGood = true;
             for (auto sensor : m_Sensors) {

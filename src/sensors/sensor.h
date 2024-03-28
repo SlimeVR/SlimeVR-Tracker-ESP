@@ -111,7 +111,7 @@ public:
     uint8_t sclPin = 0;
     uint8_t sdaPin = 0;
 
-    #if ESP32
+    #if ESP32 && SENSOR_THREADING
         SemaphoreHandle_t updateMutex = NULL;
     #endif
 private:
