@@ -194,7 +194,7 @@ public:
             m_lastRotationPacketSent = now - (elapsed - sendInterval);
 
             setFusedRotation(m_fusion.getQuaternionQuat() * sensorOffset);
-            setAccelerationReady(m_fusion.getLinearAccVec());
+            setAcceleration(m_fusion.getLinearAccVec());
             optimistic_yield(100);
         }
     }
