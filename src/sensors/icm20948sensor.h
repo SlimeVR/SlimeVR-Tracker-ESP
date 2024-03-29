@@ -33,8 +33,8 @@ public:
     static constexpr auto TypeID = ImuID::ICM20948;
     static constexpr uint8_t Address = 0x68;
 
-    ICM20948Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t)
-        : Sensor("ICM20948Sensor", ImuID::ICM20948, id, address, rotation, sclPin, sdaPin) {}
+    ICM20948Sensor(uint8_t id, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t)
+        : Sensor("ICM20948Sensor", ImuID::ICM20948, id, Address+addrSuppl, rotation, sclPin, sdaPin) {}
     ~ICM20948Sensor() override = default;
     void motionSetup() override final;
     void postSetup() override {
