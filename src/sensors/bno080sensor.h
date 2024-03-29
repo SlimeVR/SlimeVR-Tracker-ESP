@@ -46,6 +46,10 @@ public:
     void startCalibration(int calibrationType) override final;
     SensorStatus getSensorState() override final;
 
+protected:
+    // forwarding constructor
+    BNO080Sensor(const char* sensorName, ImuID imuId, uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
+        : Sensor(sensorName, imuId, id, address, rotation, sclPin, sdaPin), m_IntPin(intPin) {};
 private:
     BNO080 imu{};
 
@@ -61,6 +65,22 @@ private:
     uint8_t magCalibrationAccuracy = 0;
     float magneticAccuracyEstimate = 999;
     bool newMagData = false;
+};
+
+class BNO085Sensor : public BNO080Sensor
+{
+public:
+    static constexpr auto TypeID = ImuID::BNO085;
+    BNO085Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
+    : BNO080Sensor("BNO085Sensor", ImuID::BNO085, id, address, rotation, sclPin, sdaPin, intPin) {};
+};
+
+class BNO086Sensor : public BNO080Sensor
+{
+public:
+    static constexpr auto TypeID = ImuID::BNO086;
+    BNO086Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t intPin)
+    : BNO080Sensor("BNO086Sensor", ImuID::BNO086, id, address, rotation, sclPin, sdaPin, intPin) {};
 };
 
 #endif
