@@ -378,7 +378,7 @@ public:
         uint16_t numCurrentPositionSamples = 0;
         bool waitForMotion = true;
 
-        float* accelCalibrationChunk = new float[numSamplesPerPosition * 3];
+        auto accelCalibrationChunk = std::make_unique<float[]>(numSamplesPerPosition * 3);
         ledManager.pattern(100, 100, 6);
         ledManager.on();
         m_Logger.info("Gathering accelerometer data...");
@@ -438,7 +438,7 @@ public:
         }
         ledManager.off();
         m_Logger.debug("Calculating accelerometer calibration data...");
-        delete[] accelCalibrationChunk;
+        accelCalibrationChunk.reset();
 
         float A_BAinv[4][3];
         magneto->current_calibration(A_BAinv);

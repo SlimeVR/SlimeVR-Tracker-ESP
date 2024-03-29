@@ -27,10 +27,8 @@
 #include "globals.h"
 #include "sensor.h"
 #include "EmptySensor.h"
-#include "logging/Logger.h"
-
 #include "ErroneousSensor.h"
-#include "EmptySensor.h"
+#include "logging/Logger.h"
 
 #include <i2cscan.h>
 
