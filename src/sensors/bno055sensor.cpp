@@ -45,7 +45,6 @@ void BNO055Sensor::motionSetup() {
     m_Logger.info("Connected to BNO055 at address 0x%02x", addr);
 
     working = true;
-    configured = true;
 }
 
 void BNO055Sensor::motionLoop() {
@@ -61,6 +60,7 @@ void BNO055Sensor::motionLoop() {
 
     // TODO Optimize a bit with setting rawQuat directly
     setFusedRotation(imu.getQuat());
+    hadData = true;
 
 #if SEND_ACCELERATION
     setAcceleration(imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL));

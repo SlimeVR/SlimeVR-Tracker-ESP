@@ -98,6 +98,7 @@ void ICM20948Sensor::readFIFOToEnd()
 // Performance Test
 //        cntbuf ++;
         hasdata = true;
+        hadData = true;
         readFIFOToEnd();
     }
 }

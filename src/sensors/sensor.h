@@ -69,6 +69,9 @@ public:
     bool isWorking() {
         return working;
     };
+    bool getHadData() const {
+        return hadData;
+    };
     bool isValid() {
         return sclPin != sdaPin;
     };
@@ -92,8 +95,8 @@ protected:
     uint8_t addr = 0;
     uint8_t sensorId = 0;
     ImuID sensorType = ImuID::Unknown;
-    bool configured = false;
     bool working = false;
+    bool hadData = false;
     uint8_t calibrationAccuracy = 0;
     Quat sensorOffset;
 

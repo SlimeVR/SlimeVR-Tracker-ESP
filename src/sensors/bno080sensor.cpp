@@ -88,6 +88,7 @@ void BNO080Sensor::motionLoop()
     //Look for reports from the IMU
     while (imu.dataAvailable())
     {
+        hadData = true;
 #if ENABLE_INSPECTION
         {
             int16_t rX = imu.getRawGyroX();

@@ -65,6 +65,7 @@ private:
     uint8_t magCalibrationAccuracy = 0;
     float magneticAccuracyEstimate = 999;
     bool newMagData = false;
+    bool configured = false;
 };
 
 class BNO085Sensor : public BNO080Sensor

@@ -136,11 +136,12 @@ namespace SerialCommands {
         );
         for (auto &sensor : sensorManager.getSensors()) {
             logger.info(
-                "Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s",
+                "Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
                 sensor->getSensorId(),
                 getIMUNameByType(sensor->getSensorType()),
                 UNPACK_QUATERNION(sensor->getFusedRotation()),
-                sensor->isWorking() ? "true" : "false"
+                sensor->isWorking() ? "true" : "false",
+                sensor->getHadData() ? "true" : "false"
             );
         }
     }
@@ -212,11 +213,17 @@ namespace SerialCommands {
             auto& sensor0 = sensorManager.getSensors()[0];
             sensor0->motionLoop();
             logger.info(
-                "[TEST] Sensor[0]: %s (%.3f %.3f %.3f %.3f) is working: %s",
+                "[TEST] Sensor[0]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
                 getIMUNameByType(sensor0->getSensorType()),
                 UNPACK_QUATERNION(sensor0->getFusedRotation()),
-                sensor0->isWorking() ? "true" : "false"
+                sensor0->isWorking() ? "true" : "false",
+                sensor0->getHadData() ? "true" : "false"
             );
+            if(!sensor0->getHadData()) {
+                logger.error("[TEST] Sensor[0] didn't send any data yet!");
+            } else {
+                logger.info("[TEST] Sensor[0] sent some data, looks working.");
+            }
         }
 
         if (parser->equalCmdParam(1, "WIFISCAN")) {

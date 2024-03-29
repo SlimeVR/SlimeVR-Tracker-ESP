@@ -181,6 +181,7 @@ public:
             );
             optimistic_yield(100);
             if (!m_fusion.isUpdated()) return;
+            hadData = true;
             m_fusion.clearUpdated();
         }
 
