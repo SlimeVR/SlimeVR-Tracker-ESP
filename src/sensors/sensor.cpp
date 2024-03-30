@@ -29,11 +29,13 @@ SensorStatus Sensor::getSensorState() {
     return isWorking() ? SensorStatus::SENSOR_OK : SensorStatus::SENSOR_ERROR;
 }
 
-void Sensor::setAccelerationReady() {
+void Sensor::setAcceleration(Vector3 a) {
+    acceleration = a;
     newAcceleration = true;
 }
 
-void Sensor::setFusedRotationReady() {
+void Sensor::setFusedRotation(Quat r) {
+    fusedRotation = r * sensorOffset;
     bool changed = OPTIMIZE_UPDATES ? !lastFusedRotationSent.equalsWithEpsilon(fusedRotation) : true;
     if (ENABLE_INSPECTION || changed) {
         newFusedRotation = true;
