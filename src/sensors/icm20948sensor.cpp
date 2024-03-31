@@ -347,18 +347,13 @@ void ICM20948Sensor::readRotation()
             double q2 = ((double)dmpData.Quat6.Data.Q2) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q3 = ((double)dmpData.Quat6.Data.Q3) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-            fusedRotation.w = q0;
-            fusedRotation.x = q1;
-            fusedRotation.y = q2;
-            fusedRotation.z = q3;
+            Quat nRotation(q1, q2, q3, q0); // x, y, z, w
 
             #if SEND_ACCELERATION
-            calculateAccelerationWithoutGravity(&fusedRotation);
+            calculateAccelerationWithoutGravity(&nRotation);
             #endif
 
-            fusedRotation *= sensorOffset; //imu rotation
-
-            newFusedRotation = true;
+            setFusedRotation(nRotation);
             lastData = millis();
         }
     }
@@ -374,18 +369,13 @@ void ICM20948Sensor::readRotation()
             double q2 = ((double)dmpData.Quat9.Data.Q2) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q3 = ((double)dmpData.Quat9.Data.Q3) / DMPNUMBERTODOUBLECONVERTER; // Convert to double. Divide by 2^30
             double q0 = sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-            fusedRotation.w = q0;
-            fusedRotation.x = q1;
-            fusedRotation.y = q2;
-            fusedRotation.z = q3;
+            Quat nRotation(q1, q2, q3, q0); // x, y, z, w
 
             #if SEND_ACCELERATION
-            calculateAccelerationWithoutGravity(&fusedRotation);
+            calculateAccelerationWithoutGravity(&nRotation);
             #endif
 
-            fusedRotation *= sensorOffset; //imu rotation
-
-            newFusedRotation = true;
+            setFusedRotation(nRotation);
             lastData = millis();
         }
     }
@@ -508,8 +498,7 @@ void ICM20948Sensor::calculateAccelerationWithoutGravity(Quat *quaternion)
                             };
             sfusion.updateAcc(Axyz);
 
-            acceleration = sfusion.getLinearAccVec();
-			this->newAcceleration = true;
+            setAcceleration(sfusion.getLinearAccVec());
         }
     }
     #endif
