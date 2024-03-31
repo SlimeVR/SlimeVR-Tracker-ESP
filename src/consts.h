@@ -40,7 +40,6 @@ enum class ImuID {
     BMI270,
     LSM6DS3TRC,
     LSM6DSV,
-    MPU6050_SF,
     LSM6DSO,
     LSM6DSR,
     Empty = 255

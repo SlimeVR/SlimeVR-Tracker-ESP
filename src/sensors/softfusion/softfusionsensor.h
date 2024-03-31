@@ -116,7 +116,7 @@ class SoftFusionSensor : public Sensor
         m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
     }
 
-    void eatSamplesForSeconds(const size_t seconds) {
+    void eatSamplesForSeconds(const uint32_t seconds) {
         const auto targetDelay = millis() + 1000 * seconds;
         auto lastSecondsRemaining = seconds;
         while (millis() < targetDelay)
@@ -133,11 +133,11 @@ class SoftFusionSensor : public Sensor
         }
     }
 
-    std::pair<RawVectorT, RawVectorT> eatSamplesReturnLast(const size_t seconds)
+    std::pair<RawVectorT, RawVectorT> eatSamplesReturnLast(const uint32_t milliseconds)
     {
         RawVectorT accel = {0};
         RawVectorT gyro = {0};
-        const auto targetDelay = millis() + 1000 * seconds;
+        const auto targetDelay = millis() + milliseconds;
         while (millis() < targetDelay)
         {
             m_sensor.bulkRead(
@@ -244,14 +244,14 @@ public:
 
         m_status = SensorStatus::SENSOR_OK;
         working = true;
-        [[maybe_unused]] auto lastRawSample = eatSamplesReturnLast(1);
+        [[maybe_unused]] auto lastRawSample = eatSamplesReturnLast(1000);
         if constexpr(UpsideDownCalibrationInit) {
             auto gravity = static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(lastRawSample.first[2]));
             m_Logger.info("Gravity read: %.1f (need < -7.5 to start calibration)", gravity);
             if (gravity < -7.5f) {
                 ledManager.on();
                 m_Logger.info("Flip front in 5 seconds to start calibration");
-                lastRawSample = eatSamplesReturnLast(5);
+                lastRawSample = eatSamplesReturnLast(5000);
                 gravity = static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(lastRawSample.first[2]));
                 if (gravity > 7.5f) {
                     m_Logger.debug("Starting calibration...");

@@ -56,7 +56,7 @@ struct MPU6050
 
     static constexpr uint8_t Address = 0x68;
     static constexpr auto Name = "MPU-6050";
-    static constexpr auto Type = ImuID::MPU6050_SF;
+    static constexpr auto Type = ImuID::MPU6050;
 
     static constexpr float Freq = 250;
 
