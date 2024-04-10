@@ -172,11 +172,8 @@ void ICM42688Sensor::motionLoop() {
     if (magExists)
         sfusion.updateMag(Mxyz);
     
-    fusedRotation = sfusion.getQuaternionQuat();
-    fusedRotation *= sensorOffset;
-    acceleration = sfusion.getLinearAccVec();
-    setFusedRotationReady();
-    setAccelerationReady();
+    setFusedRotation(sfusion.getQuaternionQuat());
+    setAcceleration(sfusion.getLinearAccVec());
 }
 
 void ICM42688Sensor::accel_read() {
