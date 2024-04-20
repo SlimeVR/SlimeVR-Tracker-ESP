@@ -116,20 +116,20 @@ void BNO080Sensor::motionLoop()
 #if USE_6_AXIS
         if (imu.hasNewGameQuat()) // New quaternion if context
         {
-            imu.getGameQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, calibrationAccuracy);
-            fusedRotation *= sensorOffset;
+            Quat nRotation;
+            imu.getGameQuat(nRotation.x, nRotation.y, nRotation.z, nRotation.w, calibrationAccuracy);
 
-            setFusedRotationReady();
+            setFusedRotation(nRotation);
             // Leave new quaternion if context open, it's closed later
 
 #else // USE_6_AXIS
 
         if (imu.hasNewQuat()) // New quaternion if context
         {
-            imu.getQuat(fusedRotation.x, fusedRotation.y, fusedRotation.z, fusedRotation.w, magneticAccuracyEstimate, calibrationAccuracy);
-            fusedRotation *= sensorOffset;
+            Quat nRotation;
+            imu.getQuat(nRotation.x, nRotation.y, nRotation.z, nRotation.w, magneticAccuracyEstimate, calibrationAccuracy);
 
-            setFusedRotationReady();
+            setFusedRotation(nRotation);
             // Leave new quaternion if context open, it's closed later
 #endif // USE_6_AXIS
 
@@ -137,8 +137,9 @@ void BNO080Sensor::motionLoop()
 #if SEND_ACCELERATION
             {
                 uint8_t acc;
-                imu.getLinAccel(acceleration.x, acceleration.y, acceleration.z, acc);
-                setAccelerationReady();
+                Vector3 nAccel;
+                imu.getLinAccel(nAccel.x, nAccel.y, nAccel.z, acc);
+                setAcceleration(nAccel);
             }
 #endif // SEND_ACCELERATION
         } // Closing new quaternion if context
