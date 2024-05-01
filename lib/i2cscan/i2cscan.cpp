@@ -6,7 +6,7 @@ uint8_t portArray[] = {16, 5, 4, 2, 14, 12, 13};
 uint8_t portExclude[] = {LED_PIN};
 String portMap[] = {"D0", "D1", "D2", "D4", "D5", "D6", "D7"};
 // ESP32C3 has not as many ports as the ESP32
-#elif defined(ESP32C3)
+#elif defined(ESP32C3) || defined(ESP32C6)
 uint8_t portArray[] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
 uint8_t portExclude[] = {18, 19, 20, 21, LED_PIN};
 String portMap[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10"};
@@ -113,13 +113,13 @@ namespace I2CSCAN
 
     bool hasDevOnBus(uint8_t addr) {
         byte error;
-#if ESP32C3
+#if defined(ESP32C3) || defined(ESP32C6)
         int retries = 2;
         do {
 #endif
             Wire.beginTransmission(addr);
             error = Wire.endTransmission();
-#if ESP32C3
+#if defined(ESP32C3) || defined(ESP32C6)
         }
         while (error != 0 && retries--);
 #endif
