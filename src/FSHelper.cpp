@@ -42,8 +42,9 @@ bool ensureDirectory(const char* directory) {
 	auto isDirectory = dir.isDirectory();
 	dir.close();
 #else
-	auto dir = LittleFS.openDir(directory);
+	auto dir = LittleFS.open(directory, "r");
 	auto isDirectory = dir.isDirectory();
+	dir.close();
 #endif
 
 	if (!isDirectory) {
