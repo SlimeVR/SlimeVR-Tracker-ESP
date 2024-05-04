@@ -37,10 +37,10 @@ bool ensureDirectory(const char* directory) {
 		}
 	}
 
-#ifdef ESP32
-	auto dir = LittleFS.open(directory);
+	auto dir = LittleFS.open(directory, "r");
 	auto isDirectory = dir.isDirectory();
 	dir.close();
+
 	if (!isDirectory) {
 		if (!LittleFS.remove(directory)) {
 			m_Logger.error("Failed to remove directory: %s", directory);
@@ -52,7 +52,7 @@ bool ensureDirectory(const char* directory) {
 			return false;
 		}
 	}
-#endif
+
 	return true;
 }
 
