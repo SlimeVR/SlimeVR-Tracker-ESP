@@ -52,7 +52,7 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl>
     static constexpr float MagTs=1.0/MagFreq;
 
     static constexpr float GyroSensitivity = 1000 / 35.0f;
-    static constexpr float AccelSensitivity = 1000 / 0.244f;
+    static constexpr float AccelSensitivity = 1000 / 0.122f;
 
     using LSM6DSOutputHandler<I2CImpl>::i2c;
 
@@ -85,7 +85,7 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl>
         };
         struct Ctrl8XLFS {
             static constexpr uint8_t reg = 0x17;
-            static constexpr uint8_t value = (0b10); //8g
+            static constexpr uint8_t value = (0b01); //4g
         };
         struct FifoCtrl3BDR {
             static constexpr uint8_t reg = 0x09;

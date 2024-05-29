@@ -50,7 +50,7 @@ struct BMI270
     static constexpr float MagTs=1.0/100;
 
     static constexpr float GyroSensitivity = 32.768f;
-    static constexpr float AccelSensitivity = 2048.0f;
+    static constexpr float AccelSensitivity = 8192.0f;
 
     struct MotionlessCalibrationData
     {
@@ -173,7 +173,7 @@ struct BMI270
             static constexpr uint8_t range8G = 2;
             static constexpr uint8_t range16G = 3;
 
-            static constexpr uint8_t value = range16G;
+            static constexpr uint8_t value = range4G;
         };
 
         struct FifoConfig0 {

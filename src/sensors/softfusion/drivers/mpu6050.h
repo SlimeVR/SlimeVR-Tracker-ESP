@@ -65,7 +65,7 @@ struct MPU6050
     static constexpr float MagTs = 1.0 / Freq;
 
     static constexpr float GyroSensitivity = 32.8f;
-    static constexpr float AccelSensitivity = 4096.0f;
+    static constexpr float AccelSensitivity = 8192.0f;
 
     I2CImpl i2c;
     SlimeVR::Logging::Logger &logger;
@@ -90,7 +90,7 @@ struct MPU6050
 
         struct AccelConfig {
             static constexpr uint8_t reg = 0x1c;
-            static constexpr uint8_t value = 0b10 << 3; // 8g
+            static constexpr uint8_t value = 0b01 << 3; // 4g
         };
 
         static constexpr uint8_t OutTemp = MPU6050_RA_TEMP_OUT_H;

@@ -48,7 +48,7 @@ struct LSM6DS3TRC
     static constexpr float MagTs=1.0/Freq;
 
     static constexpr float GyroSensitivity = 28.571428571f;
-    static constexpr float AccelSensitivity = 4098.360655738f;
+    static constexpr float AccelSensitivity = 8196.72131148f;
 
     I2CImpl i2c;
     SlimeVR::Logging::Logger logger;
@@ -63,7 +63,7 @@ struct LSM6DS3TRC
         static constexpr uint8_t OutTemp = 0x20;
         struct Ctrl1XL {
             static constexpr uint8_t reg = 0x10;
-            static constexpr uint8_t value = (0b11 << 2) | (0b0110 << 4); //8g, 416Hz
+            static constexpr uint8_t value = (0b10 << 2) | (0b0110 << 4); //4g, 416Hz
         };
         struct Ctrl2G {
             static constexpr uint8_t reg = 0x11;
