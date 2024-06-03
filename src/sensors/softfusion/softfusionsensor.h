@@ -121,6 +121,9 @@ class SoftFusionSensor : public Sensor
         auto lastSecondsRemaining = seconds;
         while (millis() < targetDelay)
         {
+            #ifdef ESP8266
+			    ESP.wdtFeed();
+		    #endif
             auto currentSecondsRemaining = (targetDelay - millis()) / 1000;
             if (currentSecondsRemaining != lastSecondsRemaining) {
                 m_Logger.info("%d...", currentSecondsRemaining + 1);
@@ -335,6 +338,9 @@ public:
 
         while (millis() < targetCalib)
         {
+            #ifdef ESP8266
+			    ESP.wdtFeed();
+		    #endif
             m_sensor.bulkRead(
                 [](const int16_t xyz[3], const sensor_real_t timeDelta) { },
                 [&sumXYZ, &sampleCount](const int16_t xyz[3], const sensor_real_t timeDelta) {
@@ -386,6 +392,9 @@ public:
         m_Logger.info("Waiting for position %i, you can leave the device as is...", numPositionsRecorded + 1);
         bool samplesGathered = false;
         while (!samplesGathered) {
+            #ifdef ESP8266
+			    ESP.wdtFeed();
+		    #endif
             m_sensor.bulkRead(
                 [&](const int16_t xyz[3], const sensor_real_t timeDelta) {
                     const sensor_real_t scaledData[] = {
