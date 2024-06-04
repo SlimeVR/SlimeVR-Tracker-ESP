@@ -62,9 +62,16 @@ struct LSM6DSOutputHandler
 
     template <typename AccelCall, typename GyroCall, typename Regs>
     void bulkRead(AccelCall &processAccelSample, GyroCall &processGyroSample, float GyrTs, float AccTs) {
+        const auto FIFO_SAMPLES_MASK = 0x3ff;
+        const auto FIFO_OVERRUN_LATCHED_MASK = 0x800;
+        
         const auto fifo_status = i2c.readReg16(Regs::FifoStatus);
-        const auto available_axes = fifo_status & 0x3ff;
-        const auto fifo_bytes = available_axes * 7;
+        const auto available_axes = fifo_status & FIFO_SAMPLES_MASK;
+        const auto fifo_bytes = available_axes * FullFifoEntrySize;
+        if (fifo_status & FIFO_OVERRUN_LATCHED_MASK) {
+            // FIFO is expected to happen during startup and calibration
+            logger.error("FIFO OVERRUN! This occuring during normal usage is an issue.");
+        }
         
         std::array<uint8_t, FullFifoEntrySize * 8> read_buffer; // max 8 readings
         const auto bytes_to_read = std::min(static_cast<size_t>(read_buffer.size()),
