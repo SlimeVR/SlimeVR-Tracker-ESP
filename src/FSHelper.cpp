@@ -37,14 +37,9 @@ bool ensureDirectory(const char* directory) {
 		}
 	}
 
-#ifdef ESP32
-	auto dir = LittleFS.open(directory);
+	auto dir = LittleFS.open(directory, "r");
 	auto isDirectory = dir.isDirectory();
 	dir.close();
-#else
-	auto dir = LittleFS.openDir(directory);
-	auto isDirectory = dir.isDirectory();
-#endif
 
 	if (!isDirectory) {
 		if (!LittleFS.remove(directory)) {
