@@ -381,7 +381,7 @@ void Connection::sendFeatureFlags() {
 	MUST(endPacket());
 }
 
-// PACKET_ACKNOWLEDGE_CONFIG_CHANGE 23
+// PACKET_ACKNOWLEDGE_CONFIG_CHANGE 24
 
 void Connection::sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configType) {
 	MUST(m_Connected);
