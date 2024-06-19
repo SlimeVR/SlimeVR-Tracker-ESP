@@ -82,10 +82,13 @@
 // PPS: 650 @ 5+1, 650 @ 5+3
 #define PACKET_BUNDLING_BUFFERED 2
 
-#define DEG_0 0.f
-#define DEG_90 -PI / 2
-#define DEG_180 PI
-#define DEG_270 PI / 2
+// Get radian for a given angle from 0° to 360° (2*PI*r, solve for r given an angle, range -180° to 180°)
+#define DEG_X(deg) ((((deg) < 180.0f ? 0 : 360.0f) - (deg)) * PI / 180.0f)
+
+#define DEG_0 DEG_X(0.0f)
+#define DEG_90 DEG_X(90.0f)
+#define DEG_180 DEG_X(180.0f)
+#define DEG_270 DEG_X(270.0f)
 
 #define CONST_EARTH_GRAVITY 9.80665
 
