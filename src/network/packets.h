@@ -47,6 +47,7 @@
 #define PACKET_TEMPERATURE 20
 // #define PACKET_USER_ACTION 21 // Joycon buttons only currently
 #define PACKET_FEATURE_FLAGS 22
+#define PACKET_TOGGLE_MAGNETOMETER 23
 
 #define PACKET_BUNDLE 100
 

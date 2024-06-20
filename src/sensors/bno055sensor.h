@@ -38,6 +38,10 @@ public:
     void motionLoop() override final;
     void startCalibration(int calibrationType) override final;
 
+    bool supportsTogglingMagnetometer() { return true; };
+    bool hasMagnetometerEnabled() override final;
+    bool toggleMagnetometer(bool enabled) override final;
+
 private:
     Adafruit_BNO055 imu;
 };
