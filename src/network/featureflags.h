@@ -26,6 +26,7 @@
 
 #include <cstring>
 #include <algorithm>
+#include "debug.h"
 
 /**
  * Bit packed flags, enum values start with 0 and indicate which bit it is.
@@ -73,8 +74,8 @@ class FirmwareFeatures {
 public:
     enum EFirmwareFeatureFlags: uint32_t {
         // EXAMPLE_FEATURE,
+		REMOTE_COMMAND = 0,
 		B64_WIFI_SCANNING = 1,
-
         // Add new flags here
 
         BITS_TOTAL,
@@ -83,6 +84,9 @@ public:
     // Flags to send
     static constexpr const std::initializer_list<EFirmwareFeatureFlags> flagsEnabled = {
         // EXAMPLE_FEATURE,
+#ifdef USE_REMOTE_COMMAND
+		REMOTE_COMMAND,
+#endif
 		B64_WIFI_SCANNING,
 
         // Add enabled flags here

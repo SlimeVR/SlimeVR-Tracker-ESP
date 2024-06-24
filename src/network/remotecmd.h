@@ -20,39 +20,34 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "manager.h"
+#ifndef SLIMEVR_NETWORK_REMOTECMD_H_
+#define SLIMEVR_NETWORK_REMOTECMD_H_
 
-#include "GlobalVars.h"
+#include <WiFiClient.h>
+#include <WiFiServer.h>
+
+#include "globals.h"
+#include "logging/Logger.h"
 
 namespace SlimeVR {
 namespace Network {
 
-void Manager::setup() { ::WiFiNetwork::setUp(); }
+class RemoteCmd {
+public:
+	void reset();
+	void update();
 
-void Manager::update() {
-	WiFiNetwork::upkeep();
+	bool isConnected();
+	Stream& getStream();
 
-	auto wasConnected = m_IsConnected;
+private:
+	SlimeVR::Logging::Logger r_Logger = SlimeVR::Logging::Logger("RemoteCmd");
 
-	m_IsConnected = ::WiFiNetwork::isConnected();
-
-	if (!m_IsConnected) {
-		return;
-	}
-
-	if (!wasConnected) {
-		// WiFi was reconnected, rediscover the server and reconnect
-		networkConnection.reset();
-		#ifdef USE_REMOTE_COMMAND
-		networkRemoteCmd.reset();
-		#endif
-	}
-
-	networkConnection.update();
-	#ifdef USE_REMOTE_COMMAND
-	networkRemoteCmd.update();
-	#endif
-}
+	WiFiServer rcmdServer = WiFiServer(23);
+	WiFiClient rcmdClient;
+};
 
 }  // namespace Network
 }  // namespace SlimeVR
+
+#endif  // SLIMEVR_NETWORK_REMOTECMD_H_
