@@ -55,6 +55,7 @@
 #define BOARD_MOCOPI 15 // Used by mocopi/moslime
 #define BOARD_WEMOSWROOM02 16
 #define BOARD_XIAO_ESP32C3 17
+#define BOARD_HARITORA 18 // Used by Haritora/SlimeTora
 #define BOARD_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
 
 #define BAT_EXTERNAL 1
@@ -99,7 +100,7 @@
 #define BMI160_MAG_TYPE_HMC 1
 #define BMI160_MAG_TYPE_QMC 2
 
-#define MCU_UKNOWN 0
+#define MCU_UNKNOWN 0
 #define MCU_ESP8266 1
 #define MCU_ESP32 2
 #define MCU_OWOTRACK_ANDROID 3 // Only used by owoTrack mobile app
@@ -107,6 +108,7 @@
 #define MCU_OWOTRACK_IOS 5 // Only used by owoTrack mobile app
 #define MCU_ESP32_C3 6
 #define MCU_MOCOPI 7 // Used by mocopi/moslime
+#define MCU_HARITORA 8 // Used by Haritora/SlimeTora
 #define MCU_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
 
 #ifdef ESP8266
@@ -114,7 +116,7 @@
 #elif defined(ESP32)
   #define HARDWARE_MCU MCU_ESP32
 #else
-  #define HARDWARE_MCU MCU_UKNOWN
+  #define HARDWARE_MCU MCU_UNKNOWN
 #endif
 
 #define CURRENT_CONFIGURATION_VERSION 1
