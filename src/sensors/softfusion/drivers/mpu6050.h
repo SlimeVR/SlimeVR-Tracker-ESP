@@ -117,7 +117,7 @@ struct MPU6050
         delay(100);
         i2c.writeReg(MPU6050_RA_SIGNAL_PATH_RESET, 0x07); // full SIGNAL_PATH_RESET: with another 100ms delay
         delay(100);
-        
+
         // Configure
         i2c.writeReg(MPU6050_RA_PWR_MGMT_1,   0x01); // 0000 0001 PWR_MGMT_1:Clock Source Select PLL_X_gyro
         i2c.writeReg(MPU6050_RA_USER_CTRL,    0x00); // 0000 0000 USER_CTRL: Disable FIFO / I2C master / DMP
@@ -164,7 +164,7 @@ struct MPU6050
         i2c.readBytes(Regs::FifoData, readBytes, readBuffer.data());
         for (auto i = 0u; i < readBytes; i += sizeof(FifoSample)) {
             const FifoSample *sample = reinterpret_cast<FifoSample *>(&readBuffer[i]);
-            
+
             int16_t xyz[3];
 
             xyz[0] = MPU6050_FIFO_VALUE(sample, accel_x);
@@ -177,6 +177,10 @@ struct MPU6050
             xyz[2] = MPU6050_FIFO_VALUE(sample, gyro_z);
             processGyroSample(xyz, GyrTs);
         }
+    }
+
+    void deinitialize() {
+        i2c.writeReg(MPU6050_RA_PWR_MGMT_1, 0xc0); // Reset the device and put it into low power mode
     }
 
 

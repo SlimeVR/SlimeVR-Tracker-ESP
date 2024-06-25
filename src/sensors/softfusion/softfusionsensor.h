@@ -229,7 +229,7 @@ public:
         }
 
         bool initResult = false;
-        
+
         if constexpr(HasMotionlessCalib) {
             typename imu::MotionlessCalibrationData calibData;
             std::memcpy(&calibData, m_calibration.MotionlessData, sizeof(calibData));
@@ -526,6 +526,10 @@ public:
     uint32_t m_lastPollTime = micros();
     uint32_t m_lastRotationPacketSent = 0;
     uint32_t m_lastTemperaturePacketSent = 0;
+
+	void deinitialize() override {
+		m_sensor.deinitialize();
+	}
 };
 
 } // namespace

@@ -76,7 +76,7 @@ struct ICM42688
         };
         struct FifoConfig1 {
             static constexpr uint8_t reg = 0x5f;
-            static constexpr uint8_t value = 0b1 | (0b1 << 1) | (0b0 << 2); //fifo accel en=1, gyro=1, temp=0 todo: fsync, hires 
+            static constexpr uint8_t value = 0b1 | (0b1 << 1) | (0b0 << 2); //fifo accel en=1, gyro=1, temp=0 todo: fsync, hires
         };
         struct GyroConfig {
             static constexpr uint8_t reg = 0x4f;
@@ -143,7 +143,7 @@ struct ICM42688
     template <typename AccelCall, typename GyroCall>
     void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
         const auto fifo_bytes = i2c.readReg16(Regs::FifoCount);
-        
+
         std::array<uint8_t, FullFifoEntrySize * 8> read_buffer; // max 8 readings
         const auto bytes_to_read = std::min(static_cast<size_t>(read_buffer.size()),
             static_cast<size_t>(fifo_bytes)) / FullFifoEntrySize * FullFifoEntrySize;
@@ -155,9 +155,13 @@ struct ICM42688
 
             if (entry.part.accel[0] != -32768) {
                 processAccelSample(entry.part.accel, AccTs);
-            }            
-        }      
+            }
+        }
     }
+
+	void deinitialize() {
+        i2c.writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
+	}
 
 };
 

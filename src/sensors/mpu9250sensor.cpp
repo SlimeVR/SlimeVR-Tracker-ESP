@@ -442,3 +442,7 @@ bool MPU9250Sensor::getNextSample(union fifo_sample_raw *buffer, uint16_t *remai
     swapFifoData(buffer);
     return true;
 }
+
+void MPU9250Sensor::deinitialize() {
+    imu.reset();
+}

@@ -121,7 +121,7 @@ struct LSM6DS3TRC
         const auto unread_entries = read_result & 0x7ff;
         constexpr auto single_measurement_words = 6;
         constexpr auto single_measurement_bytes = sizeof(uint16_t) * single_measurement_words;
-        
+
         std::array<int16_t, 60> read_buffer; // max 10 packages of 6 16bit values of data form fifo
         const auto bytes_to_read = std::min(static_cast<size_t>(read_buffer.size()), static_cast<size_t>(unread_entries)) \
                      * sizeof(uint16_t) / single_measurement_bytes * single_measurement_bytes;
@@ -133,6 +133,9 @@ struct LSM6DS3TRC
         }
     }
 
+	void deinitialize() {
+        i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+	}
 
 };
 

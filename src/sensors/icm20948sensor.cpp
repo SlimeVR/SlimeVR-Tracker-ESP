@@ -758,3 +758,7 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void)
   return worstResult;
 }
 #endif // OVERRIDEDMPSETUP
+
+void ICM20948Sensor::deinitialize() {
+    imu.swReset();
+}

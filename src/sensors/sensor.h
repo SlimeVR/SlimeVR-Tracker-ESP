@@ -90,6 +90,7 @@ public:
     bool hasNewDataToSend() {
         return newFusedRotation || newAcceleration;
     };
+    virtual void deinitialize();
 
 protected:
     uint8_t addr = 0;

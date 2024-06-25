@@ -97,7 +97,7 @@ constexpr uint16_t BMI160_FIFO_READ_BUFFER_SIZE_BYTES = min(
 // #define BMI160_GYRO_TYPICAL_SENSITIVITY_LSB 16.4f  // 2000 deg  0
 // #define BMI160_GYRO_TYPICAL_SENSITIVITY_LSB 32.8f  // 1000 deg  1
 // #define BMI160_GYRO_TYPICAL_SENSITIVITY_LSB 65.6f  // 500 deg   2
-// #define BMI160_GYRO_TYPICAL_SENSITIVITY_LSB 131.2f // 250 deg   3 
+// #define BMI160_GYRO_TYPICAL_SENSITIVITY_LSB 131.2f // 250 deg   3
 // #define BMI160_GYRO_TYPICAL_SENSITIVITY_LSB 262.4f // 125 deg   4
 constexpr double BMI160_GYRO_TYPICAL_SENSITIVITY_LSB = (16.4f * (1 << BMI160_GYRO_RANGE));
 
@@ -146,7 +146,7 @@ class BMI160Sensor : public Sensor {
         void maybeCalibrateGyro();
         void maybeCalibrateAccel();
         void maybeCalibrateMag();
-        
+
         void printTemperatureCalibrationState() override final;
         void printDebugTemperatureCalibrationState() override final;
         void resetTemperatureCalibrationState() override final {
@@ -175,6 +175,8 @@ class BMI160Sensor : public Sensor {
         void getRemappedAcceleration(int16_t* x, int16_t* y, int16_t* z);
 
         bool getTemperature(float* out);
+
+		void deinitialize() override final;
 
     private:
         BMI160 imu {};

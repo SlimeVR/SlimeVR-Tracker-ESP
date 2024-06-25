@@ -68,6 +68,7 @@ void Sensor::printTemperatureCalibrationState() { printTemperatureCalibrationUns
 void Sensor::printDebugTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
 void Sensor::saveTemperatureCalibration() { printTemperatureCalibrationUnsupported(); };
 void Sensor::resetTemperatureCalibrationState() { printTemperatureCalibrationUnsupported(); };
+void Sensor::deinitialize() {}
 
 const char * getIMUNameByType(ImuID imuType) {
     switch(imuType) {

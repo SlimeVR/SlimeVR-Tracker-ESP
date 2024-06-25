@@ -115,6 +115,10 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl>
         LSM6DSOutputHandler<I2CImpl>::template bulkRead<AccelCall, GyroCall, Regs>(processAccelSample, processGyroSample, GyrTs, AccTs);
     }
 
+	void deinitialize() {
+        i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+	}
+
 };
 
 } // namespace

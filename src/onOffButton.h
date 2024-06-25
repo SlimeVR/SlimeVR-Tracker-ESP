@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,30 +20,30 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef SLIMEVR_ONOFFBUTTON_H_
+#define SLIMEVR_ONOFFBUTTON_H_
 
-#ifndef SENSORS_BNO055SENSOR_H
-#define SENSORS_BNO055SENSOR_H
+#include "logging/Logger.h"
+#include "globals.h"
 
-#include "sensor.h"
+#ifndef ON_OFF_BUTTON_ACTIVE_LEVEL
+#define ON_OFF_BUTTON_ACTIVE_LEVEL LOW
+#endif
 
-#include <Adafruit_BNO055.h>
+#ifndef ON_OFF_BUTTON_HOLD_TIME_MS
+#define ON_OFF_BUTTON_HOLD_TIME_MS 1000
+#endif
 
-class BNO055Sensor : public Sensor
-{
+namespace SlimeVR {
+
+class OnOffButton {
 public:
-    static constexpr auto TypeID = ImuID::BNO055;
-    static constexpr uint8_t Address = 0x28;
-
-    BNO055Sensor(uint8_t id, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t) 
-        : Sensor("BNO055Sensor", ImuID::BNO055, id, Address+addrSuppl, rotation, sclPin, sdaPin){};
-    ~BNO055Sensor(){};
-    void motionSetup() override final;
-    void motionLoop() override final;
-    void startCalibration(int calibrationType) override final;
-    void deinitialize() override final;
-
+    void setup();
+    void update();
 private:
-    Adafruit_BNO055 imu;
+    SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("OnOffButton");
 };
+
+}
 
 #endif

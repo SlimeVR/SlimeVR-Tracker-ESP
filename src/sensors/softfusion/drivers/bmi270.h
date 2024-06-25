@@ -75,13 +75,13 @@ struct BMI270
             static constexpr uint8_t reg = 0x7e;
             static constexpr uint8_t valueSwReset = 0xb6;
             static constexpr uint8_t valueFifoFlush = 0xb0;
-            static constexpr uint8_t valueGTrigger = 0x02;            
+            static constexpr uint8_t valueGTrigger = 0x02;
         };
 
         struct PwrConf {
             static constexpr uint8_t reg = 0x7c;
             static constexpr uint8_t valueNoPowerSaving = 0x0;
-            static constexpr uint8_t valueFifoSelfWakeup = 0x2;            
+            static constexpr uint8_t valueFifoSelfWakeup = 0x2;
         };
 
         struct PwrCtrl {
@@ -98,7 +98,7 @@ struct BMI270
         };
 
         static constexpr uint8_t InitAddr = 0x5b;
-        static constexpr uint8_t InitData = 0x5e;        
+        static constexpr uint8_t InitData = 0x5e;
 
         struct InternalStatus {
             static constexpr uint8_t reg = 0x21;
@@ -232,7 +232,7 @@ struct BMI270
         // disable power saving
         i2c.writeReg(Regs::PwrConf::reg, Regs::PwrConf::valueNoPowerSaving);
         delay(1);
-        
+
         // firmware upload
         i2c.writeReg(Regs::InitCtrl::reg, Regs::InitCtrl::valueStartInit);
         for (uint16_t pos=0; pos<sizeof(bmi270_firmware);)
@@ -360,7 +360,7 @@ struct BMI270
     }
 
     using FifoBuffer = std::array<uint8_t, I2CImpl::MaxTransactionLength>;
-    FifoBuffer read_buffer; 
+    FifoBuffer read_buffer;
 
     template<typename T>
     inline T getFromFifo(uint32_t &position, FifoBuffer& fifo) {
@@ -373,7 +373,7 @@ struct BMI270
     template <typename AccelCall, typename GyroCall>
     void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
         const auto fifo_bytes = i2c.readReg16(Regs::FifoCount);
-        
+
         const auto bytes_to_read = std::min(static_cast<size_t>(read_buffer.size()),
             static_cast<size_t>(fifo_bytes));
         i2c.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
@@ -384,7 +384,7 @@ struct BMI270
                 getFromFifo<uint8_t>(i, read_buffer); // skip 1 byte
             }
             else if ((header & Fifo::ModeMask) == Fifo::DataFrame) {
-                const uint8_t required_length = 
+                const uint8_t required_length =
                     (((header & Fifo::GyrDataBit) >> Fifo::GyrDataBit) +
                     ((header & Fifo::AccelDataBit) >> Fifo::AccelDataBit)) * 6;
                 if (i - bytes_to_read < required_length) {
@@ -413,6 +413,10 @@ struct BMI270
             }
         }
     }
+
+	void deinitialize() {
+        i2c.writeReg(Regs::Cmd::reg, Regs::Cmd::valueSwReset);
+	}
 
 };
 
