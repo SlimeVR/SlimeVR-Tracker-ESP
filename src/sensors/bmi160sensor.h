@@ -122,11 +122,19 @@ static_assert(0x7FFF * BMI160_TEMP_CALIBRATION_REQUIRED_SAMPLES_PER_STEP < 0x7FF
 
 class BMI160Sensor : public Sensor {
     public:
-        BMI160Sensor(uint8_t id, uint8_t address, float rotation, uint8_t sclPin, uint8_t sdaPin, int axisRemap=AXIS_REMAP_DEFAULT) :
-            Sensor("BMI160Sensor", IMU_BMI160, id, address, rotation, sclPin, sdaPin),
-            axisRemap(axisRemap),
+        static constexpr uint8_t Address = 0x68;
+        static constexpr auto TypeID = ImuID::BMI160;
+
+        BMI160Sensor(uint8_t id, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, int axisRemapParam) :
+            Sensor("BMI160Sensor", ImuID::BMI160, id, Address+addrSuppl, rotation, sclPin, sdaPin),
             sfusion(BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f, BMI160_ODR_MAG_MICROS / 1e6f)
         {
+            if (axisRemapParam < 256) {
+                axisRemap = AXIS_REMAP_DEFAULT;
+            }
+            else {
+                axisRemap = axisRemapParam;
+            }
         };
         ~BMI160Sensor(){};
         void initHMC(BMI160MagRate magRate);
@@ -167,6 +175,7 @@ class BMI160Sensor : public Sensor {
         void getRemappedAcceleration(int16_t* x, int16_t* y, int16_t* z);
 
         bool getTemperature(float* out);
+
     private:
         BMI160 imu {};
         int axisRemap;

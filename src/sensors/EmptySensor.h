@@ -33,7 +33,7 @@ namespace SlimeVR
         class EmptySensor : public Sensor
         {
         public:
-            EmptySensor(uint8_t id) : Sensor("EmptySensor", 255, id, 0, 0.0){};
+            EmptySensor(uint8_t id) : Sensor("EmptySensor", ImuID::Empty, id, 0, 0.0){};
             ~EmptySensor(){};
 
             void motionSetup() override final{};

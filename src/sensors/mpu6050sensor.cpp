@@ -106,7 +106,6 @@ void MPU6050Sensor::motionSetup()
         packetSize = imu.dmpGetFIFOPacketSize();
 
         working = true;
-        configured = true;
     }
     else
     {
@@ -136,6 +135,7 @@ void MPU6050Sensor::motionLoop()
     if (imu.dmpGetCurrentFIFOPacket(fifoBuffer))
     {
         imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
+        hadData = true;
 
         sfusion.updateQuaternion(rawQuat);
 

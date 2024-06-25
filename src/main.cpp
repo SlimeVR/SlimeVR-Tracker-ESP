@@ -71,10 +71,10 @@ void setup()
 
     SerialCommands::setUp();
 
-#if IMU == IMU_MPU6500 || IMU == IMU_MPU6050 || IMU == IMU_MPU9250 || IMU == IMU_BNO055 || IMU == IMU_ICM20948 || IMU == IMU_BMI160|| IMU == IMU_ICM42688
     I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); // Make sure the bus isn't stuck when resetting ESP without powering it down
-    // Fixes I2C issues for certain IMUs. Only has been tested on IMUs above. Testing advised when adding other IMUs.
-#endif
+    // Fixes I2C issues for certain IMUs. Previously this feature was enabled for selected IMUs, now it's enabled for all.
+    // If some IMU turned out to be broken by this, check needs to be re-added.
+
     // join I2C bus
 
 #if ESP32

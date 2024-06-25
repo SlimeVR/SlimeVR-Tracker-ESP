@@ -272,6 +272,18 @@ namespace SlimeVR {
 
                     break;
 
+                case CalibrationConfigType::SFUSION:
+                    m_Logger.info("            A_B        : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.sfusion.A_B));
+
+                    m_Logger.info("            A_Ainv     :");
+                    for (uint8_t i = 0; i < 3; i++) {
+                        m_Logger.info("                         %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.sfusion.A_Ainv[i]));
+                    }
+
+                    m_Logger.info("            G_off      : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.sfusion.G_off));
+                    m_Logger.info("            Temperature: %f", c.data.sfusion.temperature);
+                    break;
+
                 case CalibrationConfigType::ICM20948:
                     m_Logger.info("            G: %d, %d, %d", UNPACK_VECTOR_ARRAY(c.data.icm20948.G));
                     m_Logger.info("            A: %d, %d, %d", UNPACK_VECTOR_ARRAY(c.data.icm20948.A));
@@ -301,25 +313,6 @@ namespace SlimeVR {
                 case CalibrationConfigType::MPU6050:
                     m_Logger.info("            A_B  : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.mpu6050.A_B));
                     m_Logger.info("            G_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.mpu6050.G_off));
-
-                    break;
-
-                case CalibrationConfigType::ICM42688:
-                    m_Logger.info("            A_B   : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.A_B));
-
-                    m_Logger.info("            A_Ainv:");
-                    for (uint8_t i = 0; i < 3; i++) {
-                        m_Logger.info("                    %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.A_Ainv[i]));
-                    }
-
-                    m_Logger.info("            M_B   : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.M_B));
-
-                    m_Logger.info("            M_Ainv:");
-                    for (uint8_t i = 0; i < 3; i++) {
-                        m_Logger.info("                    %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.M_Ainv[i]));
-                    }
-
-                    m_Logger.info("            G_off  : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.icm42688.G_off));
 
                     break;
                 }

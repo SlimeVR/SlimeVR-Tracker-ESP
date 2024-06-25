@@ -18,7 +18,7 @@ namespace SlimeVR
             updateGyro(Gxyz, deltat);
         }
 
-        void SensorFusion::updateAcc(sensor_real_t Axyz[3], sensor_real_t deltat)
+        void SensorFusion::updateAcc(const sensor_real_t Axyz[3], sensor_real_t deltat)
         {
             if (deltat < 0) deltat = accTs;
 
@@ -32,7 +32,7 @@ namespace SlimeVR
             #endif
         }
 
-        void SensorFusion::updateMag(sensor_real_t Mxyz[3], sensor_real_t deltat)
+        void SensorFusion::updateMag(const sensor_real_t Mxyz[3], sensor_real_t deltat)
         {
             if (deltat < 0) deltat = magTs;
 
@@ -53,7 +53,7 @@ namespace SlimeVR
             #endif
         }
 
-        void SensorFusion::updateGyro(sensor_real_t Gxyz[3], sensor_real_t deltat)
+        void SensorFusion::updateGyro(const sensor_real_t Gxyz[3], sensor_real_t deltat)
         {
             if (deltat < 0) deltat = gyrTs;
 

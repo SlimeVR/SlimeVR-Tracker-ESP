@@ -35,6 +35,12 @@ The following IMUs and their corresponding `IMU` values are supported by the fir
   * Using fusion in internal DMP for 6Dof or 9DoF, 9DoF mode requires good magnetic environment.
   * Comment out `USE_6DOF` in `debug.h` for 9DoF mode.
   * Experimental support!
+* BMI270 (IMU_BMI270), ICM-42688 (IMU_ICM42688), LSM6DS3TR-C (IMU_LSM6DS3TRC), LSM6DSV (IMU_LSM6DSV), LSM6DSO (IMU_LSM6DSO), LSM6DSR (IMU_LSM6DSR), MPU-6050 (IMU_MPU6050_SF)
+  * Using common code: SoftFusionSensor for sensor fusion of Gyroscope and Accelerometer.
+  * Gyro&Accel sample rate, gyroscope offset and 6-side accelerometer calibration supported.
+  * In case of BMI270, gyroscope sensitivity auto-calibration (CRT) is additionally performed.
+  * Support for magnetometers is currently not implemented.
+  * VERY experimental support!
 
 Firmware can work with both ESP8266 and ESP32. Please edit `defines.h` and set your pinout properly according to how you connected the IMU.
 
