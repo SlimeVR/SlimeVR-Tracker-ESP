@@ -410,7 +410,7 @@ void Connection::sendTrackerDiscovery() {
 	MUST(sendInt(BOARD));
 	// This is kept for backwards compatibility,
 	// but the latest SlimeVR server will not initialize trackers
-	// with firmware build > 8 until it recieves a sensor info packet
+	// with firmware build > 8 until it receives a sensor info packet
 	MUST(sendInt(IMU));
 	MUST(sendInt(HARDWARE_MCU));
 	MUST(sendInt(0));
