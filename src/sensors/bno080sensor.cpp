@@ -54,7 +54,7 @@ void BNO080Sensor::motionSetup()
     this->imu.enableLinearAccelerometer(10);
 
 #if USE_6_AXIS
-    if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
+    if ((sensorType == ImuID::BNO085 || sensorType == ImuID::BNO086) && BNO_USE_ARVR_STABILIZATION) {
         imu.enableARVRStabilizedGameRotationVector(10);
     } else {
         imu.enableGameRotationVector(10);
@@ -64,7 +64,7 @@ void BNO080Sensor::motionSetup()
     imu.enableRotationVector(1000);
     #endif
 #else
-    if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
+    if ((sensorType == ImuID::BNO085 || sensorType == ImuID::BNO086) && BNO_USE_ARVR_STABILIZATION) {
         imu.enableARVRStabilizedRotationVector(10);
     } else {
         imu.enableRotationVector(10);

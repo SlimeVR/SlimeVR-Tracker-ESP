@@ -332,6 +332,7 @@ void BMI160Sensor::motionLoop() {
             #endif
             optimistic_yield(100);
             if (!sfusion.isUpdated()) return;
+            hadData = true;
             sfusion.clearUpdated();
         }
     }
