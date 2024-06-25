@@ -27,8 +27,30 @@
 ADC_MODE(ADC_VCC);
 #endif
 
+#if BATTERY_MONITOR == BAT_BQ27441
+#include <SparkFunBQ27441.h>
+#endif
+
 void BatteryMonitor::Setup()
 {
+#if BATTERY_MONITOR == BAT_BQ27441
+    if (!lipo.begin()){
+        m_Logger.error("BQ27741 not found on I2C bus");
+    }
+    else{
+        m_Logger.info("BQ27741 found");
+        if(lipo.itporFlag()){ // Check if need to set configs
+            m_Logger.info("BQ27741 paremeters not set, setting them");
+            lipo.enterConfig();
+            lipo.setCapacity(BATTERY_DESIGN_CAPACITY);
+            lipo.setDesignEnergy(3.7f*BATTERY_DESIGN_CAPACITY);
+            lipo.setTerminateVoltage(BATTERY_LOWEST_OP_VOLTAGE);
+            lipo.setTaperRate(10 * BATTERY_DESIGN_CAPACITY / BATTERY_TAPER_CURRENT);
+            lipo.exitConfig();
+        }
+    } 
+    
+#endif
 #if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
     for (uint8_t i = 0x48; i < 0x4F; i++)
     {
@@ -47,7 +69,7 @@ void BatteryMonitor::Setup()
 
 void BatteryMonitor::Loop()
 {
-    #if BATTERY_MONITOR == BAT_EXTERNAL || BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
+    #if BATTERY_MONITOR == BAT_EXTERNAL || BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021 || BATTERY_MONITOR == BAT_BQ27441 
         auto now_ms = millis();
         if (now_ms - last_battery_sample >= batterySampleRate)
         {
@@ -99,26 +121,49 @@ void BatteryMonitor::Loop()
                     }
                 }
             #endif
+            #if BATTERY_MONITOR == BAT_BQ27441
+                voltage = lipo.voltage()/1000.f;
+                level = lipo.soc()/100.0f;
+
+                int current = lipo.current(AVG);
+                unsigned int fullCapacity = lipo.capacity(FULL);
+                unsigned int capacity = lipo.capacity(REMAIN);
+                int power = lipo.power();
+                int health = lipo.soh();
+
+                String bat_status = "Battery:";
+                bat_status += " Level : " + String(level);
+                bat_status += ", Voltage [V]: " + String(voltage);
+                bat_status += ", Current [mA]: " + String(current);
+                bat_status += ", Capacity [mAh]: " + String (capacity) + "/" + String(fullCapacity);
+                bat_status += ", Power draw [mW]: " + String(power);
+                bat_status += ", Health [perc]: " + String(health);
+                m_Logger.info(bat_status.c_str());
+
+            #endif
             if (voltage > 0) //valid measurement
             {
-                // Estimate battery level, 3.2V is 0%, 4.17V is 100% (1.0)
-                if (voltage > 3.975f)
-                    level = (voltage - 2.920f) * 0.8f;
-                else if (voltage > 3.678f)
-                    level = (voltage - 3.300f) * 1.25f;
-                else if (voltage > 3.489f)
-                    level = (voltage - 3.400f) * 1.7f;
-                else if (voltage > 3.360f)
-                    level = (voltage - 3.300f) * 0.8f;
-                else
-                    level = (voltage - 3.200f) * 0.3f;
+                #if BATTERY_MONITOR == BAT_EXTERNAL || BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021 
+                    // Estimate battery level based on voltage, 3.2V is 0%, 4.17V is 100% (1.0)
+                    if (voltage > 3.975f)
+                        level = (voltage - 2.920f) * 0.8f;
+                    else if (voltage > 3.678f)
+                        level = (voltage - 3.300f) * 1.25f;
+                    else if (voltage > 3.489f)
+                        level = (voltage - 3.400f) * 1.7f;
+                    else if (voltage > 3.360f)
+                        level = (voltage - 3.300f) * 0.8f;
+                    else
+                        level = (voltage - 3.200f) * 0.3f;
 
-                level = (level - 0.05f) / 0.95f; // Cut off the last 5% (3.36V)
+                    level = (level - 0.05f) / 0.95f; // Cut off the last 5% (3.36V)
 
-                if (level > 1)
-                    level = 1;
-                else if (level < 0)
-                    level = 0;
+                    if (level > 1)
+                        level = 1;
+                    else if (level < 0)
+                        level = 0;
+                #endif
+
                 networkConnection.sendBatteryLevel(voltage, level);
                 #ifdef BATTERY_LOW_POWER_VOLTAGE
                     if (voltage < BATTERY_LOW_POWER_VOLTAGE)
