@@ -113,13 +113,13 @@ namespace I2CSCAN
 
     bool hasDevOnBus(uint8_t addr) {
         byte error;
-#if defined(ESP32C3) || defined(ESP32C6)
+#if defined(ESP32C3)
         int retries = 2;
         do {
 #endif
             Wire.beginTransmission(addr);
             error = Wire.endTransmission();
-#if defined(ESP32C3) || defined(ESP32C6)
+#if defined(ESP32C3)
         }
         while (error != 0 && retries--);
 #endif
