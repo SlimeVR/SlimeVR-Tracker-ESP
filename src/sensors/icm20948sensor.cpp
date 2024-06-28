@@ -144,7 +144,7 @@ void ICM20948Sensor::startCalibrationAutoSave()
 void ICM20948Sensor::startDMP()
 {
 #ifdef ESP32
-    #if defined(ESP32C3) || defined(ESP32C6)
+    #if defined(ESP32C3)
         #define ICM20948_ODRGYR 1
         #define ICM20948_ODRAXL 1
     #else
