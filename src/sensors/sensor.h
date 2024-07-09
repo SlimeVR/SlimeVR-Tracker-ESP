@@ -41,6 +41,12 @@ enum class SensorStatus : uint8_t {
     SENSOR_ERROR = 2
 };
 
+enum class MagnetometerStatus : uint8_t {
+	NOT_SUPPORTED = 0,
+	DISABLED = 1,
+	ENABLED = 2,
+};
+
 class Sensor
 {
 public:
@@ -73,12 +79,18 @@ public:
     bool isValid() {
         return sclPin != sdaPin;
     };
+	bool isMagEnabled() {
+		return magStatus == MagnetometerStatus::ENABLED;
+	}
     uint8_t getSensorId() {
         return sensorId;
     };
     uint8_t getSensorType() {
         return sensorType;
     };
+	MagnetometerStatus getMagStatus() {
+		return magStatus;
+	};
     const Vector3& getAcceleration() {
         return acceleration;
     };
@@ -97,6 +109,7 @@ protected:
     bool configured = false;
     bool working = false;
     uint8_t calibrationAccuracy = 0;
+	MagnetometerStatus magStatus = MagnetometerStatus::NOT_SUPPORTED;
     Quat sensorOffset;
 
     bool newFusedRotation = false;

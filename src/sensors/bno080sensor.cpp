@@ -58,14 +58,15 @@ void BNO080Sensor::motionSetup()
     switch (sensorConfig.type) {
     case SlimeVR::Configuration::SensorConfigType::BNO0XX:
         m_Config = sensorConfig.data.bno0XX;
-        m_magEnabled = m_Config.magEnabled;
+        magStatus = m_Config.magEnabled ? MagnetometerStatus::ENABLED : MagnetometerStatus::DISABLED;
         break;
     default:
         // Ignore lack of config for BNO, byt default use from FW build
+		magStatus = USE_6_AXIS ? MagnetometerStatus::DISABLED : MagnetometerStatus::ENABLED;
         break;
     }
 
-    if(!m_magEnabled) {
+    if(!isMagEnabled()) {
         if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
             imu.enableARVRStabilizedGameRotationVector(10);
         } else {
@@ -125,7 +126,7 @@ void BNO080Sensor::motionLoop()
         lastReset = 0;
         lastData = millis();
 
-        if(!m_magEnabled) {
+        if(!isMagEnabled()) {
                 if (imu.hasNewGameQuat()) // New quaternion if context
                 {
                     Quat nRotation;
@@ -233,11 +234,11 @@ void BNO080Sensor::sendData()
 #endif
     }
 
-    if(m_magEnabled) {
+    if(isMagEnabled()) {
         networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
     }
 
-    if(BNO_USE_MAGNETOMETER_CORRECTION && !m_magEnabled) {
+    if(BNO_USE_MAGNETOMETER_CORRECTION && !isMagEnabled()) {
         if (newMagData)
         {
             newMagData = false;
@@ -257,26 +258,13 @@ void BNO080Sensor::setFlag(uint16_t flagId, bool state)
 {
     if(flagId == FLAG_SENSOR_BNO0XX_MAG_ENABLED) {
         m_Config.magEnabled = state;
-        m_magEnabled = state;
-        if(state) {
-            if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
-                imu.enableARVRStabilizedRotationVector(10);
-            } else {
-                imu.enableRotationVector(10);
-            }
-        } else {
-            if ((sensorType == IMU_BNO085 || sensorType == IMU_BNO086) && BNO_USE_ARVR_STABILIZATION) {
-                imu.enableARVRStabilizedGameRotationVector(10);
-            } else {
-                imu.enableGameRotationVector(10);
-            }
+        magStatus = state ? MagnetometerStatus::ENABLED : MagnetometerStatus::DISABLED;
 
-            #if BNO_USE_MAGNETOMETER_CORRECTION
-            imu.enableRotationVector(1000);
-            #endif
-        }
-        imu.softReset();
-    }
+		SlimeVR::Configuration::SensorConfig config;
+		config.type = SlimeVR::Configuration::SensorConfigType::BNO0XX;
+		config.data.bno0XX = m_Config;
+		configuration.setSensor(sensorId, config);
+	}
 }
 
 void BNO080Sensor::startCalibration(int calibrationType)

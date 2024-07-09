@@ -298,6 +298,7 @@ void Connection::sendSensorInfo(Sensor* sensor) {
 	MUST(sendByte(sensor->getSensorId()));
 	MUST(sendByte((uint8_t)sensor->getSensorState()));
 	MUST(sendByte(sensor->getSensorType()));
+	MUST(sendByte((uint8_t)sensor->getMagStatus()));
 
 	MUST(endPacket());
 }
@@ -738,8 +739,11 @@ void Connection::update() {
 			uint8_t sensorId = m_Packet[12];
 			uint16_t flagId = m_Packet[13] << 8 | m_Packet[14];
 			bool newState = m_Packet[15] > 0;
-			if(sensorId == 255) {
-				// Apply the flag to the whole device
+			if(sensorId == UINT8_MAX) {
+				std::vector<Sensor *> & sensors = sensorManager.getSensors();
+				for (Sensor * sensor : sensors) {
+					sensor->setFlag(flagId, newState);
+				}
 			} else {
 				std::vector<Sensor *> & sensors = sensorManager.getSensors();
 				if(sensorId < sensors.size()) {
@@ -748,6 +752,10 @@ void Connection::update() {
 				}
 			}
 			sendAcknowledgeConfigChange(sensorId, flagId);
+			configuration.save();
+			// Should not be done always, but for magnetometer we probably prefer restarting
+			// the whole ESP
+			EspClass::restart();
 			break;
 		}
 	}
