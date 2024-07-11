@@ -58,11 +58,13 @@ void BNO080Sensor::motionSetup()
     switch (sensorConfig.type) {
     case SlimeVR::Configuration::SensorConfigType::BNO0XX:
         m_Config = sensorConfig.data.bno0XX;
-        magStatus = m_Config.magEnabled ? MagnetometerStatus::ENABLED : MagnetometerStatus::DISABLED;
+        magStatus = m_Config.magEnabled ? MagnetometerStatus::MAG_ENABLED
+										: MagnetometerStatus::MAG_DISABLED;
         break;
     default:
         // Ignore lack of config for BNO, byt default use from FW build
-		magStatus = USE_6_AXIS ? MagnetometerStatus::DISABLED : MagnetometerStatus::ENABLED;
+		magStatus = USE_6_AXIS ? MagnetometerStatus::MAG_DISABLED
+							   : MagnetometerStatus::MAG_ENABLED;
         break;
     }
 
@@ -258,7 +260,8 @@ void BNO080Sensor::setFlag(uint16_t flagId, bool state)
 {
     if(flagId == FLAG_SENSOR_BNO0XX_MAG_ENABLED) {
         m_Config.magEnabled = state;
-        magStatus = state ? MagnetometerStatus::ENABLED : MagnetometerStatus::DISABLED;
+        magStatus = state ? MagnetometerStatus::MAG_ENABLED
+						  : MagnetometerStatus::MAG_DISABLED;
 
 		SlimeVR::Configuration::SensorConfig config;
 		config.type = SlimeVR::Configuration::SensorConfigType::BNO0XX;
