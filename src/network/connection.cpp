@@ -755,7 +755,7 @@ void Connection::update() {
 			configuration.save();
 			// Should not be done always, but for magnetometer we probably prefer restarting
 			// the whole ESP
-			EspClass::restart();
+			ESP.restart();
 			break;
 		}
 	}
