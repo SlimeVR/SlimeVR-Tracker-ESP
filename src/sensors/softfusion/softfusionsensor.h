@@ -274,12 +274,12 @@ public:
         if (calibrationType == 0) {
             // ALL
             calibrateSampleRate();
-            calibrateGyroOffset();
             if constexpr(HasMotionlessCalib) {
                 typename imu::MotionlessCalibrationData calibData;
                 m_sensor.motionlessCalibration(calibData);
                 std::memcpy(m_calibration.MotionlessData, &calibData, sizeof(calibData));
             }
+            calibrateGyroOffset();
             calibrateAccel();
         }
         else if (calibrationType == 1)
