@@ -62,7 +62,7 @@ void BNO080Sensor::motionSetup()
 										: MagnetometerStatus::MAG_DISABLED;
         break;
     default:
-        // Ignore lack of config for BNO, byt default use from FW build
+        // Ignore lack of config for BNO, by default use from FW build
 		magStatus = USE_6_AXIS ? MagnetometerStatus::MAG_DISABLED
 							   : MagnetometerStatus::MAG_ENABLED;
         break;
@@ -161,7 +161,7 @@ void BNO080Sensor::motionLoop()
 #endif // SEND_ACCELERATION
 
 #if BNO_USE_MAGNETOMETER_CORRECTION
-        if(!m_magEnabled) {
+        if(!isMagEnabled()) {
                 if (imu.hasNewMagQuat())
                 {
                     imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
@@ -267,6 +267,7 @@ void BNO080Sensor::setFlag(uint16_t flagId, bool state)
 		config.type = SlimeVR::Configuration::SensorConfigType::BNO0XX;
 		config.data.bno0XX = m_Config;
 		configuration.setSensor(sensorId, config);
+		imu.softReset();
 	}
 }
 
