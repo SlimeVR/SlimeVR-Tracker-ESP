@@ -236,16 +236,19 @@ void BNO080Sensor::sendData()
 #endif
     }
 
-    if(isMagEnabled()) {
-        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
-    }
+	// FIXME: This doesn't seem really useful to send, and it's a waste of packets, maybe we
+	// 		should disable it via a define macro
+
+//    if(isMagEnabled()) {
+//        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
+//    }
 
     if(BNO_USE_MAGNETOMETER_CORRECTION && !isMagEnabled()) {
         if (newMagData)
         {
             newMagData = false;
             networkConnection.sendRotationData(sensorId, &magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy);
-            networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
+//            networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
         }
     }
 
@@ -267,7 +270,9 @@ void BNO080Sensor::setFlag(uint16_t flagId, bool state)
 		config.type = SlimeVR::Configuration::SensorConfigType::BNO0XX;
 		config.data.bno0XX = m_Config;
 		configuration.setSensor(sensorId, config);
-		imu.softReset();
+
+		// Reinitialize the sensor
+		motionSetup();
 	}
 }
 

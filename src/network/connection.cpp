@@ -753,9 +753,6 @@ void Connection::update() {
 			}
 			sendAcknowledgeConfigChange(sensorId, flagId);
 			configuration.save();
-			// Should not be done always, but for magnetometer we probably prefer restarting
-			// the whole ESP
-			ESP.restart();
 			break;
 		}
 	}
