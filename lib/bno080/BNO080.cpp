@@ -256,13 +256,13 @@ uint16_t BNO080::parseCommandReport(void)
 		if (command == COMMAND_ME_CALIBRATE)
 		{
 			calibrationStatus = shtpData[5 + 0]; //R0 - Status (0 = success, non-zero = fail)
-			calibrationResponseStatus = shtpData[5 + 0];
-			accelCalEnabled = shtpData[6 + 0];
-			gyroCalEnabled = shtpData[7 + 0];
-			magCalEnabled = shtpData[8 + 0];
-			planarAccelCalEnabled = shtpData[9 + 0];
-			onTableCalEnabled = shtpData[10 + 0];
-			_hasNewCliabrationStatus = true
+			_calibrationResponseStatus = shtpData[5 + 0];
+			_accelCalEnabled = shtpData[6 + 0];
+			_gyroCalEnabled = shtpData[7 + 0];
+			_magCalEnabled = shtpData[8 + 0];
+			_planarAccelCalEnabled = shtpData[9 + 0];
+			_onTableCalEnabled = shtpData[10 + 0];
+			_hasNewCliabrationStatus = true;
 		}
 		return shtpData[0];
 	}
@@ -1436,6 +1436,26 @@ void BNO080::saveCalibration()
 
 	//Using this shtpData packet, send a command
 	sendCommand(COMMAND_DCD); //Save DCD command
+}
+
+void BNO080::saveCalibrationPeriodically(bool save)
+{
+	/*shtpData[3] = 0; //P0 - Enable/Disable Periodic DCD Save
+	shtpData[4] = 0; //P1 - Reserved
+	shtpData[5] = 0; //P2 - Reserved
+	shtpData[6] = 0; //P3 - Reserved
+	shtpData[7] = 0; //P4 - Reserved
+	shtpData[8] = 0; //P5 - Reserved
+	shtpData[9] = 0; //P6 - Reserved
+	shtpData[10] = 0; //P7 - Reserved
+	shtpData[11] = 0; //P8 - Reserved*/
+
+	for (uint8_t x = 3; x < 12; x++) //Clear this section of the shtpData array
+		shtpData[x] = 0;
+	shtpData[3] = save ? 1 : 0;
+
+	//Using this shtpData packet, send a command
+	sendCommand(COMMAND_DCD_PERIOD_SAVE); //Save DCD command
 }
 
 bool BNO080::hasNewCliabrationStatus()
