@@ -256,6 +256,13 @@ uint16_t BNO080::parseCommandReport(void)
 		if (command == COMMAND_ME_CALIBRATE)
 		{
 			calibrationStatus = shtpData[5 + 0]; //R0 - Status (0 = success, non-zero = fail)
+			calibrationResponseStatus = shtpData[5 + 0];
+			accelCalEnabled = shtpData[6 + 0];
+			gyroCalEnabled = shtpData[7 + 0];
+			magCalEnabled = shtpData[8 + 0];
+			planarAccelCalEnabled = shtpData[9 + 0];
+			onTableCalEnabled = shtpData[10 + 0];
+			_hasNewCliabrationStatus = true
 		}
 		return shtpData[0];
 	}
@@ -1381,6 +1388,7 @@ void BNO080::sendCalibrateCommand(uint8_t thingToCalibrate)
 
 	//Make the internal calStatus variable non-zero (operation failed) so that user can test while we wait
 	calibrationStatus = 1;
+	_hasNewCliabrationStatus  = false;
 
 	//Using this shtpData packet, send a command
 	sendCommand(COMMAND_ME_CALIBRATE);
@@ -1404,7 +1412,7 @@ void BNO080::requestCalibrationStatus()
 		shtpData[x] = 0;
 
 	shtpData[6] = 0x01; //P3 - 0x01 - Subcommand: Get ME Calibration
-
+	_hasNewCliabrationStatus  = false;
 	//Using this shtpData packet, send a command
 	sendCommand(COMMAND_ME_CALIBRATE);
 }
@@ -1429,6 +1437,23 @@ void BNO080::saveCalibration()
 	//Using this shtpData packet, send a command
 	sendCommand(COMMAND_DCD); //Save DCD command
 }
+
+bool BNO080::hasNewCliabrationStatus()
+{
+	return _hasNewCliabrationStatus;
+}
+
+void BNO080::getCalibrationStatus(uint8_t &calibrationResponseStatus, uint8_t &accelCalEnabled, uint8_t &gyroCalEnabled, uint8_t &magCalEnabled, uint8_t &planarAccelCalEnabled, uint8_t &onTableCalEnabled)
+{
+	_hasNewCliabrationStatus = false;
+	calibrationResponseStatus = _calibrationResponseStatus;
+	accelCalEnabled = _accelCalEnabled;
+	gyroCalEnabled = _gyroCalEnabled;
+	magCalEnabled = _magCalEnabled;
+	planarAccelCalEnabled = _planarAccelCalEnabled;
+	onTableCalEnabled = _onTableCalEnabled;
+}
+
 
 //Wait a certain time for incoming I2C bytes before giving up
 //Returns false if failed
