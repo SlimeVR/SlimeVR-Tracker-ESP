@@ -37,8 +37,7 @@ public:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
 		uint8_t
 	)
 		: Sensor(
@@ -47,8 +46,7 @@ public:
 			id,
 			Address + addrSuppl,
 			rotation,
-			sclPin,
-			sdaPin
+			sensorInterface
 		) {}
 	~ICM20948Sensor() override = default;
 	void motionSetup() override final;

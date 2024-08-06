@@ -61,40 +61,8 @@ using SoftFusionLSM6DSR
 using SoftFusionMPU6050
 	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
 
-// TODO Make it more generic in the future and move another place (abstract sensor
-// interface)
-void SensorManager::swapI2C(uint8_t sclPin, uint8_t sdaPin) {
-	if (sclPin != activeSCL || sdaPin != activeSDA || !running) {
-		Wire.flush();
-#if ESP32
-		if (running) {
-		} else {
-			// Reset HWI2C to avoid being affected by I2CBUS reset
-			Wire.end();
-		}
-		// Disconnect pins from HWI2C
-		gpio_set_direction((gpio_num_t)activeSCL, GPIO_MODE_INPUT);
-		gpio_set_direction((gpio_num_t)activeSDA, GPIO_MODE_INPUT);
-
-		if (running) {
-			i2c_set_pin(I2C_NUM_0, sdaPin, sclPin, false, false, I2C_MODE_MASTER);
-		} else {
-			Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin), I2C_SPEED);
-			Wire.setTimeOut(150);
-		}
-#else
-		Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin));
-#endif
-
-		activeSCL = sclPin;
-		activeSDA = sdaPin;
-	}
-}
-
-void SensorManager::setup() {
-	running = false;
-	activeSCL = PIN_IMU_SCL;
-	activeSDA = PIN_IMU_SDA;
+void SensorManager::setup()
+{
 
 	uint8_t sensorID = 0;
 	uint8_t activeSensorCount = 0;
@@ -115,33 +83,32 @@ void SensorManager::setup() {
 	m_Logger.info("%d sensor(s) configured", activeSensorCount);
 	// Check and scan i2c if no sensors active
 	if (activeSensorCount == 0) {
-		m_Logger.error(
-			"Can't find I2C device on provided addresses, scanning for all I2C devices "
-			"and returning"
-		);
+		m_Logger.error("Can't find I2C device on provided addresses, scanning for all I2C devices and returning");
 		I2CSCAN::scani2cports();
 	}
 }
 
-void SensorManager::postSetup() {
-	running = true;
-	for (auto& sensor : m_Sensors) {
+void SensorManager::postSetup()
+{
+	for (auto &sensor : m_Sensors) {
 		if (sensor->isWorking()) {
-			swapI2C(sensor->sclPin, sensor->sdaPin);
+			sensor->hwInterface->swapIn();
 			sensor->postSetup();
 		}
 	}
 }
 
-void SensorManager::update() {
+void SensorManager::update()
+{
 	// Gather IMU data
 	bool allIMUGood = true;
-	for (auto& sensor : m_Sensors) {
+	for (auto &sensor : m_Sensors) {
 		if (sensor->isWorking()) {
-			swapI2C(sensor->sclPin, sensor->sdaPin);
+				sensor->hwInterface->swapIn();
 			sensor->motionLoop();
 		}
-		if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR) {
+		if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR)
+		{
 			allIMUGood = false;
 		}
 	}
@@ -152,47 +119,43 @@ void SensorManager::update() {
 		return;
 	}
 
-#ifndef PACKET_BUNDLING
-	static_assert(false, "PACKET_BUNDLING not set");
-#endif
-#if PACKET_BUNDLING == PACKET_BUNDLING_BUFFERED
-	uint32_t now = micros();
-	bool shouldSend = false;
-	bool allSensorsReady = true;
-	for (auto& sensor : m_Sensors) {
-		if (!sensor->isWorking()) {
-			continue;
+	#ifndef PACKET_BUNDLING
+		static_assert(false, "PACKET_BUNDLING not set");
+	#endif
+	#if PACKET_BUNDLING == PACKET_BUNDLING_BUFFERED
+		uint32_t now = micros();
+		bool shouldSend = false;
+		bool allSensorsReady = true;
+		for (auto &sensor : m_Sensors) {
+			if (!sensor->isWorking()) continue;
+			if (sensor->hasNewDataToSend()) shouldSend = true;
+			allSensorsReady &= sensor->hasNewDataToSend();
 		}
-		if (sensor->hasNewDataToSend()) {
-			shouldSend = true;
+
+		if (now - m_LastBundleSentAtMicros < PACKET_BUNDLING_BUFFER_SIZE_MICROS) {
+			shouldSend &= allSensorsReady;
 		}
-		allSensorsReady &= sensor->hasNewDataToSend();
-	}
 
-	if (now - m_LastBundleSentAtMicros < PACKET_BUNDLING_BUFFER_SIZE_MICROS) {
-		shouldSend &= allSensorsReady;
-	}
+		if (!shouldSend) {
+			return;
+		}
 
-	if (!shouldSend) {
-		return;
-	}
+		m_LastBundleSentAtMicros = now;
+	#endif
 
-	m_LastBundleSentAtMicros = now;
-#endif
+	#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+		networkConnection.beginBundle();
+	#endif
 
-#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
-	networkConnection.beginBundle();
-#endif
-
-	for (auto& sensor : m_Sensors) {
+	for (auto &sensor : m_Sensors) {
 		if (sensor->isWorking()) {
 			sensor->sendData();
 		}
 	}
 
-#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
-	networkConnection.endBundle();
-#endif
+	#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+		networkConnection.endBundle();
+	#endif
 }
 
 }  // namespace Sensors

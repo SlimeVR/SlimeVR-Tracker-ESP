@@ -140,8 +140,7 @@ public:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
 		int axisRemapParam
 	)
 		: Sensor(
@@ -150,8 +149,7 @@ public:
 			id,
 			Address + addrSuppl,
 			rotation,
-			sclPin,
-			sdaPin
+			sensorInterface
 		)
 		, sfusion(
 			  BMI160_ODR_GYR_MICROS / 1e6f,

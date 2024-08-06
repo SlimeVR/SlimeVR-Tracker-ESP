@@ -39,8 +39,7 @@ public:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
 		uint8_t intPin
 	)
 		: Sensor(
@@ -49,8 +48,7 @@ public:
 			id,
 			Address + addrSuppl,
 			rotation,
-			sclPin,
-			sdaPin
+			sensorInterface
 		)
 		, m_IntPin(intPin){};
 	~BNO080Sensor(){};
@@ -71,11 +69,10 @@ protected:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
 		uint8_t intPin
 	)
-		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sclPin, sdaPin)
+		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sensorInterface)
 		, m_IntPin(intPin){};
 
 private:
@@ -104,8 +101,7 @@ public:
 		uint8_t id,
 		uint8_t address,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
 		uint8_t intPin
 	)
 		: BNO080Sensor(
@@ -114,8 +110,7 @@ public:
 			id,
 			address,
 			rotation,
-			sclPin,
-			sdaPin,
+			sensorInterface,
 			intPin
 		){};
 };
@@ -127,8 +122,7 @@ public:
 		uint8_t id,
 		uint8_t address,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
 		uint8_t intPin
 	)
 		: BNO080Sensor(
@@ -137,8 +131,7 @@ public:
 			id,
 			address,
 			rotation,
-			sclPin,
-			sdaPin,
+			sensorInterface,
 			intPin
 		){};
 };

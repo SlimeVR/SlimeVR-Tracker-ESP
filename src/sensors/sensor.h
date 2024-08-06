@@ -32,6 +32,7 @@
 #include "globals.h"
 #include "logging/Logger.h"
 #include "utils.h"
+#include "sensorinterface/SensorInterface.h"
 
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
@@ -50,26 +51,14 @@ enum class MagnetometerStatus : uint8_t {
 
 class Sensor {
 public:
-	Sensor(
-		const char* sensorName,
-		ImuID type,
-		uint8_t id,
-		uint8_t address,
-		float rotation,
-		uint8_t sclpin = 0,
-		uint8_t sdapin = 0
-	)
-		: addr(address)
-		, sensorId(id)
-		, sensorType(type)
-		, sensorOffset({Quat(Vector3(0, 0, 1), rotation)})
-		, m_Logger(SlimeVR::Logging::Logger(sensorName))
-		, sclPin(sclpin)
-		, sdaPin(sdapin) {
-		char buf[4];
-		sprintf(buf, "%u", id);
-		m_Logger.setTag(buf);
-	}
+    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface)
+        : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
+            hwInterface(sensorInterface)
+    {
+        char buf[4];
+        sprintf(buf, "%u", id);
+        m_Logger.setTag(buf);
+    }
 
 	virtual ~Sensor(){};
 	virtual void motionSetup(){};
@@ -88,7 +77,7 @@ public:
 	virtual uint16_t getSensorConfigData();
 	bool isWorking() { return working; };
 	bool getHadData() const { return hadData; };
-	bool isValid() { return sclPin != sdaPin; };
+	bool isValid() { return hwInterface != nullptr; };
 	bool isMagEnabled() { return magStatus == MagnetometerStatus::MAG_ENABLED; };
 	uint8_t getSensorId() { return sensorId; };
 	ImuID getSensorType() { return sensorType; };
@@ -97,6 +86,9 @@ public:
 	const Quat& getFusedRotation() { return fusedRotation; };
 	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
 
+	void printTemperatureCalibrationUnsupported();
+    
+    std::shared_ptr<SlimeVR::SensorInterface> hwInterface;
 protected:
 	uint8_t addr = 0;
 	uint8_t sensorId = 0;
@@ -115,13 +107,6 @@ protected:
 	Vector3 acceleration{};
 
 	mutable SlimeVR::Logging::Logger m_Logger;
-
-public:
-	uint8_t sclPin = 0;
-	uint8_t sdaPin = 0;
-
-private:
-	void printTemperatureCalibrationUnsupported();
 };
 
 const char* getIMUNameByType(ImuID imuType);

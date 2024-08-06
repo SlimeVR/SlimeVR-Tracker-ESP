@@ -101,10 +101,12 @@ void BNO080Sensor::motionSetup() {
 	imu.saveCalibrationPeriodically(true);
 	imu.requestCalibrationStatus();
 	// EXPERIMENTAL Disable accelerometer calibration after 1 minute to prevent "stomping" bug
+	// WARNING : Executing IMU commands outside of the update loop is not allowed
+	// since the address might have changed when the timer is executed!
 	if(sensorType == ImuID::BNO085) {
 		// For BNO085, disable accel calibration
 		globalTimer.in(60000, [](void *sensor) {((BNO080*) sensor)->sendCalibrateCommand(SH2_CAL_MAG | SH2_CAL_ON_TABLE); return true;}, &imu);
-	} else if(sensorType == ImuID::BNO085) {
+	} else if(sensorType == ImuID::BNO086) {
 		// For BNO086, disable accel calibration
 		// TODO: Find default flags for BNO086
 		globalTimer.in(60000, [](void *sensor) {((BNO080*) sensor)->sendCalibrateCommand(SH2_CAL_MAG | SH2_CAL_ON_TABLE); return true;}, &imu);
