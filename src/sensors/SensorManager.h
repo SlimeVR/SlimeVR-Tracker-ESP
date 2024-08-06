@@ -29,8 +29,7 @@
 #include "EmptySensor.h"
 #include "ErroneousSensor.h"
 #include "logging/Logger.h"
-
-#include <i2cscan.h>
+#include "sensorinterface/I2CWireSensorInterface.h"
 
 #include <memory>
 
@@ -48,7 +47,7 @@ namespace SlimeVR
             void postSetup();
 
             void update();
-            
+
             std::vector<std::unique_ptr<Sensor>> & getSensors() { return m_Sensors; };
             ImuID getSensorType(size_t id) {
                 if(id < m_Sensors.size()) {
@@ -76,8 +75,9 @@ namespace SlimeVR
                 std::unique_ptr<Sensor> sensor;
 
                 // Clear and reset I2C bus for each sensor upon startup
-                I2CSCAN::clearBus(sdaPin, sclPin);
-                swapI2C(sclPin, sdaPin);
+				std::shared_ptr<SensorInterface> sensorInterface = std::make_shared<I2CWireSensorInterface>(sclPin, sdaPin);
+				sensorInterface->init();
+				sensorInterface->swapIn();
 
                 if (I2CSCAN::hasDevOnBus(address)) {
                     m_Logger.trace("Sensor %d found at address 0x%02X", sensorID + 1, address);
@@ -94,16 +94,12 @@ namespace SlimeVR
                 }
 
                 uint8_t intPin = extraParam;
-                sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, sclPin, sdaPin, intPin);
+                sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, std::move(sensorInterface), intPin);
 
                 sensor->motionSetup();
                 return sensor;
-            }            
-            uint8_t activeSCL = 0;
-            uint8_t activeSDA = 0;
-            bool running = false;
-            void swapI2C(uint8_t scl, uint8_t sda);
-            
+            }
+
             uint32_t m_LastBundleSentAtMicros = micros();
         };
     }

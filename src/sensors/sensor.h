@@ -31,6 +31,7 @@
 #include "globals.h"
 #include "logging/Logger.h"
 #include "utils.h"
+#include "sensorinterface/SensorInterface.h"
 
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
@@ -44,9 +45,9 @@ enum class SensorStatus : uint8_t {
 class Sensor
 {
 public:
-    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, uint8_t sclpin=0, uint8_t sdapin=0)
+    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface)
         : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
-            sclPin(sclpin), sdaPin(sdapin)
+            hwInterface(sensorInterface)
     {
         char buf[4];
         sprintf(buf, "%u", id);
@@ -73,7 +74,7 @@ public:
         return hadData;
     };
     bool isValid() {
-        return sclPin != sdaPin;
+        return hwInterface != nullptr;
     };
     uint8_t getSensorId() {
         return sensorId;
@@ -108,10 +109,9 @@ protected:
     Vector3 acceleration{};
 
     mutable SlimeVR::Logging::Logger m_Logger;
-    
+
 public:
-    uint8_t sclPin = 0;
-    uint8_t sdaPin = 0;
+    std::shared_ptr<SlimeVR::SensorInterface> hwInterface;
 
 private:
     void printTemperatureCalibrationUnsupported();

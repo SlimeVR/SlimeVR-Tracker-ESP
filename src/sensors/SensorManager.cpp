@@ -57,41 +57,8 @@ namespace SlimeVR
         using SoftFusionLSM6DSR = SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;
         using SoftFusionMPU6050 = SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
 
-        // TODO Make it more generic in the future and move another place (abstract sensor interface)
-        void SensorManager::swapI2C(uint8_t sclPin, uint8_t sdaPin)
-        {
-            if (sclPin != activeSCL || sdaPin != activeSDA || !running) {
-                Wire.flush();
-                #if ESP32
-                    if (running) {}
-                    else {
-                        // Reset HWI2C to avoid being affected by I2CBUS reset
-                        Wire.end();
-                    }
-                    // Disconnect pins from HWI2C
-                    gpio_set_direction((gpio_num_t)activeSCL, GPIO_MODE_INPUT);
-                    gpio_set_direction((gpio_num_t)activeSDA, GPIO_MODE_INPUT);
-
-                    if (running) {
-                        i2c_set_pin(I2C_NUM_0, sdaPin, sclPin, false, false, I2C_MODE_MASTER);
-                    } else {
-                        Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin), I2C_SPEED);
-                        Wire.setTimeOut(150);
-                    }
-                #else
-                    Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin));
-                #endif
-
-                activeSCL = sclPin;
-                activeSDA = sdaPin;
-            }
-        }
-
         void SensorManager::setup()
         {
-            running = false;
-            activeSCL = PIN_IMU_SCL;
-            activeSDA = PIN_IMU_SDA;
 
             uint8_t sensorID = 0;
             uint8_t activeSensorCount = 0;
@@ -119,10 +86,9 @@ namespace SlimeVR
 
         void SensorManager::postSetup()
         {
-            running = true;
             for (auto &sensor : m_Sensors) {
                 if (sensor->isWorking()) {
-                    swapI2C(sensor->sclPin, sensor->sdaPin);
+                    sensor->hwInterface->swapIn();
                     sensor->postSetup();
                 }
             }
@@ -134,7 +100,7 @@ namespace SlimeVR
             bool allIMUGood = true;
             for (auto &sensor : m_Sensors) {
                 if (sensor->isWorking()) {
-                    swapI2C(sensor->sclPin, sensor->sdaPin);
+                     sensor->hwInterface->swapIn();
                     sensor->motionLoop();
                 }
                 if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR)
@@ -172,7 +138,7 @@ namespace SlimeVR
 
                 m_LastBundleSentAtMicros = now;
             #endif
-            
+
             #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
                 networkConnection.beginBundle();
             #endif

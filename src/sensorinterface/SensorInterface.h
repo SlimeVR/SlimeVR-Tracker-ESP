@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2024 Eiren & SlimeVR Contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,18 @@
     THE SOFTWARE.
 */
 
-#ifndef SENSORS_BNO055SENSOR_H
-#define SENSORS_BNO055SENSOR_H
+#ifndef SENSORINTERFACE_H
+#define SENSORINTERFACE_H
 
-#include "sensor.h"
-
-#include <Adafruit_BNO055.h>
-
-class BNO055Sensor : public Sensor
+namespace SlimeVR
 {
-public:
-    static constexpr auto TypeID = ImuID::BNO055;
-    static constexpr uint8_t Address = 0x28;
+	class SensorInterface
+	{
+		public:
 
-    BNO055Sensor(uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, uint8_t)
-        : Sensor("BNO055Sensor", ImuID::BNO055, id, Address+addrSuppl, rotation, sensorInterface){};
-    ~BNO055Sensor(){};
-    void motionSetup() override final;
-    void motionLoop() override final;
-    void startCalibration(int calibrationType) override final;
+			virtual void init();
+			virtual void swapIn();
+	};
+}
 
-private:
-    Adafruit_BNO055 imu;
-};
-
-#endif
+#endif // SENSORINTERFACE_H
