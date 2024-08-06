@@ -21,37 +21,41 @@
     THE SOFTWARE.
 */
 
-#ifndef SENSORINTERFACE_I2CWIRE_H
-#define SENSORINTERFACE_I2CWIRE_H
+#include "I2CWireSensorInterface.h"
 
-#include <Wire.h>
-#include "sensorinterface.h"
-#include <i2cscan.h>
+uint8_t activeSCLPin;
+uint8_t activeSDAPin;
+bool isI2CActive = false;
 
 namespace SlimeVR
 {
-	void swapI2C(uint8_t sclPin, uint8_t sdaPin);
+	void swapI2C(uint8_t sclPin, uint8_t sdaPin)
+	{
+		if (sclPin != activeSCLPin || sdaPin != activeSDAPin || !isI2CActive) {
+			Wire.flush();
+			#if ESP32
+				if (running) {}
+				else {
+					// Reset HWI2C to avoid being affected by I2CBUS reset
+					Wire.end();
+				}
+				// Disconnect pins from HWI2C
+				gpio_set_direction((gpio_num_t)activeSCLPin, GPIO_MODE_INPUT);
+				gpio_set_direction((gpio_num_t)activeSDAPin, GPIO_MODE_INPUT);
 
-	class I2CWireSensorInterface : public SensorInterface {
-		public:
-			I2CWireSensorInterface(uint8_t sdapin, uint8_t sclpin) :
-				sdaPin(sdapin), sclPin(sclpin){};
-			~I2CWireSensorInterface(){};
+				if (running) {
+					i2c_set_pin(I2C_NUM_0, sdaPin, sclPin, false, false, I2C_MODE_MASTER);
+				} else {
+					Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin), I2C_SPEED);
+					Wire.setTimeOut(150);
+				}
+			#else
+				Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin));
+			#endif
 
-			void init() override final {
-				I2CSCAN::clearBus(sdaPin, sclPin);
-			}
-			void swapIn() override final {
-				swapI2C(sclPin, sdaPin);
-			}
-		protected:
-			uint8_t sdaPin;
-			uint8_t sclPin;
-	};
-
-
+			activeSCLPin = sclPin;
+			activeSDAPin = sdaPin;
+			isI2CActive = true;
+		}
+	}
 }
-
-
-
-#endif // SENSORINTERFACE_I2CWIRE_H

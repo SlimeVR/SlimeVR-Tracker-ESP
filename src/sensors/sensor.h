@@ -34,6 +34,8 @@
 #include "utils.h"
 #include "sensorinterface/SensorInterface.h"
 
+#include <memory>
+
 #define DATA_TYPE_NORMAL 1
 #define DATA_TYPE_CORRECTION 2
 
@@ -51,9 +53,9 @@ enum class MagnetometerStatus : uint8_t {
 
 class Sensor {
 public:
-    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface)
+    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface = nullptr)
         : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
-            hwInterface(sensorInterface)
+            hwInterface(std::move(sensorInterface))
     {
         char buf[4];
         sprintf(buf, "%u", id);
