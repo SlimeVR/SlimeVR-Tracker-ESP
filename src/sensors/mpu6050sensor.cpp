@@ -23,7 +23,7 @@
 
 #include "globals.h"
 
-#ifdef IMU_MPU6050_RUNTIME_CALIBRATION
+#if IMU_MPU6050_RUNTIME_CALIBRATION
 #include "MPU6050_6Axis_MotionApps_V6_12.h"
 #else
 #include "MPU6050_6Axis_MotionApps20.h"
@@ -50,7 +50,7 @@ void MPU6050Sensor::motionSetup()
 
     m_Logger.info("Connected to %s (reported device ID 0x%02x) at address 0x%02x", getIMUNameByType(sensorType), imu.getDeviceID(), addr);
 
-#ifndef IMU_MPU6050_RUNTIME_CALIBRATION
+#if !IMU_MPU6050_RUNTIME_CALIBRATION
     // Initialize the configuration
     {
         SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
@@ -76,7 +76,7 @@ void MPU6050Sensor::motionSetup()
 
     if (devStatus == 0)
     {
-#ifdef IMU_MPU6050_RUNTIME_CALIBRATION
+#if IMU_MPU6050_RUNTIME_CALIBRATION
         // We don't have to manually calibrate if we are using the dmp's automatic calibration
 #else  // IMU_MPU6050_RUNTIME_CALIBRATION
 
@@ -160,7 +160,7 @@ void MPU6050Sensor::motionLoop()
 void MPU6050Sensor::startCalibration(int calibrationType) {
     ledManager.on();
 
-#ifdef IMU_MPU6050_RUNTIME_CALIBRATION
+#if IMU_MPU6050_RUNTIME_CALIBRATION
     m_Logger.info("MPU is using automatic runtime calibration. Place down the device and it should automatically calibrate after a few seconds");
 #else //!IMU_MPU6050_RUNTIME_CALIBRATION
     m_Logger.info("Put down the device and wait for baseline gyro reading calibration");

@@ -6,7 +6,9 @@
 
 #define SENSOR_DOUBLE_PRECISION 0
 
-#define SENSOR_FUSION_TYPE SENSOR_FUSION_VQF
+#ifndef SENSOR_FUSION_TYPE
+	#define SENSOR_FUSION_TYPE SENSOR_FUSION_VQF
+#endif
 
 #define SENSOR_FUSION_MAHONY 1
 #define SENSOR_FUSION_MADGWICK 2
@@ -58,8 +60,8 @@ namespace SlimeVR
         {
         public:
             SensorFusion(sensor_real_t gyrTs, sensor_real_t accTs=-1.0, sensor_real_t magTs=-1.0)
-                : gyrTs(gyrTs), 
-                  accTs( (accTs<0) ? gyrTs : accTs ), 
+                : gyrTs(gyrTs),
+                  accTs( (accTs<0) ? gyrTs : accTs ),
                   magTs( (magTs<0) ? gyrTs : magTs )
             #if SENSOR_USE_MAHONY
             #elif SENSOR_USE_MADGWICK
@@ -67,7 +69,7 @@ namespace SlimeVR
                 , basicvqf(gyrTs, ((accTs<0) ? gyrTs : accTs),
                                     ((magTs<0) ? gyrTs : magTs))
             #elif SENSOR_USE_VQF
-                , vqf(vqfParams, gyrTs, ((accTs<0) ? gyrTs : accTs), 
+                , vqf(vqfParams, gyrTs, ((accTs<0) ? gyrTs : accTs),
                                         ((magTs<0) ? gyrTs : magTs))
             #endif
             {}
