@@ -32,9 +32,9 @@
 namespace SlimeVR::Sensors::SoftFusion::Drivers
 {
 
-// Driver uses acceleration range at 16g
+// Driver uses acceleration range at 4g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 400Hz, accel ODR = 100Hz
+// Gyroscope ODR = 400Hz, accel ODR = 200Hz
 // Timestamps reading are not used
 
 template <typename I2CImpl>
@@ -45,7 +45,7 @@ struct BMI270
     static constexpr auto Type = ImuID::BMI270;
 
     static constexpr float GyrTs=1.0/400.0;
-    static constexpr float AccTs=1.0/100.0;
+    static constexpr float AccTs=1.0/200.0;
 
     static constexpr float MagTs=1.0/100;
 
@@ -162,7 +162,7 @@ struct BMI270
 
             static constexpr uint8_t filterHighPerfMode = 1 << 7;
 
-            static constexpr uint8_t value = rate100Hz | DLPFModeAvg4 | filterHighPerfMode;
+            static constexpr uint8_t value = rate200Hz | DLPFModeAvg4 | filterHighPerfMode;
         };
 
         struct AccRange {
