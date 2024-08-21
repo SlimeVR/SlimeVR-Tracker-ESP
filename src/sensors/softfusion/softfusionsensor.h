@@ -36,7 +36,7 @@ class SoftFusionSensor : public Sensor
 {
     using imu = T<I2CImpl>;
     using RawVectorT = std::array<int16_t, 3>;
-    static constexpr auto UpsideDownCalibrationInit = true;
+    static constexpr auto UpsideDownCalibrationInit = false;
     static constexpr auto GyroCalibDelaySeconds = 5;
     static constexpr auto GyroCalibSeconds = 5;
     static constexpr auto SampleRateCalibDelaySeconds = 1;
