@@ -141,8 +141,8 @@ struct MPU6050
         return result;
     }
 
-    template <typename AccelCall, typename GyroCall>
-    void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
+    template <typename AccelCall, typename GyroCall, typename MagCall>
+    void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample, MagCall &&processMagSample) {
         const auto status = i2c.readReg(Regs::IntStatus);
 
         if (status & (1 << MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) {

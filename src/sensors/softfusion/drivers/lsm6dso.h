@@ -28,6 +28,7 @@
 #include <algorithm>
 
 #include "lsm6ds-common.h"
+#include "../empty_mag.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers
 {
@@ -36,8 +37,8 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 416Hz, accel ODR = 104Hz
 
-template <typename I2CImpl>
-struct LSM6DSO : LSM6DSOutputHandler<I2CImpl>
+template <typename I2CImpl, typename Mag = NoMag>
+struct LSM6DSO : LSM6DSOutputHandler<I2CImpl, Mag>
 {
     static constexpr uint8_t Address = 0x6a;
     static constexpr auto Name = "LSM6DSO";
@@ -54,7 +55,7 @@ struct LSM6DSO : LSM6DSOutputHandler<I2CImpl>
     static constexpr float GyroSensitivity = 1000 / 35.0f;
     static constexpr float AccelSensitivity = 1000 / 0.244f;
 
-    using LSM6DSOutputHandler<I2CImpl>::i2c;
+    using LSM6DSOutputHandler<I2CImpl, Mag>::i2c;
 
     struct Regs {
         struct WhoAmI {
@@ -89,7 +90,7 @@ struct LSM6DSO : LSM6DSOutputHandler<I2CImpl>
     };
 
     LSM6DSO(I2CImpl i2c, SlimeVR::Logging::Logger &logger)
-        : LSM6DSOutputHandler<I2CImpl>(i2c, logger) {
+        : LSM6DSOutputHandler<I2CImpl, Mag>(i2c, logger) {
     }
 
     bool initialize()
@@ -102,17 +103,21 @@ struct LSM6DSO : LSM6DSOutputHandler<I2CImpl>
         i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
         i2c.writeReg(Regs::FifoCtrl3BDR::reg, Regs::FifoCtrl3BDR::value);
         i2c.writeReg(Regs::FifoCtrl4Mode::reg, Regs::FifoCtrl4Mode::value);
+
+        LSM6DSOutputHandler<I2CImpl, Mag>::initializeMag();
         return true;
     }
 
     float getDirectTemp() const
     {
-        return LSM6DSOutputHandler<I2CImpl>::template getDirectTemp<Regs>();
+        return LSM6DSOutputHandler<I2CImpl, Mag>::template getDirectTemp<Regs>();
     }
 
-    template <typename AccelCall, typename GyroCall>
-    void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
-        LSM6DSOutputHandler<I2CImpl>::template bulkRead<AccelCall, GyroCall, Regs>(processAccelSample, processGyroSample, GyrTs, AccTs);
+    template <typename AccelCall, typename GyroCall, typename MagCall>
+    void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample, MagCall &&processMagSample) {
+        LSM6DSOutputHandler<I2CImpl, Mag>::template bulkRead<AccelCall, GyroCall, MagCall, Regs>(
+            processAccelSample, processGyroSample, processMagSample, GyrTs, AccTs, MagTs
+        );
     }
 
 };

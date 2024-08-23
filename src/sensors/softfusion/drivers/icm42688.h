@@ -140,8 +140,8 @@ struct ICM42688
         return result;
     }
 
-    template <typename AccelCall, typename GyroCall>
-    void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
+    template <typename AccelCall, typename GyroCall, typename MagCall>
+    void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample, MagCall &&processMagSample) {
         const auto fifo_bytes = i2c.readReg16(Regs::FifoCount);
         
         std::array<uint8_t, FullFifoEntrySize * 8> read_buffer; // max 8 readings

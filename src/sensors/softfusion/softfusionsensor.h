@@ -45,6 +45,10 @@ class SoftFusionSensor : public Sensor
     static constexpr auto AccelCalibDelaySeconds = 3;
     static constexpr auto AccelCalibRestSeconds = 3;
 
+    static constexpr auto MagCalibDelaySeconds = 3;
+    static constexpr auto MagCalibDurationSeconds = 20;
+    static constexpr auto MagSampleDelayMs = 100.0f;
+
     static constexpr double GScale = ((32768. / imu::GyroSensitivity) / 32768.) * (PI / 180.0);
     static constexpr double AScale = CONST_EARTH_GRAVITY / imu::AccelSensitivity;
 
@@ -116,6 +120,24 @@ class SoftFusionSensor : public Sensor
         m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
     }
 
+    void processMagSample(const int16_t xyz[3], const sensor_real_t timeDelta)
+    {
+        sensor_real_t magData[] = {
+            static_cast<sensor_real_t>(xyz[0]),
+            static_cast<sensor_real_t>(xyz[1]),
+            static_cast<sensor_real_t>(xyz[2]) };
+
+        float tmp[3];
+        for (uint8_t i = 0; i < 3; i++)
+            tmp[i] = (magData[i] - m_calibration.M_B[i]);
+
+        magData[0] = (m_calibration.M_Ainv[0][0] * tmp[0] + m_calibration.M_Ainv[0][1] * tmp[1] + m_calibration.M_Ainv[0][2] * tmp[2]);
+        magData[1] = (m_calibration.M_Ainv[1][0] * tmp[0] + m_calibration.M_Ainv[1][1] * tmp[1] + m_calibration.M_Ainv[1][2] * tmp[2]);
+        magData[2] = (m_calibration.M_Ainv[2][0] * tmp[0] + m_calibration.M_Ainv[2][1] * tmp[1] + m_calibration.M_Ainv[2][2] * tmp[2]);
+
+        m_fusion.updateMag(magData, timeDelta);
+    }
+
     void eatSamplesForSeconds(const uint32_t seconds) {
         const auto targetDelay = millis() + 1000 * seconds;
         auto lastSecondsRemaining = seconds;
@@ -131,15 +153,17 @@ class SoftFusionSensor : public Sensor
             }
             m_sensor.bulkRead(
                 [](const int16_t xyz[3], const sensor_real_t timeDelta) { },
+                [](const int16_t xyz[3], const sensor_real_t timeDelta) { },
                 [](const int16_t xyz[3], const sensor_real_t timeDelta) { }
             );
         }
     }
 
-    std::pair<RawVectorT, RawVectorT> eatSamplesReturnLast(const uint32_t milliseconds)
+    std::tuple<RawVectorT, RawVectorT, RawVectorT> eatSamplesReturnLast(const uint32_t milliseconds)
     {
         RawVectorT accel = {0};
         RawVectorT gyro = {0};
+        RawVectorT mag = {0};
         const auto targetDelay = millis() + milliseconds;
         while (millis() < targetDelay)
         {
@@ -153,10 +177,15 @@ class SoftFusionSensor : public Sensor
                     gyro[0] = xyz[0];
                     gyro[1] = xyz[1];
                     gyro[2] = xyz[2];
+                },
+                [&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+                    mag[0] = xyz[0];
+                    mag[1] = xyz[1];
+                    mag[2] = xyz[2];
                 }
             );
         }
-        return std::make_pair(accel, gyro);
+        return std::make_tuple(accel, gyro, mag);
     }
 
 public:
@@ -180,7 +209,8 @@ public:
             m_lastPollTime = now - (elapsed - targetPollIntervalMicros);
             m_sensor.bulkRead(
                 [&](const int16_t xyz[3], const sensor_real_t timeDelta) { processAccelSample(xyz, timeDelta); },
-                [&](const int16_t xyz[3], const sensor_real_t timeDelta) { processGyroSample(xyz, timeDelta); }
+                [&](const int16_t xyz[3], const sensor_real_t timeDelta) { processGyroSample(xyz, timeDelta); },
+                [&](const int16_t xyz[3], const sensor_real_t timeDelta) { processMagSample(xyz, timeDelta); }
             );
             optimistic_yield(100);
             if (!m_fusion.isUpdated()) return;
@@ -247,18 +277,18 @@ public:
 
         m_status = SensorStatus::SENSOR_OK;
         working = true;
-        [[maybe_unused]] auto lastRawSample = eatSamplesReturnLast(1000);
+        [[maybe_unused]] auto [lastRawSample, _gyro, _mag] = eatSamplesReturnLast(1000);
         if constexpr(UpsideDownCalibrationInit) {
-            auto gravity = static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(lastRawSample.first[2]));
+            auto gravity = static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(lastRawSample[2]));
             m_Logger.info("Gravity read: %.1f (need < -7.5 to start calibration)", gravity);
             if (gravity < -7.5f) {
                 ledManager.on();
                 m_Logger.info("Flip front in 5 seconds to start calibration");
-                lastRawSample = eatSamplesReturnLast(5000);
-                gravity = static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(lastRawSample.first[2]));
+                std::tie(lastRawSample, _gyro, _mag) = eatSamplesReturnLast(5000);
+                gravity = static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(lastRawSample[2]));
                 if (gravity > 7.5f) {
                     m_Logger.debug("Starting calibration...");
-                    startCalibration(0);
+                    startCalibration(5);
                 }
                 else {
                     m_Logger.info("Flip not detected. Skipping calibration.");
@@ -281,6 +311,7 @@ public:
                 std::memcpy(m_calibration.MotionlessData, &calibData, sizeof(calibData));
             }
             calibrateAccel();
+            calibrateMag();
         }
         else if (calibrationType == 1)
         {
@@ -302,6 +333,10 @@ public:
             } else {
                 m_Logger.info("Sensor doesn't provide any custom motionless calibration");
             }
+        }
+        else if (calibrationType == 5)
+        {
+            calibrateMag();
         }
 
         saveCalibration();
@@ -348,7 +383,8 @@ public:
                     sumXYZ[1] += xyz[1];
                     sumXYZ[2] += xyz[2];
                     ++sampleCount;
-                }
+                },
+                [](const int16_t xyz[3], const sensor_real_t timeDelta) { }
             );
         }
 
@@ -443,6 +479,7 @@ public:
                         samplesGathered = true;
                     }
                 },
+                [](const int16_t xyz[3], const sensor_real_t timeDelta) { },
                 [](const int16_t xyz[3], const sensor_real_t timeDelta) { }
             );
         }
@@ -482,7 +519,8 @@ public:
         {
             m_sensor.bulkRead(
                 [&accelSamples](const int16_t xyz[3], const sensor_real_t timeDelta) { accelSamples++; },
-                [&gyroSamples](const int16_t xyz[3], const sensor_real_t timeDelta) { gyroSamples++; }
+                [&gyroSamples](const int16_t xyz[3], const sensor_real_t timeDelta) { gyroSamples++; },
+                [](const int16_t xyz[3], const sensor_real_t timeDelta) { }
             );
         }
 
@@ -496,6 +534,49 @@ public:
 
         //fusion needs to be recalculated
         recalcFusion();
+    }
+
+    void calibrateMag() {
+        auto magneto = std::make_unique<MagnetoCalibration>();
+        
+        m_Logger.info("After 3 seconds, rotate the device in figure 8 pattern while it's gathering data (%d seconds)", MagCalibDurationSeconds);
+        eatSamplesForSeconds(MagCalibDelaySeconds);
+
+        ledManager.pattern(100, 100, 9);
+        delay(100);
+        ledManager.on();
+        m_Logger.debug("Gathering magnetometer data...");
+
+        constexpr auto magCalibrationSamples =
+            (int)((float)MagCalibDurationSeconds / (MagSampleDelayMs / 1e3f));
+
+        for (int i = 0; i < magCalibrationSamples; i++) {
+            ledManager.on();
+
+            auto [_accel, _gyro, mag] = eatSamplesReturnLast(MagSampleDelayMs);
+            
+            ledManager.off();
+            
+            magneto->sample(mag[0], mag[1], mag[2]);
+            m_Logger.debug("mag - %d, %d, %d", mag[0], mag[1], mag[2]);
+        }
+
+        ledManager.off();
+        m_Logger.debug("Calculating magnetometer calibration data...");
+
+        float M_BAinv[4][3];
+        magneto->current_calibration(M_BAinv);
+
+        m_Logger.debug("[INFO] Magnetometer calibration matrix:");
+        m_Logger.debug("{");
+        for (int i = 0; i < 3; i++) {
+            m_calibration.M_B[i] = M_BAinv[0][i];
+            m_calibration.M_Ainv[0][i] = M_BAinv[1][i];
+            m_calibration.M_Ainv[1][i] = M_BAinv[2][i];
+            m_calibration.M_Ainv[2][i] = M_BAinv[3][i];
+            m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
+        }
+        m_Logger.debug("}");
     }
 
     SensorStatus getSensorState() override final

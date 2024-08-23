@@ -38,6 +38,7 @@
 #include "softfusion/drivers/lsm6dso.h"
 #include "softfusion/drivers/lsm6dsr.h"
 #include "softfusion/drivers/mpu6050.h"
+#include "softfusion/drivers/qmc5883l.h"
 
 #include "softfusion/i2cimpl.h"
 
@@ -56,6 +57,14 @@ namespace SlimeVR
         using SoftFusionLSM6DSO = SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::I2CImpl>;
         using SoftFusionLSM6DSR = SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;
         using SoftFusionMPU6050 = SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
+
+        template <typename I2CImpl>
+        using _LSM6DSR_QMC = SoftFusion::Drivers::LSM6DSR<I2CImpl, SoftFusion::Drivers::QMC5883L>;
+        using SoftFusionLSM6DSR_QMC = SoftFusionSensor<_LSM6DSR_QMC, SoftFusion::I2CImpl>;
+
+        template <typename I2CImpl>
+        using _LSM6DSO_QMC = SoftFusion::Drivers::LSM6DSO<I2CImpl, SoftFusion::Drivers::QMC5883L>;
+        using SoftFusionLSM6DSO_QMC = SoftFusionSensor<_LSM6DSO_QMC, SoftFusion::I2CImpl>;
 
         // TODO Make it more generic in the future and move another place (abstract sensor interface)
         void SensorManager::swapI2C(uint8_t sclPin, uint8_t sdaPin)
