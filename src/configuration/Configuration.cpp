@@ -156,6 +156,7 @@ namespace SlimeVR {
         }
 
 		void Configuration::loadCalibrations() {
+			return;
 			SlimeVR::Utils::forEachFile(DIR_CALIBRATIONS, [&](SlimeVR::Utils::File f) {
 				CalibrationConfig calibrationConfig;
 				f.read((uint8_t*)&calibrationConfig, sizeof(CalibrationConfig));
