@@ -288,7 +288,7 @@ public:
                 gravity = static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(lastRawSample[2]));
                 if (gravity > 7.5f) {
                     m_Logger.debug("Starting calibration...");
-                    startCalibration(5);
+                    startCalibration(0);
                 }
                 else {
                     m_Logger.info("Flip not detected. Skipping calibration.");
