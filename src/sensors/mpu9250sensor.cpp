@@ -130,7 +130,6 @@ void MPU9250Sensor::motionSetup() {
     imu.setFIFOEnabled(true);
 
     working = true;
-    configured = true;
 #endif
 }
 
@@ -154,6 +153,7 @@ void MPU9250Sensor::motionLoop() {
     uint8_t dmpPacket[packetSize];
     if(!imu.GetCurrentFIFOPacket(dmpPacket, packetSize)) return;
     if(imu.dmpGetQuaternion(&rawQuat, dmpPacket)) return; // FIFO CORRUPTED
+    hadData = true;
 
     sfusion.updateQuaternion(rawQuat);
 

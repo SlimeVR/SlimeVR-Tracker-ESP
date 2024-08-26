@@ -98,6 +98,7 @@ void ICM20948Sensor::readFIFOToEnd()
 // Performance Test
 //        cntbuf ++;
         hasdata = true;
+        hadData = true;
         readFIFOToEnd();
     }
 }
@@ -319,7 +320,6 @@ void ICM20948Sensor::startMotionLoop()
 {
     lastData = millis();
     working = true;
-	hadData = true;
 }
 
 void ICM20948Sensor::checkSensorTimeout()

@@ -37,8 +37,8 @@ const char* calibrationConfigTypeToString(SensorConfigType type) {
 			return "MPU9250";
 		case SensorConfigType::ICM20948:
 			return "ICM20948";
-		case SensorConfigType::ICM42688:
-			return "ICM42688";
+		case SensorConfigType::SFUSION:
+			return "SoftFusion (common)";
 		case SensorConfigType::BNO0XX:
 			return "BNO0XX";
 		default:

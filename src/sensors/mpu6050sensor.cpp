@@ -53,14 +53,14 @@ void MPU6050Sensor::motionSetup()
 #ifndef IMU_MPU6050_RUNTIME_CALIBRATION
     // Initialize the configuration
     {
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        SlimeVR::Configuration::SensorConfig sensorCalibration = configuration.getCalibration(sensorId);
         // If no compatible calibration data is found, the calibration data will just be zero-ed out
         switch (sensorCalibration.type) {
-        case SlimeVR::Configuration::CalibrationConfigType::MPU6050:
+        case SlimeVR::Configuration::SensorConfigType::MPU6050:
             m_Config = sensorCalibration.data.mpu6050;
             break;
 
-        case SlimeVR::Configuration::CalibrationConfigType::NONE:
+        case SlimeVR::Configuration::SensorConfigType::NONE:
             m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
             m_Logger.info("Calibration is advised");
             break;
@@ -106,7 +106,6 @@ void MPU6050Sensor::motionSetup()
         packetSize = imu.dmpGetFIFOPacketSize();
 
         working = true;
-        configured = true;
     }
     else
     {
@@ -136,6 +135,7 @@ void MPU6050Sensor::motionLoop()
     if (imu.dmpGetCurrentFIFOPacket(fifoBuffer))
     {
         imu.dmpGetQuaternion(&rawQuat, fifoBuffer);
+        hadData = true;
 
         sfusion.updateQuaternion(rawQuat);
 
@@ -189,8 +189,8 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
         break;
     }
 
-    SlimeVR::Configuration::CalibrationConfig calibration;
-    calibration.type = SlimeVR::Configuration::CalibrationConfigType::MPU6050;
+    SlimeVR::Configuration::SensorConfig calibration;
+    calibration.type = SlimeVR::Configuration::SensorConfigType::MPU6050;
     calibration.data.mpu6050 = m_Config;
     configuration.setCalibration(sensorId, calibration);
     configuration.save();

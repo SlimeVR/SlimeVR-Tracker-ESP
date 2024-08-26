@@ -288,7 +288,7 @@ void Connection::sendSensorError(uint8_t sensorId, uint8_t error) {
 }
 
 // PACKET_SENSOR_INFO 15
-void Connection::sendSensorInfo(Sensor* sensor) {
+void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(m_Connected);
 
 	MUST(beginPacket());
@@ -296,9 +296,9 @@ void Connection::sendSensorInfo(Sensor* sensor) {
 	MUST(sendPacketType(PACKET_SENSOR_INFO));
 	MUST(sendPacketNumber());
 	MUST(sendByte(sensor->getSensorId()));
-	MUST(sendByte((uint8_t)sensor->getSensorState()));
-	MUST(sendByte(sensor->getSensorType()));
-	MUST(sendByte((uint8_t)sensor->getMagStatus()));
+	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
+	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
+	MUST(sendByte(static_cast<uint8_t>(sensor->getMagStatus())));
 
 	MUST(endPacket());
 }
@@ -411,8 +411,8 @@ void Connection::sendTrackerDiscovery() {
 	MUST(sendInt(BOARD));
 	// This is kept for backwards compatibility,
 	// but the latest SlimeVR server will not initialize trackers
-	// with firmware build > 8 until it receives a sensor info packet
-	MUST(sendInt(IMU));
+	// with firmware build > 8 until it recieves a sensor info packet
+	MUST(sendInt(static_cast<int>(sensorManager.getSensorType(0))));
 	MUST(sendInt(HARDWARE_MCU));
 	MUST(sendInt(0));
 	MUST(sendInt(0));
@@ -527,7 +527,7 @@ void Connection::returnLastPacket(int len) {
 	MUST(endPacket());
 }
 
-void Connection::updateSensorState(std::vector<Sensor *> & sensors) {
+void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>> & sensors) {
 	if (millis() - m_LastSensorInfoPacketTimestamp <= 1000) {
 		return;
 	}
@@ -536,7 +536,7 @@ void Connection::updateSensorState(std::vector<Sensor *> & sensors) {
 
 	for (int i = 0; i < (int)sensors.size(); i++) {
 		if (m_AckedSensorState[i] != sensors[i]->getSensorState()) {
-			sendSensorInfo(sensors[i]);
+			sendSensorInfo(*sensors[i]);
 		}
 	}
 }
@@ -563,7 +563,7 @@ void Connection::searchForServer() {
 		}
 
 		// receive incoming UDP packets
-		int len = m_UDP.read(m_Packet, sizeof(m_Packet));
+		[[maybe_unused]] int len = m_UDP.read(m_Packet, sizeof(m_Packet));
 
 #ifdef DEBUG_NETWORK
 		m_Logger.trace(
@@ -629,7 +629,7 @@ void Connection::reset() {
 }
 
 void Connection::update() {
-	std::vector<Sensor *> & sensors = sensorManager.getSensors();
+	auto & sensors = sensorManager.getSensors();
 
 	updateSensorState(sensors);
 	maybeRequestFeatureFlags();

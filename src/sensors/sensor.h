@@ -50,7 +50,7 @@ enum class MagnetometerStatus : uint8_t {
 class Sensor
 {
 public:
-    Sensor(const char *sensorName, uint8_t type, uint8_t id, uint8_t address, float rotation, uint8_t sclpin=0, uint8_t sdapin=0)
+    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, uint8_t sclpin=0, uint8_t sdapin=0)
         : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
             sclPin(sclpin), sdaPin(sdapin)
     {
@@ -76,6 +76,9 @@ public:
     bool isWorking() {
         return working;
     };
+    bool getHadData() const {
+        return hadData;
+    };
     bool isValid() {
         return sclPin != sdaPin;
     };
@@ -85,7 +88,7 @@ public:
     uint8_t getSensorId() {
         return sensorId;
     };
-    uint8_t getSensorType() {
+    ImuID getSensorType() {
         return sensorType;
     };
 	MagnetometerStatus getMagStatus() {
@@ -101,13 +104,12 @@ public:
         return newFusedRotation || newAcceleration;
     };
 
-    bool hadData = false;
 protected:
     uint8_t addr = 0;
     uint8_t sensorId = 0;
-    uint8_t sensorType = 0;
-    bool configured = false;
+    ImuID sensorType = ImuID::Unknown;
     bool working = false;
+    bool hadData = false;
     uint8_t calibrationAccuracy = 0;
 	MagnetometerStatus magStatus = MagnetometerStatus::MAG_NOT_SUPPORTED;
     Quat sensorOffset;
@@ -119,7 +121,7 @@ protected:
     bool newAcceleration = false;
     Vector3 acceleration{};
 
-    SlimeVR::Logging::Logger m_Logger;
+    mutable SlimeVR::Logging::Logger m_Logger;
     
 public:
     uint8_t sclPin = 0;
@@ -129,6 +131,6 @@ private:
     void printTemperatureCalibrationUnsupported();
 };
 
-const char * getIMUNameByType(int imuType);
+const char * getIMUNameByType(ImuID imuType);
 
 #endif // SLIMEVR_SENSOR_H_

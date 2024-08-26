@@ -134,14 +134,14 @@ namespace SerialCommands {
             statusManager.getStatus(),
             WiFiNetwork::getWiFiState()
         );
-        for (auto sensor : sensorManager.getSensors()) {
+        for (auto &sensor : sensorManager.getSensors()) {
             logger.info(
                 "Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
                 sensor->getSensorId(),
                 getIMUNameByType(sensor->getSensorType()),
                 UNPACK_QUATERNION(sensor->getFusedRotation()),
                 sensor->isWorking() ? "true" : "false",
-                sensor->hadData ? "true" : "false"
+                sensor->getHadData() ? "true" : "false"
             );
         }
     }
@@ -180,8 +180,8 @@ namespace SerialCommands {
             Serial.printf(
                 str.c_str(),
                 BOARD,
-                IMU,
-                SECOND_IMU,
+                static_cast<int>(sensorManager.getSensorType(0)),
+                static_cast<int>(sensorManager.getSensorType(1)),
                 IMU_ROTATION,
                 SECOND_IMU_ROTATION,
                 BATTERY_MONITOR,
@@ -210,16 +210,16 @@ namespace SerialCommands {
                 statusManager.getStatus(),
                 WiFiNetwork::getWiFiState()
             );
-            Sensor* sensor0 = sensorManager.getSensors()[0];
+            auto& sensor0 = sensorManager.getSensors()[0];
             sensor0->motionLoop();
             logger.info(
                 "[TEST] Sensor[0]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
                 getIMUNameByType(sensor0->getSensorType()),
                 UNPACK_QUATERNION(sensor0->getFusedRotation()),
                 sensor0->isWorking() ? "true" : "false",
-                sensor0->hadData ? "true" : "false"
+                sensor0->getHadData() ? "true" : "false"
             );
-            if(!sensor0->hadData) {
+            if(!sensor0->getHadData()) {
                 logger.error("[TEST] Sensor[0] didn't send any data yet!");
             } else {
                 logger.info("[TEST] Sensor[0] sent some data, looks working.");
@@ -293,22 +293,22 @@ namespace SerialCommands {
     void cmdTemperatureCalibration(CmdParser* parser) {
         if (parser->getParamCount() > 1) {
             if (parser->equalCmdParam(1, "PRINT")) {
-                for (auto sensor : sensorManager.getSensors()) {
+                for (auto &sensor : sensorManager.getSensors()) {
                     sensor->printTemperatureCalibrationState();
                 }
                 return;
             } else if (parser->equalCmdParam(1, "DEBUG")) {
-                for (auto sensor : sensorManager.getSensors()) {
+                for (auto &sensor : sensorManager.getSensors()) {
                     sensor->printDebugTemperatureCalibrationState();
                 }
                 return;
             } else if (parser->equalCmdParam(1, "RESET")) {
-                for (auto sensor : sensorManager.getSensors()) {
+                for (auto &sensor : sensorManager.getSensors()) {
                     sensor->resetTemperatureCalibrationState();
                 }
                 return;
             } else if (parser->equalCmdParam(1, "SAVE")) {
-                for (auto sensor : sensorManager.getSensors()) {
+                for (auto &sensor : sensorManager.getSensors()) {
                     sensor->saveTemperatureCalibration();
                 }
                 return;

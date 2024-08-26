@@ -25,6 +25,7 @@
 #define SLIMEVR_CONFIGURATION_SENSORCONFIG_H
 
 #include <stdint.h>
+#include "consts.h"
 
 namespace SlimeVR {
 namespace Configuration {
@@ -42,6 +43,35 @@ struct BMI160SensorConfig {
 
 	// calibration temperature for dynamic compensation
 	float temperature;
+};
+
+struct SoftFusionSensorConfig {
+	ImuID ImuType;
+	uint16_t MotionlessDataLen;
+
+	// accelerometer offsets and correction matrix
+	float A_B[3];
+	float A_Ainv[3][3];
+
+	// magnetometer offsets and correction matrix
+	float M_B[3];
+	float M_Ainv[3][3];
+
+	// raw offsets, determined from gyro at rest
+	float G_off[3];
+
+	// calibration temperature for dynamic compensation
+	float temperature;
+
+	// real measured sensor sampling rate
+	float A_Ts;
+	float G_Ts;
+	float M_Ts;
+
+	// gyro sensitivity multiplier
+	float G_Sens[3];
+
+	uint8_t MotionlessData[60];
 };
 
 struct MPU6050SensorConfig {
@@ -99,7 +129,7 @@ enum class SensorConfigType {
 	MPU6050,
 	MPU9250,
 	ICM20948,
-	ICM42688,
+	SFUSION,
 	BNO0XX
 };
 
@@ -110,10 +140,10 @@ struct SensorConfig {
 
 	union {
 		BMI160SensorConfig bmi160;
+		SoftFusionSensorConfig sfusion;
 		MPU6050SensorConfig mpu6050;
 		MPU9250SensorConfig mpu9250;
 		ICM20948SensorConfig icm20948;
-		ICM42688SensorConfig icm42688;
 		BNO0XXSensorConfig bno0XX;
 	} data;
 };
