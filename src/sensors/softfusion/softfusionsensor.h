@@ -210,7 +210,7 @@ public:
             return;
         }
 
-        SlimeVR::Configuration::SensorConfig sensorCalibration = configuration.getCalibration(sensorId);
+        SlimeVR::Configuration::SensorConfig sensorCalibration = configuration.getSensor(sensorId);
 
         // If no compatible calibration data is found, the calibration data will just be zero-ed out
         if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::SFUSION
@@ -313,7 +313,7 @@ public:
         SlimeVR::Configuration::SensorConfig calibration;
         calibration.type = SlimeVR::Configuration::SensorConfigType::SFUSION;
         calibration.data.sfusion = m_calibration;
-        configuration.setCalibration(sensorId, calibration);
+        configuration.setSensor(sensorId, calibration);
         configuration.save();
     }
 

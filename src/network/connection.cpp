@@ -295,10 +295,10 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 
 	MUST(sendPacketType(PACKET_SENSOR_INFO));
 	MUST(sendPacketNumber());
-	MUST(sendByte(sensor->getSensorId()));
+	MUST(sendByte(sensor.getSensorId()));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
-	MUST(sendByte(static_cast<uint8_t>(sensor->getMagStatus())));
+	MUST(sendByte(static_cast<uint8_t>(sensor.getMagStatus())));
 
 	MUST(endPacket());
 }
@@ -740,14 +740,13 @@ void Connection::update() {
 			uint16_t flagId = m_Packet[13] << 8 | m_Packet[14];
 			bool newState = m_Packet[15] > 0;
 			if(sensorId == UINT8_MAX) {
-				std::vector<Sensor *> & sensors = sensorManager.getSensors();
-				for (Sensor * sensor : sensors) {
+				for (auto& sensor : sensors) {
 					sensor->setFlag(flagId, newState);
 				}
 			} else {
-				std::vector<Sensor *> & sensors = sensorManager.getSensors();
+				auto & sensors = sensorManager.getSensors();
 				if(sensorId < sensors.size()) {
-					Sensor * sensor = sensors[sensorId];
+					auto& sensor = sensors[sensorId];
 					sensor->setFlag(flagId, newState);
 				}
 			}

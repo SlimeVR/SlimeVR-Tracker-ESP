@@ -315,6 +315,11 @@ namespace SlimeVR {
                     m_Logger.info("            G_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.mpu6050.G_off));
 
                     break;
+
+				case SensorConfigType::BNO0XX:
+					m_Logger.info("            magEnabled: %d", c.data.bno0XX.magEnabled);
+
+					break;
                 }
             }
         }
