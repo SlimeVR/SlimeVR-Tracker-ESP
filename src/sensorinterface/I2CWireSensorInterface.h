@@ -24,6 +24,7 @@
 #ifndef SENSORINTERFACE_I2CWIRE_H
 #define SENSORINTERFACE_I2CWIRE_H
 
+#include "globals.h"
 #include <Wire.h>
 #include "SensorInterface.h"
 #include <i2cscan.h>
