@@ -25,6 +25,7 @@ struct QMC5883L {
 
     template <typename WriteRegCall>
     bool initialize(WriteRegCall&& writeReg) {
+        delay(2);
         writeReg(Address, Regs::Reset::reg, Regs::Reset::value);
         delay(5);
         writeReg(Address, Regs::Control::reg, Regs::Control::value);
