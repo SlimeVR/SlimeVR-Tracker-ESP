@@ -46,7 +46,7 @@ class SoftFusionSensor : public Sensor
     static constexpr auto AccelCalibRestSeconds = 3;
 
     static constexpr auto MagCalibDelaySeconds = 3;
-    static constexpr auto MagCalibDurationSeconds = 20;
+    static constexpr auto MagCalibDurationSeconds = 60;
     static constexpr auto MagSampleDelayMs = 100.0f;
 
     static constexpr double GScale = ((32768. / imu::GyroSensitivity) / 32768.) * (PI / 180.0);
@@ -135,6 +135,8 @@ class SoftFusionSensor : public Sensor
         magData[1] = (m_calibration.M_Ainv[1][0] * tmp[0] + m_calibration.M_Ainv[1][1] * tmp[1] + m_calibration.M_Ainv[1][2] * tmp[2]);
         magData[2] = (m_calibration.M_Ainv[2][0] * tmp[0] + m_calibration.M_Ainv[2][1] * tmp[1] + m_calibration.M_Ainv[2][2] * tmp[2]);
 
+        remapAllAxis(AXIS_REMAP_GET_ALL_MAG(axisRemap), &magData[0], &magData[1], &magData[2]);
+
         m_fusion.updateMag(magData, timeDelta);
     }
 
@@ -192,9 +194,10 @@ public:
     static constexpr auto TypeID = imu::Type;
     static constexpr uint8_t Address = imu::Address;
 
-    SoftFusionSensor(uint8_t id, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, uint8_t)
+    SoftFusionSensor(uint8_t id, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, int axisRemap)
     : Sensor(imu::Name, imu::Type, id, imu::Address + addrSuppl, rotation, sclPin, sdaPin),
-      m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs), m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger) {}
+      m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs), m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger),
+      axisRemap(axisRemap) {}
     ~SoftFusionSensor(){}
 
     void motionLoop() override final
@@ -226,7 +229,7 @@ public:
         elapsed = now - m_lastRotationPacketSent;
         if (elapsed >= sendInterval) {
             m_lastRotationPacketSent = now - (elapsed - sendInterval);
-
+            
             setFusedRotation(m_fusion.getQuaternionQuat());
             setAcceleration(m_fusion.getLinearAccVec());
             optimistic_yield(100);
@@ -607,6 +610,8 @@ public:
     uint32_t m_lastPollTime = micros();
     uint32_t m_lastRotationPacketSent = 0;
     uint32_t m_lastTemperaturePacketSent = 0;
+
+    int axisRemap;
 };
 
 } // namespace
