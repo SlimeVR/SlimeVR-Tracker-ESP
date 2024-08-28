@@ -25,7 +25,7 @@
 #define SENSORINTERFACE_I2CWIRE_H
 
 #include <Wire.h>
-#include "sensorinterface.h"
+#include "SensorInterface.h"
 #include <i2cscan.h>
 
 namespace SlimeVR

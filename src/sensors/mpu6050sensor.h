@@ -34,7 +34,7 @@ public:
     static constexpr auto TypeID = ImuID::MPU6050;
     static constexpr uint8_t Address = 0x68;
 
-    MPU6050Sensor(uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, uint8_t)
+    MPU6050Sensor(uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface>, int)
         : Sensor("MPU6050Sensor", ImuID::MPU6050, id, Address+addrSuppl, rotation, sensorInterface){};
     ~MPU6050Sensor(){};
     void motionSetup() override final;

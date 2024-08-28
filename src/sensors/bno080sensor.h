@@ -33,7 +33,7 @@ public:
     static constexpr auto TypeID = ImuID::BNO080;
     static constexpr uint8_t Address = 0x4a;
 
-    BNO080Sensor(uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface> intPin)
+    BNO080Sensor(uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface> intPin, int)
         : Sensor("BNO080Sensor", ImuID::BNO080, id, Address+addrSuppl, rotation, sensorInterface), m_IntPin(intPin) {};
     ~BNO080Sensor(){};
     void motionSetup() override final;
@@ -48,7 +48,7 @@ public:
 
 protected:
     // forwarding constructor
-    BNO080Sensor(const char* sensorName, ImuID imuId, uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface> intPin)
+    BNO080Sensor(const char* sensorName, ImuID imuId, uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface> intPin, int)
         : Sensor(sensorName, imuId, id, Address+addrSuppl, rotation, sensorInterface), m_IntPin(intPin) {};
 private:
     BNO080 imu{};
@@ -72,16 +72,16 @@ class BNO085Sensor : public BNO080Sensor
 {
 public:
     static constexpr auto TypeID = ImuID::BNO085;
-    BNO085Sensor(uint8_t id, uint8_t address, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface> intPin)
-    : BNO080Sensor("BNO085Sensor", ImuID::BNO085, id, address, rotation, sensorInterface, intPin) {};
+    BNO085Sensor(uint8_t id, uint8_t address, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface> intPin, int extraParam)
+    : BNO080Sensor("BNO085Sensor", ImuID::BNO085, id, address, rotation, sensorInterface, intPin, extraParam) {};
 };
 
 class BNO086Sensor : public BNO080Sensor
 {
 public:
     static constexpr auto TypeID = ImuID::BNO086;
-    BNO086Sensor(uint8_t id, uint8_t address, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface> intPin)
-    : BNO080Sensor("BNO086Sensor", ImuID::BNO086, id, address, rotation, sensorInterface, intPin) {};
+    BNO086Sensor(uint8_t id, uint8_t address, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface> intPin, int extraParam)
+    : BNO080Sensor("BNO086Sensor", ImuID::BNO086, id, address, rotation, sensorInterface, intPin, extraParam) {};
 };
 
 #endif

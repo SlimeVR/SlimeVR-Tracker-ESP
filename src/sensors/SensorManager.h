@@ -63,14 +63,14 @@ namespace SlimeVR
             std::vector<std::unique_ptr<Sensor>> m_Sensors;
 
             template <typename ImuType>
-            std::unique_ptr<Sensor> buildSensor(uint8_t sensorID, uint8_t addrSuppl, float rotation, std::shared_ptr<SensorInterface> sensorInterface, bool optional = false, std::shared_ptr<PinInterface> intPin = nullptr)
+            std::unique_ptr<Sensor> buildSensor(uint8_t sensorID, uint8_t addrSuppl, float rotation, std::shared_ptr<SensorInterface> sensorInterface, bool optional = false, std::shared_ptr<PinInterface> intPin = nullptr, int extraParam = 0)
             {
                 const uint8_t address = ImuType::Address + addrSuppl;
                 m_Logger.trace("Building IMU with: id=%d,\n\
                                 address=0x%02X, rotation=%f,\n\
-                                interface=%s, extraParam=%s, optional=%d",
+                                interface=%s, int=%s, extraParam=%d, optional=%d",
                                 sensorID, address, rotation,
-                                sensorInterface, intPin, optional);
+                                sensorInterface, intPin, extraParam, optional);
 
                 // Now start detecting and building the IMU
                 std::unique_ptr<Sensor> sensor;
@@ -93,7 +93,7 @@ namespace SlimeVR
                     return sensor;
                 }
 
-                sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, sensorInterface, intPin);
+                sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, sensorInterface, intPin, extraParam);
 
                 sensor->motionSetup();
                 return sensor;

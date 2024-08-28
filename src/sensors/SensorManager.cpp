@@ -62,8 +62,11 @@ namespace SlimeVR
 
             uint8_t sensorID = 0;
             uint8_t activeSensorCount = 0;
+
+#define NO_PIN nullptr
 #define DIRECT_PIN(pin) std::make_shared<DirectPinInterface>(pin)
 #define DIRECT_WIRE(scl, sda) std::make_shared<I2CWireSensorInterface>(sda, scl)
+
 #define IMU_DESC_ENTRY(ImuType, ...)                                  \
             {                                                         \
                 auto sensor = buildSensor<ImuType>(sensorID, __VA_ARGS__); \
@@ -78,6 +81,9 @@ namespace SlimeVR
             IMU_DESC_LIST;
 
 #undef IMU_DESC_ENTRY
+#undef NO_PIN
+#undef DIRECT_PIN
+#undef DIRECT_WIRE
             m_Logger.info("%d sensor(s) configured", activeSensorCount);
             // Check and scan i2c if no sensors active
             if (activeSensorCount == 0) {
