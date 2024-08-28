@@ -224,7 +224,7 @@ void BNO080Sensor::motionLoop() {
 			// Default calibration flags for BNO085:
 			// Accel: 1, Gyro: 0, Mag: 1, Planar: 0, OnTable: 0 (OnTable can't be disabled)
 		}
-		if (m_IntPin == 255 || imu.I2CTimedOut()) {
+		if (m_IntPin == nullptr || imu.I2CTimedOut()) {
 			break;
 		}
 	}

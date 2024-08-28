@@ -31,6 +31,7 @@
 #include "ErroneousSensor.h"
 #include "logging/Logger.h"
 #include "sensorinterface/I2CWireSensorInterface.h"
+#include "sensorinterface/DirectPinInterface.h"
 
 #include <memory>
 
@@ -118,7 +119,7 @@ private:
 		}
 
 		uint8_t intPin = extraParam;
-		sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, std::move(sensorInterface), intPin);
+		sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, std::move(sensorInterface), std::make_shared<DirectPinInterface>(intPin));
 
 		sensor->motionSetup();
 		return sensor;

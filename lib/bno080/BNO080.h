@@ -49,6 +49,8 @@
 
 #include <Wire.h>
 #include <SPI.h>
+#include <memory>
+#include "PinInterface.h"
 
 //The default I2C address for the BNO080 on the SparkX breakout is 0x4B. 0x4A is also possible.
 #define BNO080_DEFAULT_ADDRESS 0x4B
@@ -150,8 +152,8 @@ struct BNO080Error {
 class BNO080
 {
 public:
-	boolean begin(uint8_t deviceAddress = BNO080_DEFAULT_ADDRESS, TwoWire &wirePort = Wire, uint8_t intPin = 255); //By default use the default I2C addres, and use Wire port, and don't declare an INT pin
-	boolean beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_INTPin, uint8_t user_RSTPin, uint32_t spiPortSpeed = 3000000, SPIClass &spiPort = SPI);
+	boolean begin(uint8_t deviceAddress = BNO080_DEFAULT_ADDRESS, TwoWire &wirePort = Wire, std::shared_ptr<PinInterface> intPin = nullptr); //By default use the default I2C addres, and use Wire port, and don't declare an INT pin
+	boolean beginSPI(std::shared_ptr<PinInterface> user_CSPin, std::shared_ptr<PinInterface> user_WAKPin, std::shared_ptr<PinInterface> user_INTPin, std::shared_ptr<PinInterface> user_RSTPin, uint32_t spiPortSpeed = 3000000, SPIClass &spiPort = SPI);
 
 	void enableDebugging(Stream &debugPort = Serial); //Turn on debug printing. If user doesn't specify then Serial will be used.
 
@@ -311,10 +313,10 @@ private:
 
 	SPIClass *_spiPort;			 //The generic connection to user's chosen SPI hardware
 	unsigned long _spiPortSpeed; //Optional user defined port speed
-	uint8_t _cs;				 //Pins needed for SPI
-	uint8_t _wake;
-	uint8_t _int;
-	uint8_t _rst;
+	std::shared_ptr<PinInterface> _cs;				 //Pins needed for SPI
+	std::shared_ptr<PinInterface> _wake;
+	std::shared_ptr<PinInterface> _int;
+	std::shared_ptr<PinInterface> _rst;
 
 	//These are the raw sensor values (without Q applied) pulled from the user requested Input Report
 	uint16_t rawAccelX, rawAccelY, rawAccelZ, accelAccuracy;
