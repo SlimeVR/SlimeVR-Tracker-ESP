@@ -39,6 +39,7 @@ public:
 		uint8_t addrSuppl,
 		float rotation,
 		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
+		std::shared_ptr<PinInterface>,
 		uint8_t
 	)
 		: Sensor(

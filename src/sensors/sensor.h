@@ -33,6 +33,7 @@
 #include "logging/Logger.h"
 #include "utils.h"
 #include "sensorinterface/SensorInterface.h"
+#include "PinInterface.h"
 
 #include <memory>
 
