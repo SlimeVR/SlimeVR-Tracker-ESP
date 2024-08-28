@@ -74,10 +74,6 @@ void BNO080Sensor::motionSetup()
         } else {
             imu.enableGameRotationVector(10);
         }
-
-        #if BNO_USE_MAGNETOMETER_CORRECTION
-        imu.enableRotationVector(1000);
-        #endif
     } else {
         if ((sensorType == ImuID::BNO085 || sensorType == ImuID::BNO086) && BNO_USE_ARVR_STABILIZATION) {
             imu.enableARVRStabilizedRotationVector(10);
@@ -160,24 +156,6 @@ void BNO080Sensor::motionLoop()
         }
 #endif // SEND_ACCELERATION
 
-#if BNO_USE_MAGNETOMETER_CORRECTION
-        if(!isMagEnabled()) {
-                if (imu.hasNewMagQuat())
-                {
-                    imu.getMagQuat(magQuaternion.x, magQuaternion.y, magQuaternion.z, magQuaternion.w, magneticAccuracyEstimate, magCalibrationAccuracy);
-                    magQuaternion *= sensorOffset;
-
-            #if ENABLE_INSPECTION
-                    {
-                        networkConnection.sendInspectionCorrectionData(sensorId, quaternion);
-                    }
-            #endif // ENABLE_INSPECTION
-
-                    newMagData = true;
-                }
-        }
-#endif
-
         if (imu.getTapDetected())
         {
             tap = imu.getTapDetector();
@@ -234,22 +212,6 @@ void BNO080Sensor::sendData()
             networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
         }
 #endif
-    }
-
-	// FIXME: This doesn't seem really useful to send, and it's a waste of packets, maybe we
-	// 		should disable it via a define macro
-
-//    if(isMagEnabled()) {
-//        networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
-//    }
-
-    if(BNO_USE_MAGNETOMETER_CORRECTION && !isMagEnabled()) {
-        if (newMagData)
-        {
-            newMagData = false;
-            networkConnection.sendRotationData(sensorId, &magQuaternion, DATA_TYPE_CORRECTION, magCalibrationAccuracy);
-//            networkConnection.sendMagnetometerAccuracy(sensorId, magneticAccuracyEstimate);
-        }
     }
 
     if (tap != 0)
