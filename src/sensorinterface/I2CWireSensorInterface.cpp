@@ -23,6 +23,10 @@
 
 #include "I2CWireSensorInterface.h"
 
+#if ESP32
+    #include "driver/i2c.h"
+#endif
+
 uint8_t activeSCLPin;
 uint8_t activeSDAPin;
 bool isI2CActive = false;
@@ -34,7 +38,7 @@ namespace SlimeVR
 		if (sclPin != activeSCLPin || sdaPin != activeSDAPin || !isI2CActive) {
 			Wire.flush();
 			#if ESP32
-				if (running) {}
+				if (isI2CActive) {}
 				else {
 					// Reset HWI2C to avoid being affected by I2CBUS reset
 					Wire.end();
@@ -43,7 +47,7 @@ namespace SlimeVR
 				gpio_set_direction((gpio_num_t)activeSCLPin, GPIO_MODE_INPUT);
 				gpio_set_direction((gpio_num_t)activeSDAPin, GPIO_MODE_INPUT);
 
-				if (running) {
+				if (isI2CActive) {
 					i2c_set_pin(I2C_NUM_0, sdaPin, sclPin, false, false, I2C_MODE_MASTER);
 				} else {
 					Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin), I2C_SPEED);

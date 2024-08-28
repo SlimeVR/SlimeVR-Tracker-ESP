@@ -41,10 +41,6 @@
 
 #include "softfusion/i2cimpl.h"
 
-#if ESP32
-    #include "driver/i2c.h"
-#endif
-
 namespace SlimeVR
 {
     namespace Sensors
