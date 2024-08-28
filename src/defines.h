@@ -48,25 +48,9 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 */
 
 #ifndef IMU_DESC_LIST
-#define IMU_DESC_LIST              \
-	IMU_DESC_ENTRY(                \
-		IMU,                       \
-		PRIMARY_IMU_ADDRESS_ONE,   \
-		IMU_ROTATION,              \
-		PIN_IMU_SCL,               \
-		PIN_IMU_SDA,               \
-		PRIMARY_IMU_OPTIONAL,      \
-		PIN_IMU_INT                \
-	)                              \
-	IMU_DESC_ENTRY(                \
-		SECOND_IMU,                \
-		SECONDARY_IMU_ADDRESS_TWO, \
-		SECOND_IMU_ROTATION,       \
-		PIN_IMU_SCL,               \
-		PIN_IMU_SDA,               \
-		SECONDARY_IMU_OPTIONAL,    \
-		PIN_IMU_INT_2              \
-	)
+#define IMU_DESC_LIST \
+        IMU_DESC_ENTRY(IMU,        PRIMARY_IMU_ADDRESS_ONE,   IMU_ROTATION,        DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), PRIMARY_IMU_OPTIONAL,   DIRECT_PIN(PIN_IMU_INT)) \
+        IMU_DESC_ENTRY(SECOND_IMU, SECONDARY_IMU_ADDRESS_TWO, SECOND_IMU_ROTATION, DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), SECONDARY_IMU_OPTIONAL, DIRECT_PIN(PIN_IMU_INT_2))
 #endif
 
 // Battery monitoring options (comment to disable):

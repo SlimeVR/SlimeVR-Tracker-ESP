@@ -70,30 +70,21 @@ private:
 		uint8_t sensorID,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		std::shared_ptr<SensorInterface> sensorInterface,
 		bool optional = false,
-		int extraParam = 0
-	) {
+		std::shared_ptr<PinInterface> intPin = nullptr)
+	{
 		const uint8_t address = ImuType::Address + addrSuppl;
-		m_Logger.trace(
-			"Building IMU with: id=%d,\n\
-                                address=0x%02X, rotation=%f,\n\
-                                sclPin=%d, sdaPin=%d, extraParam=%d, optional=%d",
-			sensorID,
-			address,
-			rotation,
-			sclPin,
-			sdaPin,
-			extraParam,
-			optional
-		);
+		m_Logger.trace("Building IMU with: id=%d,\n\
+						address=0x%02X, rotation=%f,\n\
+						interface=%s, extraParam=%s, optional=%d",
+						sensorID, address, rotation,
+						sensorInterface, intPin, optional);
 
 		// Now start detecting and building the IMU
 		std::unique_ptr<Sensor> sensor;
 
 		// Clear and reset I2C bus for each sensor upon startup
-		std::shared_ptr<SensorInterface> sensorInterface = std::make_shared<I2CWireSensorInterface>(sclPin, sdaPin);
 		sensorInterface->init();
 		sensorInterface->swapIn();
 
@@ -118,8 +109,7 @@ private:
 			return sensor;
 		}
 
-		uint8_t intPin = extraParam;
-		sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, std::move(sensorInterface), std::make_shared<DirectPinInterface>(intPin));
+        sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, sensorInterface, intPin);
 
 		sensor->motionSetup();
 		return sensor;
