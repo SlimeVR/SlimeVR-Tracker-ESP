@@ -183,7 +183,7 @@ void BNO080Sensor::motionLoop()
         {
             tap = imu.getTapDetector();
         }
-        if (m_IntPin == 255 || imu.I2CTimedOut())
+        if (m_IntPin == nullptr || imu.I2CTimedOut())
             break;
     }
 	if(imu.hasNewCliabrationStatus()) {
