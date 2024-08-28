@@ -62,6 +62,8 @@ namespace SlimeVR
 
             uint8_t sensorID = 0;
             uint8_t activeSensorCount = 0;
+#define DIRECT_PIN(pin) std::make_shared<DirectPinInterface>(pin)
+#define DIRECT_WIRE(scl, sda) std::make_shared<I2CWireSensorInterface>(sda, scl)
 #define IMU_DESC_ENTRY(ImuType, ...)                                  \
             {                                                         \
                 auto sensor = buildSensor<ImuType>(sensorID, __VA_ARGS__); \
@@ -72,7 +74,7 @@ namespace SlimeVR
                 m_Sensors.push_back(std::move(sensor));               \
                 sensorID++;                                           \
             }
-            // Apply descriptor list and expand to entrys
+            // Apply descriptor list and expand to entries
             IMU_DESC_LIST;
 
 #undef IMU_DESC_ENTRY
