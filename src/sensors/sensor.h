@@ -84,7 +84,7 @@ public:
     };
 	bool isMagEnabled() {
 		return magStatus == MagnetometerStatus::MAG_ENABLED;
-	}
+	};
     uint8_t getSensorId() {
         return sensorId;
     };
