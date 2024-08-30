@@ -26,6 +26,10 @@
 #include <PinInterface.h>
 #include <Arduino.h>
 
+/**
+ * Pin interface using direct pins
+ *
+ */
 class DirectPinInterface : public PinInterface
 {
 public:

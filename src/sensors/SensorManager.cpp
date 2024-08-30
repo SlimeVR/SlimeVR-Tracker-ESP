@@ -40,6 +40,8 @@
 #include "softfusion/drivers/mpu6050.h"
 
 #include "softfusion/i2cimpl.h"
+#include "sensorinterface/MCP23X17PinInterface.h"
+#include "sensorinterface/I2CPCAInterface.h"
 
 namespace SlimeVR
 {
@@ -53,15 +55,20 @@ namespace SlimeVR
         using SoftFusionLSM6DSR = SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;
         using SoftFusionMPU6050 = SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
 
+		Adafruit_MCP23X17 mcp;
+
         void SensorManager::setup()
         {
 
             uint8_t sensorID = 0;
             uint8_t activeSensorCount = 0;
+			mcp.begin_I2C();
 
 #define NO_PIN nullptr
 #define DIRECT_PIN(pin) std::make_shared<DirectPinInterface>(pin)
 #define DIRECT_WIRE(scl, sda) std::make_shared<I2CWireSensorInterface>(sda, scl)
+#define MCP_PIN(pin) std::make_shared<MCP23X17PinInterface>(&mcp, pin)
+#define PCA_WIRE(scl, sda, addr, ch) std::make_shared<I2CPCASensorInterface>(scl, sda, addr, ch)
 
 #define IMU_DESC_ENTRY(ImuType, ...)                                  \
             {                                                         \
