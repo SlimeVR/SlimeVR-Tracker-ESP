@@ -33,6 +33,7 @@
 #include "utils.h"
 #include "sensorinterface/SensorInterface.h"
 #include "PinInterface.h"
+#include "status/TPSCounter.h"
 
 #include <memory>
 
@@ -94,6 +95,9 @@ public:
     bool hasNewDataToSend() {
         return newFusedRotation || newAcceleration;
     };
+
+	TPSCounter tpsCounter;
+	TPSCounter dataCounter;
 
 protected:
     uint8_t addr = 0;

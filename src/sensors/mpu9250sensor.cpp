@@ -131,9 +131,12 @@ void MPU9250Sensor::motionSetup() {
 
     working = true;
 #endif
+	tpsCounter.reset();
+	dataCounter.reset();
 }
 
 void MPU9250Sensor::motionLoop() {
+	tpsCounter.update();
 #if ENABLE_INSPECTION
     {
         int16_t rX, rY, rZ, aX, aY, aZ, mX, mY, mZ;
@@ -349,7 +352,7 @@ void MPU9250Sensor::parseMagData(int16_t data[3]) {
     for (unsigned i = 0; i < 3; i++) {
         temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
     }
-    
+
     for (unsigned i = 0; i < 3; i++) {
         #if useFullCalibrationMatrix == true
             Mxyz[i] = m_Calibration.M_Ainv[i][0] * temp[0] + m_Calibration.M_Ainv[i][1] * temp[1] + m_Calibration.M_Ainv[i][2] * temp[2];
@@ -374,7 +377,7 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
         #if !MPU_USE_DMPMAG
         temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
     }
-    
+
     for (unsigned i = 0; i < 3; i++) {
         #if useFullCalibrationMatrix == true
             Axyz[i] = m_Calibration.A_Ainv[i][0] * temp[0] + m_Calibration.A_Ainv[i][1] * temp[1] + m_Calibration.A_Ainv[i][2] * temp[2];

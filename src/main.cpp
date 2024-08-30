@@ -30,6 +30,7 @@
 #include "serial/serialcommands.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
+#include "status./TPSCounter.h"
 
 Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
@@ -47,6 +48,7 @@ unsigned long loopTime = 0;
 unsigned long lastStatePrint = 0;
 bool secondImuActive = false;
 BatteryMonitor battery;
+TPSCounter tpsCounter;
 
 void setup()
 {
@@ -107,10 +109,12 @@ void setup()
     sensorManager.postSetup();
 
     loopTime = micros();
+	tpsCounter.reset();
 }
 
 void loop()
 {
+	tpsCounter.update();
     globalTimer.tick();
     SerialCommands::update();
     OTA::otaUpdate();

@@ -100,10 +100,13 @@ void BNO080Sensor::motionSetup()
     lastData = millis();
     working = true;
     configured = true;
+	tpsCounter.reset();
+	dataCounter.reset();
 }
 
 void BNO080Sensor::motionLoop()
 {
+	tpsCounter.update();
     //Look for reports from the IMU
     while (imu.dataAvailable())
     {

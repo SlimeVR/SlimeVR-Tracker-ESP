@@ -41,6 +41,9 @@ void Sensor::setFusedRotation(Quat r) {
         newFusedRotation = true;
         lastFusedRotationSent = fusedRotation;
     }
+	if (changed) {
+		dataCounter.update();
+	}
 }
 
 void Sensor::sendData() {

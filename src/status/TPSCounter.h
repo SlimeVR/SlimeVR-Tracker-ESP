@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2022 TheDevMinerTV
+    Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,24 +20,24 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#ifndef _H_TPS_COUNTER_
+#define _H_TPS_COUNTER_
 
-#include "ErroneousSensor.h"
-#include "GlobalVars.h"
+#include <Arduino.h>
 
-namespace SlimeVR
+class TPSCounter
 {
-    namespace Sensors
-    {
-        void ErroneousSensor::motionSetup()
-        {
-            m_Logger.error("IMU of type %s failed to initialize", getIMUNameByType(m_ExpectedType));
-			tpsCounter.reset();
-			dataCounter.reset();
-        }
+public:
+	virtual void reset();
+	virtual void update();
+	virtual float getAveragedTPS();
+	virtual float getTPS();
+private:
+	long _lastUpdate;
+	long _lastAverageUpdate;
+	uint32_t _averageUpdatesCounter;
+	float _averagedTps;
+	float _tps;
+};
 
-        SensorStatus ErroneousSensor::getSensorState()
-        {
-            return SensorStatus::SENSOR_ERROR;
-        };
-    }
-}
+#endif // _H_TPS_COUNTER_
