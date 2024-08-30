@@ -24,12 +24,10 @@
 #ifndef SLIMEVR_CONFIGURATION_DEVICECONFIG_H
 #define SLIMEVR_CONFIGURATION_DEVICECONFIG_H
 
-namespace SlimeVR {
-namespace Configuration {
+namespace SlimeVR::Configuration {
 struct DeviceConfig {
 	int32_t version;
 };
-}  // namespace Configuration
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Configuration
 
 #endif

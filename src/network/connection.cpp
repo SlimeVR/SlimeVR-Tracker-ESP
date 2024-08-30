@@ -748,6 +748,9 @@ void Connection::update() {
 				if(sensorId < sensors.size()) {
 					auto& sensor = sensors[sensorId];
 					sensor->setFlag(flagId, newState);
+				} else {
+					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id");
+					break;
 				}
 			}
 			sendAcknowledgeConfigChange(sensorId, flagId);
