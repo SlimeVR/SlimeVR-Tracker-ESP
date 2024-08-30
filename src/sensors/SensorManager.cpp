@@ -39,6 +39,8 @@
 #include "softfusion/drivers/mpu6050.h"
 #include "softfusion/i2cimpl.h"
 #include "softfusion/softfusionsensor.h"
+#include "sensorinterface/MCP23X17PinInterface.h"
+#include "sensorinterface/I2CPCAInterface.h"
 
 #if ESP32
 #include "driver/i2c.h"
@@ -68,6 +70,8 @@ void SensorManager::setup()
 #define NO_PIN nullptr
 #define DIRECT_PIN(pin) std::make_shared<DirectPinInterface>(pin)
 #define DIRECT_WIRE(scl, sda) std::make_shared<I2CWireSensorInterface>(sda, scl)
+#define MCP_PIN(pin) std::make_shared<MCP23X17PinInterface>(&mcp, pin)
+#define PCA_WIRE(scl, sda, addr, ch) std::make_shared<I2CPCASensorInterface>(scl, sda, addr, ch)
 
 #define IMU_DESC_ENTRY(ImuType, ...)                                  \
 	{                                                         \

@@ -62,4 +62,12 @@ namespace SlimeVR
 			isI2CActive = true;
 		}
 	}
+
+	void disconnectI2C()
+	{
+		isI2CActive = false;
+		#if ESP32
+			Wire.end();
+		#endif
+	}
 }

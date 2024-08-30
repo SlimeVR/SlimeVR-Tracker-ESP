@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2024 Eiren Rain & SlimeVR contributors
+    Copyright (c) 2024 Eiren & SlimeVR Contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,46 +20,32 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef _H_MCP23X17PinInterface_
-#define _H_MCP23X17PinInterface_
+#ifndef I2C_PCA_INTERFACE_H
+#define I2C_PCA_INTERFACE_H
 
-#include <PinInterface.h>
-#include <Adafruit_MCP23X17.h>
+#include "I2CWireSensorInterface.h"
 
-#define MCP_GPA0 0
-#define MCP_GPA1 1
-#define MCP_GPA2 2
-#define MCP_GPA3 3
-#define MCP_GPA4 4
-#define MCP_GPA5 5
-#define MCP_GPA6 6
-#define MCP_GPA7 7
-#define MCP_GPB0 8
-#define MCP_GPB1 9
-#define MCP_GPB2 10
-#define MCP_GPB3 11
-#define MCP_GPB4 12
-#define MCP_GPB5 13
-#define MCP_GPB6 14
-#define MCP_GPB7 15
-
-/**
- * Pin interface to use MCP23008/17 I2C GPIO port extenders
- */
-class MCP23X17PinInterface: public PinInterface
+namespace SlimeVR
 {
+	/**
+	 * I2C Sensor interface for use with PCA9547 (8-channel I2C-buss multiplexer)
+	 * or PCA9546A (4-channel I2C-bus multiplexer) or analogs
+	 */
+	class I2CPCASensorInterface : public SensorInterface {
+		public:
+			I2CPCASensorInterface(uint8_t sda, uint8_t scl, uint8_t address, uint8_t channel) :
+				_wire(I2CWireSensorInterface(sda, scl)), _address(address), _channel(channel){};
+			~I2CPCASensorInterface(){};
 
-public:
-    MCP23X17PinInterface(Adafruit_MCP23X17* mcp, uint8_t pin)
-        : _mcp23x17(mcp), _pinNum(pin) {};
+			void init() override final;
+			void swapIn() override final;
+		protected:
+			uint8_t _address;
+			uint8_t _channel;
+			I2CWireSensorInterface _wire;
+	};
 
-    int digitalRead() override final;
-    void pinMode(uint8_t mode) override final;
-    void digitalWrite(uint8_t val) override final;
 
-private:
-    Adafruit_MCP23X17* _mcp23x17;
-    uint8_t _pinNum;
-};
+}
 
-#endif // _H_MCP23X17PinInterface_
+#endif

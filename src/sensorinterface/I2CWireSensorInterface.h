@@ -25,29 +25,37 @@
 #define SENSORINTERFACE_I2CWIRE_H
 
 #include "globals.h"
-#include <Wire.h>
+#include <Arduino.h>
 #include "SensorInterface.h"
 #include <i2cscan.h>
 
 namespace SlimeVR
 {
 	void swapI2C(uint8_t sclPin, uint8_t sdaPin);
+	void disconnectI2C();
 
+	/**
+	 * I2C Sensor interface using direct arduino Wire on provided pins
+	 *
+	 */
 	class I2CWireSensorInterface : public SensorInterface {
 		public:
 			I2CWireSensorInterface(uint8_t sdapin, uint8_t sclpin) :
-				sdaPin(sdapin), sclPin(sclpin){};
+				_sdaPin(sdapin), _sclPin(sclpin){};
 			~I2CWireSensorInterface(){};
 
 			void init() override final {
-				I2CSCAN::clearBus(sdaPin, sclPin);
+				I2CSCAN::clearBus(_sdaPin, _sclPin);
 			}
 			void swapIn() override final {
-				swapI2C(sclPin, sdaPin);
+				swapI2C(_sclPin, _sdaPin);
+			}
+			void disconnect() {
+				disconnectI2C();
 			}
 		protected:
-			uint8_t sdaPin;
-			uint8_t sclPin;
+			uint8_t _sdaPin;
+			uint8_t _sclPin;
 	};
 
 
