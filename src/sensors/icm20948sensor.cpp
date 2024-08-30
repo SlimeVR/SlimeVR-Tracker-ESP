@@ -41,14 +41,17 @@ constexpr float ASCALE_4G
 	= ((32768. / ACCEL_SENSITIVITY_4G) / 32768.) * CONST_EARTH_GRAVITY;
 
 void ICM20948Sensor::motionSetup() {
-	connectSensor();
-	startDMP();
-	loadCalibration();
-	startMotionLoop();
-	startCalibrationAutoSave();
+    connectSensor();
+    startDMP();
+    loadCalibration();
+    startMotionLoop();
+    startCalibrationAutoSave();
+	tpsCounter.reset();
+	dataCounter.reset();
 }
 
 void ICM20948Sensor::motionLoop() {
+	tpsCounter.update();
 #if ENABLE_INSPECTION
 	{
 		(void)imu.getAGMT();

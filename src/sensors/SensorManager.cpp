@@ -80,7 +80,7 @@ void SensorManager::setup()
 		sensorID++;                                           \
 	}
 	// Apply descriptor list and expand to entries
-	IMU_DESC_LIST;
+	SENSOR_DESC_LIST;
 
 #undef IMU_DESC_ENTRY
 #undef NO_PIN

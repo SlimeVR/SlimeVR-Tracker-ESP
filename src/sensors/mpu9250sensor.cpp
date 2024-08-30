@@ -152,9 +152,12 @@ void MPU9250Sensor::motionSetup() {
 
 	working = true;
 #endif
+	tpsCounter.reset();
+	dataCounter.reset();
 }
 
 void MPU9250Sensor::motionLoop() {
+	tpsCounter.update();
 #if ENABLE_INSPECTION
 	{
 		int16_t rX, rY, rZ, aX, aY, aZ, mX, mY, mZ;

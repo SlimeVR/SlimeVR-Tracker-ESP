@@ -283,6 +283,7 @@ void BMI160Sensor::motionSetup() {
 }
 
 void BMI160Sensor::motionLoop() {
+	tpsCounter.update();
 #if ENABLE_INSPECTION
 	{
 		int16_t rX, rY, rZ, aX, aY, aZ;

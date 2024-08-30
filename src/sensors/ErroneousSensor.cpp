@@ -32,6 +32,8 @@ void ErroneousSensor::motionSetup() {
 		"IMU of type %s failed to initialize",
 		getIMUNameByType(m_ExpectedType)
 	);
+	tpsCounter.reset();
+	dataCounter.reset();
 }
 
 SensorStatus ErroneousSensor::getSensorState() { return SensorStatus::SENSOR_ERROR; };

@@ -34,6 +34,7 @@
 #include "utils.h"
 #include "sensorinterface/SensorInterface.h"
 #include "PinInterface.h"
+#include "status/TPSCounter.h"
 
 #include <memory>
 
@@ -91,6 +92,8 @@ public:
 
 	void printTemperatureCalibrationUnsupported();
     
+    TPSCounter tpsCounter;
+	TPSCounter dataCounter;
     std::shared_ptr<SlimeVR::SensorInterface> hwInterface;
 protected:
 	uint8_t addr = 0;

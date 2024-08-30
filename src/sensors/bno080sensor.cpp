@@ -116,16 +116,20 @@ void BNO080Sensor::motionSetup() {
 	//imu.sendCalibrateCommand(SH2_CAL_ACCEL | SH2_CAL_GYRO_IN_HAND | SH2_CAL_MAG | SH2_CAL_ON_TABLE | SH2_CAL_PLANAR);
 
 
-	lastReset = 0;
-	lastData = millis();
-	working = true;
-	configured = true;
+    lastReset = 0;
+    lastData = millis();
+    working = true;
+    configured = true;
+	tpsCounter.reset();
+	dataCounter.reset();
 }
 
 void BNO080Sensor::motionLoop() {
-	// Look for reports from the IMU
-	while (imu.dataAvailable()) {
-		hadData = true;
+	tpsCounter.update();
+    //Look for reports from the IMU
+    while (imu.dataAvailable())
+    {
+        hadData = true;
 #if ENABLE_INSPECTION
 		{
 			int16_t rX = imu.getRawGyroX();
