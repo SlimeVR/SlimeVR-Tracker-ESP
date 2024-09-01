@@ -72,6 +72,9 @@ public:
     void Setup();
     void Loop();
 
+    float getVoltage() const { return voltage; }
+    float getLevel() const { return level; }
+
 private:
     unsigned long last_battery_sample = 0;
 #if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
@@ -82,10 +85,6 @@ private:
 #endif
     float voltage = -1;
     float level = -1;
-
-public:
-    float getVoltage() const { return voltage; }
-    float getLevel() const { return level; }
 
     SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("BatteryMonitor");
 };
