@@ -125,7 +125,7 @@ class BMI160Sensor : public Sensor {
         static constexpr uint8_t Address = 0x68;
         static constexpr auto TypeID = ImuID::BMI160;
 
-        BMI160Sensor(uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface>, int axisRemapParam) :
+        BMI160Sensor(uint8_t id, uint8_t addrSuppl, float rotation, SlimeVR::SensorInterface* sensorInterface, PinInterface*, int axisRemapParam) :
             Sensor("BMI160Sensor", ImuID::BMI160, id, Address+addrSuppl, rotation, sensorInterface),
             sfusion(BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f, BMI160_ODR_MAG_MICROS / 1e6f)
         {

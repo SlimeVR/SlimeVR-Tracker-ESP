@@ -34,7 +34,7 @@ public:
     static constexpr auto TypeID = ImuID::BNO055;
     static constexpr uint8_t Address = 0x28;
 
-    BNO055Sensor(uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface>, int)
+    BNO055Sensor(uint8_t id, uint8_t addrSuppl, float rotation, SlimeVR::SensorInterface* sensorInterface, PinInterface*, int)
         : Sensor("BNO055Sensor", ImuID::BNO055, id, Address+addrSuppl, rotation, sensorInterface){};
     ~BNO055Sensor(){};
     void motionSetup() override final;

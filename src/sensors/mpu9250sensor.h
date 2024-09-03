@@ -47,7 +47,7 @@ public:
     static constexpr auto TypeID = ImuID::MPU9250;
     static constexpr uint8_t Address = 0x68;
 
-    MPU9250Sensor(uint8_t id, uint8_t addrSuppl, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface, std::shared_ptr<PinInterface>, int)
+    MPU9250Sensor(uint8_t id, uint8_t addrSuppl, float rotation, SlimeVR::SensorInterface* sensorInterface, PinInterface*, int)
         : Sensor("MPU9250Sensor", ImuID::MPU9250, id, Address+addrSuppl, rotation, sensorInterface)
     #if !MPU_USE_DMPMAG
         , sfusion(MPU9250_ODR_TS)

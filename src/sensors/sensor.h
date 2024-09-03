@@ -49,9 +49,9 @@ enum class SensorStatus : uint8_t {
 class Sensor
 {
 public:
-    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, std::shared_ptr<SlimeVR::SensorInterface> sensorInterface = nullptr)
+    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, SlimeVR::SensorInterface* sensorInterface = nullptr)
         : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
-            hwInterface(std::move(sensorInterface))
+            hwInterface(sensorInterface)
     {
         char buf[4];
         sprintf(buf, "%u", id);
@@ -98,6 +98,7 @@ public:
 
 	TPSCounter tpsCounter;
 	TPSCounter dataCounter;
+    SlimeVR::SensorInterface* hwInterface;
 
 protected:
     uint8_t addr = 0;
@@ -116,9 +117,6 @@ protected:
     Vector3 acceleration{};
 
     mutable SlimeVR::Logging::Logger m_Logger;
-
-public:
-    std::shared_ptr<SlimeVR::SensorInterface> hwInterface;
 
 private:
     void printTemperatureCalibrationUnsupported();
