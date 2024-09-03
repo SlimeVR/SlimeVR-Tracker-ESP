@@ -39,8 +39,8 @@ public:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
-		std::shared_ptr<PinInterface> intPin,
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
 		int
 	)
 		: Sensor(
@@ -70,8 +70,8 @@ protected:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
-		std::shared_ptr<PinInterface> intPin,
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
 		int
 	)
 		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sensorInterface)
@@ -80,7 +80,7 @@ protected:
 private:
 	BNO080 imu{};
 
-    std::shared_ptr<PinInterface> m_IntPin;
+    PinInterface* m_IntPin;
 
 	uint8_t tap;
 	unsigned long lastData = 0;
@@ -103,8 +103,8 @@ public:
 		uint8_t id,
 		uint8_t address,
 		float rotation,
-		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
-		std::shared_ptr<PinInterface> intPin,
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
 		int extraParam
 	)
 		: BNO080Sensor(
@@ -126,8 +126,8 @@ public:
 		uint8_t id,
 		uint8_t address,
 		float rotation,
-		std::shared_ptr<SlimeVR::SensorInterface> sensorInterface,
-		std::shared_ptr<PinInterface> intPin,
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
 		int extraParam
 	)
 		: BNO080Sensor(
