@@ -32,6 +32,7 @@
 #include "network/manager.h"
 #include "sensors/SensorManager.h"
 #include "status/StatusManager.h"
+#include "batterymonitor.h"
 
 extern Timer<> globalTimer;
 extern SlimeVR::LEDManager ledManager;
@@ -40,5 +41,6 @@ extern SlimeVR::Configuration::Configuration configuration;
 extern SlimeVR::Sensors::SensorManager sensorManager;
 extern SlimeVR::Network::Manager networkManager;
 extern SlimeVR::Network::Connection networkConnection;
+extern BatteryMonitor battery;
 
 #endif
