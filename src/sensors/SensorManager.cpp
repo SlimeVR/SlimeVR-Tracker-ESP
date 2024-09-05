@@ -41,6 +41,7 @@
 #include "softfusion/softfusionsensor.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
 #include "sensorinterface/I2CPCAInterface.h"
+#include <map>
 
 #if ESP32
 #include "driver/i2c.h"
@@ -63,17 +64,66 @@ using SoftFusionLSM6DSR
 using SoftFusionMPU6050
 	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
 
+
 void SensorManager::setup()
 {
+	Adafruit_MCP23X17 mcp;
+	std::map<int, std::unique_ptr<DirectPinInterface>> directPinInterfaces;
+	std::map<int, std::unique_ptr<MCP23X17PinInterface>> mcpPinInterfaces;
+	std::map<std::tuple<int, int>, std::unique_ptr<I2CWireSensorInterface>> i2cWireInterfaces;
+	std::map<std::tuple<int, int, int, int>, std::unique_ptr<I2CPCASensorInterface>> pcaWireInterfaces;
+
+	DirectPinInterface* directPin(int pin)
+	{
+		if(!directPinInterfaces.contains(pin))
+		{
+			auto ptr = std::make_unique<DirectPinInterface>(pin);
+			directPinInterfaces[pin] = std::move(ptr);
+		}
+		return directPinInterfaces[pin].get();
+	}
+
+	MCP23X17PinInterface* mcpPin(int pin)
+	{
+		if(!mcpPinInterfaces.contains(pin))
+		{
+			auto ptr = std::make_unique<MCP23X17PinInterface>(&mcp, pin);
+			mcpPinInterfaces[pin] = std::move(ptr);
+		}
+		return mcpPinInterfaces[pin].get();
+	}
+
+	I2CWireSensorInterface* directWire(int scl, int sda)
+	{
+		auto pair = std::make_tuple(scl, sda);
+		if(!i2cWireInterfaces.contains(pair))
+		{
+			auto ptr = std::make_unique<I2CWireSensorInterface>(scl, sda);
+			i2cWireInterfaces[pair] = std::move(ptr);
+		}
+		return i2cWireInterfaces[pair].get();
+	}
+
+	I2CPCASensorInterface* pcaWire(int scl, int sda, int addr, int ch)
+	{
+		auto pair = std::make_tuple(scl, sda, addr, ch);
+		if(!pcaWireInterfaces.contains(pair))
+		{
+			auto ptr = std::make_unique<I2CPCASensorInterface>(scl, sda, addr, ch);
+			pcaWireInterfaces[pair] = std::move(ptr);
+		}
+		return pcaWireInterfaces[pair].get();
+	}
 	uint8_t sensorID = 0;
 	uint8_t activeSensorCount = 0;
+	mcp.begin_I2C();
 #define NO_PIN nullptr
-#define DIRECT_PIN(pin) std::make_shared<DirectPinInterface>(pin)
-#define DIRECT_WIRE(scl, sda) std::make_shared<I2CWireSensorInterface>(sda, scl)
-#define MCP_PIN(pin) std::make_shared<MCP23X17PinInterface>(&mcp, pin)
-#define PCA_WIRE(scl, sda, addr, ch) std::make_shared<I2CPCASensorInterface>(scl, sda, addr, ch)
+#define DIRECT_PIN(pin) directPin(pin)
+#define DIRECT_WIRE(scl, sda) directWire(scl, sda)
+#define MCP_PIN(pin) mcpPin(pin)
+#define PCA_WIRE(scl, sda, addr, ch) pcaWire(scl, sda, addr, ch)
 
-#define IMU_DESC_ENTRY(ImuType, ...)                                  \
+#define IMU_DESC_ENTRY(ImuType, ...)                          \
 	{                                                         \
 		auto sensor = buildSensor<ImuType>(sensorID, __VA_ARGS__); \
 		if (sensor->isWorking()) {                            \

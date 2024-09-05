@@ -152,8 +152,8 @@ struct BNO080Error {
 class BNO080
 {
 public:
-	boolean begin(uint8_t deviceAddress = BNO080_DEFAULT_ADDRESS, TwoWire &wirePort = Wire, std::shared_ptr<PinInterface> intPin = nullptr); //By default use the default I2C addres, and use Wire port, and don't declare an INT pin
-	boolean beginSPI(std::shared_ptr<PinInterface> user_CSPin, std::shared_ptr<PinInterface> user_WAKPin, std::shared_ptr<PinInterface> user_INTPin, std::shared_ptr<PinInterface> user_RSTPin, uint32_t spiPortSpeed = 3000000, SPIClass &spiPort = SPI);
+	boolean begin(uint8_t deviceAddress = BNO080_DEFAULT_ADDRESS, TwoWire &wirePort = Wire, PinInterface* intPin = nullptr); //By default use the default I2C addres, and use Wire port, and don't declare an INT pin
+	boolean beginSPI(PinInterface* user_CSPin, PinInterface* user_WAKPin, PinInterface* user_INTPin, PinInterface* user_RSTPin, uint32_t spiPortSpeed = 3000000, SPIClass &spiPort = SPI);
 
 	void enableDebugging(Stream &debugPort = Serial); //Turn on debug printing. If user doesn't specify then Serial will be used.
 
@@ -313,10 +313,10 @@ private:
 
 	SPIClass *_spiPort;			 //The generic connection to user's chosen SPI hardware
 	unsigned long _spiPortSpeed; //Optional user defined port speed
-	std::shared_ptr<PinInterface> _cs;				 //Pins needed for SPI
-	std::shared_ptr<PinInterface> _wake;
-	std::shared_ptr<PinInterface> _int;
-	std::shared_ptr<PinInterface> _rst;
+	PinInterface* _cs;				 //Pins needed for SPI
+	PinInterface* _wake;
+	PinInterface* _int;
+	PinInterface* _rst;
 
 	//These are the raw sensor values (without Q applied) pulled from the user requested Input Report
 	uint16_t rawAccelX, rawAccelY, rawAccelZ, accelAccuracy;

@@ -43,7 +43,7 @@
 
 //Attempt communication with the device
 //Return true if we got a 'Polo' back from Marco
-boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, std::shared_ptr<PinInterface> intPin)
+boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, PinInterface* intPin)
 {
 	_deviceAddress = deviceAddress; //If provided, store the I2C address from user
 	_i2cPort = &wirePort;			//Grab which port the user wants us to use
@@ -99,7 +99,7 @@ boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, std::shared_ptr<
 	return tBoardInfoReceived;
 }
 
-boolean BNO080::beginSPI(std::shared_ptr<PinInterface> user_CSPin, std::shared_ptr<PinInterface> user_WAKPin, std::shared_ptr<PinInterface> user_INTPin, std::shared_ptr<PinInterface> user_RSTPin, uint32_t spiPortSpeed, SPIClass &spiPort)
+boolean BNO080::beginSPI(PinInterface* user_CSPin, PinInterface* user_WAKPin, PinInterface* user_INTPin, PinInterface* user_RSTPin, uint32_t spiPortSpeed, SPIClass &spiPort)
 {
 	_i2cPort = NULL; //This null tells the send/receive functions to use SPI
 
