@@ -152,7 +152,7 @@ void SensorManager::postSetup()
 {
 	for (auto &sensor : m_Sensors) {
 		if (sensor->isWorking()) {
-			sensor->hwInterface->swapIn();
+			sensor->m_hwInterface->swapIn();
 			sensor->postSetup();
 		}
 	}
@@ -164,7 +164,7 @@ void SensorManager::update()
 	bool allIMUGood = true;
 	for (auto &sensor : m_Sensors) {
 		if (sensor->isWorking()) {
-				sensor->hwInterface->swapIn();
+				sensor->m_hwInterface->swapIn();
 			sensor->motionLoop();
 		}
 		if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR)

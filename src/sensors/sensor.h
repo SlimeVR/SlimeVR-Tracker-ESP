@@ -56,8 +56,8 @@ enum class MagnetometerStatus : uint8_t {
 class Sensor {
 public:
     Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, SlimeVR::SensorInterface* sensorInterface = nullptr)
-        : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
-            hwInterface(sensorInterface)
+        : m_hwInterface(sensorInterface), addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}),
+		m_Logger(SlimeVR::Logging::Logger(sensorName))
     {
         char buf[4];
         sprintf(buf, "%u", id);
@@ -81,7 +81,7 @@ public:
 	virtual uint16_t getSensorConfigData();
 	bool isWorking() { return working; };
 	bool getHadData() const { return hadData; };
-	bool isValid() { return hwInterface != nullptr; };
+	bool isValid() { return m_hwInterface != nullptr; };
 	bool isMagEnabled() { return magStatus == MagnetometerStatus::MAG_ENABLED; };
 	uint8_t getSensorId() { return sensorId; };
 	ImuID getSensorType() { return sensorType; };
@@ -92,9 +92,9 @@ public:
 
 	void printTemperatureCalibrationUnsupported();
     
-    TPSCounter tpsCounter;
-	TPSCounter dataCounter;
-    std::shared_ptr<SlimeVR::SensorInterface> hwInterface;
+    TPSCounter m_tpsCounter;
+	TPSCounter m_dataCounter;
+    std::shared_ptr<SlimeVR::SensorInterface> m_hwInterface;
 protected:
 	uint8_t addr = 0;
 	uint8_t sensorId = 0;

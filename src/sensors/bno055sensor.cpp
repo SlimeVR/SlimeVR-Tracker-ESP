@@ -47,12 +47,12 @@ void BNO055Sensor::motionSetup() {
 	m_Logger.info("Connected to BNO055 at address 0x%02x", addr);
 
     working = true;
-	tpsCounter.reset();
-	dataCounter.reset();
+	m_tpsCounter.reset();
+	m_dataCounter.reset();
 }
 
 void BNO055Sensor::motionLoop() {
-	tpsCounter.update();
+	m_tpsCounter.update();
 #if ENABLE_INSPECTION
 	{
 		Vector3 gyro = imu.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);

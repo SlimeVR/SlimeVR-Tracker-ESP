@@ -232,3 +232,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 #define BATTERY_SHIELD_R2 100
 #endif
 #endif
+
+#ifndef PCA_ADDR
+#define PCA_ADDR 0x70
+#endif

@@ -132,12 +132,12 @@ void MPU6050Sensor::motionSetup() {
         // (if it's going to break, usually the code will be 1)
         m_Logger.error("DMP Initialization failed (code %d)", devStatus);
     }
-	tpsCounter.reset();
-	dataCounter.reset();
+	m_tpsCounter.reset();
+	m_dataCounter.reset();
 }
 
 void MPU6050Sensor::motionLoop() {
-	tpsCounter.update();
+	m_tpsCounter.update();
 #if ENABLE_INSPECTION
 	{
 		int16_t rX, rY, rZ, aX, aY, aZ;

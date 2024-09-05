@@ -46,12 +46,12 @@ void ICM20948Sensor::motionSetup() {
     loadCalibration();
     startMotionLoop();
     startCalibrationAutoSave();
-	tpsCounter.reset();
-	dataCounter.reset();
+	m_tpsCounter.reset();
+	m_dataCounter.reset();
 }
 
 void ICM20948Sensor::motionLoop() {
-	tpsCounter.update();
+	m_tpsCounter.update();
 #if ENABLE_INSPECTION
 	{
 		(void)imu.getAGMT();
