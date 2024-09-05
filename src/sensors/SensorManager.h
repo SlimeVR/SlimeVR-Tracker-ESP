@@ -31,6 +31,8 @@
 #include "logging/Logger.h"
 #include "sensorinterface/I2CWireSensorInterface.h"
 #include "sensorinterface/DirectPinInterface.h"
+#include "sensorinterface/MCP23X17PinInterface.h"
+#include "sensorinterface/I2CPCAInterface.h"
 
 #include <memory>
 
@@ -61,6 +63,7 @@ namespace SlimeVR
             SlimeVR::Logging::Logger m_Logger;
 
             std::vector<std::unique_ptr<Sensor>> m_Sensors;
+			Adafruit_MCP23X17 m_MCP;
 
             template <typename ImuType>
             std::unique_ptr<Sensor> buildSensor(
