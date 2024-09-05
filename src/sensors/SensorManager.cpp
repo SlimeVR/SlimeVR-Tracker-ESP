@@ -67,56 +67,56 @@ using SoftFusionMPU6050
 
 void SensorManager::setup()
 {
-	Adafruit_MCP23X17 mcp;
-	std::map<int, std::unique_ptr<DirectPinInterface>> directPinInterfaces;
-	std::map<int, std::unique_ptr<MCP23X17PinInterface>> mcpPinInterfaces;
-	std::map<std::tuple<int, int>, std::unique_ptr<I2CWireSensorInterface>> i2cWireInterfaces;
-	std::map<std::tuple<int, int, int, int>, std::unique_ptr<I2CPCASensorInterface>> pcaWireInterfaces;
+	std::map<int, DirectPinInterface*> directPinInterfaces;
+	std::map<int, MCP23X17PinInterface*> mcpPinInterfaces;
+	std::map<std::tuple<int, int>, I2CWireSensorInterface*> i2cWireInterfaces;
+	std::map<std::tuple<int, int, int, int>, I2CPCASensorInterface*> pcaWireInterfaces;
 
-	DirectPinInterface* directPin(int pin)
+	auto directPin = [&] (int pin)
 	{
 		if(!directPinInterfaces.contains(pin))
 		{
-			auto ptr = std::make_unique<DirectPinInterface>(pin);
-			directPinInterfaces[pin] = std::move(ptr);
+			auto ptr = new DirectPinInterface(pin);
+			directPinInterfaces[pin] = ptr;
 		}
-		return directPinInterfaces[pin].get();
-	}
+		return directPinInterfaces[pin];
+	};
 
-	MCP23X17PinInterface* mcpPin(int pin)
+	auto mcpPin = [&](int pin)
 	{
 		if(!mcpPinInterfaces.contains(pin))
 		{
-			auto ptr = std::make_unique<MCP23X17PinInterface>(&mcp, pin);
-			mcpPinInterfaces[pin] = std::move(ptr);
+			auto ptr = new MCP23X17PinInterface(&m_MCP, pin);
+			mcpPinInterfaces[pin] = ptr;
 		}
-		return mcpPinInterfaces[pin].get();
-	}
+		return mcpPinInterfaces[pin];
+	};
 
-	I2CWireSensorInterface* directWire(int scl, int sda)
+	auto directWire = [&](int scl, int sda)
 	{
 		auto pair = std::make_tuple(scl, sda);
 		if(!i2cWireInterfaces.contains(pair))
 		{
-			auto ptr = std::make_unique<I2CWireSensorInterface>(scl, sda);
-			i2cWireInterfaces[pair] = std::move(ptr);
+			auto ptr = new I2CWireSensorInterface(scl, sda);
+			i2cWireInterfaces[pair] = ptr;
 		}
-		return i2cWireInterfaces[pair].get();
-	}
+		return i2cWireInterfaces[pair];
+	};
 
-	I2CPCASensorInterface* pcaWire(int scl, int sda, int addr, int ch)
+	auto pcaWire = [&](int scl, int sda, int addr, int ch)
 	{
 		auto pair = std::make_tuple(scl, sda, addr, ch);
 		if(!pcaWireInterfaces.contains(pair))
 		{
-			auto ptr = std::make_unique<I2CPCASensorInterface>(scl, sda, addr, ch);
-			pcaWireInterfaces[pair] = std::move(ptr);
+			auto ptr = new I2CPCASensorInterface(scl, sda, addr, ch);
+			pcaWireInterfaces[pair] = ptr;
 		}
-		return pcaWireInterfaces[pair].get();
-	}
+		return pcaWireInterfaces[pair];
+	};
 	uint8_t sensorID = 0;
 	uint8_t activeSensorCount = 0;
-	mcp.begin_I2C();
+	m_MCP.begin_I2C();
+
 #define NO_PIN nullptr
 #define DIRECT_PIN(pin) directPin(pin)
 #define DIRECT_WIRE(scl, sda) directWire(scl, sda)
