@@ -50,8 +50,8 @@ class Sensor
 {
 public:
     Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, SlimeVR::SensorInterface* sensorInterface = nullptr)
-        : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
-            hwInterface(sensorInterface)
+        : m_hwInterface(sensorInterface), addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}),
+		m_Logger(SlimeVR::Logging::Logger(sensorName))
     {
         char buf[4];
         sprintf(buf, "%u", id);
@@ -78,7 +78,7 @@ public:
         return hadData;
     };
     bool isValid() {
-        return hwInterface != nullptr;
+        return m_hwInterface != nullptr;
     };
     uint8_t getSensorId() {
         return sensorId;
@@ -96,9 +96,9 @@ public:
         return newFusedRotation || newAcceleration;
     };
 
-	TPSCounter tpsCounter;
-	TPSCounter dataCounter;
-    SlimeVR::SensorInterface* hwInterface;
+	TPSCounter m_tpsCounter;
+	TPSCounter m_dataCounter;
+    SlimeVR::SensorInterface* m_hwInterface;
 
 protected:
     uint8_t addr = 0;

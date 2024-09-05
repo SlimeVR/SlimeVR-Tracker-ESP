@@ -143,7 +143,7 @@ namespace SlimeVR
         {
             for (auto &sensor : m_Sensors) {
                 if (sensor->isWorking()) {
-                    sensor->hwInterface->swapIn();
+                    sensor->m_hwInterface->swapIn();
                     sensor->postSetup();
                 }
             }
@@ -155,7 +155,7 @@ namespace SlimeVR
             bool allIMUGood = true;
             for (auto &sensor : m_Sensors) {
                 if (sensor->isWorking()) {
-                     sensor->hwInterface->swapIn();
+                     sensor->m_hwInterface->swapIn();
                     sensor->motionLoop();
                 }
                 if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR)

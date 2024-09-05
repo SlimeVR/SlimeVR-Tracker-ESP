@@ -34,15 +34,15 @@ namespace SlimeVR
 	class I2CPCASensorInterface : public SensorInterface {
 		public:
 			I2CPCASensorInterface(uint8_t sda, uint8_t scl, uint8_t address, uint8_t channel) :
-				_wire(I2CWireSensorInterface(sda, scl)), _address(address), _channel(channel){};
+				m_Wire(I2CWireSensorInterface(sda, scl)), m_Address(address), m_Channel(channel){};
 			~I2CPCASensorInterface(){};
 
 			void init() override final;
 			void swapIn() override final;
 		protected:
-			uint8_t _address;
-			uint8_t _channel;
-			I2CWireSensorInterface _wire;
+			I2CWireSensorInterface m_Wire;
+			uint8_t m_Address;
+			uint8_t m_Channel;
 	};
 
 
