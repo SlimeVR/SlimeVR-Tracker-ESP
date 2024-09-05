@@ -31,7 +31,7 @@
 #include "logging/Logger.h"
 #include "ota.h"
 #include "serial/serialcommands.h"
-#include "status./TPSCounter.h"
+#include "status/TPSCounter.h"
 
 Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
