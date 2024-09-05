@@ -30,7 +30,7 @@
 #include "serial/serialcommands.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
-#include "status./TPSCounter.h"
+#include "status/TPSCounter.h"
 
 Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
