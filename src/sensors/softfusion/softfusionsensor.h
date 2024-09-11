@@ -68,6 +68,10 @@ class SoftFusionSensor : public Sensor {
 		{ imu::TemperatureZROChange } -> std::same_as<float>;
 	};
 
+	static constexpr bool HasPerSensorVQFParams = requires(imu i) {
+		{ imu::SensorVQFParams } -> std::same_as<VQFParams>;
+	};
+
 	bool detected() const {
 		const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
 		if (imu::Regs::WhoAmI::value != value) {
@@ -141,11 +145,20 @@ class SoftFusionSensor : public Sensor {
 	}
 
 	void recalcFusion() {
-		m_fusion = SensorFusionRestDetect(
-			m_calibration.G_Ts,
-			m_calibration.A_Ts,
-			m_calibration.M_Ts
-		);
+		if constexpr (HasPerSensorVQFParams) {
+			m_fusion = SensorFusionRestDetect(
+				imu::SensorVQFParams,
+				m_calibration.G_Ts,
+				m_calibration.A_Ts,
+				m_calibration.M_Ts
+			);
+		} else {
+			m_fusion = SensorFusionRestDetect(
+				m_calibration.G_Ts,
+				m_calibration.A_Ts,
+				m_calibration.M_Ts
+			);
+		}
 	}
 
 	void processAccelSample(const int16_t xyz[3], const sensor_real_t timeDelta) {
@@ -266,9 +279,19 @@ public:
 			sclPin,
 			sdaPin
 		)
-		, m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs)
 		, m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger) {}
-	~SoftFusionSensor() {}
+	~SoftFusionSensor() {
+		if constexpr (HasPerSensorVQFParams) {
+			m_fusion = SensorFusionRestDetect(
+				imu::SensorVQFParams,
+				imu::GyrTs,
+				imu::AccTs,
+				imu::MagTs
+			);
+		} else {
+			m_fusion = SensorFusionRestDetect(imu::GyrTs, imu::AccTs, imu::MagTs);
+		}
+	}
 
 	void motionLoop() override final {
 		sendTempIfNeeded();
@@ -678,7 +701,7 @@ public:
 
 	SensorStatus getSensorState() override final { return m_status; }
 
-	SensorFusionRestDetect m_fusion;
+	SensorFusionRestDetect m_fusion{0, 0, 0};
 	T<I2CImpl> m_sensor;
 	SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration
 		= {// let's create here transparent calibration that doesn't affect input data

@@ -52,6 +52,21 @@ struct BMI270 {
 	static constexpr float AccelSensitivity = 8192.0f;
 	static constexpr float TemperatureZROChange = 6.67f;
 
+	static constexpr VQFParams SensorVQFParams{
+		.tauAcc = 3.0f,
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 1.0f,
+		.biasForgettingTime = 60.0f,
+		.biasClip = 2.0f,
+		.biasSigmaMotion = 0.1175f,
+		.biasVerticalForgettingFactor = 0,
+		.biasSigmaRest = 0.007f,
+		.restMinT = 1.5f,
+		.restFilterTau = 0.5f,
+		.restThGyr = 1.0f,  // 400 norm
+		.restThAcc = 0.196f,  // 100 norm
+	};
+
 	struct MotionlessCalibrationData {
 		bool valid;
 		uint8_t x, y, z;

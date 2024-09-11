@@ -37,27 +37,20 @@
 
 namespace SlimeVR {
 namespace Sensors {
-#if SENSOR_USE_VQF
-struct SensorVQFParams : VQFParams {
-	SensorVQFParams()
-		: VQFParams() {
-#ifndef VQF_NO_MOTION_BIAS_ESTIMATION
-		motionBiasEstEnabled = true;
-#endif
-		tauAcc = 3.0f;
-		biasSigmaInit = 1.0f;
-		biasForgettingTime = 60.0f;
-		biasClip = 2.0f;
-		biasSigmaMotion = 0.1175f;
-		biasVerticalForgettingFactor = 0;
-		biasSigmaRest = 0.007f;
-		restMinT = 1.5f;
-		restFilterTau = 0.5f;
-		restThGyr = 1.0f;  // 400 norm
-		restThAcc = 0.196f;  // 100 norm
-	}
-};
-#endif
+
+// Previous VQF params:
+//  motionBiasEstEnabled = true;
+//  tauAcc = 3.0f;
+//  biasSigmaInit = 1.0f;
+//  biasForgettingTime = 60.0f;
+//  biasClip = 2.0f;
+//  biasSigmaMotion = 0.1175f;
+//  biasVerticalForgettingFactor = 0;
+//  biasSigmaRest = 0.007f;
+//  restMinT = 1.5f;
+//  restFilterTau = 0.5f;
+//  restThGyr = 1.0f;  // 400 norm
+//  restThAcc = 0.196f;  // 100 norm
 
 class SensorFusion {
 public:
@@ -81,6 +74,23 @@ public:
 #endif
 	{
 	}
+
+#if SENSOR_USE_VQF
+	SensorFusion(
+		VQFParams vqfParams,
+		sensor_real_t gyrTs,
+		sensor_real_t accTs = -1.0,
+		sensor_real_t magTs = -1.0
+	)
+		: gyrTs(gyrTs)
+		, accTs((accTs < 0) ? gyrTs : accTs)
+		, magTs((magTs < 0) ? gyrTs : magTs)
+		, vqfParams(vqfParams)
+		, vqf(vqfParams,
+			  gyrTs,
+			  ((accTs < 0) ? gyrTs : accTs),
+			  ((magTs < 0) ? gyrTs : magTs)) {}
+#endif
 
 	void update6D(
 		sensor_real_t Axyz[3],
@@ -129,7 +139,7 @@ protected:
 #elif SENSOR_USE_BASICVQF
 	BasicVQF basicvqf;
 #elif SENSOR_USE_VQF
-	SensorVQFParams vqfParams{};
+	VQFParams vqfParams;
 	VQF vqf;
 #endif
 
