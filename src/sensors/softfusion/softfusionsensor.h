@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <array>
+#include <utility>
+
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
@@ -61,9 +64,6 @@ class SoftFusionSensor : public Sensor {
 		{ i.getDirectTemp() } -> std::same_as<float>;
 	};
 
-	float lastReadTemperature = 0;
-	float temperatureChangeRate = 0;
-
 	bool detected() const {
 		const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
 		if (imu::Regs::WhoAmI::value != value) {
@@ -79,6 +79,33 @@ class SoftFusionSensor : public Sensor {
 		return true;
 	}
 
+	float lastReadTemperature = 0;
+	float temperatureChangeRate = 0;
+
+	float lastTemperatureAverage;
+	float temperatureSum = 0;
+	float temperatureTimeSum = 0;
+
+	static constexpr float temperatureAveragingSeconds = 5;
+
+	void handleTemperatureMeasurement(float temperature, float timeStep) {
+		lastReadTemperature = temperature;
+
+		temperatureSum += temperature * timeStep;
+		temperatureTimeSum += timeStep;
+
+		if (temperatureTimeSum < temperatureAveragingSeconds) {
+			return;
+		}
+
+		float averageTemperature = temperatureSum / temperatureTimeSum;
+		temperatureChangeRate
+			= (averageTemperature - lastTemperatureAverage) / temperatureTimeSum;
+		temperatureTimeSum = 0;
+		temperatureSum = 0;
+		lastTemperatureAverage = averageTemperature;
+	}
+
 	void sendTempIfNeeded() {
 		uint32_t now = micros();
 		constexpr float maxSendRateHz = 2.0f;
@@ -87,9 +114,7 @@ class SoftFusionSensor : public Sensor {
 		if (elapsed >= sendInterval) {
 			if constexpr (OnlyDirectTemperature) {
 				float currentTemperature = m_sensor.getDirectTemp();
-				temperatureChangeRate
-					= (currentTemperature - lastReadTemperature) / sendInterval;
-				lastReadTemperature = currentTemperature;
+				handleTemperatureMeasurement(currentTemperature, sendInterval);
 			}
 			m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
 			networkConnection.sendTemperature(sensorId, lastReadTemperature);
@@ -148,9 +173,7 @@ class SoftFusionSensor : public Sensor {
 	void processTemperatureSample(const int16_t value, const sensor_real_t timeDelta) {
 		if constexpr (!OnlyDirectTemperature) {
 			float scaledTemperature = value * TScale + imu::TemperatureBias;
-			temperatureChangeRate
-				= (scaledTemperature - lastReadTemperature) / timeDelta;
-			lastReadTemperature = scaledTemperature;
+			handleTemperatureMeasurement(scaledTemperature, timeDelta);
 		}
 	}
 
