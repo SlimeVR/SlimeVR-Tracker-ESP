@@ -50,6 +50,7 @@ struct BMI270 {
 
 	static constexpr float GyroSensitivity = 32.768f;
 	static constexpr float AccelSensitivity = 8192.0f;
+	static constexpr float TemperatureZROChange = 6.67f;
 
 	struct MotionlessCalibrationData {
 		bool valid;

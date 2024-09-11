@@ -987,6 +987,8 @@ public:
     static bool matrix3Inv(const vqf_real_t in[9], vqf_real_t out[9]);
 #endif
 
+	void updateBiasForgettingTime(float biasForgettingTime);
+
 protected:
     /**
      * @brief Calculates coefficients based on parameters and sampling rates.

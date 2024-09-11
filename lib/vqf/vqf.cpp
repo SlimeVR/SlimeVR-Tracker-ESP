@@ -917,7 +917,8 @@ void VQF::setup()
 
     coeffs.biasP0 = square(params.biasSigmaInit*100.0);
     // the system noise increases the variance from 0 to (0.1 °/s)^2 in biasForgettingTime seconds
-    coeffs.biasV = square(0.1*100.0)*coeffs.accTs/params.biasForgettingTime;
+
+	updateBiasForgettingTime(params.biasForgettingTime);
 
 #ifndef VQF_NO_MOTION_BIAS_ESTIMATION
     vqf_real_t pMotion = square(params.biasSigmaMotion*100.0);
@@ -940,4 +941,8 @@ void VQF::setup()
     }
 
     resetState();
+}
+
+void VQF::updateBiasForgettingTime(float biasForgettingTime) {
+    coeffs.biasV = square(0.1*100.0)*coeffs.accTs/params.biasForgettingTime;
 }

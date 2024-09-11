@@ -64,6 +64,10 @@ class SoftFusionSensor : public Sensor {
 		{ i.getDirectTemp() } -> std::same_as<float>;
 	};
 
+	static constexpr bool DefinedTemperatureZROChange = requires(imu i) {
+		{ imu::TemperatureZROChange } -> std::same_as<float>;
+	};
+
 	bool detected() const {
 		const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
 		if (imu::Regs::WhoAmI::value != value) {
@@ -104,6 +108,12 @@ class SoftFusionSensor : public Sensor {
 		temperatureTimeSum = 0;
 		temperatureSum = 0;
 		lastTemperatureAverage = averageTemperature;
+
+		if constexpr (DefinedTemperatureZROChange) {
+			m_fusion.updateBiasForgettingTime(
+				imu::TemperatureZROChange / temperatureChangeRate
+			);
+		}
 	}
 
 	void sendTempIfNeeded() {
