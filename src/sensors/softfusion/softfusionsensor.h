@@ -118,15 +118,24 @@ class SoftFusionSensor : public Sensor {
 
 	void sendTempIfNeeded() {
 		uint32_t now = micros();
+
+		if constexpr (OnlyDirectTemperature) {
+			constexpr float temperatureSamplingRateHz = 15.0f;
+			constexpr uint32_t samplingInterval
+				= 1.0f / temperatureSamplingRateHz * 1e6;
+			uint32_t elapsedSinceSampled = now - m_lastTemperatureSampling;
+			if (elapsedSinceSampled >= samplingInterval) {
+				float currentTemperature = m_sensor.getDirectTemp();
+				handleTemperatureMeasurement(currentTemperature, samplingInterval);
+			}
+			m_lastTemperatureSampling = now - (elapsedSinceSampled - samplingInterval);
+		}
+
 		constexpr float maxSendRateHz = 2.0f;
 		constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6;
-		uint32_t elapsed = now - m_lastTemperaturePacketSent;
-		if (elapsed >= sendInterval) {
-			if constexpr (OnlyDirectTemperature) {
-				float currentTemperature = m_sensor.getDirectTemp();
-				handleTemperatureMeasurement(currentTemperature, sendInterval);
-			}
-			m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
+		uint32_t elapsedSinceSend = now - m_lastTemperaturePacketSent;
+		if (elapsedSinceSend >= sendInterval) {
+			m_lastTemperaturePacketSent = now - (elapsedSinceSend - sendInterval);
 			networkConnection.sendTemperature(sensorId, lastReadTemperature);
 		}
 	}
@@ -692,6 +701,7 @@ public:
 	uint32_t m_lastPollTime = micros();
 	uint32_t m_lastRotationPacketSent = 0;
 	uint32_t m_lastTemperaturePacketSent = 0;
+	uint32_t m_lastTemperatureSampling = 0;
 };
 
 }  // namespace SlimeVR::Sensors
