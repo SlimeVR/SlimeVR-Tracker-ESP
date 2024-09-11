@@ -58,8 +58,10 @@ struct BMI270 {
 		.biasSigmaInit = 1.0f,
 		.biasForgettingTime = 60.0f,
 		.biasClip = 2.0f,
-		.biasSigmaMotion = 0.1175f,
-		.biasVerticalForgettingFactor = 0,
+		// vvvv mess with this later, once we can determine actual temp stability
+		// per-sensor
+		.biasSigmaMotion = 10 * 0.03f,
+		.biasVerticalForgettingFactor = 0.0001f,
 		.biasSigmaRest = 0.007f,
 		.restMinT = 1.5f,
 		.restFilterTau = 0.5f,

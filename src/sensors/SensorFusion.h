@@ -45,7 +45,7 @@ namespace Sensors {
 //  biasForgettingTime = 60.0f;
 //  biasClip = 2.0f;
 //  biasSigmaMotion = 0.1175f;
-//  biasVerticalForgettingFactor = 0;
+//  biasVerticalForgettingFactor = 10 - 0.03f;
 //  biasSigmaRest = 0.007f;
 //  restMinT = 1.5f;
 //  restFilterTau = 0.5f;
