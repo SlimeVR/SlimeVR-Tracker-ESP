@@ -701,7 +701,7 @@ public:
 
 	SensorStatus getSensorState() override final { return m_status; }
 
-	SensorFusionRestDetect m_fusion{0, 0, 0};
+	SensorFusionRestDetect m_fusion{1, 1, 1};
 	T<I2CImpl> m_sensor;
 	SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration
 		= {// let's create here transparent calibration that doesn't affect input data
