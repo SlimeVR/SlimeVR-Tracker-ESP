@@ -51,6 +51,21 @@ struct ICM42688 {
 
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 2.07f;
+		static constexpr float TemperatureZROChange = 20.0f;
+
+	static constexpr VQFParams SensorVQFParams{
+		.tauAcc = 3.0f,
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 0.5f,
+		.biasClip = 1.0f,
+		.biasSigmaMotion = 0.028f,
+		.biasVerticalForgettingFactor = 0.0001f,
+		.biasSigmaRest = 0.0028f,
+		.restMinT = 1.0f,
+		.restFilterTau = 0.5f,
+		.restThGyr = 0.5f,  // 400 norm
+		.restThAcc = 0.294f,  // 100 norm
+	};
 
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;

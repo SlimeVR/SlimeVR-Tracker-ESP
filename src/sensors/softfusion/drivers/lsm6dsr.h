@@ -56,6 +56,21 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
+		static constexpr float TemperatureZROChange = 20.0f;
+
+	static constexpr VQFParams SensorVQFParams{
+		.tauAcc = 3.0f,
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 1.0f,
+		.biasClip = 2.0f,
+		.biasSigmaMotion = 0.038f,
+		.biasVerticalForgettingFactor = 0.0001f,
+		.biasSigmaRest = 0.0038f,
+		.restMinT = 1.0f,
+		.restFilterTau = 0.5f,
+		.restThGyr = 1.0f,  // 400 norm
+		.restThAcc = 0.294f,  // 100 norm
+	};
 
 	using LSM6DSOutputHandler<I2CImpl>::i2c;
 

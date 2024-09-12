@@ -65,6 +65,24 @@ struct MPU6050 {
 	static constexpr float GyroSensitivity = 32.8f;
 	static constexpr float AccelSensitivity = 8192.0f;
 
+	// lol this sensor sucks
+
+	static constexpr float TemperatureZROChange = 1.6f;
+
+	static constexpr VQFParams SensorVQFParams{
+		.tauAcc = 3.0f,
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 2.0f,
+		.biasClip = 4.0f,
+		.biasSigmaMotion = 0.05f,
+		.biasVerticalForgettingFactor = 0.0001f,
+		.biasSigmaRest = 0.005f,
+		.restMinT = 1.0f,
+		.restFilterTau = 0.5f,
+		.restThGyr = 2.0f,  // 400 norm
+		.restThAcc = 0.784f,  // 100 norm
+	};
+
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
 	MPU6050(I2CImpl i2c, SlimeVR::Logging::Logger& logger)

@@ -55,18 +55,15 @@ struct BMI270 {
 	static constexpr VQFParams SensorVQFParams{
 		.tauAcc = 3.0f,
 		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 1.0f,
-		.biasForgettingTime = 60.0f,
-		.biasClip = 2.0f,
-		// vvvv mess with this later, once we can determine actual temp stability
-		// per-sensor
-		.biasSigmaMotion = 10 * 0.03f,
+		.biasSigmaInit = 0.5f,
+		.biasClip = 1.0f,
+		.biasSigmaMotion = 0.07f,
 		.biasVerticalForgettingFactor = 0.0001f,
 		.biasSigmaRest = 0.007f,
-		.restMinT = 1.5f,
+		.restMinT = 1.0f,
 		.restFilterTau = 0.5f,
-		.restThGyr = 1.0f,  // 400 norm
-		.restThAcc = 0.196f,  // 100 norm
+		.restThGyr = 0.5f,  // 400 norm
+		.restThAcc = 0.294f,  // 100 norm
 	};
 
 	struct MotionlessCalibrationData {
