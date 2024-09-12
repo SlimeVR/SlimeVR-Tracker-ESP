@@ -279,19 +279,18 @@ public:
 			sclPin,
 			sdaPin
 		)
-		, m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger) {}
-	~SoftFusionSensor() {
-		if constexpr (HasPerSensorVQFParams) {
-			m_fusion = SensorFusionRestDetect(
-				imu::SensorVQFParams,
-				imu::GyrTs,
-				imu::AccTs,
-				imu::MagTs
-			);
-		} else {
-			m_fusion = SensorFusionRestDetect(imu::GyrTs, imu::AccTs, imu::MagTs);
-		}
-	}
+		, m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger)
+		, m_fusion(
+			  HasPerSensorVQFParams
+				  ? SensorFusionRestDetect(
+					  imu::SensorVQFParams,
+					  imu::GyrTs,
+					  imu::AccTs,
+					  imu::MagTs
+				  )
+				  : SensorFusionRestDetect(imu::GyrTs, imu::AccTs, imu::MagTs)
+		  ) {}
+	~SoftFusionSensor() {}
 
 	void motionLoop() override final {
 		sendTempIfNeeded();
@@ -701,7 +700,7 @@ public:
 
 	SensorStatus getSensorState() override final { return m_status; }
 
-	SensorFusionRestDetect m_fusion{1, 1, 1};
+	SensorFusionRestDetect m_fusion;
 	T<I2CImpl> m_sensor;
 	SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration
 		= {// let's create here transparent calibration that doesn't affect input data
