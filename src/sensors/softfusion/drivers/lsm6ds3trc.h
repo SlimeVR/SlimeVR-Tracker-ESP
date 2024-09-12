@@ -52,6 +52,24 @@ struct LSM6DS3TRC {
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
 
+	// params for ds3, not ds3trc, because no one uses it
+
+	static constexpr float TemperatureZROChange = 2.0f;
+
+	static constexpr VQFParams SensorVQFParams{
+		.tauAcc = 3.0f,
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 2.0f,
+		.biasClip = 4.0f,
+		.biasSigmaMotion = 0.07f,
+		.biasVerticalForgettingFactor = 0.0001f,
+		.biasSigmaRest = 0.007f,
+		.restMinT = 1.0f,
+		.restFilterTau = 0.5f,
+		.restThGyr = 2.0f,  // 400 norm
+		.restThAcc = 0.392f,  // 100 norm
+	};
+
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger logger;
 	LSM6DS3TRC(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
