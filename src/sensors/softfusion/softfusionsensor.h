@@ -97,7 +97,9 @@ class SoftFusionSensor : public Sensor {
 
 	static constexpr float temperatureAveragingSeconds = 5;
 
+#ifdef USE_NONBLOCKING_CALIBRATION
 	NonBlockingCalibrator<imu> nonBlockingCalibrator;
+#endif
 
 	void handleTemperatureMeasurement(float temperature, float timeStep) {
 		lastReadTemperature = temperature;
@@ -194,7 +196,9 @@ class SoftFusionSensor : public Sensor {
 
 		m_fusion.updateAcc(accelData, m_calibration.A_Ts);
 
+#ifdef USE_NONBLOCKING_CALIBRATION
 		nonBlockingCalibrator.provideAccelSample(xyz);
+#endif
 	}
 
 	void processGyroSample(const int16_t xyz[3], const sensor_real_t timeDelta) {
@@ -210,7 +214,9 @@ class SoftFusionSensor : public Sensor {
 			)};
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 
+#ifdef USE_NONBLOCKING_CALIBRATION
 		nonBlockingCalibrator.provideGyroSample(xyz);
+#endif
 	}
 
 	void processTemperatureSample(const int16_t value, const sensor_real_t timeDelta) {
@@ -218,7 +224,9 @@ class SoftFusionSensor : public Sensor {
 			float scaledTemperature = value * TScale + imu::TemperatureBias;
 			handleTemperatureMeasurement(scaledTemperature, timeDelta);
 
+#ifdef USE_NONBLOCKING_CALIBRATION
 			nonBlockingCalibrator.provideTempSample(scaledTemperature);
+#endif
 		}
 	}
 
@@ -303,13 +311,19 @@ public:
 				  )
 				  : SensorFusionRestDetect(imu::GyrTs, imu::AccTs, imu::MagTs)
 		  )
-		, nonBlockingCalibrator(m_fusion, AScale, m_sensor, sensorId) {}
+#ifdef USE_NONBLOCKING_CALIBRATION
+		, nonBlockingCalibrator(m_fusion, AScale, m_sensor, sensorId)
+#endif
+	{
+	}
 	~SoftFusionSensor() {}
 
 	void motionLoop() override final {
 		sendTempIfNeeded();
 
+#ifdef USE_NONBLOCKING_CALIBRATION
 		nonBlockingCalibrator.tick();
+#endif
 
 		// read fifo updating fusion
 		uint32_t now = micros();
@@ -396,9 +410,9 @@ public:
 				sensorId
 			);
 		}
-#endif
 
 		nonBlockingCalibrator.setup(m_calibration);
+#endif
 
 		bool initResult = false;
 

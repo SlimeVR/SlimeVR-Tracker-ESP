@@ -72,6 +72,8 @@ struct SoftFusionCalibrationConfig {
 
 	// gyro sensitivity multiplier
 	float G_Sens[3];
+
+	uint8_t MotionlessData[60];
 };
 
 struct NonBlockingCalibrationConfig {
