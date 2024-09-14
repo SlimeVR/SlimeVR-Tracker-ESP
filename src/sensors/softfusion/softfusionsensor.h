@@ -29,6 +29,7 @@
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
+#include "NonBlockingCalibration.h"
 
 namespace SlimeVR::Sensors {
 
@@ -96,6 +97,8 @@ class SoftFusionSensor : public Sensor {
 
 	static constexpr float temperatureAveragingSeconds = 5;
 
+	NonBlockingCalibrator<imu> nonBlockingCalibrator;
+
 	void handleTemperatureMeasurement(float temperature, float timeStep) {
 		lastReadTemperature = temperature;
 
@@ -124,10 +127,8 @@ class SoftFusionSensor : public Sensor {
 		uint32_t now = micros();
 
 		if constexpr (OnlyDirectTemperature) {
-			constexpr float temperatureSamplingRateHz = 15.0f;
-			constexpr uint32_t samplingInterval
-				= 1.0f / temperatureSamplingRateHz * 1e6;
 			uint32_t elapsedSinceSampled = now - m_lastTemperatureSampling;
+			const uint32_t samplingInterval = imu::TempTs * 1e6;
 			if (elapsedSinceSampled >= samplingInterval) {
 				float currentTemperature = m_sensor.getDirectTemp();
 				handleTemperatureMeasurement(currentTemperature, samplingInterval);
@@ -167,6 +168,7 @@ class SoftFusionSensor : public Sensor {
 			   static_cast<sensor_real_t>(xyz[1]),
 			   static_cast<sensor_real_t>(xyz[2])};
 
+#ifndef USE_NONBLOCKING_CALIBRATION
 		float tmp[3];
 		for (uint8_t i = 0; i < 3; i++) {
 			tmp[i] = (accelData[i] - m_calibration.A_B[i]);
@@ -184,8 +186,15 @@ class SoftFusionSensor : public Sensor {
 			= (m_calibration.A_Ainv[2][0] * tmp[0] + m_calibration.A_Ainv[2][1] * tmp[1]
 			   + m_calibration.A_Ainv[2][2] * tmp[2])
 			* AScale;
+#else
+		accelData[0] = accelData[0] * AScale - m_calibration.A_off[0];
+		accelData[1] = accelData[1] * AScale - m_calibration.A_off[1];
+		accelData[2] = accelData[2] * AScale - m_calibration.A_off[2];
+#endif
 
 		m_fusion.updateAcc(accelData, m_calibration.A_Ts);
+
+		nonBlockingCalibrator.provideAccelSample(xyz);
 	}
 
 	void processGyroSample(const int16_t xyz[3], const sensor_real_t timeDelta) {
@@ -200,12 +209,16 @@ class SoftFusionSensor : public Sensor {
 				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2])
 			)};
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
+
+		nonBlockingCalibrator.provideGyroSample(xyz);
 	}
 
 	void processTemperatureSample(const int16_t value, const sensor_real_t timeDelta) {
 		if constexpr (!OnlyDirectTemperature) {
 			float scaledTemperature = value * TScale + imu::TemperatureBias;
 			handleTemperatureMeasurement(scaledTemperature, timeDelta);
+
+			nonBlockingCalibrator.provideTempSample(scaledTemperature);
 		}
 	}
 
@@ -289,11 +302,14 @@ public:
 					  imu::MagTs
 				  )
 				  : SensorFusionRestDetect(imu::GyrTs, imu::AccTs, imu::MagTs)
-		  ) {}
+		  )
+		, nonBlockingCalibrator(m_fusion, AScale, m_sensor, sensorId) {}
 	~SoftFusionSensor() {}
 
 	void motionLoop() override final {
 		sendTempIfNeeded();
+
+		nonBlockingCalibrator.tick();
 
 		// read fifo updating fusion
 		uint32_t now = micros();
@@ -343,6 +359,7 @@ public:
 		SlimeVR::Configuration::CalibrationConfig sensorCalibration
 			= configuration.getCalibration(sensorId);
 
+#ifndef USE_NONBLOCKING_CALIBRATION
 		// If no compatible calibration data is found, the calibration data will just be
 		// zero-ed out
 		if (sensorCalibration.type
@@ -365,6 +382,23 @@ public:
 			);
 			m_Logger.info("Please recalibrate");
 		}
+#else
+		if (sensorCalibration.type
+				== SlimeVR::Configuration::CalibrationConfigType::NONBLOCKING
+			&& (sensorCalibration.data.sfusion.ImuType == imu::Type)
+			&& (sensorCalibration.data.sfusion.MotionlessDataLen
+				== MotionlessCalibDataSize())) {
+			m_calibration = sensorCalibration.data.nonblocking;
+			recalcFusion();
+		} else if (sensorCalibration.type != SlimeVR::Configuration::CalibrationConfigType::NONE) {
+			m_Logger.warn(
+				"Incompatible calibration data found for sensor %d, ignoring...",
+				sensorId
+			);
+		}
+#endif
+
+		nonBlockingCalibrator.setup(m_calibration);
 
 		bool initResult = false;
 
@@ -384,6 +418,8 @@ public:
 
 		m_status = SensorStatus::SENSOR_OK;
 		working = true;
+
+#ifndef USE_NONBLOCKING_CALIBRATION
 		[[maybe_unused]] auto lastRawSample = eatSamplesReturnLast(1000);
 		if constexpr (UpsideDownCalibrationInit) {
 			auto gravity = static_cast<sensor_real_t>(
@@ -410,8 +446,10 @@ public:
 				ledManager.off();
 			}
 		}
+#endif
 	}
 
+#ifndef USE_NONBLOCKING_CALIBRATION
 	void startCalibration(int calibrationType) override final {
 		if (calibrationType == 0) {
 			// ALL
@@ -492,7 +530,7 @@ public:
 			ESP.wdtFeed();
 #endif
 			m_sensor.bulkRead(
-				[](const int16_t xyz[3], const sensor_real_t timeDelta) {},
+				[](const int16_t xyz[3], const sensor_real_t timeDelta){},
 				[&sumXYZ,
 				 &sampleCount](const int16_t xyz[3], const sensor_real_t timeDelta) {
 					sumXYZ[0] += xyz[0];
@@ -500,7 +538,7 @@ public:
 					sumXYZ[2] += xyz[2];
 					++sampleCount;
 				},
-				[](const int16_t value, const sensor_real_t timeDelta) {}
+				[](const int16_t value, const sensor_real_t timeDelta){}
 			);
 		}
 
@@ -528,7 +566,7 @@ public:
 		ledManager.off();
 
 		RestDetectionParams calibrationRestDetectionParams;
-		calibrationRestDetectionParams.restMinTime = AccelCalibRestSeconds;
+
 		calibrationRestDetectionParams.restThAcc = 0.25f;
 
 		RestDetection calibrationRestDetection(
@@ -614,8 +652,8 @@ public:
 						samplesGathered = true;
 					}
 				},
-				[](const int16_t xyz[3], const sensor_real_t timeDelta) {},
-				[](const int16_t value, const sensor_real_t timeDelta) {}
+				[](const int16_t xyz[3], const sensor_real_t timeDelta){},
+				[](const int16_t value, const sensor_real_t timeDelta){}
 			);
 		}
 		ledManager.off();
@@ -697,27 +735,62 @@ public:
 		// fusion needs to be recalculated
 		recalcFusion();
 	}
+#endif
 
 	SensorStatus getSensorState() override final { return m_status; }
 
 	SensorFusionRestDetect m_fusion;
 	T<I2CImpl> m_sensor;
+#ifndef USE_NONBLOCKING_CALIBRATION
 	SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration
 		= {// let's create here transparent calibration that doesn't affect input data
 		   .ImuType = {imu::Type},
 		   .MotionlessDataLen = {MotionlessCalibDataSize()},
 		   .A_B = {0.0, 0.0, 0.0},
-		   .A_Ainv = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
+		   .A_Ainv
+		   = {{1.0, 0.0, 0.0},
+			  {0.0, 1.0, 0.0},
+			  { 0.0,
+				0.0,
+				1.0 }},
 		   .M_B = {0.0, 0.0, 0.0},
-		   .M_Ainv = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
+		   .M_Ainv
+		   = {{1.0, 0.0, 0.0},
+			  {0.0, 1.0, 0.0},
+			  { 0.0,
+				0.0,
+				1.0 }},
 		   .G_off = {0.0, 0.0, 0.0},
 		   .temperature = 0.0,
 		   .A_Ts = imu::AccTs,
 		   .G_Ts = imu::GyrTs,
 		   .M_Ts = imu::MagTs,
-		   .T_Ts = imu::MagTs,
+		   .T_Ts = imu::TempTs,
 		   .G_Sens = {1.0, 1.0, 1.0},
 		   .MotionlessData = {}};
+#else
+	SlimeVR::Configuration::NonBlockingCalibrationConfig m_calibration = {
+		// let's create here transparent calibration that doesn't affect input data
+		.ImuType = {imu::Type},
+		.MotionlessDataLen = {MotionlessCalibDataSize()},
+
+		.sensorTimestepsCalibrated = false,
+		.A_Ts = imu::AccTs,
+		.G_Ts = imu::GyrTs,
+		.M_Ts = imu::MagTs,
+		.T_Ts = imu::TempTs,
+
+		.motionlessCalibrated = false,
+		.MotionlessData = {},
+
+		.gyroCalibrated = false,
+		.gyroMeasurementTemperature = 0,
+		.G_off = {0.0, 0.0, 0.0},
+
+		.accelCalibrated = false,
+		.A_off = {0.0, 0.0, 0.0},
+	};
+#endif
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();

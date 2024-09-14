@@ -72,8 +72,27 @@ struct SoftFusionCalibrationConfig {
 
 	// gyro sensitivity multiplier
 	float G_Sens[3];
+};
 
+struct NonBlockingCalibrationConfig {
+	ImuID ImuType;
+	uint16_t MotionlessDataLen;
+
+	bool sensorTimestepsCalibrated;
+	float A_Ts;
+	float G_Ts;
+	float M_Ts;
+	float T_Ts;
+
+	bool motionlessCalibrated;
 	uint8_t MotionlessData[60];
+
+	bool gyroCalibrated;
+	float gyroMeasurementTemperature;
+	float G_off[3];
+
+	bool accelCalibrated;
+	float A_off[3];
 };
 
 struct MPU6050CalibrationConfig {
@@ -121,7 +140,15 @@ struct ICM42688CalibrationConfig {
 	float G_off[3];
 };
 
-enum CalibrationConfigType { NONE, BMI160, MPU6050, MPU9250, ICM20948, SFUSION };
+enum CalibrationConfigType {
+	NONE,
+	BMI160,
+	MPU6050,
+	MPU9250,
+	ICM20948,
+	SFUSION,
+	NONBLOCKING
+};
 
 const char* calibrationConfigTypeToString(CalibrationConfigType type);
 
@@ -131,6 +158,7 @@ struct CalibrationConfig {
 	union {
 		BMI160CalibrationConfig bmi160;
 		SoftFusionCalibrationConfig sfusion;
+		NonBlockingCalibrationConfig nonblocking;
 		MPU6050CalibrationConfig mpu6050;
 		MPU9250CalibrationConfig mpu9250;
 		ICM20948CalibrationConfig icm20948;

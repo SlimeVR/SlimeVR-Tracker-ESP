@@ -45,6 +45,7 @@ struct BMI270 {
 
 	static constexpr float GyrTs = 1.0 / 400.0;
 	static constexpr float AccTs = 1.0 / 200.0;
+	static constexpr float TempTs = 1.0 / 15.0;
 
 	static constexpr float MagTs = 1.0 / 100;
 
@@ -63,7 +64,7 @@ struct BMI270 {
 		.restMinT = 1.0f,
 		.restFilterTau = 0.5f,
 		.restThGyr = 0.5f,  // 400 norm
-		.restThAcc = 0.294f,  // 100 norm
+		.restThAcc = 0.5f,  // 100 norm
 	};
 
 	struct MotionlessCalibrationData {
@@ -328,7 +329,7 @@ struct BMI270 {
 		return true;
 	}
 
-	void motionlessCalibration(MotionlessCalibrationData& gyroSensitivity) {
+	bool motionlessCalibration(MotionlessCalibrationData& gyroSensitivity) {
 		// perfrom gyroscope motionless sensitivity calibration (CRT)
 		// need to start from clean state according to spec
 		restartAndInit();
@@ -378,6 +379,8 @@ struct BMI270 {
 		}
 
 		setNormalConfig(gyroSensitivity);
+
+		return status == 0;
 	}
 
 	float getDirectTemp() const {

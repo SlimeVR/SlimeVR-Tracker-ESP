@@ -65,11 +65,11 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 		.biasClip = 2.0f,
 		.biasSigmaMotion = 0.028f,
 		.biasVerticalForgettingFactor = 0.0001f,
-		.biasSigmaRest = 0.0028f,
+		.biasSigmaRest = 0.014f,
 		.restMinT = 1.0f,
 		.restFilterTau = 0.5f,
 		.restThGyr = 1.0f,  // 400 norm
-		.restThAcc = 0.294f,  // 100 norm
+		.restThAcc = 0.5f,  // 100 norm
 	};
 
 	using LSM6DSOutputHandler<I2CImpl>::i2c;

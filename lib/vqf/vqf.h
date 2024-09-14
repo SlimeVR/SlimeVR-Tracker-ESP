@@ -255,7 +255,7 @@ struct VQFParams
      * undisturbed field in between), the heading correction is performed with an increased time constant (see
      * #magRejectionFactor).
      *
-     * efault value: 60.0 s
+     * Default value: 60.0 s
      */
     vqf_real_t magMaxRejectionTime = 60.0;
     /**
