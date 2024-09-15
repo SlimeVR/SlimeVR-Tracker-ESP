@@ -26,9 +26,9 @@
 
 #include <stdint.h>
 
-typedef int8_t (*ReadFunction)(uint8_t, uint8_t*, uint32_t, const void*);
-typedef int8_t (*WriteFunction)(uint8_t, const uint8_t*, uint32_t, const void *);
-typedef void (*DelayFunction)(uint32_t, const void *);
+typedef int8_t (*ReadFunction)(uint8_t, uint8_t*, uint32_t, void*);
+typedef int8_t (*WriteFunction)(uint8_t, const uint8_t*, uint32_t, void *);
+typedef void (*DelayFunction)(uint32_t, void *);
 
 class BMI323_LIB {
     
@@ -273,7 +273,7 @@ class BMI323_LIB {
         /******************************************************************************************
          *                                   CONSTRUCTOR FUNCTIONS
         ******************************************************************************************/
-        BMI323_LIB(ReadFunction readFunc, WriteFunction writeFunc, DelayFunction delayFunc, const void* interfacePtr) :
+        BMI323_LIB(ReadFunction readFunc, WriteFunction writeFunc, DelayFunction delayFunc, void* interfacePtr) :
             readFunction(readFunc),
             writeFunction(writeFunc),
             delayFunction(delayFunc),
@@ -454,6 +454,6 @@ class BMI323_LIB {
         ReadFunction readFunction;
         WriteFunction writeFunction;
         DelayFunction delayFunction;
-        const void *interfacePointer;
+        void *interfacePointer;
 };
 #endif

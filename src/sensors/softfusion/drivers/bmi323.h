@@ -70,22 +70,26 @@ struct BMI323
     struct Regs {
         struct WhoAmI {
             static constexpr uint8_t reg = 0x00;
-            static constexpr uint8_t value = 0x68;
+            static constexpr uint8_t value = 0x24;
         };
     };
 
-    static void delayUs(uint32_t period, const void *)
+    static void delayUs(uint32_t period, void *)
     {
         delay(period / 1000);
     }
 
-    static int8_t i2cRead(uint8_t registerAddress, uint8_t *registerData, uint32_t length, const void *interfacePointer)
+    static int8_t i2cRead(uint8_t registerAddress, uint8_t *registerData, uint32_t length, void *interfacePointer)
     {
+        I2CImpl i2c = *static_cast<I2CImpl*>(interfacePointer);
+        i2c.readBytes(registerAddress, length, registerData);
         return 0;
     }
 
-    static int8_t i2cWrite(uint8_t registerAddress, const uint8_t *registerData, uint32_t length, const void *interfacePointer)
+    static int8_t i2cWrite(uint8_t registerAddress, const uint8_t *registerData, uint32_t length, void *interfacePointer)
     {
+        I2CImpl i2c = *static_cast<I2CImpl*>(interfacePointer);
+        i2c.writeBytes(registerAddress, length, const_cast<uint8_t*>(registerData));
         return 0;
     }
 
@@ -100,12 +104,12 @@ struct BMI323
         
         int8_t result;
 
-        BMI323_LIB bmi323Lib(i2cRead, i2cWrite, delayUs, &Address);
+        BMI323_LIB bmi323Lib(&i2cRead, &i2cWrite, &delayUs, &i2c);
 
         // Initialize the sensor
         result = bmi323Lib.initI2C();
         if (result == BMI323_LIB::SUCCESS) {
-            logger.info("BMI323 Initialized on address 0x");
+            logger.info("BMI323 Initialized on address 0x%x", Address);
         } else {
             logger.info("BMI323 Initialization failed");
             return false;
