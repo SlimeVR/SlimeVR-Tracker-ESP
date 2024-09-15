@@ -26,9 +26,9 @@
 // ================================================
 
 // Set parameters of IMU and board used
-#define IMU IMU_BNO085
-#define SECOND_IMU IMU
-#define BOARD BOARD_SLIMEVR
+#define IMU IMU_BMI323
+#define SECOND_IMU IMU_BMI323
+#define BOARD BOARD_CUSTOM
 #define IMU_ROTATION DEG_270
 #define SECOND_IMU_ROTATION DEG_270
 
@@ -149,6 +149,24 @@ IMU_DESC_ENTRY(IMU_BMP160, PRIMARY_IMU_ADDRESS_ONE, IMU_ROTATION, PIN_IMU_SCL, P
 //  #define LED_INVERTED false
 #elif BOARD == BOARD_CUSTOM
   // Define pins by the examples above
+  #define PIN_IMU_SDA 4
+  #define PIN_IMU_SCL 5
+  #define PIN_IMU_INT 14
+  #define PIN_IMU_INT_2 12
+  #define PIN_BATTERY_LEVEL A0
+  #define LED_PIN 15
+  #define LED_INVERTED false
+  // The Wemos D1 mini has an internal voltage divider that I don't have on my custom board
+  // Therefor, BATTERY_SHIELD_RESISTANCE is set to 0 and SHIELD_R1 and R2 are adjusted instead
+  #ifndef BATTERY_SHIELD_RESISTANCE
+    #define BATTERY_SHIELD_RESISTANCE 0
+  #endif
+  #ifndef BATTERY_SHIELD_R1 
+    #define BATTERY_SHIELD_R1 36
+  #endif
+  #ifndef BATTERY_SHIELD_R2
+    #define BATTERY_SHIELD_R2 123.5
+  #endif
 #elif BOARD == BOARD_WROOM32
   #define PIN_IMU_SDA 21
   #define PIN_IMU_SCL 22
