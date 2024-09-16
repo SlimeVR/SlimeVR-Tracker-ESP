@@ -70,7 +70,24 @@ public:
 	}
 
 	void tick() {
+		if (skippedAStep && !lastTickRest && m_fusion.getRestDetected()) {
+			if (!calibrationConfig.sensorTimestepsCalibrated) {
+				nextCalibrationStep = CalibrationStep::SAMPLING_RATE;
+			} else if (!calibrationConfig.motionlessCalibrated && HasMotionlessCalib) {
+				nextCalibrationStep = CalibrationStep::MOTIONLESS;
+			} else if (!calibrationConfig.gyroCalibrated) {
+				nextCalibrationStep = CalibrationStep::GYRO_BIAS;
+			} else if (!allAccelAxesCalibrated()) {
+				nextCalibrationStep = CalibrationStep::ACCEL_BIAS;
+			} else {
+				nextCalibrationStep = CalibrationStep::NONE;
+			}
+
+			skippedAStep = false;
+		}
+
 		if (nextCalibrationStep == CalibrationStep::NONE) {
+			lastTickRest = m_fusion.getRestDetected();
 			return;
 		}
 
@@ -83,6 +100,7 @@ public:
 				cancelCalibration();
 			}
 
+			lastTickRest = m_fusion.getRestDetected();
 			return;
 		}
 
@@ -102,6 +120,8 @@ public:
 				tickAccelBiasCalibration();
 				break;
 		}
+
+		lastTickRest = m_fusion.getRestDetected();
 	}
 
 	void provideAccelSample(const int16_t accelSample[3]) {
@@ -207,11 +227,12 @@ private:
 			case CalibrationStep::ACCEL_BIAS:
 				accelBiasCalibrationData.reset();
 
-				if (allAccelAxesCalibrated()) {
-					nextCalibrationStep = CalibrationStep::NONE;
-				} else {
-					nextCalibrationStep = CalibrationStep::ACCEL_BIAS;
+				nextCalibrationStep = CalibrationStep::NONE;
+
+				if (!allAccelAxesCalibrated()) {
+					skippedAStep = true;
 				}
+
 				break;
 		}
 
@@ -307,6 +328,9 @@ private:
 	uint8_t sensorId;
 
 	SlimeVR::Configuration::NonBlockingCalibrationConfig calibrationConfig;
+
+	bool skippedAStep = false;
+	bool lastTickRest = false;
 
 	// Sampling rate calibration
 
@@ -490,6 +514,7 @@ private:
 				}
 
 				if (calibrationConfig.accelCalibrated[largestAxis]) {
+					stepCalibrationForward(false);
 					return;
 				}
 
