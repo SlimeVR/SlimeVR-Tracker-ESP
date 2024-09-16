@@ -406,15 +406,26 @@ void Configuration::print() {
 					m_Logger.info("            Motionless calibration not done");
 				}
 
-				if (c.data.nonblocking.gyroCalibrated) {
+				if (c.data.nonblocking.gyroPointsCalibrated != 0) {
 					m_Logger.info(
-						"            Calibrated gyro bias: %f %f %f",
-						c.data.nonblocking.G_off[0],
-						c.data.nonblocking.G_off[1],
-						c.data.nonblocking.G_off[2]
+						"            Calibrated gyro bias at %fC: %f %f %f",
+						c.data.nonblocking.gyroMeasurementTemperature1,
+						c.data.nonblocking.G_off1[0],
+						c.data.nonblocking.G_off1[1],
+						c.data.nonblocking.G_off1[2]
 					);
 				} else {
 					m_Logger.info("            Gyro bias not calibrated");
+				}
+
+				if (c.data.nonblocking.gyroPointsCalibrated == 2) {
+					m_Logger.info(
+						"            Calibrated gyro bias at %fC: %f %f %f",
+						c.data.nonblocking.gyroMeasurementTemperature2,
+						c.data.nonblocking.G_off2[0],
+						c.data.nonblocking.G_off2[1],
+						c.data.nonblocking.G_off2[2]
+					);
 				}
 
 				if (c.data.nonblocking.accelCalibrated[0]

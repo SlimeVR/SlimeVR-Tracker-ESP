@@ -89,9 +89,11 @@ struct NonBlockingCalibrationConfig {
 	bool motionlessCalibrated;
 	uint8_t MotionlessData[60];
 
-	bool gyroCalibrated;
-	float gyroMeasurementTemperature;
-	float G_off[3];
+	uint8_t gyroPointsCalibrated;
+	float gyroMeasurementTemperature1;
+	float G_off1[3];
+	float gyroMeasurementTemperature2;
+	float G_off2[3];
 
 	bool accelCalibrated[3];
 	float A_off[3];

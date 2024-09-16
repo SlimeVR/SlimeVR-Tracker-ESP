@@ -205,6 +205,7 @@ class SoftFusionSensor : public Sensor {
 	}
 
 	void processGyroSample(const int16_t xyz[3], const sensor_real_t timeDelta) {
+#ifndef USE_NONBLOCKING_CALIBRATION
 		const sensor_real_t scaledData[] = {
 			static_cast<sensor_real_t>(
 				GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off[0])
@@ -215,6 +216,18 @@ class SoftFusionSensor : public Sensor {
 			static_cast<sensor_real_t>(
 				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2])
 			)};
+#else
+		const sensor_real_t scaledData[] = {
+			static_cast<sensor_real_t>(
+				GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off1[0])
+			),
+			static_cast<sensor_real_t>(
+				GScale * (static_cast<sensor_real_t>(xyz[1]) - m_calibration.G_off1[1])
+			),
+			static_cast<sensor_real_t>(
+				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off1[2])
+			)};
+#endif
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 
 #ifdef USE_NONBLOCKING_CALIBRATION
@@ -800,9 +813,11 @@ public:
 		.motionlessCalibrated = false,
 		.MotionlessData = {},
 
-		.gyroCalibrated = false,
-		.gyroMeasurementTemperature = 0,
-		.G_off = {0.0, 0.0, 0.0},
+		.gyroPointsCalibrated = 0,
+		.gyroMeasurementTemperature1 = 0,
+		.G_off1 = {0.0, 0.0, 0.0},
+		.gyroMeasurementTemperature2 = 0,
+		.G_off2 = {0.0, 0.0, 0.0},
 
 		.accelCalibrated = {false, false, false},
 		.A_off = {0.0, 0.0, 0.0},

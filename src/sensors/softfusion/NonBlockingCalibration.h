@@ -54,35 +54,14 @@ public:
 		calibrationConfig = baseCalibrationConfig;
 		startupMillis = millis();
 
-		printCalibration();
+		computeNextCalibrationStep();
 
-		if (!calibrationConfig.sensorTimestepsCalibrated) {
-			nextCalibrationStep = CalibrationStep::SAMPLING_RATE;
-		} else if (!calibrationConfig.motionlessCalibrated && HasMotionlessCalib) {
-			nextCalibrationStep = CalibrationStep::MOTIONLESS;
-		} else if (!calibrationConfig.gyroCalibrated) {
-			nextCalibrationStep = CalibrationStep::GYRO_BIAS;
-		} else if (!allAccelAxesCalibrated()) {
-			nextCalibrationStep = CalibrationStep::ACCEL_BIAS;
-		} else {
-			nextCalibrationStep = CalibrationStep::NONE;
-		}
+		printCalibration();
 	}
 
 	void tick() {
 		if (skippedAStep && !lastTickRest && m_fusion.getRestDetected()) {
-			if (!calibrationConfig.sensorTimestepsCalibrated) {
-				nextCalibrationStep = CalibrationStep::SAMPLING_RATE;
-			} else if (!calibrationConfig.motionlessCalibrated && HasMotionlessCalib) {
-				nextCalibrationStep = CalibrationStep::MOTIONLESS;
-			} else if (!calibrationConfig.gyroCalibrated) {
-				nextCalibrationStep = CalibrationStep::GYRO_BIAS;
-			} else if (!allAccelAxesCalibrated()) {
-				nextCalibrationStep = CalibrationStep::ACCEL_BIAS;
-			} else {
-				nextCalibrationStep = CalibrationStep::NONE;
-			}
-
+			computeNextCalibrationStep();
 			skippedAStep = false;
 		}
 
@@ -113,11 +92,14 @@ public:
 			case CalibrationStep::MOTIONLESS:
 				tickMotionlessCalibration();
 				break;
-			case CalibrationStep::GYRO_BIAS:
+			case CalibrationStep::GYRO_BIAS1:
 				tickGyroBiasCalibration();
 				break;
 			case CalibrationStep::ACCEL_BIAS:
 				tickAccelBiasCalibration();
+				break;
+			case CalibrationStep::GYRO_BIAS2:
+				tickGyroBiasCalibration();
 				break;
 		}
 
@@ -147,8 +129,9 @@ private:
 		NONE,
 		SAMPLING_RATE,
 		MOTIONLESS,
-		GYRO_BIAS,
+		GYRO_BIAS1,
 		ACCEL_BIAS,
+		GYRO_BIAS2,
 	};
 
 	void cancelCalibration() {
@@ -161,11 +144,14 @@ private:
 			case CalibrationStep::MOTIONLESS:
 				motionlessCalibrationData.reset();
 				break;
-			case CalibrationStep::GYRO_BIAS:
+			case CalibrationStep::GYRO_BIAS1:
 				gyroBiasCalibrationData.reset();
 				break;
 			case CalibrationStep::ACCEL_BIAS:
 				accelBiasCalibrationData.reset();
+				break;
+			case CalibrationStep::GYRO_BIAS2:
+				gyroBiasCalibrationData.reset();
 				break;
 		}
 
@@ -176,6 +162,22 @@ private:
 		isCalibrating = false;
 	}
 
+	void computeNextCalibrationStep() {
+		if (!calibrationConfig.sensorTimestepsCalibrated) {
+			nextCalibrationStep = CalibrationStep::SAMPLING_RATE;
+		} else if (!calibrationConfig.motionlessCalibrated && HasMotionlessCalib) {
+			nextCalibrationStep = CalibrationStep::MOTIONLESS;
+		} else if (calibrationConfig.gyroPointsCalibrated == 0) {
+			nextCalibrationStep = CalibrationStep::GYRO_BIAS1;
+		} else if (!allAccelAxesCalibrated()) {
+			nextCalibrationStep = CalibrationStep::ACCEL_BIAS;
+		} else if (calibrationConfig.gyroPointsCalibrated == 1) {
+			nextCalibrationStep = CalibrationStep::GYRO_BIAS2;
+		} else {
+			nextCalibrationStep = CalibrationStep::NONE;
+		}
+	}
+
 	bool requiresRestForNextStep() {
 		switch (nextCalibrationStep) {
 			case CalibrationStep::NONE:
@@ -184,9 +186,11 @@ private:
 				return false;
 			case CalibrationStep::MOTIONLESS:
 				return true;
-			case CalibrationStep::GYRO_BIAS:
+			case CalibrationStep::GYRO_BIAS1:
 				return true;
 			case CalibrationStep::ACCEL_BIAS:
+				return true;
+			case CalibrationStep::GYRO_BIAS2:
 				return true;
 		}
 
@@ -217,9 +221,9 @@ private:
 			case CalibrationStep::MOTIONLESS:
 				motionlessCalibrationData.reset();
 
-				nextCalibrationStep = CalibrationStep::GYRO_BIAS;
+				nextCalibrationStep = CalibrationStep::GYRO_BIAS1;
 				break;
-			case CalibrationStep::GYRO_BIAS:
+			case CalibrationStep::GYRO_BIAS1:
 				gyroBiasCalibrationData.reset();
 
 				nextCalibrationStep = CalibrationStep::ACCEL_BIAS;
@@ -227,12 +231,16 @@ private:
 			case CalibrationStep::ACCEL_BIAS:
 				accelBiasCalibrationData.reset();
 
-				nextCalibrationStep = CalibrationStep::NONE;
+				nextCalibrationStep = CalibrationStep::GYRO_BIAS2;
 
 				if (!allAccelAxesCalibrated()) {
 					skippedAStep = true;
 				}
+				break;
+			case CalibrationStep::GYRO_BIAS2:
+				gyroBiasCalibrationData.reset();
 
+				nextCalibrationStep = CalibrationStep::NONE;
 				break;
 		}
 
@@ -279,15 +287,26 @@ private:
 			}
 		}
 
-		if (calibrationConfig.gyroCalibrated) {
+		if (calibrationConfig.gyroPointsCalibrated != 0) {
 			printf(
-				"\tCalibrated gyro bias: %f %f %f\n",
-				calibrationConfig.G_off[0],
-				calibrationConfig.G_off[1],
-				calibrationConfig.G_off[2]
+				"\tCalibrated gyro bias at %fC: %f %f %f\n",
+				calibrationConfig.gyroMeasurementTemperature1,
+				calibrationConfig.G_off1[0],
+				calibrationConfig.G_off1[1],
+				calibrationConfig.G_off1[2]
 			);
 		} else {
 			printf("\tGyro bias not calibrated\n");
+		}
+
+		if (calibrationConfig.gyroPointsCalibrated == 2) {
+			printf(
+				"\tCalibrated gyro bias at %fC: %f %f %f\n",
+				calibrationConfig.gyroMeasurementTemperature2,
+				calibrationConfig.G_off2[0],
+				calibrationConfig.G_off2[1],
+				calibrationConfig.G_off2[2]
+			);
 		}
 
 		if (allAccelAxesCalibrated()) {
@@ -445,6 +464,21 @@ private:
 			};
 			tempSampleHandler = [&](float tempSample) {
 				gyroBiasCalibrationData.value().temperature = tempSample;
+
+				if (calibrationConfig.gyroPointsCalibrated == 0) {
+					return;
+				}
+
+				float tempDiff = std::abs(
+					calibrationConfig.gyroMeasurementTemperature1 - tempSample
+				);
+				if (tempDiff < gyroBiasTemperatureDifference) {
+					gyroBiasCalibrationData.value().gyroSums[0] = 0;
+					gyroBiasCalibrationData.value().gyroSums[1] = 0;
+					gyroBiasCalibrationData.value().gyroSums[2] = 0;
+					gyroBiasCalibrationData.value().sampleCount = 0;
+					gyroBiasCalibrationData.value().startMillis = millis();
+				}
 			};
 
 			isCalibrating = true;
@@ -465,10 +499,21 @@ private:
 			= gyroBiasCalibrationData.value().gyroSums[2]
 			/ static_cast<float>(gyroBiasCalibrationData.value().sampleCount);
 
-		calibrationConfig.G_off[0] = gyroOffsetX;
-		calibrationConfig.G_off[1] = gyroOffsetY;
-		calibrationConfig.G_off[2] = gyroOffsetZ;
-		calibrationConfig.gyroCalibrated = true;
+		if (calibrationConfig.gyroPointsCalibrated == 0) {
+			calibrationConfig.G_off1[0] = gyroOffsetX;
+			calibrationConfig.G_off1[1] = gyroOffsetY;
+			calibrationConfig.G_off1[2] = gyroOffsetZ;
+			calibrationConfig.gyroPointsCalibrated = 1;
+			calibrationConfig.gyroMeasurementTemperature1
+				= gyroBiasCalibrationData.value().temperature;
+		} else {
+			calibrationConfig.G_off2[0] = gyroOffsetX;
+			calibrationConfig.G_off2[1] = gyroOffsetY;
+			calibrationConfig.G_off2[2] = gyroOffsetZ;
+			calibrationConfig.gyroPointsCalibrated = 2;
+			calibrationConfig.gyroMeasurementTemperature2
+				= gyroBiasCalibrationData.value().temperature;
+		}
 
 		stepCalibrationForward();
 	}
@@ -481,6 +526,7 @@ private:
 	};
 
 	static constexpr float gyroBiasCalibrationSeconds = 5;
+	static constexpr float gyroBiasTemperatureDifference = 5;
 	std::optional<GyroBiasCalibrationData> gyroBiasCalibrationData;
 
 	// Accel Bias Calibration
@@ -525,6 +571,7 @@ private:
 
 				if (smallAxisPercentage1 > allowableVerticalAxisPercentage
 					|| smallAxisPercentage2 > allowableVerticalAxisPercentage) {
+					stepCalibrationForward(false);
 					return;
 				}
 
