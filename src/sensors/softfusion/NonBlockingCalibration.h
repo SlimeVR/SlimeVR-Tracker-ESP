@@ -173,7 +173,7 @@ private:
 		return false;
 	}
 
-	void stepCalibrationForward() {
+	void stepCalibrationForward(bool save = true) {
 		switch (nextCalibrationStep) {
 			case CalibrationStep::NONE:
 				return;
@@ -186,6 +186,7 @@ private:
 				motionlessCalibrationData.reset();
 
 				nextCalibrationStep = CalibrationStep::GYRO_BIAS;
+				break;
 			case CalibrationStep::GYRO_BIAS:
 				gyroBiasCalibrationData.reset();
 
@@ -204,7 +205,9 @@ private:
 
 		isCalibrating = false;
 
-		saveCalibration();
+		if (save) {
+			saveCalibration();
+		}
 	}
 
 	void saveCalibration() {
@@ -231,10 +234,12 @@ private:
 			printf("\tSensor timesteps not calibrated\n");
 		}
 
-		if (calibrationConfig.motionlessCalibrated) {
-			printf("\tMotionless calibration done\n");
-		} else {
-			printf("\tMotionless calibration not done\n");
+		if constexpr (HasMotionlessCalib) {
+			if (calibrationConfig.motionlessCalibrated) {
+				printf("\tMotionless calibration done\n");
+			} else {
+				printf("\tMotionless calibration not done\n");
+			}
 		}
 
 		if (calibrationConfig.gyroCalibrated) {
@@ -358,7 +363,7 @@ private:
 				stepCalibrationForward();
 			}
 		} else {
-			stepCalibrationForward();
+			stepCalibrationForward(false);
 		}
 	}
 
@@ -495,13 +500,14 @@ private:
 			= accelBiasCalibrationData.value().accelSum
 			/ static_cast<float>(accelBiasCalibrationData.value().sampleCount);
 
-		float accelOffset = CONST_EARTH_GRAVITY - accelAverage * accelScale;
+		float expected = accelAverage > 0 ? CONST_EARTH_GRAVITY : -CONST_EARTH_GRAVITY;
+
+		float accelOffset = expected - accelAverage * accelScale;
 
 		calibrationConfig.A_off[accelBiasCalibrationData.value().largestAxis]
 			= accelOffset;
 		calibrationConfig.accelCalibrated = true;
 
-		saveCalibration();
 		stepCalibrationForward();
 	}
 

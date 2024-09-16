@@ -160,6 +160,21 @@ void Configuration::setCalibration(size_t sensorID, const CalibrationConfig& con
 	m_Calibrations[sensorID] = config;
 }
 
+void Configuration::eraseCalibration() {
+	m_Calibrations.clear();
+
+	SlimeVR::Utils::forEachFile(DIR_CALIBRATIONS, [&](SlimeVR::Utils::File f) {
+		char path[17];
+		sprintf(path, DIR_CALIBRATIONS "/%s", f.name());
+
+		f.close();
+
+		LittleFS.remove(path);
+	});
+
+	save();
+}
+
 void Configuration::loadCalibrations() {
 	SlimeVR::Utils::forEachFile(DIR_CALIBRATIONS, [&](SlimeVR::Utils::File f) {
 		CalibrationConfig calibrationConfig;
