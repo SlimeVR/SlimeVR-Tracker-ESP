@@ -217,16 +217,28 @@ class SoftFusionSensor : public Sensor {
 				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2])
 			)};
 #else
-		const sensor_real_t scaledData[] = {
-			static_cast<sensor_real_t>(
-				GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off1[0])
-			),
-			static_cast<sensor_real_t>(
-				GScale * (static_cast<sensor_real_t>(xyz[1]) - m_calibration.G_off1[1])
-			),
-			static_cast<sensor_real_t>(
-				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off1[2])
-			)};
+		float lerpFactor
+			= (lastReadTemperature - m_calibration.gyroMeasurementTemperature1)
+			/ (m_calibration.gyroMeasurementTemperature2
+			   - m_calibration.gyroMeasurementTemperature1);
+
+		float gOffX = m_calibration.G_off1[0] * lerpFactor
+					+ m_calibration.G_off2[0] * (1 - lerpFactor);
+		float gOffY = m_calibration.G_off1[1] * lerpFactor
+					+ m_calibration.G_off2[1] * (1 - lerpFactor);
+		float gOffZ = m_calibration.G_off1[1] * lerpFactor
+					+ m_calibration.G_off2[2] * (1 - lerpFactor);
+
+		const sensor_real_t scaledData[]
+			= {static_cast<sensor_real_t>(
+				   GScale * (static_cast<sensor_real_t>(xyz[0]) - gOffX)
+			   ),
+			   static_cast<sensor_real_t>(
+				   GScale * (static_cast<sensor_real_t>(xyz[1]) - gOffY)
+			   ),
+			   static_cast<sensor_real_t>(
+				   GScale * (static_cast<sensor_real_t>(xyz[2]) - gOffZ)
+			   )};
 #endif
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 
