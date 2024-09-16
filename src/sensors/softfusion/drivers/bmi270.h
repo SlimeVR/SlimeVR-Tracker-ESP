@@ -422,6 +422,9 @@ struct BMI270 {
 			if ((header & Fifo::ModeMask) == Fifo::SkipFrame
 				&& (i - bytes_to_read) >= 1) {
 				getFromFifo<uint8_t>(i, read_buffer);  // skip 1 byte
+				logger.error(
+					"FIFO OVERRUN! This occuring during normal usage is an issue."
+				);
 			} else if ((header & Fifo::ModeMask) == Fifo::DataFrame) {
 				const uint8_t required_length
 					= (((header & Fifo::GyrDataBit) >> Fifo::GyrDataBit)
