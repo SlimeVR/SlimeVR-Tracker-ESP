@@ -97,6 +97,8 @@ class SoftFusionSensor : public Sensor {
 
 	static constexpr float temperatureAveragingSeconds = 5;
 
+	float zroChangeOverTemperature = 0;
+
 #ifdef USE_NONBLOCKING_CALIBRATION
 	NonBlockingCalibrator<imu> nonBlockingCalibrator;
 #endif
@@ -118,9 +120,9 @@ class SoftFusionSensor : public Sensor {
 		temperatureSum = 0;
 		lastTemperatureAverage = averageTemperature;
 
-		if constexpr (DefinedTemperatureZROChange) {
+		if (DefinedTemperatureZROChange || m_calibration.gyroPointsCalibrated == 2) {
 			m_fusion.updateBiasForgettingTime(
-				imu::TemperatureZROChange / temperatureChangeRate
+				zroChangeOverTemperature / temperatureChangeRate
 			);
 		}
 	}
@@ -189,12 +191,9 @@ class SoftFusionSensor : public Sensor {
 			   + m_calibration.A_Ainv[2][2] * tmp[2])
 			* AScale;
 #else
-		// accelData[0] = accelData[0] * AScale - m_calibration.A_off[0];
-		// accelData[1] = accelData[1] * AScale - m_calibration.A_off[1];
-		// accelData[2] = accelData[2] * AScale - m_calibration.A_off[2];
-		accelData[0] = accelData[0] * AScale;
-		accelData[1] = accelData[1] * AScale;
-		accelData[2] = accelData[2] * AScale;
+		accelData[0] = accelData[0] * AScale - m_calibration.A_off[0];
+		accelData[1] = accelData[1] * AScale - m_calibration.A_off[1];
+		accelData[2] = accelData[2] * AScale - m_calibration.A_off[2];
 #endif
 
 		m_fusion.updateAcc(accelData, m_calibration.A_Ts);
@@ -217,28 +216,16 @@ class SoftFusionSensor : public Sensor {
 				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2])
 			)};
 #else
-		float lerpFactor
-			= (lastReadTemperature - m_calibration.gyroMeasurementTemperature1)
-			/ (m_calibration.gyroMeasurementTemperature2
-			   - m_calibration.gyroMeasurementTemperature1);
-
-		float gOffX = m_calibration.G_off1[0] * lerpFactor
-					+ m_calibration.G_off2[0] * (1 - lerpFactor);
-		float gOffY = m_calibration.G_off1[1] * lerpFactor
-					+ m_calibration.G_off2[1] * (1 - lerpFactor);
-		float gOffZ = m_calibration.G_off1[1] * lerpFactor
-					+ m_calibration.G_off2[2] * (1 - lerpFactor);
-
-		const sensor_real_t scaledData[]
-			= {static_cast<sensor_real_t>(
-				   GScale * (static_cast<sensor_real_t>(xyz[0]) - gOffX)
-			   ),
-			   static_cast<sensor_real_t>(
-				   GScale * (static_cast<sensor_real_t>(xyz[1]) - gOffY)
-			   ),
-			   static_cast<sensor_real_t>(
-				   GScale * (static_cast<sensor_real_t>(xyz[2]) - gOffZ)
-			   )};
+		const sensor_real_t scaledData[] = {
+			static_cast<sensor_real_t>(
+				GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off1[0])
+			),
+			static_cast<sensor_real_t>(
+				GScale * (static_cast<sensor_real_t>(xyz[1]) - m_calibration.G_off1[1])
+			),
+			static_cast<sensor_real_t>(
+				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off1[2])
+			)};
 #endif
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 
@@ -440,6 +427,24 @@ public:
 		}
 
 		nonBlockingCalibrator.setup(m_calibration);
+
+		if constexpr (DefinedTemperatureZROChange) {
+			zroChangeOverTemperature = imu::TemperatureZROChange;
+		}
+
+		if (m_calibration.gyroPointsCalibrated == 2) {
+			float diffX = (m_calibration.G_off2[0] - m_calibration.G_off1[0]) * GScale;
+			float diffY = (m_calibration.G_off2[1] - m_calibration.G_off1[1]) * GScale;
+			float diffZ = (m_calibration.G_off2[2] - m_calibration.G_off1[2]) * GScale;
+
+			float maxDiff
+				= std::max(std::max(std::abs(diffX), std::abs(diffY)), std::abs(diffZ));
+
+			// TODO: store just the datasheet value and the equivalent instead
+			zroChangeOverTemperature = 0.1f / maxDiff
+									 / (m_calibration.gyroMeasurementTemperature2
+										- m_calibration.gyroMeasurementTemperature1);
+		}
 #endif
 
 		bool initResult = false;
