@@ -804,7 +804,7 @@ public:
 		.gyroMeasurementTemperature = 0,
 		.G_off = {0.0, 0.0, 0.0},
 
-		.accelCalibrated = false,
+		.accelCalibrated = {false, false, false},
 		.A_off = {0.0, 0.0, 0.0},
 	};
 #endif

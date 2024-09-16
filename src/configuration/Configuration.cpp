@@ -417,7 +417,9 @@ void Configuration::print() {
 					m_Logger.info("            Gyro bias not calibrated");
 				}
 
-				if (c.data.nonblocking.accelCalibrated) {
+				if (c.data.nonblocking.accelCalibrated[0]
+					|| c.data.nonblocking.accelCalibrated[1]
+					|| c.data.nonblocking.accelCalibrated[2]) {
 					m_Logger.info(
 						"            Calibrated accel bias: %f %f %f",
 						c.data.nonblocking.A_off[0],

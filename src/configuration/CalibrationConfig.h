@@ -93,7 +93,7 @@ struct NonBlockingCalibrationConfig {
 	float gyroMeasurementTemperature;
 	float G_off[3];
 
-	bool accelCalibrated;
+	bool accelCalibrated[3];
 	float A_off[3];
 };
 

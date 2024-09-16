@@ -62,7 +62,7 @@ public:
 			nextCalibrationStep = CalibrationStep::MOTIONLESS;
 		} else if (!calibrationConfig.gyroCalibrated) {
 			nextCalibrationStep = CalibrationStep::GYRO_BIAS;
-		} else if (!calibrationConfig.accelCalibrated) {
+		} else if (!allAccelAxesCalibrated()) {
 			nextCalibrationStep = CalibrationStep::ACCEL_BIAS;
 		} else {
 			nextCalibrationStep = CalibrationStep::NONE;
@@ -173,6 +173,18 @@ private:
 		return false;
 	}
 
+	bool allAccelAxesCalibrated() {
+		return calibrationConfig.accelCalibrated[0]
+			&& calibrationConfig.accelCalibrated[1]
+			&& calibrationConfig.accelCalibrated[2];
+	}
+
+	bool anyAccelAxesCalibrated() {
+		return calibrationConfig.accelCalibrated[0]
+			|| calibrationConfig.accelCalibrated[1]
+			|| calibrationConfig.accelCalibrated[2];
+	}
+
 	void stepCalibrationForward(bool save = true) {
 		switch (nextCalibrationStep) {
 			case CalibrationStep::NONE:
@@ -195,7 +207,11 @@ private:
 			case CalibrationStep::ACCEL_BIAS:
 				accelBiasCalibrationData.reset();
 
-				nextCalibrationStep = CalibrationStep::NONE;
+				if (allAccelAxesCalibrated()) {
+					nextCalibrationStep = CalibrationStep::NONE;
+				} else {
+					nextCalibrationStep = CalibrationStep::ACCEL_BIAS;
+				}
 				break;
 		}
 
@@ -253,9 +269,16 @@ private:
 			printf("\tGyro bias not calibrated\n");
 		}
 
-		if (calibrationConfig.accelCalibrated) {
+		if (allAccelAxesCalibrated()) {
 			printf(
 				"\tCalibrated accel bias: %f %f %f\n",
+				calibrationConfig.A_off[0],
+				calibrationConfig.A_off[1],
+				calibrationConfig.A_off[2]
+			);
+		} else if (anyAccelAxesCalibrated()) {
+			printf(
+				"\tPartially calibrated accel bias: %f %f %f\n",
 				calibrationConfig.A_off[0],
 				calibrationConfig.A_off[1],
 				calibrationConfig.A_off[2]
@@ -451,19 +474,23 @@ private:
 					return;
 				}
 
-				size_t largestAxis;
 				float absAxes[3]{
 					std::abs(static_cast<float>(accelSample[0])),
 					std::abs(static_cast<float>(accelSample[1])),
 					std::abs(static_cast<float>(accelSample[2])),
 				};
 
+				size_t largestAxis;
 				if (absAxes[0] > absAxes[1] && absAxes[0] > absAxes[2]) {
 					largestAxis = 0;
 				} else if (absAxes[1] > absAxes[2]) {
 					largestAxis = 1;
 				} else {
 					largestAxis = 2;
+				}
+
+				if (calibrationConfig.accelCalibrated[largestAxis]) {
+					return;
 				}
 
 				float smallAxisPercentage1
@@ -506,7 +533,8 @@ private:
 
 		calibrationConfig.A_off[accelBiasCalibrationData.value().largestAxis]
 			= accelOffset;
-		calibrationConfig.accelCalibrated = true;
+		calibrationConfig.accelCalibrated[accelBiasCalibrationData.value().largestAxis]
+			= true;
 
 		stepCalibrationForward();
 	}
