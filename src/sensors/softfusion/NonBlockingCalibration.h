@@ -313,11 +313,11 @@ private:
 		}
 
 		float accelTimestep
-			= samplingRateCalibrationData.value().accelSamples / elapsedTime;
+			= elapsedTime / samplingRateCalibrationData.value().accelSamples;
 		float gyroTimestep
-			= samplingRateCalibrationData.value().gyroSamples / elapsedTime;
+			= elapsedTime / samplingRateCalibrationData.value().gyroSamples;
 		float tempTimestep
-			= samplingRateCalibrationData.value().tempSamples / elapsedTime;
+			= elapsedTime / samplingRateCalibrationData.value().tempSamples;
 
 		calibrationConfig.A_Ts = accelTimestep;
 		calibrationConfig.G_Ts = gyroTimestep;
@@ -502,7 +502,7 @@ private:
 
 		float expected = accelAverage > 0 ? CONST_EARTH_GRAVITY : -CONST_EARTH_GRAVITY;
 
-		float accelOffset = expected - accelAverage * accelScale;
+		float accelOffset = accelAverage * accelScale - expected;
 
 		calibrationConfig.A_off[accelBiasCalibrationData.value().largestAxis]
 			= accelOffset;

@@ -189,9 +189,12 @@ class SoftFusionSensor : public Sensor {
 			   + m_calibration.A_Ainv[2][2] * tmp[2])
 			* AScale;
 #else
-		accelData[0] = accelData[0] * AScale - m_calibration.A_off[0];
-		accelData[1] = accelData[1] * AScale - m_calibration.A_off[1];
-		accelData[2] = accelData[2] * AScale - m_calibration.A_off[2];
+		// accelData[0] = accelData[0] * AScale - m_calibration.A_off[0];
+		// accelData[1] = accelData[1] * AScale - m_calibration.A_off[1];
+		// accelData[2] = accelData[2] * AScale - m_calibration.A_off[2];
+		accelData[0] = accelData[0] * AScale;
+		accelData[1] = accelData[1] * AScale;
+		accelData[2] = accelData[2] * AScale;
 #endif
 
 		m_fusion.updateAcc(accelData, m_calibration.A_Ts);
