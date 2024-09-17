@@ -279,6 +279,8 @@ private:
 		configuration.save();
 
 		printf("New calibration saved!\n");
+
+		ledManager.blink(100);
 	}
 
 	enum class CalibrationPrintFlags {
