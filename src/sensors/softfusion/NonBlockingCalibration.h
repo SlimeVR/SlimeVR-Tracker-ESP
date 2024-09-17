@@ -40,6 +40,8 @@ namespace SlimeVR::Sensors {
 template <typename IMU>
 class NonBlockingCalibrator {
 public:
+	mutable SlimeVR::Logging::Logger logger{"DynamicCalibration"};
+
 	NonBlockingCalibrator(
 		SensorFusionRestDetect& fusion,
 		float accelScale,
@@ -278,8 +280,6 @@ private:
 		configuration.setCalibration(sensorId, calibration);
 		configuration.save();
 
-		printf("New calibration saved!\n");
-
 		ledManager.blink(100);
 	}
 
@@ -295,45 +295,45 @@ private:
 		| CalibrationPrintFlags::GYRO_BIAS | CalibrationPrintFlags::ACCEL_BIAS;
 
 	void printCalibration(CalibrationPrintFlags toPrint = PrintAllCalibration) {
-		printf("Current calibration:\n");
+		logger.info("Current calibration:");
 
 		if (any(toPrint & CalibrationPrintFlags::TIMESTEPS)) {
 			if (calibrationConfig.sensorTimestepsCalibrated) {
-				printf(
-					"\tCalibrated timesteps: Accel %f, Gyro %f, Temperature %f\n",
+				logger.info(
+					"Calibrated timesteps: Accel %f, Gyro %f, Temperature %f",
 					calibrationConfig.A_Ts,
 					calibrationConfig.G_Ts,
 					calibrationConfig.T_Ts
 				);
 			} else {
-				printf("\tSensor timesteps not calibrated\n");
+				logger.info("Sensor timesteps not calibrated");
 			}
 		}
 
 		if (HasMotionlessCalib && any(toPrint & CalibrationPrintFlags::MOTIONLESS)) {
 			if (calibrationConfig.motionlessCalibrated) {
-				printf("\tMotionless calibration done\n");
+				logger.info("Motionless calibration done");
 			} else {
-				printf("\tMotionless calibration not done\n");
+				logger.info("Motionless calibration not done");
 			}
 		}
 
 		if (any(toPrint & CalibrationPrintFlags::GYRO_BIAS)) {
 			if (calibrationConfig.gyroPointsCalibrated != 0) {
-				printf(
-					"\tCalibrated gyro bias at %fC: %f %f %f\n",
+				logger.info(
+					"Calibrated gyro bias at %fC: %f %f %f",
 					calibrationConfig.gyroMeasurementTemperature1,
 					calibrationConfig.G_off1[0],
 					calibrationConfig.G_off1[1],
 					calibrationConfig.G_off1[2]
 				);
 			} else {
-				printf("\tGyro bias not calibrated\n");
+				logger.info("Gyro bias not calibrated");
 			}
 
 			if (calibrationConfig.gyroPointsCalibrated == 2) {
-				printf(
-					"\tCalibrated gyro bias at %fC: %f %f %f\n",
+				logger.info(
+					"Calibrated gyro bias at %fC: %f %f %f",
 					calibrationConfig.gyroMeasurementTemperature2,
 					calibrationConfig.G_off2[0],
 					calibrationConfig.G_off2[1],
@@ -344,21 +344,21 @@ private:
 
 		if (any(toPrint & CalibrationPrintFlags::ACCEL_BIAS)) {
 			if (allAccelAxesCalibrated()) {
-				printf(
-					"\tCalibrated accel bias: %f %f %f\n",
+				logger.info(
+					"Calibrated accel bias: %f %f %f",
 					calibrationConfig.A_off[0],
 					calibrationConfig.A_off[1],
 					calibrationConfig.A_off[2]
 				);
 			} else if (anyAccelAxesCalibrated()) {
-				printf(
-					"\tPartially calibrated accel bias: %f %f %f\n",
+				logger.info(
+					"Partially calibrated accel bias: %f %f %f",
 					calibrationConfig.A_off[0],
 					calibrationConfig.A_off[1],
 					calibrationConfig.A_off[2]
 				);
 			} else {
-				printf("\tAccel bias not calibrated\n");
+				logger.info("Accel bias not calibrated");
 			}
 		}
 	}
