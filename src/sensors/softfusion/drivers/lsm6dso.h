@@ -56,7 +56,7 @@ struct LSM6DSO : LSM6DSOutputHandler<I2CImpl> {
 
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
-	static constexpr float TemperatureZROChange = 10.0f;
+	static constexpr float TemperatureZROChange = 1.0f;
 
 	static constexpr VQFParams SensorVQFParams{
 		.tauAcc = 3.0f,
