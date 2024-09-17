@@ -104,6 +104,10 @@ class SoftFusionSensor : public Sensor {
 #endif
 
 	void handleTemperatureMeasurement(float temperature, float timeStep) {
+#ifdef USE_NONBLOCKING_CALIBRATION
+		nonBlockingCalibrator.provideTempSample(temperature);
+#endif
+
 		lastReadTemperature = temperature;
 
 		temperatureSum += temperature * timeStep;
@@ -238,10 +242,6 @@ class SoftFusionSensor : public Sensor {
 		if constexpr (!OnlyDirectTemperature) {
 			float scaledTemperature = value * TScale + imu::TemperatureBias;
 			handleTemperatureMeasurement(scaledTemperature, timeDelta);
-
-#ifdef USE_NONBLOCKING_CALIBRATION
-			nonBlockingCalibrator.provideTempSample(scaledTemperature);
-#endif
 		}
 	}
 
@@ -441,7 +441,8 @@ public:
 				= std::max(std::max(std::abs(diffX), std::abs(diffY)), std::abs(diffZ));
 
 			// TODO: store just the datasheet value and the equivalent instead
-			// ! I'm not sure if this should be 0.1 or 0.01, but 0.01 seems to work better?
+			// ! I'm not sure if this should be 0.1 or 0.01, but 0.01 seems to work
+			// better?
 			zroChangeOverTemperature = 0.01f / maxDiff
 									 / (m_calibration.gyroMeasurementTemperature2
 										- m_calibration.gyroMeasurementTemperature1);
