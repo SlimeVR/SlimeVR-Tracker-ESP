@@ -295,8 +295,7 @@ private:
 		| CalibrationPrintFlags::GYRO_BIAS | CalibrationPrintFlags::ACCEL_BIAS;
 
 	void printCalibration(CalibrationPrintFlags toPrint = PrintAllCalibration) {
-		logger.info("Current calibration:");
-
+		
 		if (any(toPrint & CalibrationPrintFlags::TIMESTEPS)) {
 			if (calibrationConfig.sensorTimestepsCalibrated) {
 				logger.info(
