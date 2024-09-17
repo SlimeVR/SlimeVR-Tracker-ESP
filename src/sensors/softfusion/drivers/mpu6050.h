@@ -65,22 +65,22 @@ struct MPU6050 {
 	static constexpr float GyroSensitivity = 32.8f;
 	static constexpr float AccelSensitivity = 8192.0f;
 
-	// lol this sensor sucks
+	// Temperature stability constant - how many degrees of temperature for the bias to change by 0.01
+	// Though I don't know if it should be 0.1 or 0.01, this is a guess and seems to work better than 0.1
+	static constexpr float TemperatureZROChange = 0.16f;
 
-	static constexpr float TemperatureZROChange = 1.6f;
+	// VQF parameters
+	// biasSigmaInit and and restThGyr should be the sensor's typical gyro bias
+	// biasClip should be 2x the sensor's typical gyro bias
+	// restThAcc should be the sensor's typical acceleration bias
 
+	// Jesus christ this sensor sucks
 	static constexpr VQFParams SensorVQFParams{
-		.tauAcc = 3.0f,
 		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 2.0f,
-		.biasClip = 4.0f,
-		.biasSigmaMotion = 0.05f,
-		.biasVerticalForgettingFactor = 0.0001f,
-		.biasSigmaRest = 0.005f,
-		.restMinT = 1.0f,
-		.restFilterTau = 0.5f,
-		.restThGyr = 2.0f,  // 400 norm
-		.restThAcc = 0.784f,  // 100 norm
+		.biasSigmaInit = 20.0f,
+		.biasClip = 40.0f,
+		.restThGyr = 20.0f,
+		.restThAcc = 1.568f,
 	};
 
 	I2CImpl i2c;

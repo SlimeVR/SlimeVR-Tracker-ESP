@@ -52,22 +52,22 @@ struct LSM6DS3TRC {
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
 
-	// params for ds3, not ds3trc, because no one uses it
+	// Parameters are for LSM6DS3, not LSM6DS3TR-C, because no one uses it
 
-	static constexpr float TemperatureZROChange = 2.0f;
+	// Temperature stability constant - how many degrees of temperature for the bias to change by 0.01
+	// Though I don't know if it should be 0.1 or 0.01, this is a guess and seems to work better than 0.1
+	static constexpr float TemperatureZROChange = 0.2f;
 
+	// VQF parameters
+	// biasSigmaInit and and restThGyr should be the sensor's typical gyro bias
+	// biasClip should be 2x the sensor's typical gyro bias
+	// restThAcc should be the sensor's typical acceleration bias
 	static constexpr VQFParams SensorVQFParams{
-		.tauAcc = 3.0f,
 		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 2.0f,
-		.biasClip = 4.0f,
-		.biasSigmaMotion = 0.07f,
-		.biasVerticalForgettingFactor = 0.0001f,
-		.biasSigmaRest = 0.007f,
-		.restMinT = 1.0f,
-		.restFilterTau = 0.5f,
-		.restThGyr = 2.0f,  // 400 norm
-		.restThAcc = 0.392f,  // 100 norm
+		.biasSigmaInit = 3.0f,
+		.biasClip = 6.0f,
+		.restThGyr = 3.0f,
+		.restThAcc = 0.784f,
 	};
 
 	I2CImpl i2c;

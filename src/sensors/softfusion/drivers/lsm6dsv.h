@@ -56,20 +56,21 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
+
+	// Temperature stability constant - how many degrees of temperature for the bias to change by 0.01
+	// Though I don't know if it should be 0.1 or 0.01, this is a guess and seems to work better than 0.1
 	static constexpr float TemperatureZROChange = 1.667f;
 
+	// VQF parameters
+	// biasSigmaInit and and restThGyr should be the sensor's typical gyro bias
+	// biasClip should be 2x the sensor's typical gyro bias
+	// restThAcc should be the sensor's typical acceleration bias
 	static constexpr VQFParams SensorVQFParams{
-		.tauAcc = 3.0f,
 		.motionBiasEstEnabled = true,
 		.biasSigmaInit = 1.0f,
 		.biasClip = 2.0f,
-		.biasSigmaMotion = 0.0529f,
-		.biasVerticalForgettingFactor = 0.0001f,
-		.biasSigmaRest = 0.0529f,
-		.restMinT = 1.0f,
-		.restFilterTau = 0.5f,
-		.restThGyr = 1.0f,  // 400 norm
-		.restThAcc = 0.5f,  // 100 norm
+		.restThGyr = 1.0f,
+		.restThAcc = 0.392f,
 	};
 
 	using LSM6DSOutputHandler<I2CImpl>::i2c;
