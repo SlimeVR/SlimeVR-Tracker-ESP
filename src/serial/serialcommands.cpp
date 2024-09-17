@@ -250,7 +250,7 @@ namespace SerialCommands {
 				for (int i = 0; i < scanRes; i++) {
 					logger.info("[WSCAN] %d:\t%02d\t%s\t(%d)\t%s",
 						i, WiFi.SSID(i).length(), WiFi.SSID(i).c_str(), WiFi.RSSI(i),
-						((WiFi.encryptionType(i) == 0) ? "OPEN" : "PASS")
+						((WiFi.encryptionType(i) == 0) ? "OPEN" : "PASSWD")
 					);
 				}
 				WiFi.scanDelete();
