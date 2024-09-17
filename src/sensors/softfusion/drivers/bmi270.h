@@ -51,20 +51,21 @@ struct BMI270 {
 
 	static constexpr float GyroSensitivity = 32.768f;
 	static constexpr float AccelSensitivity = 8192.0f;
-	static constexpr float TemperatureZROChange = 6.67f;
 
+	// Temperature stability constant - how many degrees of temperature for the bias to change by 0.01
+	// Though I don't know if it should be 0.1 or 0.01, this is a guess and seems to work better than 0.1
+	static constexpr float TemperatureZROChange = 0.667f;
+
+	// VQF parameters
+	// biasSigmaInit and and restThGyr should be the sensor's typical gyro bias
+	// biasClip should be 2x the sensor's typical gyro bias
+	// restThAcc should be the sensor's typical acceleration bias
 	static constexpr VQFParams SensorVQFParams{
-		.tauAcc = 3.0f,
 		.motionBiasEstEnabled = true,
 		.biasSigmaInit = 0.5f,
 		.biasClip = 1.0f,
-		.biasSigmaMotion = 0.07f,
-		.biasVerticalForgettingFactor = 0.0001f,
-		.biasSigmaRest = 0.007f,
-		.restMinT = 1.0f,
-		.restFilterTau = 0.5f,
-		.restThGyr = 0.5f,  // 400 norm
-		.restThAcc = 0.5f,  // 100 norm
+		.restThGyr = 0.5f,
+		.restThAcc = 0.392f,
 	};
 
 	struct MotionlessCalibrationData {

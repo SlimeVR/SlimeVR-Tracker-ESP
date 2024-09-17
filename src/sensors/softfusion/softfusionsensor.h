@@ -441,7 +441,8 @@ public:
 				= std::max(std::max(std::abs(diffX), std::abs(diffY)), std::abs(diffZ));
 
 			// TODO: store just the datasheet value and the equivalent instead
-			zroChangeOverTemperature = 0.1f / maxDiff
+			// ! I'm not sure if this should be 0.1 or 0.01, but 0.01 seems to work better?
+			zroChangeOverTemperature = 0.01f / maxDiff
 									 / (m_calibration.gyroMeasurementTemperature2
 										- m_calibration.gyroMeasurementTemperature1);
 		}
