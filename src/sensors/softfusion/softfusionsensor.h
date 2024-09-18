@@ -27,9 +27,9 @@
 #include <utility>
 
 #include "../SensorFusionRestDetect.h"
+#include "../nonblockingcalibration/NonBlockingCalibration.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
-#include "NonBlockingCalibration.h"
 
 namespace SlimeVR::Sensors {
 
@@ -100,7 +100,7 @@ class SoftFusionSensor : public Sensor {
 	float zroChangeOverTemperature = 0;
 
 #ifdef USE_NONBLOCKING_CALIBRATION
-	NonBlockingCalibrator<imu> nonBlockingCalibrator;
+	NonBlockingCalibration::NonBlockingCalibrator<imu> nonBlockingCalibrator;
 #endif
 
 	void handleTemperatureMeasurement(float temperature, float timeStep) {
@@ -368,15 +368,15 @@ public:
 		// send new fusion values when time is up
 		now = micros();
 		float maxSendRateHz = 0;
-		#if defined(ESP8266)
-			if(sensorManager.getActiveSensorCount() > 1) {
-				maxSendRateHz = 100.0f;
-			} else {
-				maxSendRateHz = 120.0f;
-			}
-		#else
+#if defined(ESP8266)
+		if (sensorManager.getActiveSensorCount() > 1) {
+			maxSendRateHz = 100.0f;
+		} else {
 			maxSendRateHz = 120.0f;
-		#endif
+		}
+#else
+		maxSendRateHz = 120.0f;
+#endif
 		uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6;
 		elapsed = now - m_lastRotationPacketSent;
 		if (elapsed >= sendInterval) {
