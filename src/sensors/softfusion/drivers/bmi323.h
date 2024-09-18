@@ -32,11 +32,6 @@
 namespace SlimeVR::Sensors::SoftFusion::Drivers
 {
 
-// Driver uses acceleration range at 16g
-// and gyroscope range at 1000dps
-// Gyroscope ODR = 400Hz, accel ODR = 100Hz
-// Timestamps reading are not used
-
 template <typename I2CImpl>
 struct BMI323
 {
@@ -45,9 +40,9 @@ struct BMI323
     static constexpr auto Name = "BMI323";
     static constexpr auto Type = ImuID::BMI323;
 
-    static constexpr float GyrTs=1.0/200.0; // Delay between each gyro sample
-    static constexpr float AccTs=1.0/200.0; // Dealy between each accel sample
-    static constexpr float MagTs=1.0/25.0; // Delay between each mag sample
+    static constexpr float GyrTs = 1.0/200.0; // Delay between each gyro sample
+    static constexpr float AccTs = 1.0/200.0; // Dealy between each accel sample
+    static constexpr float MagTs = 1.0/25.0; // Delay between each mag sample
 
     // BMI323 specific constants
     static constexpr float GyroSensitivity = 32.768f;
@@ -55,22 +50,21 @@ struct BMI323
     static constexpr float GScale = ((32768. / GyroSensitivity) / 32768.) * (PI / 180.0);
     static constexpr float AScale = CONST_EARTH_GRAVITY / AccelSensitivity;
 
-    struct MotionlessCalibrationData
-    {
-        bool valid;
-        uint8_t x, y, z;
-    };
+    // Calculate frame length for BMI323 FIFO
+    static constexpr int8_t frameLength = BMI323_LIB::LENGTH_FIFO_ACCEL + BMI323_LIB::LENGTH_FIFO_GYRO + BMI323_LIB::LENGTH_TEMPERATURE;
 
     I2CImpl i2c;
     SlimeVR::Logging::Logger &logger;
     int8_t zxFactor;
-    BMI323(I2CImpl i2c, SlimeVR::Logging::Logger &logger)
-    : i2c(i2c), logger(logger), zxFactor(0) {}
+    BMI323_LIB bmi323Lib;
+    // BMI323(I2CImpl i2c, SlimeVR::Logging::Logger &logger): i2c(i2c), logger(logger), zxFactor(0) {}
+    BMI323(I2CImpl i2c, SlimeVR::Logging::Logger &logger): i2c(i2c), logger(logger), zxFactor(0), bmi323Lib(&i2cRead, &i2cWrite, &delayUs, &i2c) {}
+
 
     struct Regs {
         struct WhoAmI {
             static constexpr uint8_t reg = 0x00;
-            static constexpr uint8_t value = 0x24;
+            static constexpr uint8_t value = 0x00; // 0x43
         };
     };
 
@@ -93,18 +87,61 @@ struct BMI323
         return 0;
     }
 
-    bool restartAndInit() {
-       
-       return true;
+    /**
+     * @brief Extracts the next frame from a FIFO frame
+     * @note The indexes (accelIndex, gyroIndex, tempIndex, timeIndex) needs to
+     * be reset before the first call
+    */
+    static uint8_t extractFrame(uint8_t *data, uint8_t index, float *accelData, float *gyroData, float *tempData) {
+        uint8_t dataValidity = ACCEL_VALID | GYRO_VALID | TEMP_VALID;
+        
+        // Unpack accelerometer
+        uint8_t accelIndex = index * frameLength + BMI323_LIB::DUMMY_BYTE;
+        int16_t isValid = (int16_t)((data[accelIndex + 1] << 8) | data[accelIndex]);
+        if (isValid == BMI323_LIB::FIFO_ACCEL_DUMMY_FRAME) {
+            dataValidity &= ~ACCEL_VALID;
+        } else {
+            accelData[0] = lsbToMps2(isValid);
+            accelData[1] = lsbToMps2((int16_t)((data[accelIndex + 3] << 8) | data[accelIndex + 2]));
+            accelData[2] = lsbToMps2((int16_t)((data[accelIndex + 5] << 8) | data[accelIndex + 4]));
+            // accelData.sensor_time = (int16_t)((data[accelIndex + 13] << 8) | data[accelIndex + 12]);
+        }
+
+        // Unpack gyroscope data
+        uint8_t gyroIndex = accelIndex + BMI323_LIB::LENGTH_FIFO_ACCEL;
+        isValid = (int16_t)((data[gyroIndex + 1] << 8) | data[gyroIndex]);
+        if (isValid == BMI323_LIB::FIFO_GYRO_DUMMY_FRAME) {
+            dataValidity &= ~GYRO_VALID;
+        } else {
+            #if BMI323_USE_TEMP_CAL
+                gyroData[0] = isValid;
+                gyroData[1] = (int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2]);
+                gyroData[2] = (int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4]);
+            #else
+                gyroData[0] = (isValid) * gScaleX;
+                gyroData[1] = ((int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2])) * gScaleY;
+                gyroData[2] = ((int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4])) * gScaleZ;
+            #endif
+            // gyroData.sensor_time = (int16_t)((data[gyroIndex + 7] << 8) | data[gyroIndex + 6]);
+        }
+
+        // Unpack temperature data
+        uint8_t tempIndex = gyroIndex + BMI323_LIB::LENGTH_FIFO_GYRO;
+        uint16_t isTempValid = (uint16_t)((data[tempIndex + 1] << 8) | data[tempIndex]);
+        if (isTempValid == BMI323_LIB::FIFO_TEMP_DUMMY_FRAME) {
+            dataValidity &= ~TEMP_VALID;
+        } else {
+            tempData[0] = ((int16_t)((data[tempIndex + 1] << 8) | data[tempIndex]) / 512.0f) + 23.0f;
+        }
+
+        return dataValidity;
     }
 
-    bool initialize(MotionlessCalibrationData &gyroSensitivity)
+    bool initialize()
     {
         logger.info("jojos38 BMI323 firmware V1.4");
         
         int8_t result;
-
-        BMI323_LIB bmi323Lib(&i2cRead, &i2cWrite, &delayUs, &i2c);
 
         // Initialize the sensor
         result = bmi323Lib.initI2C();
@@ -114,6 +151,8 @@ struct BMI323
             logger.info("BMI323 Initialization failed");
             return false;
         }
+
+        logger.info("Chip ID 0x%x", bmi323Lib.chipId);
 
         // Apply the calibration data
         /*if (m_calibration.G_G[0] != 0 || m_calibration.G_G[1] != 0 || m_calibration.G_G[2] != 0 || m_calibration.G_O[0] != 0 || m_calibration.G_O[1] != 0 || m_calibration.G_O[2] != 0) {
@@ -129,49 +168,46 @@ struct BMI323
         } else {
             m_Logger.warn("No calibration data found, please calibrate the sensor it only takes a few seconds");
             calibrate = true;
-        }
+        }*/
 
         // Set gyroscope configuration
-        result = bmi323.setGyroConfig(
-            BMI323::GYRO_ODR_200HZ,
-            BMI323::GYRO_BANDWIDTH_ODR_HALF,
-            BMI323::GYRO_MODE_HIGH_PERF,
-            BMI323::GYRO_RANGE_1000DPS,
-            BMI323::GYRO_AVG_2
+        result = bmi323Lib.setGyroConfig(
+            BMI323_LIB::GYRO_ODR_200HZ,
+            BMI323_LIB::GYRO_BANDWIDTH_ODR_HALF,
+            BMI323_LIB::GYRO_MODE_HIGH_PERF,
+            BMI323_LIB::GYRO_RANGE_1000DPS,
+            BMI323_LIB::GYRO_AVG_2
         );
-        if (result == BMI323::SUCCESS) {
-            m_Logger.info("BMI323 Gyroscope configured");
+        if (result == BMI323_LIB::SUCCESS) {
+            logger.info("BMI323 Gyroscope configured");
         } else {
-            m_Logger.error("BMI323 Gyroscope configuration failed");
-            error = true;
+            logger.error("BMI323 Gyroscope configuration failed");
+            return false;
         }
 
         // Set accelerometer configuration
-        result = bmi323.setAccelConfig(
-            BMI323::ACCEL_ODR_200HZ,
-            BMI323::ACCEL_BANDWIDTH_ODR_HALF,
-            BMI323::ACCEL_MODE_HIGH_PERF,
-            BMI323::ACCEL_RANGE_8G,
-            BMI323::ACCEL_AVG_2
+        result = bmi323Lib.setAccelConfig(
+            BMI323_LIB::ACCEL_ODR_200HZ,
+            BMI323_LIB::ACCEL_BANDWIDTH_ODR_HALF,
+            BMI323_LIB::ACCEL_MODE_HIGH_PERF,
+            BMI323_LIB::ACCEL_RANGE_8G,
+            BMI323_LIB::ACCEL_AVG_2
         );
-        if (result == BMI323::SUCCESS) {
-            m_Logger.info("BMI323 Accelerometer configured");
+        if (result == BMI323_LIB::SUCCESS) {
+            logger.info("BMI323 Accelerometer configured");
         } else {
-            m_Logger.error("BMI323 Accelerometer configuration failed");
-            error = true;
+            logger.error("BMI323 Accelerometer configuration failed");
+            return false;
         }
 
         // Set FIFO configuration
-        bmi323.setFifoConfig(BMI323::FIFO_ACCEL_EN | BMI323::FIFO_GYRO_EN | BMI323::FIFO_TEMP_EN, BMI323::ENABLE);
-        if (result == BMI323::SUCCESS) {
-            m_Logger.info("BMI323 FIFO enabled");
+        bmi323Lib.setFifoConfig(BMI323_LIB::FIFO_ACCEL_EN | BMI323_LIB::FIFO_GYRO_EN | BMI323_LIB::FIFO_TEMP_EN, BMI323_LIB::ENABLE);
+        if (result == BMI323_LIB::SUCCESS) {
+            logger.info("BMI323 FIFO enabled");
         } else {
-            m_Logger.error("BMI323 FIFO enable failed");
-            error = true;
+            logger.error("BMI323 FIFO enable failed");
+            return false;
         }
-
-        // Calculate variables for BMI323 FIFO
-        frameLength = BMI323::LENGTH_FIFO_ACCEL + BMI323::LENGTH_FIFO_GYRO + BMI323::LENGTH_TEMPERATURE;
 
         #if BMI323_USE_BMM350
             // BMM350
@@ -243,25 +279,12 @@ struct BMI323
             }
         #endif
 
-        if (calibrate) {
-            startCalibration(0);
-        }
-
-        // Tell SlimeVR that the sensor is working and ready
-        if (!error) {
-            m_status = SensorStatus::SENSOR_OK;
-            working = true;
-            m_Logger.info("BMI323 initialized");
-        } else {
-            m_status = SensorStatus::SENSOR_ERROR;
-            working = false;
-            m_Logger.error("BMI323 initialization failed");
-        }*/
+        logger.info("BMI323 initialized");
 
         return true;
     }
 
-    void motionlessCalibration(MotionlessCalibrationData &gyroSensitivity)
+    void motionlessCalibration()
     {
 
     }
