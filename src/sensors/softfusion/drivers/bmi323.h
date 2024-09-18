@@ -40,8 +40,8 @@ struct BMI323
     static constexpr auto Name = "BMI323";
     static constexpr auto Type = ImuID::BMI323;
 
-    static constexpr float GyrTs = 1.0/200.0; // Delay between each gyro sample
-    static constexpr float AccTs = 1.0/200.0; // Dealy between each accel sample
+    static constexpr float GyrTs = 1.0/50.0; // Delay between each gyro sample
+    static constexpr float AccTs = 1.0/50.0; // Dealy between each accel sample
     static constexpr float MagTs = 1.0/25.0; // Delay between each mag sample
 
     // BMI323 specific constants
@@ -50,15 +50,24 @@ struct BMI323
     static constexpr float GScale = ((32768. / GyroSensitivity) / 32768.) * (PI / 180.0);
     static constexpr float AScale = CONST_EARTH_GRAVITY / AccelSensitivity;
 
-    // Calculate frame length for BMI323 FIFO
-    static constexpr int8_t frameLength = BMI323_LIB::LENGTH_FIFO_ACCEL + BMI323_LIB::LENGTH_FIFO_GYRO + BMI323_LIB::LENGTH_TEMPERATURE;
+    // FIFO variables
+    static constexpr int8_t FifoFrameLength = BMI323_LIB::LENGTH_FIFO_ACCEL + BMI323_LIB::LENGTH_FIFO_GYRO + BMI323_LIB::LENGTH_TEMPERATURE;
+    uint8_t fifoData[I2C_BUFFER_LENGTH] = { 0 }; // 2048 is the maximum size of the FIFO
+    int16_t accelData[3] = { 0 };
+    int16_t gyroData[3] = { 0 };
+    float temperatureData = 0;
+    int16_t magData[3] = { 0 };
+
+    // FIFO Data validity bytes
+    static const uint8_t ACCEL_VALID = 0x01;   // Bit 0 represents accelerometer data validity
+    static const uint8_t GYRO_VALID = 0x02;    // Bit 1 represents gyroscope data validity
+    static const uint8_t TEMP_VALID = 0x04;    // Bit 2 represents temperature data validity
 
     I2CImpl i2c;
     SlimeVR::Logging::Logger &logger;
-    int8_t zxFactor;
     BMI323_LIB bmi323Lib;
     // BMI323(I2CImpl i2c, SlimeVR::Logging::Logger &logger): i2c(i2c), logger(logger), zxFactor(0) {}
-    BMI323(I2CImpl i2c, SlimeVR::Logging::Logger &logger): i2c(i2c), logger(logger), zxFactor(0), bmi323Lib(&i2cRead, &i2cWrite, &delayUs, &i2c) {}
+    BMI323(I2CImpl i2c, SlimeVR::Logging::Logger &logger): i2c(i2c), logger(logger), bmi323Lib(&i2cRead, &i2cWrite, &delayUs, &i2c) {}
 
 
     struct Regs {
@@ -75,16 +84,41 @@ struct BMI323
 
     static int8_t i2cRead(uint8_t registerAddress, uint8_t *registerData, uint32_t length, void *interfacePointer)
     {
-        I2CImpl i2c = *static_cast<I2CImpl*>(interfacePointer);
-        i2c.readBytes(registerAddress, length, registerData);
+        uint8_t address = 0x68;
+
+        // Read data from the sensor
+        Wire.beginTransmission(address);
+        Wire.write(registerAddress);
+        Wire.endTransmission();
+        Wire.requestFrom(address, length);
+        for (auto i = 0u; i < length; i++) {
+            registerData[i] = Wire.read();
+        }
+
         return 0;
+
+        /*I2CImpl i2c = *static_cast<I2CImpl*>(interfacePointer);
+        i2c.readBytes(registerAddress, length, registerData);
+        return 0;*/
     }
 
     static int8_t i2cWrite(uint8_t registerAddress, const uint8_t *registerData, uint32_t length, void *interfacePointer)
     {
-        I2CImpl i2c = *static_cast<I2CImpl*>(interfacePointer);
-        i2c.writeBytes(registerAddress, length, const_cast<uint8_t*>(registerData));
+        uint8_t dev_addr = 0x68;
+
+        // Write data to the sensor
+        Wire.beginTransmission(dev_addr);
+        Wire.write(registerAddress);
+        for (auto i = 0u; i < length; i++) {
+            Wire.write(registerData[i]);
+        }
+        Wire.endTransmission();
+        
         return 0;
+
+        /*I2CImpl i2c = *static_cast<I2CImpl*>(interfacePointer);
+        i2c.writeBytes(registerAddress, length, const_cast<uint8_t*>(registerData));
+        return 0;*/
     }
 
     /**
@@ -92,19 +126,18 @@ struct BMI323
      * @note The indexes (accelIndex, gyroIndex, tempIndex, timeIndex) needs to
      * be reset before the first call
     */
-    static uint8_t extractFrame(uint8_t *data, uint8_t index, float *accelData, float *gyroData, float *tempData) {
+    static uint8_t extractFrame(uint8_t *data, uint8_t index, int16_t *accelData, int16_t *gyroData, float *tempData) {
         uint8_t dataValidity = ACCEL_VALID | GYRO_VALID | TEMP_VALID;
         
         // Unpack accelerometer
-        uint8_t accelIndex = index * frameLength + BMI323_LIB::DUMMY_BYTE;
+        uint8_t accelIndex = index * FifoFrameLength + BMI323_LIB::DUMMY_BYTE;
         int16_t isValid = (int16_t)((data[accelIndex + 1] << 8) | data[accelIndex]);
         if (isValid == BMI323_LIB::FIFO_ACCEL_DUMMY_FRAME) {
             dataValidity &= ~ACCEL_VALID;
         } else {
-            accelData[0] = lsbToMps2(isValid);
-            accelData[1] = lsbToMps2((int16_t)((data[accelIndex + 3] << 8) | data[accelIndex + 2]));
-            accelData[2] = lsbToMps2((int16_t)((data[accelIndex + 5] << 8) | data[accelIndex + 4]));
-            // accelData.sensor_time = (int16_t)((data[accelIndex + 13] << 8) | data[accelIndex + 12]);
+            accelData[0] = isValid;
+            accelData[1] = (int16_t)((data[accelIndex + 3] << 8) | data[accelIndex + 2]);
+            accelData[2] = (int16_t)((data[accelIndex + 5] << 8) | data[accelIndex + 4]);
         }
 
         // Unpack gyroscope data
@@ -118,11 +151,10 @@ struct BMI323
                 gyroData[1] = (int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2]);
                 gyroData[2] = (int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4]);
             #else
-                gyroData[0] = (isValid) * gScaleX;
-                gyroData[1] = ((int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2])) * gScaleY;
-                gyroData[2] = ((int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4])) * gScaleZ;
+                gyroData[0] = (isValid);
+                gyroData[1] = ((int16_t)((data[gyroIndex + 3] << 8) | data[gyroIndex + 2]));
+                gyroData[2] = ((int16_t)((data[gyroIndex + 5] << 8) | data[gyroIndex + 4]));
             #endif
-            // gyroData.sensor_time = (int16_t)((data[gyroIndex + 7] << 8) | data[gyroIndex + 6]);
         }
 
         // Unpack temperature data
@@ -172,7 +204,7 @@ struct BMI323
 
         // Set gyroscope configuration
         result = bmi323Lib.setGyroConfig(
-            BMI323_LIB::GYRO_ODR_200HZ,
+            BMI323_LIB::GYRO_ODR_50HZ,
             BMI323_LIB::GYRO_BANDWIDTH_ODR_HALF,
             BMI323_LIB::GYRO_MODE_HIGH_PERF,
             BMI323_LIB::GYRO_RANGE_1000DPS,
@@ -187,7 +219,7 @@ struct BMI323
 
         // Set accelerometer configuration
         result = bmi323Lib.setAccelConfig(
-            BMI323_LIB::ACCEL_ODR_200HZ,
+            BMI323_LIB::ACCEL_ODR_50HZ,
             BMI323_LIB::ACCEL_BANDWIDTH_ODR_HALF,
             BMI323_LIB::ACCEL_MODE_HIGH_PERF,
             BMI323_LIB::ACCEL_RANGE_8G,
@@ -291,14 +323,51 @@ struct BMI323
 
     template <typename AccelCall, typename GyroCall>
     void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
-        
+        // Get available data length in the FIFO
+        uint16_t availableFifoLength;
+        bmi323Lib.getFifoLength(&availableFifoLength);
+
+        // Check for FIFO overflow
+        if (availableFifoLength >= 127) {
+            logger.error("FIFO OVERFLOW");
+        }
+
+        // If there is enough data in the FIFO to get at least a single frame
+        if (availableFifoLength >= FifoFrameLength) {        
+            // Make sure the length that we read is a multiple of the frame length
+            uint16_t fifoReadLength = availableFifoLength = std::min(availableFifoLength, static_cast<uint16_t>(I2C_BUFFER_LENGTH - BMI323_LIB::DUMMY_BYTE)) / FifoFrameLength * FifoFrameLength + BMI323_LIB::DUMMY_BYTE;
+            int8_t result = bmi323Lib.readFifoData(fifoData, fifoReadLength);
+            if (result == BMI323_LIB::SUCCESS) {
+                // Feed sensor fusion
+                const uint8_t frameCount = fifoReadLength / FifoFrameLength;
+                for (int i = 0; i < frameCount; i++) {
+                    float temperature = 0;
+                    uint8_t dataValidity = extractFrame(fifoData, i, accelData, gyroData, &temperature);
+
+                    // If the accel data is valid
+                    if (dataValidity & ACCEL_VALID) {
+                        processAccelSample(accelData, AccTs);
+                    }
+
+                    // If the gyro data is valid
+                    if (dataValidity & GYRO_VALID) {
+                        processGyroSample(gyroData, GyrTs);
+                    }
+
+                    // If the temp data is valid
+                    if (dataValidity & TEMP_VALID) {
+                        temperatureData = temperature;
+                    }
+                }
+            } else {
+                logger.error("FIFO data read failed");
+            }
+        }
     }
 
     float getDirectTemp() const
     {
-        const float temp = 1.0f;
-
-        return temp;
+        return temperatureData;
     }
 
 };
