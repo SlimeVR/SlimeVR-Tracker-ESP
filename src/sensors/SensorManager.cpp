@@ -37,6 +37,7 @@
 #include "softfusion/drivers/lsm6dsr.h"
 #include "softfusion/drivers/lsm6dsv.h"
 #include "softfusion/drivers/mpu6050.h"
+#include "softfusion/drivers/lsm6ds3.h"
 #include "softfusion/i2cimpl.h"
 #include "softfusion/softfusionsensor.h"
 
@@ -60,6 +61,8 @@ using SoftFusionLSM6DSR
 	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;
 using SoftFusionMPU6050
 	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
+using SoftFusionLSM6DS3
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DS3, SoftFusion::I2CImpl>;
 
 // TODO Make it more generic in the future and move another place (abstract sensor
 // interface)
