@@ -34,10 +34,10 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 416Hz, accel ODR = 208Hz
 
 template <typename I2CImpl>
-struct LSM6DS3TRC {
+struct LSM6DS3 {
 	static constexpr uint8_t Address = 0x6a;
-	static constexpr auto Name = "LSM6DS3TR-C";
-	static constexpr auto Type = ImuID::LSM6DS3TRC;
+	static constexpr auto Name = "LSM6DS3";
+	static constexpr auto Type = ImuID::LSM6DS3;
 
 	static constexpr float Freq = 416;
 
@@ -62,22 +62,22 @@ struct LSM6DS3TRC {
 	// restThAcc should be the sensor's typical acceleration bias
 	static constexpr VQFParams SensorVQFParams{
 		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 3.0f,
-		.biasClip = 6.0f,
-		.restThGyr = 3.0f,
+		.biasSigmaInit = 10.0f,
+		.biasClip = 20.0f,
+		.restThGyr = 10.0f,
 		.restThAcc = 0.784f,
 	};
 
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger logger;
-	LSM6DS3TRC(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
+	LSM6DS3(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
 		: i2c(i2c)
 		, logger(logger) {}
 
 	struct Regs {
 		struct WhoAmI {
 			static constexpr uint8_t reg = 0x0f;
-			static constexpr uint8_t value = 0x6a;
+			static constexpr uint8_t value = 0x69;
 		};
 		static constexpr uint8_t OutTemp = 0x20;
 		struct Ctrl1XL {

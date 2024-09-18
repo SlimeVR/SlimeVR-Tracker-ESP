@@ -31,7 +31,7 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-// Driver uses acceleration range at 8g
+// Driver uses acceleration range at 4g
 // and gyroscope range at 1000dps
 // Gyroscope ODR = accel ODR = 250Hz
 
