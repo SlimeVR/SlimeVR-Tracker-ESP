@@ -29,9 +29,9 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-// Driver uses acceleration range at 8g
+// Driver uses acceleration range at 4g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 416Hz, accel ODR = 416Hz
+// Gyroscope ODR = 416Hz, accel ODR = 208Hz
 
 template <typename I2CImpl>
 struct LSM6DS3 {
@@ -62,9 +62,9 @@ struct LSM6DS3 {
 	// restThAcc should be the sensor's typical acceleration bias
 	static constexpr VQFParams SensorVQFParams{
 		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 3.0f,
-		.biasClip = 6.0f,
-		.restThGyr = 3.0f,
+		.biasSigmaInit = 10.0f,
+		.biasClip = 20.0f,
+		.restThGyr = 10.0f,
 		.restThAcc = 0.784f,
 	};
 
@@ -82,7 +82,7 @@ struct LSM6DS3 {
 		static constexpr uint8_t OutTemp = 0x20;
 		struct Ctrl1XL {
 			static constexpr uint8_t reg = 0x10;
-			static constexpr uint8_t value = (0b10 << 2) | (0b0110 << 4);  // 4g, 416Hz
+			static constexpr uint8_t value = (0b10 << 2) | (0b0101 << 4);  // 4g, 208Hz
 		};
 		struct Ctrl2G {
 			static constexpr uint8_t reg = 0x11;

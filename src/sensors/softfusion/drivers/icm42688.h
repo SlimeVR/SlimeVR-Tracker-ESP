@@ -29,7 +29,7 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-// Driver uses acceleration range at 8g
+// Driver uses acceleration range at 4g
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 500Hz, accel ODR = 100Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
@@ -108,7 +108,7 @@ struct ICM42688 {
 		};
 		struct AccelConfig {
 			static constexpr uint8_t reg = 0x50;
-			static constexpr uint8_t value = (0b010 << 5) | 0b1000;  // 4g, odr = 100Hz
+			static constexpr uint8_t value = (0b010 << 5) | 0b0111;  // 4g, odr = 200Hz
 		};
 		struct PwrMgmt {
 			static constexpr uint8_t reg = 0x4e;

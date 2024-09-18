@@ -29,9 +29,9 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-// Driver uses acceleration range at 8g
+// Driver uses acceleration range at 4g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 416Hz, accel ODR = 416Hz
+// Gyroscope ODR = 416Hz, accel ODR = 208Hz
 
 template <typename I2CImpl>
 struct LSM6DS3TRC {
@@ -51,8 +51,6 @@ struct LSM6DS3TRC {
 
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
-
-	// Parameters are for LSM6DS3, not LSM6DS3TR-C, because no one uses it
 
 	// Temperature stability constant - how many degrees of temperature for the bias to change by 0.01
 	// Though I don't know if it should be 0.1 or 0.01, this is a guess and seems to work better than 0.1
@@ -84,7 +82,7 @@ struct LSM6DS3TRC {
 		static constexpr uint8_t OutTemp = 0x20;
 		struct Ctrl1XL {
 			static constexpr uint8_t reg = 0x10;
-			static constexpr uint8_t value = (0b10 << 2) | (0b0110 << 4);  // 4g, 416Hz
+			static constexpr uint8_t value = (0b10 << 2) | (0b0101 << 4);  // 4g, 208Hz
 		};
 		struct Ctrl2G {
 			static constexpr uint8_t reg = 0x11;
