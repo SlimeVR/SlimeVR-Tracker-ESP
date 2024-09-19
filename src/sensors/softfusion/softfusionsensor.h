@@ -154,6 +154,7 @@ class SoftFusionSensor : public Sensor
                     gyro[1] = xyz[1];
                     gyro[2] = xyz[2];
                 }
+                yield();
             );
         }
         return std::make_pair(accel, gyro);
