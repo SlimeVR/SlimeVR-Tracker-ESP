@@ -9,21 +9,29 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
 
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - name: Install pio and its dependencies
+      - name: Install PlatformIO and its dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install platformio
+          pip install --upgrade platformio
 
       - name: Run builds
         run: python ./ci/build.py
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: binaries
           path: ./build/*.bin
