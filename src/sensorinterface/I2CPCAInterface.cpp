@@ -30,12 +30,12 @@ void SlimeVR::I2CPCASensorInterface::init()
 void SlimeVR::I2CPCASensorInterface::swapIn()
 {
 	m_Wire.swapIn();
-	 Wire.beginTransmission(m_Address);
+	Wire.beginTransmission(m_Address);
 	Wire.write(1 << m_Channel);
 	Wire.endTransmission();
-	// On ESP32 we need to reconnect to I2C bus for some reason
 #if ESP32
-	_wire.disconnect();
-	_wire.swapIn();
+	// On ESP32 we need to reconnect to I2C bus for some reason
+	m_Wire.disconnect();
+	m_Wire.swapIn();
 #endif
 }
