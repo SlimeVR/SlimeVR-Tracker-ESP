@@ -72,10 +72,14 @@ void setup()
     configuration.setup();
 
     SerialCommands::setUp();
-
-    I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); // Make sure the bus isn't stuck when resetting ESP without powering it down
+    // Make sure the bus isn't stuck when resetting ESP without powering it down
     // Fixes I2C issues for certain IMUs. Previously this feature was enabled for selected IMUs, now it's enabled for all.
     // If some IMU turned out to be broken by this, check needs to be re-added.
+    auto clearResult = I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); 
+    if(clearResult != 0) {
+        logger.error("Can't clear I2C bus, error %d", clearResult);
+        delay(60000);
+    }
 
     // join I2C bus
 

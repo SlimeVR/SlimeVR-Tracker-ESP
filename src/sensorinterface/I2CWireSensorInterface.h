@@ -40,7 +40,7 @@ namespace SlimeVR
 	 */
 	class I2CWireSensorInterface : public SensorInterface {
 		public:
-			I2CWireSensorInterface(uint8_t sdapin, uint8_t sclpin) :
+			I2CWireSensorInterface(uint8_t sclpin, uint8_t sdapin) :
 				_sdaPin(sdapin), _sclPin(sclpin){};
 			~I2CWireSensorInterface(){};
 
