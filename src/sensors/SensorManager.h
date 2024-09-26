@@ -93,7 +93,7 @@ namespace SlimeVR
                     return sensor;
                 }
 
-                uint8_t intPin = extraParam;
+                int intPin = extraParam;
                 sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, sclPin, sdaPin, intPin);
 
                 sensor->motionSetup();

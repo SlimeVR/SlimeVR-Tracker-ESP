@@ -24,21 +24,73 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 #include <array>
 #include <algorithm>
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers
 {
 
-template <typename I2CImpl>
+template <typename I2CImpl, typename Mag>
 struct LSM6DSOutputHandler
 {
+    struct Regs {
+        struct FuncCfgAccess {
+            static constexpr uint8_t reg = 0x01;
+            static constexpr uint8_t defaultValue = 0x00;
+            static constexpr uint8_t sensorHub = 0x40;
+        };
+        struct MasterConfig {
+            static constexpr uint8_t reg = 0x14;
+            static constexpr uint8_t reset = (0b10000000);
+            static constexpr uint8_t disable = (0b00000000);
+            static constexpr uint8_t enable = (0b01000100); // Write Once, Master On
+        };
+        struct Slave0Config {
+            static constexpr uint8_t reg = 0x17;
+            static constexpr uint8_t value = (0b10001000);  // ODR 26, FIFO enabled
+        };
+        
+        static constexpr uint8_t Slave0Address = 0x15;
+        static constexpr uint8_t Slave0Register = 0x16;
+        static constexpr uint8_t DataWriteSlave0 = 0x21;
+        static constexpr uint8_t StatusMaster = 0x22;
+    };
+
     LSM6DSOutputHandler(I2CImpl i2c, SlimeVR::Logging::Logger &logger) 
         : i2c(i2c), logger(logger)
     {}
 
+    Mag mag;
     I2CImpl i2c;
     SlimeVR::Logging::Logger &logger;
+
+    void initializeMag() {
+        i2c.writeReg(Regs::FuncCfgAccess::reg, Regs::FuncCfgAccess::sensorHub);
+        i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::reset);
+        auto success = mag.initialize(
+            [&](uint8_t addr, uint8_t reg, uint8_t value) {
+                logger.debug("Writing mag@0x%02X, register 0x%02X - 0x%02X", addr, reg, value);
+                i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::disable);
+                i2c.writeReg(Regs::Slave0Address, addr << 1);
+                i2c.writeReg(Regs::Slave0Register, reg);
+                i2c.writeReg(Regs::DataWriteSlave0, value);
+                i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::enable);
+                delay(10);
+            }
+        );
+        i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::disable);
+
+        if (success) {
+            logger.debug("Successfully initialized mag");
+            i2c.writeReg(Regs::Slave0Address, (mag.getAddress() << 1) | 1);
+            i2c.writeReg(Regs::Slave0Register, mag.getStartReg());
+            auto count = mag.getReadCount();
+            i2c.writeReg(Regs::Slave0Config::reg, Regs::Slave0Config::value | count);
+            i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::enable);
+        }
+        i2c.writeReg(Regs::FuncCfgAccess::reg, Regs::FuncCfgAccess::defaultValue);
+    }
 
     template<typename Regs>
     float getDirectTemp() const
@@ -60,8 +112,8 @@ struct LSM6DSOutputHandler
 
     static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
-    template <typename AccelCall, typename GyroCall, typename Regs>
-    void bulkRead(AccelCall &processAccelSample, GyroCall &processGyroSample, float GyrTs, float AccTs) {
+    template <typename AccelCall, typename GyroCall, typename MagCall, typename Regs>
+    void bulkRead(AccelCall &processAccelSample, GyroCall &processGyroSample, MagCall &processMagSample, float GyrTs, float AccTs, float MagTs) {
         constexpr auto FIFO_SAMPLES_MASK = 0x3ff;
         constexpr auto FIFO_OVERRUN_LATCHED_MASK = 0x800;
         
@@ -88,6 +140,15 @@ struct LSM6DSOutputHandler
                     break;
                 case 0x02: // Accel NC
                     processAccelSample(entry.xyz, AccTs);
+                    break;
+                case 0x0E:
+                    mag.unpackSample(
+                        std::span((uint8_t*)&entry.raw, sizeof(entry.raw)),
+                        [&](int16_t x, int16_t y, int16_t z) {
+                            int16_t xyz[] = {x, y, z};
+                            processMagSample(xyz, MagTs);
+                        }
+                    );
                     break;
             }
         }      

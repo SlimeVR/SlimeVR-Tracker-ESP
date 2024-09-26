@@ -63,6 +63,9 @@ enum class ImuID {
 #define IMU_LSM6DSR SoftFusionLSM6DSR
 #define IMU_MPU6050_SF SoftFusionMPU6050
 
+#define IMU_LSM6DSO_QMC SoftFusionLSM6DSO_QMC
+#define IMU_LSM6DSR_QMC SoftFusionLSM6DSR_QMC
+
 #define IMU_DEV_RESERVED 250 // Reserved, should not be used in any release firmware
 
 #define BOARD_UNKNOWN 0

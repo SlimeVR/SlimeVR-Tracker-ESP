@@ -108,8 +108,8 @@ struct LSM6DS3TRC
         return result;
     }
 
-    template <typename AccelCall, typename GyroCall>
-    void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample) {
+    template <typename AccelCall, typename GyroCall, typename MagCall>
+    void bulkRead(AccelCall &&processAccelSample, GyroCall &&processGyroSample, MagCall &&processMagSample) {
         const auto read_result = i2c.readReg16(Regs::FifoStatus);
         if (read_result & 0x4000) { // overrun!
             // disable and re-enable fifo to clear it
