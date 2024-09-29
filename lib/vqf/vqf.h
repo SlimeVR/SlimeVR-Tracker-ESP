@@ -125,7 +125,7 @@ struct VQFParams
      *
      * Default value: 0.1 °/s
      */
-    vqf_real_t biasSigmaMotion = 0.1125;
+    vqf_real_t biasSigmaMotion = 0.1;
     /**
      * @brief Forgetting factor for unobservable bias in vertical direction during motion.
      *
@@ -162,7 +162,7 @@ struct VQFParams
      *
      * Default value: 0.5 s
      */
-    vqf_real_t restFilterTau = 0.5;
+    vqf_real_t restFilterTau = 0.25;
     /**
      * @brief Angular velocity threshold for rest detection (in °/s).
      *
