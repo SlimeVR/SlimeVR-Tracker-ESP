@@ -88,6 +88,11 @@ public:
 			return;
 		}
 
+		if (!isCalibrating) {
+			isCalibrating = true;
+			currentStep->start();
+		}
+
 		auto result = currentStep->tick();
 
 		switch (result) {
@@ -105,15 +110,21 @@ public:
 	}
 
 	void provideAccelSample(const int16_t accelSample[3]) {
-		currentStep->processAccelSample(accelSample);
+		if (isCalibrating) {
+			currentStep->processAccelSample(accelSample);
+		}
 	}
 
 	void provideGyroSample(const int16_t gyroSample[3]) {
-		currentStep->processGyroSample(gyroSample);
+		if (isCalibrating) {
+			currentStep->processGyroSample(gyroSample);
+		}
 	}
 
 	void provideTempSample(float tempSample) {
-		currentStep->processTempSample(tempSample);
+		if (isCalibrating) {
+			currentStep->processTempSample(tempSample);
+		}
 	}
 
 private:
@@ -142,8 +153,6 @@ private:
 			nextCalibrationStep = CalibrationStepEnum::GYRO_BIAS;
 			currentStep = &gyroBiasCalibrationStep;
 		}
-
-		currentStep->start();
 	}
 
 	void stepCalibrationForward(bool save = true) {
@@ -188,8 +197,6 @@ private:
 				}
 				break;
 		}
-
-		currentStep->start();
 
 		isCalibrating = false;
 
