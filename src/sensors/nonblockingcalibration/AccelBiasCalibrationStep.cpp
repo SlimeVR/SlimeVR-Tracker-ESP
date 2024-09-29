@@ -37,7 +37,10 @@ AccelBiasCalibrationStep::AccelBiasCalibrationStep(
 	: CalibrationStep{calibrationConfig}
 	, accelScale{accelScale} {}
 
-void AccelBiasCalibrationStep::start() { calibrationData = CalibrationData{}; }
+void AccelBiasCalibrationStep::start() {
+	CalibrationStep::start();
+	calibrationData = CalibrationData{};
+}
 
 CalibrationStep::TickResult AccelBiasCalibrationStep::tick() {
 	if (!calibrationData.value().axisDetermined) {

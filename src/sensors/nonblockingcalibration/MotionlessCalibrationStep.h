@@ -40,7 +40,10 @@ public:
 		: CalibrationStep{calibrationConfig}
 		, imu{imu} {}
 
-	void start() override final { calibrationData = {millis()}; }
+	void start() override final {
+		CalibrationStep::start();
+		calibrationData = {millis()};
+	}
 
 	TickResult tick() override final {
 		if constexpr (HasMotionlessCalib) {

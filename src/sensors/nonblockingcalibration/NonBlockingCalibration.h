@@ -93,6 +93,11 @@ public:
 			currentStep->start();
 		}
 
+		if (currentStep->requiresRest() && !currentStep->restDetectionDelayElapsed()) {
+			lastTickRest = fusion.getRestDetected();
+			return;
+		}
+
 		auto result = currentStep->tick();
 
 		switch (result) {

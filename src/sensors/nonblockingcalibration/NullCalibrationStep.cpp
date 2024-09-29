@@ -30,7 +30,7 @@ NullCalibrationStep::NullCalibrationStep(
 )
 	: CalibrationStep{calibrationConfig} {}
 
-void NullCalibrationStep::start() {}
+void NullCalibrationStep::start() { CalibrationStep::start(); }
 
 CalibrationStep::TickResult NullCalibrationStep::tick() { return TickResult::CONTINUE; }
 

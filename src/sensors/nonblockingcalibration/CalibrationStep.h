@@ -39,7 +39,7 @@ public:
 		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig
 	);
 	virtual ~CalibrationStep() = default;
-	virtual void start() = 0;
+	virtual void start();
 	virtual TickResult tick() = 0;
 	virtual void cancel() = 0;
 	virtual bool requiresRest();
@@ -48,8 +48,15 @@ public:
 	virtual void processGyroSample(const int16_t accelSample[3]);
 	virtual void processTempSample(float tempSample);
 
+	bool restDetectionDelayElapsed();
+
 protected:
 	SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig;
+
+	float restDetectionDelaySeconds = 5.0f;
+
+private:
+	uint32_t restDetectionDelayStartMillis;
 };
 
 }  // namespace SlimeVR::Sensors::NonBlockingCalibration

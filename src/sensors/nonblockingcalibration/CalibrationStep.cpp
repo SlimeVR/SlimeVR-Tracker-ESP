@@ -38,4 +38,11 @@ void CalibrationStep::processGyroSample(const int16_t accelSample[3]) {}
 
 void CalibrationStep::processTempSample(float tempSample) {}
 
+void CalibrationStep::start() { restDetectionDelayStartMillis = millis(); }
+
+bool CalibrationStep::restDetectionDelayElapsed() {
+	return (millis() - restDetectionDelayStartMillis)
+		>= restDetectionDelaySeconds * 1e3;
+}
+
 }  // namespace SlimeVR::Sensors::NonBlockingCalibration

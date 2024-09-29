@@ -32,7 +32,10 @@ GyroBiasCalibrationStep::GyroBiasCalibrationStep(
 )
 	: CalibrationStep{calibrationConfig} {}
 
-void GyroBiasCalibrationStep::start() { calibrationData = {millis()}; }
+void GyroBiasCalibrationStep::start() {
+	CalibrationStep::start();
+	calibrationData = {millis()};
+}
 
 CalibrationStep::TickResult GyroBiasCalibrationStep::tick() {
 	if (millis() - calibrationData.value().startMillis
