@@ -155,6 +155,7 @@ class SoftFusionSensor : public Sensor
                     gyro[2] = xyz[2];
                 }
             );
+            yield();
         }
         return std::make_pair(accel, gyro);
     }
@@ -484,6 +485,7 @@ public:
                 [&accelSamples](const int16_t xyz[3], const sensor_real_t timeDelta) { accelSamples++; },
                 [&gyroSamples](const int16_t xyz[3], const sensor_real_t timeDelta) { gyroSamples++; }
             );
+            yield();
         }
 
         const auto millisFromStart = currentTime - (calibTarget - 1000 * SampleRateCalibSeconds);
