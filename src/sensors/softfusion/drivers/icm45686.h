@@ -29,13 +29,13 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-// Driver uses acceleration range at 8g
+// Driver uses acceleration range at 4g
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 400Hz, accel ODR = 100Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 template <typename I2CImpl>
-struct ICM42688 {
+struct ICM45686 {
 	static constexpr uint8_t Address = 0x68;
 	static constexpr auto Name = "ICM-45688";
 	static constexpr auto Type = ImuID::ICM45686;
@@ -46,11 +46,11 @@ struct ICM42688 {
 	static constexpr float MagTs = 1.0 / 100;
 
 	static constexpr float GyroSensitivity = 32.8f;
-	static constexpr float AccelSensitivity = 4096.0f;
+	static constexpr float AccelSensitivity = 8192.0f;
 
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
-	ICM42688(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
+	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
 		: i2c(i2c)
 		, logger(logger) {}
 
@@ -83,7 +83,7 @@ struct ICM42688 {
 		};
 		struct AccelConfig {
 			static constexpr uint8_t reg = 0x1b;
-			static constexpr uint8_t value = (0b010 << 4) | 0b1001;  // 8g, odr = 100Hz
+			static constexpr uint8_t value = (0b011 << 4) | 0b1001;  // 4g, odr = 100Hz
 		};
 		struct PwrMgmt0 {
 			static constexpr uint8_t reg = 0x10;
