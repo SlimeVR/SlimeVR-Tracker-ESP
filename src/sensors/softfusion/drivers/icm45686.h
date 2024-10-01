@@ -74,7 +74,9 @@ struct ICM45686 {
 		struct FifoConfig3 {
 			static constexpr uint8_t reg = 0x21;
 			static constexpr uint8_t value
-				= (0b1 << 1) | (0b1 << 2);  // fifo accel en=1, gyro=1, todo: hires
+				= (0b1 << 0) | (0b1 << 1) | (0b1 << 2);  // enable FIFO, enable
+														 // accel in FIFO,
+														 // enable gyro in FIFO
 		};
 		struct GyroConfig {
 			static constexpr uint8_t reg = 0x1c;
