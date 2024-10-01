@@ -31,7 +31,8 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 4g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 400Hz, accel ODR = 100Hz
+// Uses 32.768kHz clock
+// Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 template <typename I2CImpl>
@@ -40,8 +41,8 @@ struct ICM45686 {
 	static constexpr auto Name = "ICM-45688";
 	static constexpr auto Type = ImuID::ICM45686;
 
-	static constexpr float GyrTs = 1.0 / 400.0;
-	static constexpr float AccTs = 1.0 / 100.0;
+	static constexpr float GyrTs = 1.0 / 409.6;
+	static constexpr float AccTs = 1.0 / 102.4;
 
 	static constexpr float MagTs = 1.0 / 100;
 
@@ -65,12 +66,35 @@ struct ICM45686 {
 			static constexpr uint8_t reg = 0x7f;
 			static constexpr uint8_t valueSwReset = 1;
 		};
+
+		struct Pin9Config {
+			static constexpr uint8_t reg = 0x31;
+			static constexpr uint8_t value = 0b00000110;  // pin 9 to clkin
+		};
+
+		struct RtcConfig {
+			static constexpr uint8_t reg = 0x26;
+			static constexpr uint8_t value = 0b00100011;  // enable RTC
+		};
+
+		struct GyroConfig {
+			static constexpr uint8_t reg = 0x1c;
+			static constexpr uint8_t value
+				= (0b0010 << 4) | 0b0111;  // 1000dps, odr=409.6Hz
+		};
+
+		struct AccelConfig {
+			static constexpr uint8_t reg = 0x1b;
+			static constexpr uint8_t value = (0b011 << 4) | 0b1001;  // 4g, odr = 102.4Hz
+		};
+
 		struct FifoConfig0 {
 			static constexpr uint8_t reg = 0x1d;
 			static constexpr uint8_t value
 				= (0b01 << 6) | (0b000111);  // stream to FIFO mode, FIFO depth
 											 // 2k bytes
 		};
+
 		struct FifoConfig3 {
 			static constexpr uint8_t reg = 0x21;
 			static constexpr uint8_t value
@@ -78,15 +102,7 @@ struct ICM45686 {
 														 // accel in FIFO,
 														 // enable gyro in FIFO
 		};
-		struct GyroConfig {
-			static constexpr uint8_t reg = 0x1c;
-			static constexpr uint8_t value
-				= (0b0010 << 4) | 0b0111;  // 1000dps, odr=400Hz
-		};
-		struct AccelConfig {
-			static constexpr uint8_t reg = 0x1b;
-			static constexpr uint8_t value = (0b011 << 4) | 0b1001;  // 4g, odr = 100Hz
-		};
+
 		struct PwrMgmt0 {
 			static constexpr uint8_t reg = 0x10;
 			static constexpr uint8_t value
@@ -117,7 +133,8 @@ struct ICM45686 {
 		// perform initialization step
 		i2c.writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
 		delay(20);
-
+		i2c.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
+		i2c.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
 		i2c.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
 		i2c.writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
 		i2c.writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
@@ -154,6 +171,7 @@ struct ICM45686 {
 				sizeof(FifoEntryAligned)
 			);  // skip fifo header
 			processGyroSample(entry.part.gyro, GyrTs);
+			// logger.debug("Gyro: %d %d %d", entry.part.gyro[0], entry.part.gyro[1], entry.part.gyro[2]);
 
 			if (entry.part.accel[0] != -32768) {
 				processAccelSample(entry.part.accel, AccTs);
