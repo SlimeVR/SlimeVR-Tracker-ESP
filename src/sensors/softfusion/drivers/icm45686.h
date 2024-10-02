@@ -29,8 +29,9 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-// Driver uses acceleration range at 4g
-// and gyroscope range at 1000dps
+// Driver uses acceleration range at 32g
+// and gyroscope range at 4000dps
+// using high resolution mode
 // Uses 32.768kHz clock
 // Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
@@ -46,8 +47,8 @@ struct ICM45686 {
 
 	static constexpr float MagTs = 1.0 / 100;
 
-	static constexpr float GyroSensitivity = 32.8f;
-	static constexpr float AccelSensitivity = 8192.0f;
+	static constexpr float GyroSensitivity = 131.072f;
+	static constexpr float AccelSensitivity = 16384.0f;
 
 	static constexpr bool Uses32BitSensorData = true;
 
@@ -82,13 +83,13 @@ struct ICM45686 {
 		struct GyroConfig {
 			static constexpr uint8_t reg = 0x1c;
 			static constexpr uint8_t value
-				= (0b0010 << 4) | 0b0111;  // 1000dps, odr=409.6Hz
+				= (0b0000 << 4) | 0b0111;  // 4000dps, odr=409.6Hz
 		};
 
 		struct AccelConfig {
 			static constexpr uint8_t reg = 0x1b;
 			static constexpr uint8_t value
-				= (0b011 << 4) | 0b1001;  // 4g, odr = 102.4Hz
+				= (0b000 << 4) | 0b1001;  // 32g, odr = 102.4Hz
 		};
 
 		struct FifoConfig0 {
