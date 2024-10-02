@@ -138,7 +138,7 @@ struct ICM45686 {
 	bool initialize() {
 		// perform initialization step
 		i2c.writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
-		delay(20);
+		delay(35);
 		i2c.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
 		i2c.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
 		i2c.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
