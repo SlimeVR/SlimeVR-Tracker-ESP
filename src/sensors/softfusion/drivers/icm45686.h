@@ -91,8 +91,8 @@ struct ICM45686 {
 		struct FifoConfig0 {
 			static constexpr uint8_t reg = 0x1d;
 			static constexpr uint8_t value
-				= (0b01 << 6) | (0b000111);  // stream to FIFO mode, FIFO depth
-											 // 2k bytes
+				= (0b01 << 6) | (0b011111);  // stream to FIFO mode, FIFO depth
+											 // 8k bytes <-- this disables all APEX features, but we don't need them
 		};
 
 		struct FifoConfig3 {
@@ -171,7 +171,6 @@ struct ICM45686 {
 				sizeof(FifoEntryAligned)
 			);  // skip fifo header
 			processGyroSample(entry.part.gyro, GyrTs);
-			// logger.debug("Gyro: %d %d %d", entry.part.gyro[0], entry.part.gyro[1], entry.part.gyro[2]);
 
 			if (entry.part.accel[0] != -32768) {
 				processAccelSample(entry.part.accel, AccTs);
