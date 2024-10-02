@@ -49,6 +49,8 @@ struct ICM45686 {
 	static constexpr float GyroSensitivity = 32.8f;
 	static constexpr float AccelSensitivity = 8192.0f;
 
+	static constexpr bool Uses32BitSensorData = true;
+
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
 	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
@@ -85,22 +87,25 @@ struct ICM45686 {
 
 		struct AccelConfig {
 			static constexpr uint8_t reg = 0x1b;
-			static constexpr uint8_t value = (0b011 << 4) | 0b1001;  // 4g, odr = 102.4Hz
+			static constexpr uint8_t value
+				= (0b011 << 4) | 0b1001;  // 4g, odr = 102.4Hz
 		};
 
 		struct FifoConfig0 {
 			static constexpr uint8_t reg = 0x1d;
 			static constexpr uint8_t value
 				= (0b01 << 6) | (0b011111);  // stream to FIFO mode, FIFO depth
-											 // 8k bytes <-- this disables all APEX features, but we don't need them
+											 // 8k bytes <-- this disables all APEX
+											 // features, but we don't need them
 		};
 
 		struct FifoConfig3 {
 			static constexpr uint8_t reg = 0x21;
-			static constexpr uint8_t value
-				= (0b1 << 0) | (0b1 << 1) | (0b1 << 2);  // enable FIFO, enable
-														 // accel in FIFO,
-														 // enable gyro in FIFO
+			static constexpr uint8_t value = (0b1 << 0) | (0b1 << 1) | (0b1 << 2)
+										   | (0b1 << 3);  // enable FIFO,
+														  // enable accel,
+														  // enable gyro,
+														  // enable hires mode
 		};
 
 		struct PwrMgmt0 {
@@ -119,15 +124,16 @@ struct ICM45686 {
 			struct {
 				int16_t accel[3];
 				int16_t gyro[3];
-				uint8_t temp;
-				uint8_t timestamp[2];  // cannot do uint16_t because it's unaligned
+				uint16_t temp;
+				uint16_t timestamp;
+				uint8_t lsb[3];
 			} part;
-			uint8_t raw[15];
+			uint8_t raw[19];
 		};
 	};
 #pragma pack(pop)
 
-	static constexpr size_t FullFifoEntrySize = 16;
+	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
 	bool initialize() {
 		// perform initialization step
@@ -170,10 +176,26 @@ struct ICM45686 {
 				&read_buffer[i + 0x1],
 				sizeof(FifoEntryAligned)
 			);  // skip fifo header
-			processGyroSample(entry.part.gyro, GyrTs);
+			const int32_t gyroData[3]{
+				static_cast<int32_t>(entry.part.gyro[0]) << 4
+					| (entry.part.lsb[0] & 0xf),
+				static_cast<int32_t>(entry.part.gyro[1]) << 4
+					| (entry.part.lsb[1] & 0xf),
+				static_cast<int32_t>(entry.part.gyro[2]) << 4
+					| (entry.part.lsb[2] & 0xf),
+			};
+			processGyroSample(gyroData, GyrTs);
 
 			if (entry.part.accel[0] != -32768) {
-				processAccelSample(entry.part.accel, AccTs);
+				const int32_t accelData[3]{
+					static_cast<int32_t>(entry.part.accel[0]) << 4
+						| (static_cast<int32_t>(entry.part.lsb[0]) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.part.accel[1]) << 4
+						| (static_cast<int32_t>(entry.part.lsb[1]) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.part.accel[2]) << 4
+						| (static_cast<int32_t>(entry.part.lsb[2]) & 0xf0 >> 4),
+				};
+				processAccelSample(accelData, AccTs);
 			}
 		}
 	}
