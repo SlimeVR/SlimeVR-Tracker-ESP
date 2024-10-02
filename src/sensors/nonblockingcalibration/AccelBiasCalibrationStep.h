@@ -23,27 +23,119 @@
 
 #pragma once
 
+#include <cmath>
 #include <optional>
 
+#include "../../consts.h"
 #include "CalibrationStep.h"
 
 namespace SlimeVR::Sensors::NonBlockingCalibration {
 
-class AccelBiasCalibrationStep : public CalibrationStep {
+template <typename SensorRawT>
+class AccelBiasCalibrationStep : public CalibrationStep<SensorRawT> {
+	using CalibrationStep<SensorRawT>::calibrationConfig;
+	using typename CalibrationStep<SensorRawT>::TickResult;
+
 public:
 	AccelBiasCalibrationStep(
 		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig,
 		float accelScale
-	);
+	)
+		: CalibrationStep<SensorRawT>{calibrationConfig}
+		, accelScale{accelScale} {}
 
-	void start() override final;
-	TickResult tick() override final;
-	void cancel() override final;
+	void start() override final {
+		CalibrationStep<SensorRawT>::start();
+		calibrationData = CalibrationData{};
+	}
 
-	void processAccelSample(const int16_t accelSample[3]) override final;
+	TickResult tick() override final {
+		if (!calibrationData.value().axisDetermined) {
+			return TickResult::CONTINUE;
+		}
 
-	bool allAxesCalibrated();
-	bool anyAxesCalibrated();
+		if (calibrationData.value().largestAxis == -1) {
+			return TickResult::SKIP;
+		}
+
+		if (calibrationData.value().sampleCount < accelBiasCalibrationSampleCount) {
+			return TickResult::CONTINUE;
+		}
+
+		float accelAverage = calibrationData.value().accelSum
+						   / static_cast<float>(calibrationData.value().sampleCount);
+
+		float expected = accelAverage > 0 ? CONST_EARTH_GRAVITY : -CONST_EARTH_GRAVITY;
+
+		float accelOffset = accelAverage * accelScale - expected;
+
+		calibrationConfig.A_off[calibrationData.value().largestAxis] = accelOffset;
+		calibrationConfig.accelCalibrated[calibrationData.value().largestAxis] = true;
+
+		return TickResult::DONE;
+	}
+
+	void cancel() override final { calibrationData.reset(); }
+	void processAccelSample(const SensorRawT accelSample[3]) override final {
+		if (calibrationData.value().axisDetermined) {
+			calibrationData.value().accelSum
+				+= accelSample[calibrationData.value().largestAxis];
+
+			calibrationData.value().sampleCount++;
+			return;
+		}
+
+		float absAxes[3]{
+			std::abs(static_cast<float>(accelSample[0])),
+			std::abs(static_cast<float>(accelSample[1])),
+			std::abs(static_cast<float>(accelSample[2])),
+		};
+
+		size_t largestAxis;
+		if (absAxes[0] > absAxes[1] && absAxes[0] > absAxes[2]) {
+			largestAxis = 0;
+		} else if (absAxes[1] > absAxes[2]) {
+			largestAxis = 1;
+		} else {
+			largestAxis = 2;
+		}
+
+		if (calibrationConfig.accelCalibrated[largestAxis]) {
+			calibrationData.value().axisDetermined = true;
+			calibrationData.value().largestAxis = -1;
+			return;
+		}
+
+		float smallAxisPercentage1
+			= absAxes[(largestAxis + 1) % 3] / absAxes[largestAxis];
+		float smallAxisPercentage2
+			= absAxes[(largestAxis + 2) % 3] / absAxes[largestAxis];
+
+		if (smallAxisPercentage1 > allowableVerticalAxisPercentage
+			|| smallAxisPercentage2 > allowableVerticalAxisPercentage) {
+			calibrationData.value().axisDetermined = true;
+			calibrationData.value().largestAxis = -1;
+			return;
+		}
+
+		calibrationData.value().axisDetermined = true;
+		calibrationData.value().largestAxis = largestAxis;
+
+		calibrationData.value().currentAxis[0] = accelSample[0];
+		calibrationData.value().currentAxis[1] = accelSample[1];
+		calibrationData.value().currentAxis[2] = accelSample[2];
+	}
+
+	bool allAxesCalibrated() {
+		return calibrationConfig.accelCalibrated[0]
+			&& calibrationConfig.accelCalibrated[1]
+			&& calibrationConfig.accelCalibrated[2];
+	}
+	bool anyAxesCalibrated() {
+		return calibrationConfig.accelCalibrated[0]
+			|| calibrationConfig.accelCalibrated[1]
+			|| calibrationConfig.accelCalibrated[2];
+	}
 
 private:
 	static constexpr size_t accelBiasCalibrationSampleCount = 96;

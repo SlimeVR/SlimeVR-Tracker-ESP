@@ -30,18 +30,21 @@
 
 namespace SlimeVR::Sensors::NonBlockingCalibration {
 
-template <typename IMU>
-class MotionlessCalibrationStep : public CalibrationStep {
+template <typename IMU, typename SensorRawT>
+class MotionlessCalibrationStep : public CalibrationStep<SensorRawT> {
+	using CalibrationStep<SensorRawT>::calibrationConfig;
+	using typename CalibrationStep<SensorRawT>::TickResult;
+
 public:
 	MotionlessCalibrationStep(
 		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig,
 		IMU& imu
 	)
-		: CalibrationStep{calibrationConfig}
+		: CalibrationStep<SensorRawT>{calibrationConfig}
 		, imu{imu} {}
 
 	void start() override final {
-		CalibrationStep::start();
+		CalibrationStep<SensorRawT>::start();
 		calibrationData = {millis()};
 	}
 

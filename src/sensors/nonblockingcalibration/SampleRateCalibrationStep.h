@@ -29,19 +29,55 @@
 
 namespace SlimeVR::Sensors::NonBlockingCalibration {
 
-class SampleRateCalibrationStep : public CalibrationStep {
+template <typename SensorRawT>
+class SampleRateCalibrationStep : public CalibrationStep<SensorRawT> {
+	using CalibrationStep<SensorRawT>::calibrationConfig;
+	using typename CalibrationStep<SensorRawT>::TickResult;
+
 public:
 	SampleRateCalibrationStep(
 		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig
-	);
-	void start() override final;
-	TickResult tick() override final;
-	void cancel() override final;
-	bool requiresRest() override final;
+	)
+		: CalibrationStep<SensorRawT>{calibrationConfig} {}
 
-	void processAccelSample(const int16_t accelSample[3]) override final;
-	void processGyroSample(const int16_t GyroSample[3]) override final;
-	void processTempSample(float tempSample) override final;
+	void start() override final {
+		CalibrationStep<SensorRawT>::start();
+		calibrationData = {millis()};
+	}
+
+	TickResult tick() override final {
+		float elapsedTime = (millis() - calibrationData.value().startMillis) / 1e3f;
+
+		if (elapsedTime < samplingRateCalibrationSeconds) {
+			return TickResult::CONTINUE;
+		}
+
+		float accelTimestep = elapsedTime / calibrationData.value().accelSamples;
+		float gyroTimestep = elapsedTime / calibrationData.value().gyroSamples;
+		float tempTimestep = elapsedTime / calibrationData.value().tempSamples;
+
+		calibrationConfig.A_Ts = accelTimestep;
+		calibrationConfig.G_Ts = gyroTimestep;
+		calibrationConfig.T_Ts = tempTimestep;
+		calibrationConfig.sensorTimestepsCalibrated = true;
+
+		return TickResult::DONE;
+	}
+
+	void cancel() override final { calibrationData.reset(); }
+	bool requiresRest() override final { return false; }
+
+	void processAccelSample(const SensorRawT accelSample[3]) override final {
+		calibrationData.value().accelSamples++;
+	}
+
+	void processGyroSample(const SensorRawT GyroSample[3]) override final {
+		calibrationData.value().gyroSamples++;
+	}
+
+	void processTempSample(float tempSample) override final {
+		calibrationData.value().tempSamples++;
+	}
 
 private:
 	static constexpr float samplingRateCalibrationSeconds = 5;

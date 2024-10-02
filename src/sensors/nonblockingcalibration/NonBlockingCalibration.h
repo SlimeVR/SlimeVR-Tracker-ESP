@@ -41,7 +41,7 @@
 
 namespace SlimeVR::Sensors::NonBlockingCalibration {
 
-template <typename IMU>
+template <typename IMU, typename SensorRawT>
 class NonBlockingCalibrator {
 public:
 	mutable SlimeVR::Logging::Logger logger{"DynamicCalibration"};
@@ -101,26 +101,26 @@ public:
 		auto result = currentStep->tick();
 
 		switch (result) {
-			case CalibrationStep::TickResult::DONE:
+			case CalibrationStep<SensorRawT>::TickResult::DONE:
 				stepCalibrationForward();
 				break;
-			case CalibrationStep::TickResult::SKIP:
+			case CalibrationStep<SensorRawT>::TickResult::SKIP:
 				stepCalibrationForward(false);
 				break;
-			case CalibrationStep::TickResult::CONTINUE:
+			case CalibrationStep<SensorRawT>::TickResult::CONTINUE:
 				break;
 		}
 
 		lastTickRest = fusion.getRestDetected();
 	}
 
-	void provideAccelSample(const int16_t accelSample[3]) {
+	void provideAccelSample(const SensorRawT accelSample[3]) {
 		if (isCalibrating) {
 			currentStep->processAccelSample(accelSample);
 		}
 	}
 
-	void provideGyroSample(const int16_t gyroSample[3]) {
+	void provideGyroSample(const SensorRawT gyroSample[3]) {
 		if (isCalibrating) {
 			currentStep->processGyroSample(gyroSample);
 		}
@@ -313,13 +313,17 @@ private:
 
 	SlimeVR::Configuration::NonBlockingCalibrationConfig calibrationConfig;
 
-	SampleRateCalibrationStep sampleRateCalibrationStep{calibrationConfig};
-	MotionlessCalibrationStep<IMU> motionlessCalibrationStep{calibrationConfig, imu};
-	GyroBiasCalibrationStep gyroBiasCalibrationStep{calibrationConfig};
-	AccelBiasCalibrationStep accelBiasCalibrationStep{calibrationConfig, accelScale};
-	NullCalibrationStep nullCalibrationStep{calibrationConfig};
+	SampleRateCalibrationStep<SensorRawT> sampleRateCalibrationStep{calibrationConfig};
+	MotionlessCalibrationStep<IMU, SensorRawT> motionlessCalibrationStep{
+		calibrationConfig,
+		imu};
+	GyroBiasCalibrationStep<SensorRawT> gyroBiasCalibrationStep{calibrationConfig};
+	AccelBiasCalibrationStep<SensorRawT> accelBiasCalibrationStep{
+		calibrationConfig,
+		accelScale};
+	NullCalibrationStep<SensorRawT> nullCalibrationStep{calibrationConfig};
 
-	CalibrationStep* currentStep = &nullCalibrationStep;
+	CalibrationStep<SensorRawT>* currentStep = &nullCalibrationStep;
 
 	bool isCalibrating = false;
 	bool skippedAStep = false;

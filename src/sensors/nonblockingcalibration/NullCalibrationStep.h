@@ -27,14 +27,22 @@
 
 namespace SlimeVR::Sensors::NonBlockingCalibration {
 
-class NullCalibrationStep : public CalibrationStep {
+template <typename SensorRawT>
+class NullCalibrationStep : public CalibrationStep<SensorRawT> {
+	using CalibrationStep<SensorRawT>::calibrationConfig;
+	using typename CalibrationStep<SensorRawT>::TickResult;
+
 public:
 	NullCalibrationStep(
 		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig
-	);
-	void start() override final;
-	TickResult tick() override final;
-	void cancel() override final;
+	)
+		: CalibrationStep<SensorRawT>{calibrationConfig} {}
+
+	void start() override final { CalibrationStep<SensorRawT>::start(); }
+
+	TickResult tick() override final { return TickResult::CONTINUE; }
+
+	void cancel() override final {}
 };
 
 }  // namespace SlimeVR::Sensors::NonBlockingCalibration

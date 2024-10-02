@@ -27,6 +27,7 @@
 
 namespace SlimeVR::Sensors::NonBlockingCalibration {
 
+template <typename SensorRawT>
 class CalibrationStep {
 public:
 	enum class TickResult {
@@ -37,18 +38,25 @@ public:
 
 	CalibrationStep(
 		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig
-	);
+	)
+		: calibrationConfig{calibrationConfig} {}
+
 	virtual ~CalibrationStep() = default;
-	virtual void start();
+
+	virtual void start() { restDetectionDelayStartMillis = millis(); }
+
 	virtual TickResult tick() = 0;
 	virtual void cancel() = 0;
-	virtual bool requiresRest();
 
-	virtual void processAccelSample(const int16_t accelSample[3]);
-	virtual void processGyroSample(const int16_t accelSample[3]);
-	virtual void processTempSample(float tempSample);
+	virtual bool requiresRest() { return true; }
+	virtual void processAccelSample(const SensorRawT accelSample[3]) {}
+	virtual void processGyroSample(const SensorRawT accelSample[3]) {}
+	virtual void processTempSample(float tempSample) {}
 
-	bool restDetectionDelayElapsed();
+	bool restDetectionDelayElapsed() {
+		return (millis() - restDetectionDelayStartMillis)
+			>= restDetectionDelaySeconds * 1e3;
+	}
 
 protected:
 	SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig;
