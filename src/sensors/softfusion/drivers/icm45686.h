@@ -67,7 +67,7 @@ struct ICM45686 {
 
 		struct DeviceConfig {
 			static constexpr uint8_t reg = 0x7f;
-			static constexpr uint8_t valueSwReset = 1;
+			static constexpr uint8_t valueSwReset = 0b11;
 		};
 
 		struct Pin9Config {
