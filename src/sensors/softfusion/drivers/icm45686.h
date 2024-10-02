@@ -29,28 +29,32 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-// Driver uses acceleration range at 8g
-// and gyroscope range at 1000dps
-// Gyroscope ODR = 400Hz, accel ODR = 100Hz
+// Driver uses acceleration range at 32g
+// and gyroscope range at 4000dps
+// using high resolution mode
+// Uses 32.768kHz clock
+// Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 template <typename I2CImpl>
-struct ICM42688 {
+struct ICM45686 {
 	static constexpr uint8_t Address = 0x68;
 	static constexpr auto Name = "ICM-45688";
 	static constexpr auto Type = ImuID::ICM45686;
 
-	static constexpr float GyrTs = 1.0 / 400.0;
-	static constexpr float AccTs = 1.0 / 100.0;
+	static constexpr float GyrTs = 1.0 / 409.6;
+	static constexpr float AccTs = 1.0 / 102.4;
 
 	static constexpr float MagTs = 1.0 / 100;
 
-	static constexpr float GyroSensitivity = 32.8f;
-	static constexpr float AccelSensitivity = 4096.0f;
+	static constexpr float GyroSensitivity = 131.072f;
+	static constexpr float AccelSensitivity = 16384.0f;
+
+	static constexpr bool Uses32BitSensorData = true;
 
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
-	ICM42688(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
+	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
 		: i2c(i2c)
 		, logger(logger) {}
 
@@ -65,26 +69,46 @@ struct ICM42688 {
 			static constexpr uint8_t reg = 0x7f;
 			static constexpr uint8_t valueSwReset = 1;
 		};
-		struct FifoConfig0 {
-			static constexpr uint8_t reg = 0x1d;
-			static constexpr uint8_t value
-				= (0b01 << 6) | (0b000111);  // stream to FIFO mode, FIFO depth
-											 // 2k bytes
+
+		struct Pin9Config {
+			static constexpr uint8_t reg = 0x31;
+			static constexpr uint8_t value = 0b00000110;  // pin 9 to clkin
 		};
-		struct FifoConfig3 {
-			static constexpr uint8_t reg = 0x21;
-			static constexpr uint8_t value
-				= (0b1 << 1) | (0b1 << 2);  // fifo accel en=1, gyro=1, todo: hires
+
+		struct RtcConfig {
+			static constexpr uint8_t reg = 0x26;
+			static constexpr uint8_t value = 0b00100011;  // enable RTC
 		};
+
 		struct GyroConfig {
 			static constexpr uint8_t reg = 0x1c;
 			static constexpr uint8_t value
-				= (0b0010 << 4) | 0b0111;  // 1000dps, odr=400Hz
+				= (0b0000 << 4) | 0b0111;  // 4000dps, odr=409.6Hz
 		};
+
 		struct AccelConfig {
 			static constexpr uint8_t reg = 0x1b;
-			static constexpr uint8_t value = (0b010 << 4) | 0b1001;  // 8g, odr = 100Hz
+			static constexpr uint8_t value
+				= (0b000 << 4) | 0b1001;  // 32g, odr = 102.4Hz
 		};
+
+		struct FifoConfig0 {
+			static constexpr uint8_t reg = 0x1d;
+			static constexpr uint8_t value
+				= (0b01 << 6) | (0b011111);  // stream to FIFO mode, FIFO depth
+											 // 8k bytes <-- this disables all APEX
+											 // features, but we don't need them
+		};
+
+		struct FifoConfig3 {
+			static constexpr uint8_t reg = 0x21;
+			static constexpr uint8_t value = (0b1 << 0) | (0b1 << 1) | (0b1 << 2)
+										   | (0b1 << 3);  // enable FIFO,
+														  // enable accel,
+														  // enable gyro,
+														  // enable hires mode
+		};
+
 		struct PwrMgmt0 {
 			static constexpr uint8_t reg = 0x10;
 			static constexpr uint8_t value
@@ -101,21 +125,23 @@ struct ICM42688 {
 			struct {
 				int16_t accel[3];
 				int16_t gyro[3];
-				uint8_t temp;
-				uint8_t timestamp[2];  // cannot do uint16_t because it's unaligned
+				uint16_t temp;
+				uint16_t timestamp;
+				uint8_t lsb[3];
 			} part;
-			uint8_t raw[15];
+			uint8_t raw[19];
 		};
 	};
 #pragma pack(pop)
 
-	static constexpr size_t FullFifoEntrySize = 16;
+	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
 	bool initialize() {
 		// perform initialization step
 		i2c.writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
-		delay(20);
-
+		delay(35);
+		i2c.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
+		i2c.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
 		i2c.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
 		i2c.writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
 		i2c.writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
@@ -151,10 +177,26 @@ struct ICM42688 {
 				&read_buffer[i + 0x1],
 				sizeof(FifoEntryAligned)
 			);  // skip fifo header
-			processGyroSample(entry.part.gyro, GyrTs);
+			const int32_t gyroData[3]{
+				static_cast<int32_t>(entry.part.gyro[0]) << 4
+					| (entry.part.lsb[0] & 0xf),
+				static_cast<int32_t>(entry.part.gyro[1]) << 4
+					| (entry.part.lsb[1] & 0xf),
+				static_cast<int32_t>(entry.part.gyro[2]) << 4
+					| (entry.part.lsb[2] & 0xf),
+			};
+			processGyroSample(gyroData, GyrTs);
 
 			if (entry.part.accel[0] != -32768) {
-				processAccelSample(entry.part.accel, AccTs);
+				const int32_t accelData[3]{
+					static_cast<int32_t>(entry.part.accel[0]) << 4
+						| (static_cast<int32_t>(entry.part.lsb[0]) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.part.accel[1]) << 4
+						| (static_cast<int32_t>(entry.part.lsb[1]) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.part.accel[2]) << 4
+						| (static_cast<int32_t>(entry.part.lsb[2]) & 0xf0 >> 4),
+				};
+				processAccelSample(accelData, AccTs);
 			}
 		}
 	}
