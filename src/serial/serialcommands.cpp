@@ -39,7 +39,7 @@ namespace SerialCommands {
     CmdCallback<6> cmdCallbacks;
     CmdParser cmdParser;
     CmdBuffer<256> cmdBuffer;
-	bool cmdFromRemote = false;
+    bool cmdFromRemote = false;
 
 
 	bool lengthCheck (const char* const text, unsigned int length, const char* const cmd, const char* const name)
