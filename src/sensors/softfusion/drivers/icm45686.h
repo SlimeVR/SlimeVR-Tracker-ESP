@@ -39,7 +39,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 template <typename I2CImpl>
 struct ICM45686 {
 	static constexpr uint8_t Address = 0x68;
-	static constexpr auto Name = "ICM-45688";
+	static constexpr auto Name = "ICM-45686";
 	static constexpr auto Type = ImuID::ICM45686;
 
 	static constexpr float GyrTs = 1.0 / 409.6;
