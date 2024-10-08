@@ -45,7 +45,6 @@ namespace SlimeVR
 			~I2CWireSensorInterface(){};
 
 			void init() override final {
-				I2CSCAN::clearBus(_sdaPin, _sclPin);
 			}
 			void swapIn() override final {
 				swapI2C(_sclPin, _sdaPin);

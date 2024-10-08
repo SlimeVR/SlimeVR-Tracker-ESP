@@ -35,9 +35,8 @@
 #define PRIMARY_IMU_OPTIONAL false
 #define SECONDARY_IMU_OPTIONAL true
 
-#define MAX_IMU_COUNT 2
-
 #if BOARD != BOARD_GLOVE_IMU_SLIMEVR_DEV
+#define MAX_IMU_COUNT 2
 // Axis mapping example
 /*
 #include "sensors/axisremap.h"
@@ -58,6 +57,8 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 
 // Predefines for the GLOVE
 #ifndef SENSOR_DESC_LIST
+#define MAX_IMU_COUNT 10
+
 #define SENSOR_DESC_LIST \
         IMU_DESC_ENTRY(IMU, (0x4a ^ 0x02) - 0x4a, IMU_ROTATION, DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), true, MCP_PIN(MCP_GPA6), 0) \
         IMU_DESC_ENTRY(IMU, (0x4b ^ 0x02) - 0x4a, IMU_ROTATION, DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), true, MCP_PIN(MCP_GPA2), 0) \

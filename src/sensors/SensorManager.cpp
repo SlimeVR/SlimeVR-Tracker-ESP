@@ -82,6 +82,21 @@ void SensorManager::setup()
 		return directPinInterfaces[pin];
 	};
 
+	std::map<int, DirectPinInterface*> directPinInterfaces;
+	std::map<int, MCP23X17PinInterface*> mcpPinInterfaces;
+	std::map<std::tuple<int, int>, I2CWireSensorInterface*> i2cWireInterfaces;
+	std::map<std::tuple<int, int, int, int>, I2CPCASensorInterface*> pcaWireInterfaces;
+	
+	auto directPin = [&] (int pin)
+	{
+		if(!directPinInterfaces.contains(pin))
+		{
+			auto ptr = new DirectPinInterface(pin);
+			directPinInterfaces[pin] = ptr;
+		}
+		return directPinInterfaces[pin];
+	};
+
 	auto mcpPin = [&](int pin)
 	{
 		if(!mcpPinInterfaces.contains(pin))
@@ -115,7 +130,9 @@ void SensorManager::setup()
 	};
 	uint8_t sensorID = 0;
 	uint8_t activeSensorCount = 0;
-	m_MCP.begin_I2C();
+	if(m_MCP.begin_I2C()) {
+		m_Logger.info("MCP initialized");
+	}
 
 #define NO_PIN nullptr
 #define DIRECT_PIN(pin) directPin(pin)
@@ -164,7 +181,7 @@ void SensorManager::update()
 	bool allIMUGood = true;
 	for (auto &sensor : m_Sensors) {
 		if (sensor->isWorking()) {
-				sensor->m_hwInterface->swapIn();
+			sensor->m_hwInterface->swapIn();
 			sensor->motionLoop();
 		}
 		if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR)
@@ -217,6 +234,5 @@ void SensorManager::update()
 		networkConnection.endBundle();
 	#endif
 }
-
 }  // namespace Sensors
 }  // namespace SlimeVR

@@ -65,6 +65,7 @@ namespace SlimeVR
 
 	void disconnectI2C()
 	{
+		Wire.flush();
 		isI2CActive = false;
 		#if ESP32
 			Wire.end();

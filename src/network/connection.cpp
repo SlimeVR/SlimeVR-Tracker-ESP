@@ -631,15 +631,15 @@ void Connection::reset() {
 }
 
 void Connection::update() {
-	auto& sensors = sensorManager.getSensors();
-
-	updateSensorState(sensors);
-	maybeRequestFeatureFlags();
-
 	if (!m_Connected) {
 		searchForServer();
 		return;
 	}
+
+	auto & sensors = sensorManager.getSensors();
+
+	updateSensorState(sensors);
+	maybeRequestFeatureFlags();
 
 	if (m_LastPacketTimestamp + TIMEOUT < millis()) {
 		statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
