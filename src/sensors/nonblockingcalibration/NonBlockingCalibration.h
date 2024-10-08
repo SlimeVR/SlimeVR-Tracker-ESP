@@ -181,8 +181,10 @@ private:
 				break;
 			case CalibrationStepEnum::GYRO_BIAS:
 				if (calibrationConfig.gyroPointsCalibrated == 1) {
-					nextCalibrationStep = CalibrationStepEnum::ACCEL_BIAS;
-					currentStep = &accelBiasCalibrationStep;
+					// nextCalibrationStep = CalibrationStepEnum::ACCEL_BIAS;
+					// currentStep = &accelBiasCalibrationStep;
+					nextCalibrationStep = CalibrationStepEnum::GYRO_BIAS;
+					currentStep = &gyroBiasCalibrationStep;
 				}
 
 				if (save) {
