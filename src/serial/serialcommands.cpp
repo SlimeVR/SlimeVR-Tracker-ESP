@@ -144,6 +144,11 @@ namespace SerialCommands {
                 sensor->getHadData() ? "true" : "false"
             );
         }
+        logger.info(
+            "Battery voltage: %.3f, level: %.1f%%",
+            battery.getVoltage(),
+			battery.getLevel() * 100
+        );
     }
 
     void cmdGet(CmdParser * parser) {
