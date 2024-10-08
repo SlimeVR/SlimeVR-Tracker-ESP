@@ -67,7 +67,7 @@ namespace SlimeVR
 
             template <typename ImuType>
             std::unique_ptr<Sensor> buildSensor(
-				uint8_t sensorID, uint8_t addrSuppl, float rotation, SensorInterface* sensorInterface,
+				uint8_t sensorID, int addrSuppl, float rotation, SensorInterface* sensorInterface,
 				bool optional = false, PinInterface* intPin = nullptr, int extraParam = 0)
             {
                 const uint8_t address = ImuType::Address + addrSuppl;
@@ -80,7 +80,7 @@ namespace SlimeVR
                 // Now start detecting and building the IMU
                 std::unique_ptr<Sensor> sensor;
 
-                // Clear and reset I2C bus for each sensor upon startup
+                // Init I2C bus for each sensor upon startup
 				sensorInterface->init();
 				sensorInterface->swapIn();
 
