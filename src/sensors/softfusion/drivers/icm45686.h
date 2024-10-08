@@ -33,7 +33,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 4000dps
 // using high resolution mode
 // Uses 32.768kHz clock
-// Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
+// Gyroscope ODR = 409.6Hz, accel ODR = 204.8Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 template <typename I2CImpl>
@@ -43,7 +43,7 @@ struct ICM45686 {
 	static constexpr auto Type = ImuID::ICM45686;
 
 	static constexpr float GyrTs = 1.0 / 409.6;
-	static constexpr float AccTs = 1.0 / 102.4;
+	static constexpr float AccTs = 1.0 / 204.8;
 	static constexpr float TempTs = 1.0 / 409.6;
 
 	static constexpr float MagTs = 1.0 / 100;
@@ -67,10 +67,10 @@ struct ICM45686 {
 	// restThAcc should be the sensor's typical acceleration bias
 	static constexpr VQFParams SensorVQFParams{
 		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 0.5f,
-		.biasClip = 1.0f,
-		.restThGyr = 0.5f,
-		.restThAcc = 0.392f,
+		.biasSigmaInit = 0.3f,
+		.biasClip = 0.6f,
+		.restThGyr = 0.3f,
+		.restThAcc = 0.0196f,
 	};
 
 	I2CImpl i2c;
@@ -110,7 +110,7 @@ struct ICM45686 {
 		struct AccelConfig {
 			static constexpr uint8_t reg = 0x1b;
 			static constexpr uint8_t value
-				= (0b000 << 4) | 0b1001;  // 32g, odr = 102.4Hz
+				= (0b000 << 4) | 0b1000;  // 32g, odr = 204.8Hz
 		};
 
 		struct FifoConfig0 {
