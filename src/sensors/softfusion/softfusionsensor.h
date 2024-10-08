@@ -459,6 +459,10 @@ void motionSetup() override final {
 			&& (sensorCalibration.data.sfusion.MotionlessDataLen
 				== MotionlessCalibDataSize())) {
 			m_calibration = sensorCalibration.data.nonblocking;
+			m_calibration.accelCalibrated = false;
+			m_calibration.A_off[0] = 0;
+			m_calibration.A_off[1] = 0;
+			m_calibration.A_off[2] = 0;
 			recalcFusion();
 		} else if (sensorCalibration.type != SlimeVR::Configuration::CalibrationConfigType::NONE) {
 			m_Logger.warn(
