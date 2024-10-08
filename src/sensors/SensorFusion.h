@@ -125,6 +125,8 @@ public:
 
 #if SENSOR_USE_VQF
 	void updateBiasForgettingTime(float biasForgettingTime);
+
+	void updateRestDetectionParams(float restThGyr, float restThAcc);
 #endif
 
 protected:

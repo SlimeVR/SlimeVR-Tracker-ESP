@@ -107,11 +107,6 @@ class SoftFusionSensor : public Sensor {
 
 	float zroChangeOverTemperature = 0;
 
-#ifdef USE_NONBLOCKING_CALIBRATION
-	NonBlockingCalibration::NonBlockingCalibrator<imu, RawSensorT>
-		nonBlockingCalibrator;
-#endif
-
 	void handleTemperatureMeasurement(float temperature, float timeStep) {
 #ifdef USE_NONBLOCKING_CALIBRATION
 		nonBlockingCalibrator.provideTempSample(temperature);
@@ -170,12 +165,31 @@ class SoftFusionSensor : public Sensor {
 				m_calibration.A_Ts,
 				m_calibration.M_Ts
 			);
+
+#ifdef USE_NONBLOCKING_CALIBRATION
+			if (m_calibration.gyroPointsCalibrated > 0) {
+				m_fusion.updateRestDetectionParams(
+					imu::SensorVQFParams.restThGyr / 2,
+					imu::SensorVQFParams.restThAcc
+				);
+			}
+#endif
 		} else {
 			m_fusion = SensorFusionRestDetect(
 				m_calibration.G_Ts,
 				m_calibration.A_Ts,
 				m_calibration.M_Ts
 			);
+
+#ifdef USE_NONBLOCKING_CALIBRATION
+			if (m_calibration.gyroPointsCalibrated > 0) {
+				VQFParams defaultParams;
+				m_fusion.updateRestDetectionParams(
+					defaultParams.restThGyr / 2,
+					defaultParams.restThAcc
+				);
+			}
+#endif
 		}
 	}
 
@@ -341,7 +355,6 @@ SoftFusionSensor(
 		sclPin,
 		sdaPin
 	)
-	, m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger)
 	, m_fusion(
 		  HasPerSensorVQFParams
 			  ? SensorFusionRestDetect(
@@ -352,6 +365,7 @@ SoftFusionSensor(
 			  )
 			  : SensorFusionRestDetect(imu::GyrTs, imu::AccTs, imu::MagTs)
 	  )
+	, m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger)
 #ifdef USE_NONBLOCKING_CALIBRATION
 	, nonBlockingCalibrator(m_fusion, AScale, m_sensor, sensorId)
 #endif
@@ -803,6 +817,10 @@ SensorStatus getSensorState() override final { return m_status; }
 
 SensorFusionRestDetect m_fusion;
 T<I2CImpl> m_sensor;
+#ifdef USE_NONBLOCKING_CALIBRATION
+NonBlockingCalibration::NonBlockingCalibrator<imu, RawSensorT> nonBlockingCalibrator;
+#endif
+
 #ifndef USE_NONBLOCKING_CALIBRATION
 SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration
 	= {  // let's create here transparent calibration that doesn't affect input data

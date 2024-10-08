@@ -144,7 +144,7 @@ private:
 	struct CalibrationData {
 		bool axisDetermined = false;
 		int16_t currentAxis[3]{0, 0, 0};
-		size_t largestAxis = -1;
+		int32_t largestAxis = -1;
 		int32_t accelSum = 0;
 		size_t sampleCount = 0;
 	};

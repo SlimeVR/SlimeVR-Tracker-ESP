@@ -216,6 +216,10 @@ void SensorFusion::calcLinearAcc(
 void SensorFusion::updateBiasForgettingTime(float biasForgettingTime) {
 	vqf.updateBiasForgettingTime(biasForgettingTime);
 }
+
+void SensorFusion::updateRestDetectionParams(float restThGyr, float restThAcc) {
+	vqf.setRestDetectionThresholds(restThGyr, restThAcc);
+}
 #endif
 }  // namespace Sensors
 }  // namespace SlimeVR

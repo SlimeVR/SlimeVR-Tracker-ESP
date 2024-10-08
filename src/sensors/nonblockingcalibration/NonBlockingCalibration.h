@@ -53,8 +53,8 @@ public:
 		uint8_t sensorId
 	)
 		: fusion{fusion}
-		, accelScale{accelScale}
 		, imu{imu}
+		, accelScale{accelScale}
 		, sensorId{sensorId} {}
 
 	void setup(Configuration::NonBlockingCalibrationConfig& baseCalibrationConfig) {
@@ -151,9 +151,9 @@ private:
 		} else if (calibrationConfig.gyroPointsCalibrated == 0) {
 			nextCalibrationStep = CalibrationStepEnum::GYRO_BIAS;
 			currentStep = &gyroBiasCalibrationStep;
-		} else if (!accelBiasCalibrationStep.allAxesCalibrated()) {
-			nextCalibrationStep = CalibrationStepEnum::ACCEL_BIAS;
-			currentStep = &accelBiasCalibrationStep;
+			// } else if (!accelBiasCalibrationStep.allAxesCalibrated()) {
+			// 	nextCalibrationStep = CalibrationStepEnum::ACCEL_BIAS;
+			// 	currentStep = &accelBiasCalibrationStep;
 		} else {
 			nextCalibrationStep = CalibrationStepEnum::GYRO_BIAS;
 			currentStep = &gyroBiasCalibrationStep;
