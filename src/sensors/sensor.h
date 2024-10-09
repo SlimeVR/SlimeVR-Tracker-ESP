@@ -96,6 +96,18 @@ public:
         return newFusedRotation || newAcceleration;
     };
 
+	uint8_t getDataType() {
+		return SENSOR_DATATYPE_ROTATION;
+	};
+
+	uint16_t getSensorPosition() {
+		return m_SensorPosition;
+	};
+
+	void setSensorInfo(uint16_t sensorPosition) {
+		m_SensorPosition = sensorPosition;
+	};
+
 	TPSCounter m_tpsCounter;
 	TPSCounter m_dataCounter;
     SlimeVR::SensorInterface* m_hwInterface;
@@ -115,6 +127,8 @@ protected:
 
     bool newAcceleration = false;
     Vector3 acceleration{};
+
+	uint16_t m_SensorPosition = POSITION_NO;
 
     mutable SlimeVR::Logging::Logger m_Logger;
 

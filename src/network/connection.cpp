@@ -89,7 +89,7 @@ bool Connection::endPacket() {
 		MUST_TRANSFER_BOOL((innerPacketSize > 0));
 
 		m_IsBundle = false;
-		
+
 		if (m_BundlePacketInnerCount == 0) {
 			sendPacketType(PACKET_BUNDLE);
 			sendPacketNumber();
@@ -128,7 +128,7 @@ bool Connection::endBundle() {
 	MUST_TRANSFER_BOOL(m_IsBundle);
 
 	m_IsBundle = false;
-	
+
 	MUST_TRANSFER_BOOL((m_BundlePacketInnerCount > 0));
 
 	return endPacket();
@@ -298,6 +298,12 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(sendByte(sensor.getSensorId()));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
+	MUST(sendByte(sensor.getDataType()));
+	MUST(sendShort(sensor.getSensorPosition()));
+	// Send TPS
+	// TODO : Do we keep it after testing?
+	MUST(sendFloat(sensor.m_tpsCounter.getAveragedTPS()));
+	MUST(sendFloat(sensor.m_dataCounter.getAveragedTPS()));
 
 	MUST(endPacket());
 }
@@ -405,6 +411,20 @@ void Connection::sendTrackerDiscovery() {
 	MUST(sendShortString(FIRMWARE_VERSION));
 	// MAC address string
 	MUST(sendBytes(mac, 6));
+
+	MUST(endPacket());
+}
+
+// PACKET_FLEX_DATA 24
+void Connection::sendFlexData(uint8_t sensorId, float flexLevel) {
+	MUST(m_Connected);
+
+	MUST(beginPacket());
+
+	MUST(sendPacketType(PACKET_FLEX_DATA));
+	MUST(sendPacketNumber());
+	MUST(sendByte(sensorId));
+	MUST(sendFloat(flexLevel));
 
 	MUST(endPacket());
 }
@@ -525,7 +545,7 @@ void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>> & sensor
 	}
 }
 
-void Connection::maybeRequestFeatureFlags() {	
+void Connection::maybeRequestFeatureFlags() {
 	if (m_ServerFeatures.isAvailable() || m_FeatureFlagsRequestAttempts >= 15) {
 		return;
 	}
@@ -571,7 +591,7 @@ void Connection::searchForServer() {
 			m_ServerPort = m_UDP.remotePort();
 			m_LastPacketTimestamp = millis();
 			m_Connected = true;
-			
+
 			m_FeatureFlagsRequestAttempts = 0;
 			m_ServerFeatures = ServerFeatures { };
 
@@ -603,7 +623,7 @@ void Connection::searchForServer() {
 
 void Connection::reset() {
 	m_Connected = false;
-	std::fill(m_AckedSensorState, m_AckedSensorState+MAX_IMU_COUNT, SensorStatus::SENSOR_OFFLINE);
+	std::fill(m_AckedSensorState, m_AckedSensorState+MAX_SENSORS_COUNT, SensorStatus::SENSOR_OFFLINE);
 
 	m_UDP.begin(m_ServerPort);
 
@@ -625,7 +645,7 @@ void Connection::update() {
 		statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 
 		m_Connected = false;
-		std::fill(m_AckedSensorState, m_AckedSensorState+MAX_IMU_COUNT, SensorStatus::SENSOR_OFFLINE);
+		std::fill(m_AckedSensorState, m_AckedSensorState+MAX_SENSORS_COUNT, SensorStatus::SENSOR_OFFLINE);
 		m_Logger.warn("Connection to server timed out");
 
 		return;
@@ -697,7 +717,7 @@ void Connection::update() {
 			}
 
 			bool hadFlags = m_ServerFeatures.isAvailable();
-			
+
 			uint32_t flagsLength = len - 12;
 			m_ServerFeatures = ServerFeatures::from(&m_Packet[12], flagsLength);
 
