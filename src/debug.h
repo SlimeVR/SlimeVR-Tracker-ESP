@@ -94,7 +94,8 @@
 // Not recommended for production
 #define ENABLE_INSPECTION false
 
-#define PROTOCOL_VERSION 18
+#define PROTOCOL_VERSION 19
+#define FIRMWARE_VERSION "0.5.0-glove-test"
 
 #ifndef FIRMWARE_VERSION
 #define FIRMWARE_VERSION "UNKNOWN"
