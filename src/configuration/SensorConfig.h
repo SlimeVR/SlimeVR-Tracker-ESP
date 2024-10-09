@@ -147,6 +147,8 @@ struct SensorConfig {
 		BNO0XXSensorConfig bno0XX;
 	} data;
 };
+
+uint16_t configDataToNumber(SensorConfig sensorConfig);
 }  // namespace Configuration
 }  // namespace SlimeVR
 

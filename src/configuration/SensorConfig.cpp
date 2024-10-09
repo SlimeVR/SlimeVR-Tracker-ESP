@@ -45,5 +45,20 @@ const char* calibrationConfigTypeToString(SensorConfigType type) {
 			return "UNKNOWN";
 	}
 }
+
+uint16_t configDataToNumber(SensorConfig sensorConfig) {
+	uint16_t data = 0;
+	switch (sensorConfig.type) {
+		case SensorConfigType::BNO0XX: {
+			auto config = &sensorConfig.data.bno0XX;
+			data += config->magEnabled;
+			break;
+		}
+		case SensorConfigType::NONE:
+		default:
+			break;
+	}
+	return data;
+}
 }  // namespace Configuration
 }  // namespace SlimeVR

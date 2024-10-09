@@ -73,6 +73,7 @@ public:
 	virtual void resetTemperatureCalibrationState();
 	virtual void saveTemperatureCalibration();
 	virtual void setFlag(uint16_t flagId, bool state){};
+	virtual uint16_t getSensorConfigData();
 	bool isWorking() {
 		return working;
 	};

@@ -298,7 +298,7 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(sendByte(sensor.getSensorId()));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
-	MUST(sendByte(static_cast<uint8_t>(sensor.getMagStatus())));
+	MUST(sendShort(sensor.getSensorConfigData()));
 
 	MUST(endPacket());
 }
