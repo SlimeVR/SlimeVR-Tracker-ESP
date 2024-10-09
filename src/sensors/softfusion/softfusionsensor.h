@@ -210,16 +210,16 @@ public:
             return;
         }
 
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        SlimeVR::Configuration::SensorConfig sensorCalibration = configuration.getSensor(sensorId);
 
         // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        if (sensorCalibration.type == SlimeVR::Configuration::CalibrationConfigType::SFUSION
+        if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::SFUSION
             && (sensorCalibration.data.sfusion.ImuType == imu::Type)
             && (sensorCalibration.data.sfusion.MotionlessDataLen == MotionlessCalibDataSize())) {
             m_calibration = sensorCalibration.data.sfusion;
             recalcFusion();
         }
-        else if (sensorCalibration.type == SlimeVR::Configuration::CalibrationConfigType::NONE) {
+        else if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::NONE) {
             m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
             m_Logger.info("Calibration is advised");
         }
@@ -229,7 +229,7 @@ public:
         }
 
         bool initResult = false;
-        
+
         if constexpr(HasMotionlessCalib) {
             typename imu::MotionlessCalibrationData calibData;
             std::memcpy(&calibData, m_calibration.MotionlessData, sizeof(calibData));
@@ -310,10 +310,10 @@ public:
     void saveCalibration()
     {
         m_Logger.debug("Saving the calibration data");
-        SlimeVR::Configuration::CalibrationConfig calibration;
-        calibration.type = SlimeVR::Configuration::CalibrationConfigType::SFUSION;
+        SlimeVR::Configuration::SensorConfig calibration;
+        calibration.type = SlimeVR::Configuration::SensorConfigType::SFUSION;
         calibration.data.sfusion = m_calibration;
-        configuration.setCalibration(sensorId, calibration);
+        configuration.setSensor(sensorId, calibration);
         configuration.save();
     }
 
@@ -505,7 +505,7 @@ public:
 
     SensorFusionRestDetect m_fusion;
     T<I2CImpl> m_sensor;
-    SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration = {
+    SlimeVR::Configuration::SoftFusionSensorConfig m_calibration = {
         // let's create here transparent calibration that doesn't affect input data
         .ImuType = {imu::Type},
         .MotionlessDataLen = {MotionlessCalibDataSize()},

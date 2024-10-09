@@ -82,7 +82,7 @@ namespace SlimeVR {
                 save();
             }
 
-            loadCalibrations();
+            loadSensors();
 
             m_Loaded = true;
 
@@ -94,19 +94,19 @@ namespace SlimeVR {
         }
 
         void Configuration::save() {
-            for (size_t i = 0; i < m_Calibrations.size(); i++) {
-                CalibrationConfig config = m_Calibrations[i];
-                if (config.type == CalibrationConfigType::NONE) {
+            for (size_t i = 0; i < m_Sensors.size(); i++) {
+                SensorConfig config = m_Sensors[i];
+                if (config.type == SensorConfigType::NONE) {
                     continue;
                 }
 
                 char path[17];
                 sprintf(path, DIR_CALIBRATIONS"/%d", i);
 
-                m_Logger.trace("Saving calibration data for %d", i);
+                m_Logger.trace("Saving sensor config data for %d", i);
 
                 File file = LittleFS.open(path, "w");
-                file.write((uint8_t*)&config, sizeof(CalibrationConfig));
+                file.write((uint8_t*)&config, sizeof(SensorConfig));
                 file.close();
             }
 
@@ -122,7 +122,7 @@ namespace SlimeVR {
         void Configuration::reset() {
             LittleFS.format();
 
-            m_Calibrations.clear();
+            m_Sensors.clear();
             m_Config.version = 1;
             save();
 
@@ -133,41 +133,41 @@ namespace SlimeVR {
             return m_Config.version;
         }
 
-        size_t Configuration::getCalibrationCount() const {
-            return m_Calibrations.size();
+        size_t Configuration::getSensorCount() const {
+            return m_Sensors.size();
         }
 
-        CalibrationConfig Configuration::getCalibration(size_t sensorID) const {
-            if (sensorID >= m_Calibrations.size()) {
+        SensorConfig Configuration::getSensor(size_t sensorID) const {
+            if (sensorID >= m_Sensors.size()) {
                 return {};
             }
 
-            return m_Calibrations.at(sensorID);
+            return m_Sensors.at(sensorID);
         }
 
-        void Configuration::setCalibration(size_t sensorID, const CalibrationConfig& config) {
-            size_t currentCalibrations = m_Calibrations.size();
+        void Configuration::setSensor(size_t sensorID, const SensorConfig& config) {
+            size_t currentSensors = m_Sensors.size();
 
-            if (sensorID >= currentCalibrations) {
-                m_Calibrations.resize(sensorID + 1);
+            if (sensorID >= currentSensors) {
+                m_Sensors.resize(sensorID + 1);
             }
 
-            m_Calibrations[sensorID] = config;
+            m_Sensors[sensorID] = config;
         }
 
-		void Configuration::loadCalibrations() {
+		void Configuration::loadSensors() {
 			SlimeVR::Utils::forEachFile(DIR_CALIBRATIONS, [&](SlimeVR::Utils::File f) {
-				CalibrationConfig calibrationConfig;
-				f.read((uint8_t*)&calibrationConfig, sizeof(CalibrationConfig));
+				SensorConfig sensorConfig;
+				f.read((uint8_t*)&sensorConfig, sizeof(SensorConfig));
 
 				uint8_t sensorId = strtoul(f.name(), nullptr, 10);
 				m_Logger.debug(
 					"Found sensor calibration for %s at index %d",
-					calibrationConfigTypeToString(calibrationConfig.type),
+					calibrationConfigTypeToString(sensorConfig.type),
 					sensorId
 				);
 
-				setCalibration(sensorId, calibrationConfig);
+				setSensor(sensorId, sensorConfig);
 			});
 		}
 
@@ -200,8 +200,8 @@ namespace SlimeVR {
 				return false;
 			}
 
-			CalibrationConfigType storedConfigType;
-			f.read((uint8_t*)&storedConfigType, sizeof(CalibrationConfigType));
+			SensorConfigType storedConfigType;
+			f.read((uint8_t*)&storedConfigType, sizeof(SensorConfigType));
 
 			if (storedConfigType != config.type) {
 				m_Logger.debug(
@@ -225,7 +225,7 @@ namespace SlimeVR {
 		}
 
         bool Configuration::saveTemperatureCalibration(uint8_t sensorId, const GyroTemperatureCalibrationConfig& config) {
-            if (config.type == CalibrationConfigType::NONE) {
+            if (config.type == SensorConfigType::NONE) {
                 return false;
             }
 
@@ -249,17 +249,17 @@ namespace SlimeVR {
         void Configuration::print() {
             m_Logger.info("Configuration:");
             m_Logger.info("  Version: %d", m_Config.version);
-            m_Logger.info("  %d Calibrations:", m_Calibrations.size());
+            m_Logger.info("  %d Sensors:", m_Sensors.size());
 
-            for (size_t i = 0; i < m_Calibrations.size(); i++) {
-                const CalibrationConfig& c = m_Calibrations[i];
+            for (size_t i = 0; i < m_Sensors.size(); i++) {
+                const SensorConfig& c = m_Sensors[i];
                 m_Logger.info("    - [%3d] %s", i, calibrationConfigTypeToString(c.type));
 
                 switch (c.type) {
-                case CalibrationConfigType::NONE:
+                case SensorConfigType::NONE:
                     break;
 
-                case CalibrationConfigType::BMI160:
+                case SensorConfigType::BMI160:
                     m_Logger.info("            A_B        : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.bmi160.A_B));
 
                     m_Logger.info("            A_Ainv     :");
@@ -272,7 +272,7 @@ namespace SlimeVR {
 
                     break;
 
-                case CalibrationConfigType::SFUSION:
+                case SensorConfigType::SFUSION:
                     m_Logger.info("            A_B        : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.sfusion.A_B));
 
                     m_Logger.info("            A_Ainv     :");
@@ -284,14 +284,14 @@ namespace SlimeVR {
                     m_Logger.info("            Temperature: %f", c.data.sfusion.temperature);
                     break;
 
-                case CalibrationConfigType::ICM20948:
+                case SensorConfigType::ICM20948:
                     m_Logger.info("            G: %d, %d, %d", UNPACK_VECTOR_ARRAY(c.data.icm20948.G));
                     m_Logger.info("            A: %d, %d, %d", UNPACK_VECTOR_ARRAY(c.data.icm20948.A));
                     m_Logger.info("            C: %d, %d, %d", UNPACK_VECTOR_ARRAY(c.data.icm20948.C));
 
                     break;
 
-                case CalibrationConfigType::MPU9250:
+                case SensorConfigType::MPU9250:
                     m_Logger.info("            A_B   : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.mpu9250.A_B));
 
                     m_Logger.info("            A_Ainv:");
@@ -310,11 +310,16 @@ namespace SlimeVR {
 
                     break;
 
-                case CalibrationConfigType::MPU6050:
+                case SensorConfigType::MPU6050:
                     m_Logger.info("            A_B  : %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.mpu6050.A_B));
                     m_Logger.info("            G_off: %f, %f, %f", UNPACK_VECTOR_ARRAY(c.data.mpu6050.G_off));
 
                     break;
+
+				case SensorConfigType::BNO0XX:
+					m_Logger.info("            magEnabled: %d", c.data.bno0XX.magEnabled);
+
+					break;
                 }
             }
         }

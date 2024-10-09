@@ -27,6 +27,8 @@
 #include "sensor.h"
 #include <BNO080.h>
 
+#define FLAG_SENSOR_BNO0XX_MAG_ENABLED 1
+
 class BNO080Sensor : public Sensor
 {
 public:
@@ -45,6 +47,7 @@ public:
     void sendData() override final;
     void startCalibration(int calibrationType) override final;
     SensorStatus getSensorState() override final;
+    void setFlag(uint16_t flagId, bool state) override final;
 
 protected:
     // forwarding constructor
@@ -59,6 +62,7 @@ private:
     unsigned long lastData = 0;
     uint8_t lastReset = 0;
     BNO080Error lastError{};
+    SlimeVR::Configuration::BNO0XXSensorConfig m_Config = {};
 
     // Magnetometer specific members
     Quat magQuaternion{};

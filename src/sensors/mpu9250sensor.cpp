@@ -71,14 +71,14 @@ void MPU9250Sensor::motionSetup() {
 
     // Initialize the configuration
     {
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        SlimeVR::Configuration::SensorConfig sensorConfig = configuration.getSensor(sensorId);
         // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        switch (sensorCalibration.type) {
-        case SlimeVR::Configuration::CalibrationConfigType::MPU9250:
-            m_Calibration = sensorCalibration.data.mpu9250;
+        switch (sensorConfig.type) {
+        case SlimeVR::Configuration::SensorConfigType::MPU9250:
+            m_Config = sensorConfig.data.mpu9250;
             break;
 
-        case SlimeVR::Configuration::CalibrationConfigType::NONE:
+        case SlimeVR::Configuration::SensorConfigType::NONE:
             m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
             m_Logger.info("Calibration is advised");
             break;
@@ -224,10 +224,10 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     m_Logger.debug("[INFO] Magnetometer calibration matrix:");
     m_Logger.debug("{");
     for (int i = 0; i < 3; i++) {
-        m_Calibration.M_B[i] = M_BAinv[0][i];
-        m_Calibration.M_Ainv[0][i] = M_BAinv[1][i];
-        m_Calibration.M_Ainv[1][i] = M_BAinv[2][i];
-        m_Calibration.M_Ainv[2][i] = M_BAinv[3][i];
+        m_Config.M_B[i] = M_BAinv[0][i];
+        m_Config.M_Ainv[0][i] = M_BAinv[1][i];
+        m_Config.M_Ainv[1][i] = M_BAinv[2][i];
+        m_Config.M_Ainv[2][i] = M_BAinv[3][i];
         m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
     }
     m_Logger.debug("}");
@@ -265,9 +265,9 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 #endif
 
     // TODO: use offset registers?
-    m_Calibration.G_off[0] = Gxyz[0];
-    m_Calibration.G_off[1] = Gxyz[1];
-    m_Calibration.G_off[2] = Gxyz[2];
+    m_Config.G_off[0] = Gxyz[0];
+    m_Config.G_off[1] = Gxyz[1];
+    m_Config.G_off[2] = Gxyz[2];
 
     // Blink calibrating led before user should rotate the sensor
     m_Logger.info("Gently rotate the device while it's gathering accelerometer and magnetometer data");
@@ -302,20 +302,20 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
     m_Logger.debug("{");
     for (int i = 0; i < 3; i++)
     {
-        m_Calibration.A_B[i] = A_BAinv[0][i];
-        m_Calibration.A_Ainv[0][i] = A_BAinv[1][i];
-        m_Calibration.A_Ainv[1][i] = A_BAinv[2][i];
-        m_Calibration.A_Ainv[2][i] = A_BAinv[3][i];
+        m_Config.A_B[i] = A_BAinv[0][i];
+        m_Config.A_Ainv[0][i] = A_BAinv[1][i];
+        m_Config.A_Ainv[1][i] = A_BAinv[2][i];
+        m_Config.A_Ainv[2][i] = A_BAinv[3][i];
         m_Logger.debug("  %f, %f, %f, %f", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
     m_Logger.debug("}");
     m_Logger.debug("[INFO] Magnetometer calibration matrix:");
     m_Logger.debug("{");
     for (int i = 0; i < 3; i++) {
-        m_Calibration.M_B[i] = M_BAinv[0][i];
-        m_Calibration.M_Ainv[0][i] = M_BAinv[1][i];
-        m_Calibration.M_Ainv[1][i] = M_BAinv[2][i];
-        m_Calibration.M_Ainv[2][i] = M_BAinv[3][i];
+        m_Config.M_B[i] = M_BAinv[0][i];
+        m_Config.M_Ainv[0][i] = M_BAinv[1][i];
+        m_Config.M_Ainv[1][i] = M_BAinv[2][i];
+        m_Config.M_Ainv[2][i] = M_BAinv[3][i];
         m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
     }
     m_Logger.debug("}");
@@ -323,10 +323,10 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 
     m_Logger.debug("Saving the calibration data");
 
-    SlimeVR::Configuration::CalibrationConfig calibration;
-    calibration.type = SlimeVR::Configuration::CalibrationConfigType::MPU9250;
-    calibration.data.mpu9250 = m_Calibration;
-    configuration.setCalibration(sensorId, calibration);
+    SlimeVR::Configuration::SensorConfig config;
+    config.type = SlimeVR::Configuration::SensorConfigType::MPU9250;
+    config.data.mpu9250 = m_Config;
+    configuration.setSensor(sensorId, config);
     configuration.save();
 
     ledManager.off();
@@ -347,12 +347,12 @@ void MPU9250Sensor::parseMagData(int16_t data[3]) {
 
     //apply offsets and scale factors from Magneto
     for (unsigned i = 0; i < 3; i++) {
-        temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+        temp[i] = (Mxyz[i] - m_Config.M_B[i]);
     }
-    
+
     for (unsigned i = 0; i < 3; i++) {
         #if useFullCalibrationMatrix == true
-            Mxyz[i] = m_Calibration.M_Ainv[i][0] * temp[0] + m_Calibration.M_Ainv[i][1] * temp[1] + m_Calibration.M_Ainv[i][2] * temp[2];
+            Mxyz[i] = m_Config.M_Ainv[i][0] * temp[0] + m_Config.M_Ainv[i][1] * temp[1] + m_Config.M_Ainv[i][2] * temp[2];
         #else
             Mxyz[i] = temp[i];
         #endif
@@ -372,12 +372,12 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
     //apply offsets (bias) and scale factors from Magneto
     for (unsigned i = 0; i < 3; i++) {
         #if !MPU_USE_DMPMAG
-        temp[i] = (Axyz[i] - m_Calibration.A_B[i]);
+        temp[i] = (Axyz[i] - m_Config.A_B[i]);
     }
-    
+
     for (unsigned i = 0; i < 3; i++) {
         #if useFullCalibrationMatrix == true
-            Axyz[i] = m_Calibration.A_Ainv[i][0] * temp[0] + m_Calibration.A_Ainv[i][1] * temp[1] + m_Calibration.A_Ainv[i][2] * temp[2];
+            Axyz[i] = m_Config.A_Ainv[i][0] * temp[0] + m_Config.A_Ainv[i][1] * temp[1] + m_Config.A_Ainv[i][2] * temp[2];
         #else
             Axyz[i] = temp[i];
         #endif
@@ -389,9 +389,9 @@ void MPU9250Sensor::parseAccelData(int16_t data[3]) {
 // TODO: refactor so that calibration/conversion to float is only done in one place.
 void MPU9250Sensor::parseGyroData(int16_t data[3]) {
     // reading big endian int16
-    Gxyz[0] = ((float)data[0] - m_Calibration.G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
-    Gxyz[1] = ((float)data[1] - m_Calibration.G_off[1]) * gscale;
-    Gxyz[2] = ((float)data[2] - m_Calibration.G_off[2]) * gscale;
+    Gxyz[0] = ((float)data[0] - m_Config.G_off[0]) * gscale; //250 LSB(d/s) default to radians/s
+    Gxyz[1] = ((float)data[1] - m_Config.G_off[1]) * gscale;
+    Gxyz[2] = ((float)data[2] - m_Config.G_off[2]) * gscale;
 }
 
 // really just an implementation detail of getNextSample...
