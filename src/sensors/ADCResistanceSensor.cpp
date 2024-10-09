@@ -1,6 +1,6 @@
 /*
     SlimeVR Code is placed under the MIT license
-    Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
+    Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,28 +20,20 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
+#include "ADCResistanceSensor.h"
+#include "GlobalVars.h"
 
-#ifndef SENSORINTERFACE_H
-#define SENSORINTERFACE_H
-
-namespace SlimeVR
-{
-	class SensorInterface
-	{
-		public:
-
-			virtual void init();
-			virtual void swapIn();
-	};
-
-	class EmptySensorInterface : public SensorInterface
-	{
-		public:
-			EmptySensorInterface();
-			~EmptySensorInterface();
-			void init() override final;
-			void swapIn() override final;
-	};
+void ADCResistanceSensor::motionLoop() {
+	#if ESP8266
+		float voltage = ((float)analogRead(m_Pin)) * ADCVoltageMax / ADCResolution;
+		m_Data = m_ResistanceDivider * (ADCVoltageMax / voltage - 1.0f); // Convert voltage to resistance
+	#endif
+	#if ESP32
+		float voltage = ((float)analogReadMilliVolts(m_Pin)) / 1000;
+		m_Data = m_ResistanceDivider * (m_VCC / voltage - 1.0f); // Convert voltage to resistance
+	#endif
 }
 
-#endif // SENSORINTERFACE_H
+void ADCResistanceSensor::sendData() {
+	networkConnection.sendFlexData(sensorId, m_Data);
+}

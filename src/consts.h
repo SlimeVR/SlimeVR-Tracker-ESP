@@ -26,23 +26,24 @@
 // List of constants used in other places
 
 enum class ImuID {
-	Unknown = 0,
-	MPU9250,
-	MPU6500,
-	BNO080,
-	BNO085,
-	BNO055,
-	MPU6050,
-	BNO086,
-	BMI160,
-	ICM20948,
-	ICM42688,
-	BMI270,
-	LSM6DS3TRC,
-	LSM6DSV,
-	LSM6DSO,
-	LSM6DSR,
-	Empty = 255
+    Unknown = 0,
+    MPU9250,
+    MPU6500,
+    BNO080,
+    BNO085,
+    BNO055,
+    MPU6050,
+    BNO086,
+    BMI160,
+    ICM20948,
+    ICM42688,
+    BMI270,
+    LSM6DS3TRC,
+    LSM6DSV,
+    LSM6DSO,
+    LSM6DSR,
+	ADC_RESISTANCE,
+    Empty = 255
 };
 
 #define IMU_UNKNOWN ErroneousSensor

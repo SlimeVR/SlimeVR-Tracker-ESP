@@ -90,7 +90,7 @@ public:
 	const Quat& getFusedRotation() { return fusedRotation; };
 	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
 
-	uint8_t getDataType() {
+	virtual uint8_t getDataType() {
 		return SENSOR_DATATYPE_ROTATION;
 	};
 

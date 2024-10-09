@@ -150,6 +150,7 @@ void SensorManager::setup()
 		m_Sensors.push_back(std::move(sensor));               \
 		sensorID++;                                           \
 	}
+
 	// Apply descriptor list and expand to entries
 	SENSOR_DESC_LIST;
 
