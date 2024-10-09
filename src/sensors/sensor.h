@@ -90,9 +90,19 @@ public:
 	const Quat& getFusedRotation() { return fusedRotation; };
 	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
 
-	void printTemperatureCalibrationUnsupported();
-    
-    TPSCounter m_tpsCounter;
+	uint8_t getDataType() {
+		return SENSOR_DATATYPE_ROTATION;
+	};
+
+	uint16_t getSensorPosition() {
+		return m_SensorPosition;
+	};
+
+	void setSensorInfo(uint16_t sensorPosition) {
+		m_SensorPosition = sensorPosition;
+	};
+
+	TPSCounter m_tpsCounter;
 	TPSCounter m_dataCounter;
     std::shared_ptr<SlimeVR::SensorInterface> m_hwInterface;
 protected:
@@ -112,7 +122,12 @@ protected:
 	bool newAcceleration = false;
 	Vector3 acceleration{};
 
-	mutable SlimeVR::Logging::Logger m_Logger;
+	uint16_t m_SensorPosition = POSITION_NO;
+
+    mutable SlimeVR::Logging::Logger m_Logger;
+
+private:
+    void printTemperatureCalibrationUnsupported();
 };
 
 const char* getIMUNameByType(ImuID imuType);

@@ -84,6 +84,9 @@ public:
 	// PACKET_FEATURE_FLAGS 22
 	void sendFeatureFlags();
 
+	// PACKET_FLEX_DATA 24
+	void sendFlexData(uint8 t_sensorId, float flexLevel);
+
 #if ENABLE_INSPECTION
 	void sendInspectionRawIMUData(
 		uint8_t sensorId,
@@ -170,7 +173,7 @@ private:
 	unsigned long m_LastConnectionAttemptTimestamp;
 	unsigned long m_LastPacketTimestamp;
 
-	SensorStatus m_AckedSensorState[MAX_IMU_COUNT] = {SensorStatus::SENSOR_OFFLINE};
+	SensorStatus m_AckedSensorState[MAX_SENSORS_COUNT] = {SensorStatus::SENSOR_OFFLINE};
 	unsigned long m_LastSensorInfoPacketTimestamp = 0;
 
 	uint8_t m_FeatureFlagsRequestAttempts = 0;

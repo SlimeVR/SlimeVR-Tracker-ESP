@@ -86,7 +86,7 @@ void SensorManager::setup()
 	std::map<int, MCP23X17PinInterface*> mcpPinInterfaces;
 	std::map<std::tuple<int, int>, I2CWireSensorInterface*> i2cWireInterfaces;
 	std::map<std::tuple<int, int, int, int>, I2CPCASensorInterface*> pcaWireInterfaces;
-	
+
 	auto directPin = [&] (int pin)
 	{
 		if(!directPinInterfaces.contains(pin))
@@ -140,7 +140,7 @@ void SensorManager::setup()
 #define MCP_PIN(pin) mcpPin(pin)
 #define PCA_WIRE(scl, sda, addr, ch) pcaWire(scl, sda, addr, ch)
 
-#define IMU_DESC_ENTRY(ImuType, ...)                          \
+#define SENSOR_DESC_ENTRY(ImuType, ...)                                  \
 	{                                                         \
 		auto sensor = buildSensor<ImuType>(sensorID, __VA_ARGS__); \
 		if (sensor->isWorking()) {                            \
@@ -153,7 +153,13 @@ void SensorManager::setup()
 	// Apply descriptor list and expand to entries
 	SENSOR_DESC_LIST;
 
-#undef IMU_DESC_ENTRY
+#define SENSOR_INFO_ENTRY(ImuID, ...)									\
+	{															\
+		m_Sensors[ImuID]->setSensorInfo(__VA_ARGS__);			\
+	}
+	SENSOR_INFO_LIST;
+
+#undef SENSOR_DESC_ENTRY
 #undef NO_PIN
 #undef DIRECT_PIN
 #undef DIRECT_WIRE

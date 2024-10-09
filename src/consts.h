@@ -144,6 +144,14 @@ enum class ImuID {
 #define MCU_HARITORA 8  // Used by Haritora/SlimeTora
 #define MCU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
+#define SENSOR_DATATYPE_ROTATION 0
+#define SENSOR_DATATYPE_FLEX_RESISTANCE 1
+#define SENSOR_DATATYPE_FLEX_ANGLE 2
+
+#define TRACKER_TYPE_SVR_ROTATION 0
+#define TRACKER_TYPE_SVR_GLOVE_LEFT 1
+#define TRACKER_TYPE_SVR_GLOVE_RIGHT 1
+
 #ifdef ESP8266
 #define HARDWARE_MCU MCU_ESP8266
 #elif defined(ESP32)
@@ -154,4 +162,6 @@ enum class ImuID {
 
 #define CURRENT_CONFIGURATION_VERSION 1
 
-#endif  // SLIMEVR_CONSTS_H_
+#include "sensors/sensorposition.h"
+
+#endif // SLIMEVR_CONSTS_H_
