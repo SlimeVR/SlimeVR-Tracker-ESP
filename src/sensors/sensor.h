@@ -96,7 +96,7 @@ public:
         return newFusedRotation || newAcceleration;
     };
 
-	uint8_t getDataType() {
+	virtual uint8_t getDataType() {
 		return SENSOR_DATATYPE_ROTATION;
 	};
 
