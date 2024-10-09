@@ -85,7 +85,7 @@ public:
 	void sendFeatureFlags();
 
 	// PACKET_FLEX_DATA 24
-	void sendFlexData(uint8 t_sensorId, float flexLevel);
+	void sendFlexData(uint8_t sensorId, float flexLevel);
 
 #if ENABLE_INSPECTION
 	void sendInspectionRawIMUData(
