@@ -90,7 +90,7 @@
 // Not recommended for production
 #define ENABLE_INSPECTION false
 
-#define FIRMWARE_BUILD_NUMBER 17
+#define PROTOCOL_VERSION 18
 #define FIRMWARE_VERSION "0.4.0-glove-test"
 
 #endif // SLIMEVR_DEBUG_H_

@@ -127,7 +127,7 @@ namespace SerialCommands {
             "SlimeVR Tracker, board: %d, hardware: %d, build: %d, firmware: %s, address: %s, mac: %s, status: %d, wifi state: %d",
             BOARD,
             HARDWARE_MCU,
-            FIRMWARE_BUILD_NUMBER,
+            PROTOCOL_VERSION,
             FIRMWARE_VERSION,
             WiFiNetwork::getAddress().toString().c_str(),
             WiFi.macAddress().c_str(),
@@ -142,6 +142,11 @@ namespace SerialCommands {
                 UNPACK_QUATERNION(sensor->getFusedRotation()),
                 sensor->isWorking() ? "true" : "false",
                 sensor->getHadData() ? "true" : "false"
+            );
+            logger.info("Sensor[%d]: %.3f tps, %.3f data tps",
+                sensor->getSensorId(),
+                sensor->m_tpsCounter.getAveragedTPS(),
+                sensor->m_dataCounter.getAveragedTPS()
             );
         }
         logger.info(
@@ -208,7 +213,7 @@ namespace SerialCommands {
                 "[TEST] Board: %d, hardware: %d, build: %d, firmware: %s, address: %s, mac: %s, status: %d, wifi state: %d",
                 BOARD,
                 HARDWARE_MCU,
-                FIRMWARE_BUILD_NUMBER,
+                PROTOCOL_VERSION,
                 FIRMWARE_VERSION,
                 WiFiNetwork::getAddress().toString().c_str(),
                 WiFi.macAddress().c_str(),
