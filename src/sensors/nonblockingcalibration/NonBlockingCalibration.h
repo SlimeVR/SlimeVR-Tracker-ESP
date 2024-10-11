@@ -69,6 +69,8 @@ public:
 	}
 
 	void tick() {
+		if (fusion.getRestDetected()) ledManager.on();
+		else ledManager.off();
 		if (skippedAStep && !lastTickRest && fusion.getRestDetected()) {
 			computeNextCalibrationStep();
 			skippedAStep = false;
