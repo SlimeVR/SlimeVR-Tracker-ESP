@@ -78,7 +78,7 @@ class SoftFusionSensor : public Sensor {
 	};
 
 	static constexpr bool HasPerSensorVQFParams = requires(imu i) {
-		{ imu::SensorVQFParams } -> std::same_as<VQFParams>;
+		imu:: SensorVQFParams;
 	};
 
 	bool detected() const {
