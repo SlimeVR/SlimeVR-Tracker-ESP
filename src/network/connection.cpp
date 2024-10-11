@@ -401,7 +401,7 @@ void Connection::sendTrackerDiscovery() {
 	MUST(sendInt(0));
 	MUST(sendInt(0));
 	MUST(sendInt(0));
-	MUST(sendInt(FIRMWARE_BUILD_NUMBER));
+	MUST(sendInt(PROTOCOL_VERSION));
 	MUST(sendShortString(FIRMWARE_VERSION));
 	// MAC address string
 	MUST(sendBytes(mac, 6));

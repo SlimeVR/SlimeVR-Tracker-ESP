@@ -123,11 +123,12 @@ namespace SerialCommands {
 	}
 
     void printState() {
+		// `build` refers to the protocol version, but it hasn't been changed due to a change needed in the testing software
         logger.info(
             "SlimeVR Tracker, board: %d, hardware: %d, build: %d, firmware: %s, address: %s, mac: %s, status: %d, wifi state: %d",
             BOARD,
             HARDWARE_MCU,
-            FIRMWARE_BUILD_NUMBER,
+            PROTOCOL_VERSION,
             FIRMWARE_VERSION,
             WiFiNetwork::getAddress().toString().c_str(),
             WiFi.macAddress().c_str(),
@@ -204,11 +205,12 @@ namespace SerialCommands {
         }
 
         if (parser->equalCmdParam(1, "TEST")) {
+			// `build` refers to the protocol version, but it hasn't been changed due to a change needed in the testing software
             logger.info(
                 "[TEST] Board: %d, hardware: %d, build: %d, firmware: %s, address: %s, mac: %s, status: %d, wifi state: %d",
                 BOARD,
                 HARDWARE_MCU,
-                FIRMWARE_BUILD_NUMBER,
+                PROTOCOL_VERSION,
                 FIRMWARE_VERSION,
                 WiFiNetwork::getAddress().toString().c_str(),
                 WiFi.macAddress().c_str(),
