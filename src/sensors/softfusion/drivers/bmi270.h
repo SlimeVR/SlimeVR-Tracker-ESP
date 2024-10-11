@@ -56,7 +56,7 @@ struct BMI270 {
 	// Temperature stability constant - how many degrees of temperature for the bias to
 	// change by 0.01 Though I don't know if it should be 0.1 or 0.01, this is a guess
 	// and seems to work better than 0.1
-	static constexpr float TemperatureZROChange = 0.667f;
+	static constexpr float TemperatureZROChange = 6.667f;
 
 	// VQF parameters
 	// biasSigmaInit and and restThGyr should be the sensor's typical gyro bias
