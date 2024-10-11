@@ -65,7 +65,7 @@ struct LSM6DS3 {
 		.biasSigmaInit = 10.0f,
 		.biasClip = 20.0f,
 		.restThGyr = 10.0f,
-		.restThAcc = 0.784f,
+		.restThAcc = 0.392f,
 	};
 
 	I2CImpl i2c;

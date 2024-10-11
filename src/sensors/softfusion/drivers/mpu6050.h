@@ -80,7 +80,7 @@ struct MPU6050 {
 		.biasSigmaInit = 20.0f,
 		.biasClip = 40.0f,
 		.restThGyr = 20.0f,
-		.restThAcc = 1.568f,
+		.restThAcc = 0.784f,
 	};
 
 	I2CImpl i2c;

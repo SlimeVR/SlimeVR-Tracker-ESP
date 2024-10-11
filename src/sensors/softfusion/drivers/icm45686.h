@@ -70,7 +70,7 @@ struct ICM45686 {
 		.biasSigmaInit = 0.3f,
 		.biasClip = 0.6f,
 		.restThGyr = 0.3f,
-		.restThAcc = 0.0196f,
+		.restThAcc = 0.0098f,
 	};
 
 	I2CImpl i2c;
