@@ -153,7 +153,7 @@ struct VQFParams
      *
      * Default value: 1.5 s
      */
-    vqf_real_t restMinT = 1.5;
+    vqf_real_t restMinT = 0.5;
     /**
      * @brief Time constant for the low-pass filter used in rest detection (in seconds).
      *
@@ -162,7 +162,7 @@ struct VQFParams
      *
      * Default value: 0.5 s
      */
-    vqf_real_t restFilterTau = 0.025;
+    vqf_real_t restFilterTau = 0.5;
     /**
      * @brief Angular velocity threshold for rest detection (in °/s).
      *
