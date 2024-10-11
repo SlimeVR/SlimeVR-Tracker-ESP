@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <array>
+#include <type_traits>
+
 #include "../sensor.h"
 #include "../SensorFusionRestDetect.h"
 
@@ -35,7 +38,12 @@ template <template<typename I2CImpl> typename T, typename I2CImpl>
 class SoftFusionSensor : public Sensor
 {
     using imu = T<I2CImpl>;
-    using RawVectorT = std::array<int16_t, 3>;
+
+    static constexpr bool Uses32BitSensorData = requires(imu& i){ i.Uses32BitSensorData; };
+
+    using RawSensorT = typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
+    using RawVectorT = std::array<RawSensorT, 3>;
+
     static constexpr auto UpsideDownCalibrationInit = true;
     static constexpr auto GyroCalibDelaySeconds = 5;
     static constexpr auto GyroCalibSeconds = 5;
@@ -89,7 +97,7 @@ class SoftFusionSensor : public Sensor
         m_fusion = SensorFusionRestDetect(m_calibration.G_Ts, m_calibration.A_Ts, m_calibration.M_Ts);
     }
 
-    void processAccelSample(const int16_t xyz[3], const sensor_real_t timeDelta)
+    void processAccelSample(const RawSensorT xyz[3], const sensor_real_t timeDelta)
     {
         sensor_real_t accelData[] = {
             static_cast<sensor_real_t>(xyz[0]),
@@ -107,7 +115,7 @@ class SoftFusionSensor : public Sensor
         m_fusion.updateAcc(accelData, m_calibration.A_Ts);
     }
 
-    void processGyroSample(const int16_t xyz[3], const sensor_real_t timeDelta)
+    void processGyroSample(const RawSensorT xyz[3], const sensor_real_t timeDelta)
     {
         const sensor_real_t scaledData[] = {
             static_cast<sensor_real_t>(GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off[0])),
@@ -122,16 +130,17 @@ class SoftFusionSensor : public Sensor
         while (millis() < targetDelay)
         {
             #ifdef ESP8266
-			    ESP.wdtFeed();
-		    #endif
+                ESP.wdtFeed();
+            #endif
             auto currentSecondsRemaining = (targetDelay - millis()) / 1000;
             if (currentSecondsRemaining != lastSecondsRemaining) {
                 m_Logger.info("%d...", currentSecondsRemaining + 1);
                 lastSecondsRemaining = currentSecondsRemaining;
             }
+
             m_sensor.bulkRead(
-                [](const int16_t xyz[3], const sensor_real_t timeDelta) { },
-                [](const int16_t xyz[3], const sensor_real_t timeDelta) { }
+                [](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+                [](const RawSensorT xyz[3], const sensor_real_t timeDelta) {}
             );
         }
     }
@@ -144,12 +153,12 @@ class SoftFusionSensor : public Sensor
         while (millis() < targetDelay)
         {
             m_sensor.bulkRead(
-                [&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+                [&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
                     accel[0] = xyz[0];
                     accel[1] = xyz[1];
                     accel[2] = xyz[2];
                 },
-                [&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+                [&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
                     gyro[0] = xyz[0];
                     gyro[1] = xyz[1];
                     gyro[2] = xyz[2];
@@ -179,8 +188,8 @@ public:
         if (elapsed >= targetPollIntervalMicros) {
             m_lastPollTime = now - (elapsed - targetPollIntervalMicros);
             m_sensor.bulkRead(
-                [&](const int16_t xyz[3], const sensor_real_t timeDelta) { processAccelSample(xyz, timeDelta); },
-                [&](const int16_t xyz[3], const sensor_real_t timeDelta) { processGyroSample(xyz, timeDelta); }
+                [&](const RawSensorT xyz[3], const sensor_real_t timeDelta) { processAccelSample(xyz, timeDelta); },
+                [&](const RawSensorT xyz[3], const sensor_real_t timeDelta) { processGyroSample(xyz, timeDelta); }
             );
             optimistic_yield(100);
             if (!m_fusion.isUpdated()) return;
@@ -229,7 +238,7 @@ public:
         }
 
         bool initResult = false;
-        
+
         if constexpr(HasMotionlessCalib) {
             typename imu::MotionlessCalibrationData calibData;
             std::memcpy(&calibData, m_calibration.MotionlessData, sizeof(calibData));
@@ -339,11 +348,11 @@ public:
         while (millis() < targetCalib)
         {
             #ifdef ESP8266
-			    ESP.wdtFeed();
-		    #endif
+                ESP.wdtFeed();
+            #endif
             m_sensor.bulkRead(
-                [](const int16_t xyz[3], const sensor_real_t timeDelta) { },
-                [&sumXYZ, &sampleCount](const int16_t xyz[3], const sensor_real_t timeDelta) {
+                [](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+                [&sumXYZ, &sampleCount](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
                     sumXYZ[0] += xyz[0];
                     sumXYZ[1] += xyz[1];
                     sumXYZ[2] += xyz[2];
@@ -393,10 +402,10 @@ public:
         bool samplesGathered = false;
         while (!samplesGathered) {
             #ifdef ESP8266
-			    ESP.wdtFeed();
-		    #endif
+                ESP.wdtFeed();
+            #endif
             m_sensor.bulkRead(
-                [&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+                [&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
                     const sensor_real_t scaledData[] = {
                         static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(xyz[0])),
                         static_cast<sensor_real_t>(AScale * static_cast<sensor_real_t>(xyz[1])),
@@ -443,7 +452,7 @@ public:
                         samplesGathered = true;
                     }
                 },
-                [](const int16_t xyz[3], const sensor_real_t timeDelta) { }
+                [](const RawSensorT xyz[3], const sensor_real_t timeDelta) {}
             );
         }
         ledManager.off();
@@ -481,8 +490,8 @@ public:
         while ((currentTime = millis()) < calibTarget)
         {
             m_sensor.bulkRead(
-                [&accelSamples](const int16_t xyz[3], const sensor_real_t timeDelta) { accelSamples++; },
-                [&gyroSamples](const int16_t xyz[3], const sensor_real_t timeDelta) { gyroSamples++; }
+                [&accelSamples](const RawSensorT xyz[3], const sensor_real_t timeDelta) { accelSamples++; },
+                [&gyroSamples](const RawSensorT xyz[3], const sensor_real_t timeDelta) { gyroSamples++; }
             );
         }
 
