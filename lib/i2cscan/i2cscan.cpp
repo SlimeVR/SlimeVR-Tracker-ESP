@@ -97,14 +97,14 @@ namespace I2CSCAN
 
             if (error == 0)
             {
-                Serial.printf("[DBG] I2C (@ %s(%d) : %s(%d)): I2C device found at address 0x%02x  !\n", 
+                Serial.printf("[DBG] I2C (@SDA %s(%2d) SCL %s(%2d)): I2C device found at address 0x%02x  !\n", 
                                 portMap[i].c_str(), portArray[i], portMap[j].c_str(), portArray[j], address);
                 nDevices++;
                 found = true;
             }
             else if (error == 4)
             {
-                Serial.printf("[ERR] I2C (@ %s(%d) : %s(%d)): Unknown error at address 0x%02x\n",
+                Serial.printf("[ERR] I2C (@SDA %s(%2d) SCL %s(%2d)): Unknown error at address 0x%02x\n",
                                 portMap[i].c_str(), portArray[i], portMap[j].c_str(), portArray[j], address);
             }
         }
