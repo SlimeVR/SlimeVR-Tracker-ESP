@@ -242,6 +242,70 @@ namespace SlimeVR {
             return true;
         }
 
+#ifdef USE_ESPNOW_COMMUNICATION
+		bool Configuration::loadDongleConnection(uint8_t outMacAddress[6], uint8_t &outTrackerId) {
+			char path[] = "/dongleMac.bin";
+
+			if (!LittleFS.exists(path)) {
+				return false;
+			}
+
+			auto f = SlimeVR::Utils::openFile(path, "r");
+			if (f.isDirectory()) {
+				return false;
+			}
+
+			f.read(outMacAddress, sizeof(uint8_t[6]));
+			f.read(&outTrackerId, sizeof(uint8_t));
+			return true;
+		}
+
+		bool Configuration::saveDongleConnection(const uint8_t macAddress[6], uint8_t trackerId) {
+            char path[] = "/dongleMac.bin";
+
+            m_Logger.trace("Saving dongle mac address");
+
+            File file = LittleFS.open(path, "w");
+            file.write(macAddress, sizeof(uint8_t[6]));
+            file.write(&trackerId, sizeof(uint8_t));
+            file.close();
+
+            m_Logger.debug("Saved dongle mac address");
+            return true;
+		}
+#endif
+
+		bool Configuration::loadResetCount(uint32_t *outResetCount) {
+			char path[] = "/resetCount.bin";
+
+			if (!LittleFS.exists(path)) {
+				return false;
+			}
+
+			auto f = SlimeVR::Utils::openFile(path, "r");
+			if (f.isDirectory()) {
+				return false;
+			}
+
+			f.read(reinterpret_cast<uint8_t *>(outResetCount), sizeof(uint32_t));
+			return true;
+		}
+
+		bool Configuration::saveResetCount(uint32_t resetCount) {
+            char path[] = "/resetCount.bin";
+
+			// Probably not a smart idea to log this always
+            // m_Logger.trace("Saving reset count");
+
+            auto file = LittleFS.open(path, "w");
+            file.write(reinterpret_cast<uint8_t *>(&resetCount), sizeof(uint32_t));
+            file.close();
+
+			// Probably not a smart idea to log this always
+            // m_Logger.debug("Saved reset count");
+            return true;
+		}
+
         bool Configuration::runMigrations(int32_t version) {
             return true;
         }

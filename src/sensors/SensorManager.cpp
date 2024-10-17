@@ -145,9 +145,12 @@ namespace SlimeVR
 
             statusManager.setStatus(SlimeVR::Status::IMU_ERROR, !allIMUGood);
 
+            #ifndef USE_ESPNOW_COMMUNICATION
             if (!networkConnection.isConnected()) {
                 return;
             }
+            #endif
+			// TODO: ESPNOW
 
             #ifndef PACKET_BUNDLING
                 static_assert(false, "PACKET_BUNDLING not set");
@@ -172,9 +175,12 @@ namespace SlimeVR
 
                 m_LastBundleSentAtMicros = now;
             #endif
-            
+
             #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+                #ifndef USE_ESPNOW_COMMUNICATION
                 networkConnection.beginBundle();
+                #endif
+				// TODO: ESPNOW
             #endif
 
             for (auto &sensor : m_Sensors) {
@@ -184,7 +190,10 @@ namespace SlimeVR
             }
 
             #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+                #ifndef USE_ESPNOW_COMMUNICATION
                 networkConnection.endBundle();
+                #endif
+				// TODO: ESPNOW
             #endif
         }
 

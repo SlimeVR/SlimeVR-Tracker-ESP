@@ -21,6 +21,7 @@
     THE SOFTWARE.
 */
 
+#include "ResetCounter.h"
 #include "Wire.h"
 #include "ota.h"
 #include "GlobalVars.h"
@@ -31,14 +32,22 @@
 #include "batterymonitor.h"
 #include "logging/Logger.h"
 
+#ifdef USE_ESPNOW_COMMUNICATION
+#include "network/espnowconnection.h"
+#endif
+
 Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
 SlimeVR::LEDManager ledManager(LED_PIN);
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
+#ifndef USE_ESPNOW_COMMUNICATION
 SlimeVR::Network::Manager networkManager;
 SlimeVR::Network::Connection networkConnection;
+#else
+SlimeVR::Network::ESPNowConnection espnowConnection;
+#endif
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -48,17 +57,30 @@ unsigned long lastStatePrint = 0;
 bool secondImuActive = false;
 BatteryMonitor battery;
 
+SlimeVR::ResetCounter resetCounter;
+
 void setup()
 {
     Serial.begin(serialBaudRate);
-    globalTimer = timer_create_default();
+    configuration.setup();
+	resetCounter.setup();
+#ifdef USE_ESPNOW_COMMUNICATION
+	espnowConnection.setup();
+	resetCounter.onResetCount([&](uint8_t resetCount){
+		if (resetCount == 3) {
+			espnowConnection.broadcastPairingRequest();
+		}
+	});
+#endif
 
 #ifdef ESP32C3
     // Wait for the Computer to be able to connect.
-    delay(2000);
+    // delay(2000);
 #endif
 
-    Serial.println();
+    globalTimer = timer_create_default();
+
+	Serial.println();
     Serial.println();
     Serial.println();
 
@@ -67,7 +89,6 @@ void setup()
     statusManager.setStatus(SlimeVR::Status::LOADING, true);
 
     ledManager.setup();
-    configuration.setup();
 
     SerialCommands::setUp();
 
@@ -98,9 +119,11 @@ void setup()
 
     sensorManager.setup();
 
+#ifndef USE_ESPNOW_COMMUNICATION
     networkManager.setup();
-    OTA::otaSetup(otaPassword);
-    battery.Setup();
+#endif
+    // OTA::otaSetup(otaPassword);
+    // battery.Setup();
 
     statusManager.setStatus(SlimeVR::Status::LOADING, false);
 
@@ -113,10 +136,12 @@ void loop()
 {
     globalTimer.tick();
     SerialCommands::update();
-    OTA::otaUpdate();
+    // OTA::otaUpdate();
+#ifndef USE_ESPNOW_COMMUNICATION
     networkManager.update();
+#endif
     sensorManager.update();
-    battery.Loop();
+    // battery.Loop();
     ledManager.update();
 #ifdef TARGET_LOOPTIME_MICROS
     long elapsed = (micros() - loopTime);

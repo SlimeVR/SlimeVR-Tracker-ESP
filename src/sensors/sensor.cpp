@@ -44,6 +44,7 @@ void Sensor::setFusedRotation(Quat r) {
 }
 
 void Sensor::sendData() {
+#ifndef USE_ESPNOW_COMMUNICATION
     if (newFusedRotation) {
         newFusedRotation = false;
         networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
@@ -59,6 +60,12 @@ void Sensor::sendData() {
         }
 #endif
     }
+#else
+	if (newFusedRotation) {
+        newFusedRotation = false;
+		espnowConnection.sendPacket(sensorId, 50, 4, fusedRotation, acceleration);
+	}
+#endif
 }
 
 void Sensor::printTemperatureCalibrationUnsupported() {

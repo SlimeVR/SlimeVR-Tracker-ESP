@@ -28,6 +28,8 @@
 
 #include "GlobalVars.h"
 
+#include <cstring>
+
 namespace SlimeVR::Sensors
 {
 
@@ -80,7 +82,10 @@ class SoftFusionSensor : public Sensor
         if (elapsed >= sendInterval) {
             const float temperature = m_sensor.getDirectTemp();
             m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
+            #ifndef USE_ESPNOW_COMMUNICATION
             networkConnection.sendTemperature(sensorId, temperature);
+            #endif
+			// TODO: ESPNOW
         }
     }
 

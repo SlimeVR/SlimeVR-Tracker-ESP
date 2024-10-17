@@ -117,7 +117,10 @@ void BNO080Sensor::motionLoop()
             int16_t mZ = imu.getRawMagZ();
             uint8_t mA = imu.getMagAccuracy();
 
+            #ifndef USE_ESPNOW_COMMUNICATION
             networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, rA, aX, aY, aZ, aA, mX, mY, mZ, mA);
+            #endif
+			// TODO: ESPNOW
         }
 #endif
 
@@ -180,7 +183,10 @@ void BNO080Sensor::motionLoop()
         if (rr != lastReset)
         {
             lastReset = rr;
+            #ifndef USE_ESPNOW_COMMUNICATION
             networkConnection.sendSensorError(this->sensorId, rr);
+            #endif
+			// TODO: ESPNOW
         }
 
         m_Logger.error("Sensor %d doesn't respond. Last reset reason:", sensorId, lastReset);
@@ -199,7 +205,10 @@ void BNO080Sensor::sendData()
     if (newFusedRotation)
     {
         newFusedRotation = false;
+        #ifndef USE_ESPNOW_COMMUNICATION
         networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
+        #endif
+		// TODO: ESPNOW
 
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
@@ -209,14 +218,20 @@ void BNO080Sensor::sendData()
         if (newAcceleration)
         {
             newAcceleration = false;
+            #ifndef USE_ESPNOW_COMMUNICATION
             networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
+            #endif
+			// TODO: ESPNOW
         }
 #endif
     }
 
     if (tap != 0)
     {
+        #ifndef USE_ESPNOW_COMMUNICATION
         networkConnection.sendSensorTap(sensorId, tap);
+        #endif
+		// TODO: ESPNOW
         tap = 0;
     }
 }

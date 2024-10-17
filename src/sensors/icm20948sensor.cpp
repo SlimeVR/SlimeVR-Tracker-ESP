@@ -60,7 +60,10 @@ void ICM20948Sensor::motionLoop()
         float mY = imu.magY();
         float mZ = imu.magZ();
 
+        #ifndef USE_ESPNOW_COMMUNICATION
         networkConnection.sendInspectionRawIMUData(sensorId, rX, rY, rZ, 255, aX, aY, aZ, 255, mX, mY, mZ, 255);
+        #endif
+		// TODO: ESPNOW
     }
 #endif
 
@@ -111,18 +114,27 @@ void ICM20948Sensor::sendData()
 
         #if(USE_6_AXIS)
         {
+            #ifndef USE_ESPNOW_COMMUNICATION
             networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, 0);
+            #endif
+			// TODO: ESPNOW
         }
         #else
         {
+            #ifndef USE_ESPNOW_COMMUNICATION
             networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, dmpData.Quat9.Data.Accuracy);
+            #endif
+			// TODO: ESPNOW
         }
         #endif
 
 #if SEND_ACCELERATION
         if (newAcceleration) {
             newAcceleration = false;
+            #ifndef USE_ESPNOW_COMMUNICATION
             networkConnection.sendSensorAcceleration(sensorId, acceleration);
+            #endif
+			// TODO: ESPNOW
         }
 #endif
     }
@@ -328,7 +340,10 @@ void ICM20948Sensor::checkSensorTimeout()
     if(lastData + 2000 < currenttime) {
         working = false;
         m_Logger.error("Sensor timeout I2C Address 0x%02x delaytime: %d ms", addr, currenttime-lastData );
+        #ifndef USE_ESPNOW_COMMUNICATION
         networkConnection.sendSensorError(this->sensorId, 1);
+        #endif
+		// TODO: ESPNOW
         lastData = currenttime;
     }
 }

@@ -119,7 +119,9 @@ void BatteryMonitor::Loop()
                     level = 1;
                 else if (level < 0)
                     level = 0;
+                #ifndef USE_ESPNOW_COMMUNICATION
                 networkConnection.sendBatteryLevel(voltage, level);
+                #endif
                 #ifdef BATTERY_LOW_POWER_VOLTAGE
                     if (voltage < BATTERY_LOW_POWER_VOLTAGE)
                     {

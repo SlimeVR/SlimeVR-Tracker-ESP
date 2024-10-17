@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2023 SlimeVR Contributors
+	Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,36 +21,57 @@
 	THE SOFTWARE.
 */
 
-#include "GlobalVars.h"
+#pragma once
 
-#ifndef USE_ESPNOW_COMMUNICATION
+#include <cstdint>
 
-#include "manager.h"
+namespace SlimeVR::Network::ESPNow {
 
-namespace SlimeVR::Network {
+enum class ESPNowMessageHeader : uint8_t {
+	Pairing = 0x00,
+	PairingAck = 0x01,
+	Connection = 0x02,
+	Packet = 0x03,
+};
 
-void Manager::setup() {
-	::WiFiNetwork::setUp();
-}
+struct ESPNowMessageBase {
+	ESPNowMessageHeader header;
+};
 
-void Manager::update() {
-	WiFiNetwork::upkeep();
+struct ESPNowPairingMessage {
+	ESPNowMessageHeader header = ESPNowMessageHeader::Pairing;
+};
 
-	auto wasConnected = m_IsConnected;
+struct ESPNowPairingAckMessage {
+	ESPNowMessageHeader header = ESPNowMessageHeader::PairingAck;
+	uint8_t trackerId;
+};
 
-	m_IsConnected = ::WiFiNetwork::isConnected();
+struct ESPNowConnectionMessage {
+	ESPNowMessageHeader header = ESPNowMessageHeader::Connection;
+};
 
-	if (!m_IsConnected) {
-		return;
-	}
+#pragma pack(push, 1)
+struct ESPNowPacketMessage {
+	ESPNowMessageHeader header = ESPNowMessageHeader::Packet;
+	uint8_t packetId;
+	uint8_t sensorId;
+	uint8_t rssi;
+	uint8_t battPercentage;
+	uint16_t battVoltage;
+	int16_t quat[4];
+	int16_t accel[3];
+};
+#pragma pack(pop)
 
-	if (!wasConnected) {
-		// WiFi was reconnected, rediscover the server and reconnect
-		networkConnection.reset();
-	}
+static_assert(sizeof(ESPNowPacketMessage) == 21);
 
-	networkConnection.update();
-}
+union ESPNowMessage {
+	ESPNowMessageBase base;
+	ESPNowPairingMessage pairing;
+	ESPNowPairingAckMessage pairingAck;
+	ESPNowConnectionMessage connection;
+	ESPNowPacketMessage packet;
+};
 
 }  // namespace SlimeVR::Network
-#endif

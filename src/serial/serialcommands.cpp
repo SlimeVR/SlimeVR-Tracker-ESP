@@ -62,6 +62,7 @@ namespace SerialCommands {
 
 	void cmdSet(CmdParser * parser) {
 		if(parser->getParamCount() != 1) {
+            #ifndef USE_ESPNOW_COMMUNICATION
 			if (parser->equalCmdParam(1, "WIFI")) {
 				if(parser->getParamCount() < 3) {
 					logger.error("CMD SET WIFI ERROR: Too few arguments");
@@ -117,12 +118,14 @@ namespace SerialCommands {
 			} else {
 				logger.error("CMD SET ERROR: Unrecognized variable to set");
 			}
+            #endif
 		} else {
 			logger.error("CMD SET ERROR: No variable to set");
 		}
 	}
 
     void printState() {
+        #ifndef USE_ESPNOW_COMMUNICATION
         logger.info(
             "SlimeVR Tracker, board: %d, hardware: %d, protocol: %d, firmware: %s, address: %s, mac: %s, status: %d, wifi state: %d",
             BOARD,
@@ -134,6 +137,8 @@ namespace SerialCommands {
             statusManager.getStatus(),
             WiFiNetwork::getWiFiState()
         );
+        #endif
+		// TODO: ESPNOW
         for (auto &sensor : sensorManager.getSensors()) {
             logger.info(
                 "Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
@@ -204,6 +209,7 @@ namespace SerialCommands {
         }
 
         if (parser->equalCmdParam(1, "TEST")) {
+            #ifndef USE_ESPNOW_COMMUNICATION
             logger.info(
                 "[TEST] Board: %d, hardware: %d, protocol: %d, firmware: %s, address: %s, mac: %s, status: %d, wifi state: %d",
                 BOARD,
@@ -215,6 +221,8 @@ namespace SerialCommands {
                 statusManager.getStatus(),
                 WiFiNetwork::getWiFiState()
             );
+            #endif
+			// TODO: ESPNOW
             auto& sensor0 = sensorManager.getSensors()[0];
             sensor0->motionLoop();
             logger.info(
@@ -231,6 +239,7 @@ namespace SerialCommands {
             }
         }
 
+        #ifndef USE_ESPNOW_COMMUNICATION
         if (parser->equalCmdParam(1, "WIFISCAN")) {
 			logger.info("[WSCAN] Scanning for WiFi networks...");
 
@@ -263,6 +272,7 @@ namespace SerialCommands {
 				WiFi.begin();
 			}
         }
+        #endif
     }
 
     void cmdReboot(CmdParser * parser) {

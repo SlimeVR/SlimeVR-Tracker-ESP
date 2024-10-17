@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,38 +21,41 @@
 	THE SOFTWARE.
 */
 
-#ifndef GLOBALVARS_H
-#define GLOBALVARS_H
+#pragma once
 
-#include <arduino-timer.h>
+#include "./logging/Logger.h"
 
-#include "LEDManager.h"
-#include "ResetCounter.h"
-#include "configuration/Configuration.h"
-#ifndef USE_ESPNOW_COMMUNICATION
-#include "network/connection.h"
-#include "network/manager.h"
-#endif
-#include "sensors/SensorManager.h"
-#include "status/StatusManager.h"
-#include "batterymonitor.h"
+#include <cstdint>
+#include <functional>
+#include <vector>
+#include <esp_timer.h>
+#include <esp_system.h>
 
-#ifdef USE_ESPNOW_COMMUNICATION
-#include "network/espnowconnection.h"
-#endif
+namespace SlimeVR {
 
-extern Timer<> globalTimer;
-extern SlimeVR::LEDManager ledManager;
-extern SlimeVR::Status::StatusManager statusManager;
-extern SlimeVR::Configuration::Configuration configuration;
-extern SlimeVR::Sensors::SensorManager sensorManager;
-#ifndef USE_ESPNOW_COMMUNICATION
-extern SlimeVR::Network::Manager networkManager;
-extern SlimeVR::Network::Connection networkConnection;
-#else
-extern SlimeVR::Network::ESPNowConnection espnowConnection;
-#endif
-extern BatteryMonitor battery;
-extern SlimeVR::ResetCounter resetCounter;
+class ResetCounter {
+public:
+	void setup();
+	void onResetCount(std::function<void(uint32_t)> callback);
 
-#endif
+private:
+	void signalResetDelay();
+	void signalResetTimeout();
+	void invokeResetCountCallbacks();
+
+	std::vector<std::function<void(uint32_t)>> resetCountCallbacks;
+	uint32_t resetCount = 0;
+
+	esp_timer_handle_t delayTimerHandle;
+	esp_timer_handle_t timeoutTimerHandle;
+
+	Logging::Logger m_Logger = Logging::Logger("ESPNowConnection");
+
+	static constexpr float resetDelaySeconds = 0.05f;
+	static constexpr float resetTimeoutSeconds = 3.0f;
+
+	friend void resetDelayTimerCallback(void *);
+	friend void resetTimeoutTimerCallback(void *);
+};
+
+} // namespace SlimeVR
