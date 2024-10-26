@@ -57,6 +57,8 @@ namespace SlimeVR
                 return ImuID::Unknown;
             }
 
+            void shutdown();
+
         private:
             SlimeVR::Logging::Logger m_Logger;
 

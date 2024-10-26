@@ -112,12 +112,37 @@ void setup()
 void loop()
 {
     globalTimer.tick();
+    bleSerial.poll();
     SerialCommands::update();
     OTA::otaUpdate();
+    chargerMonitor.update();
+    usbPDMonitor.update();
     networkManager.update();
     sensorManager.update();
     battery.Loop();
+
+#ifdef PIN_BUTTON_INPUT
+    buttonMonitor.update();
+#endif
     ledManager.update();
+
+#ifdef PIN_ENABLE_LATCH
+    if (statusManager.hasStatus(SlimeVR::Status::SHUTDOWN_INITIATED))
+    {
+        // Sensor shutdown soft reset BNO080 to avoid state problems on wake. 
+        sensorManager.shutdown()
+
+        ledManager.pattern(150,150,3);
+        statusManager.setStatus(SlimeVR::Status::SHUTDOWN_INITIATED,false);
+        statusManager.setStatus(SlimeVR::Status::SHUTDOWN_COMPLETE,true);
+    }
+    if (statusManager.hasStatus(SlimeVR::Status::SHUTDOWN_COMPLETE) && !buttonMonitor.isPressed())
+    {
+        digitalWrite(PIN_IMU_ENABLE, LOW);
+        digitalWrite(PIN_ENABLE_LATCH, LOW);
+    }
+#endif
+
 #ifdef TARGET_LOOPTIME_MICROS
     long elapsed = (micros() - loopTime);
     if (elapsed < TARGET_LOOPTIME_MICROS)

@@ -188,5 +188,13 @@ namespace SlimeVR
             #endif
         }
 
+        void SensorManager::shutdown()
+        {
+            for (auto &sensor : m_Sensors) 
+            {
+                sensor.shutdown()
+            }
+        }
+
     }
 }

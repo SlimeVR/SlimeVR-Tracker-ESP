@@ -66,6 +66,7 @@ public:
     virtual void printDebugTemperatureCalibrationState();
     virtual void resetTemperatureCalibrationState();
     virtual void saveTemperatureCalibration();
+    virtual void shutdown() {std::cerr << "Shutdown not implemented on this sensor" << std::endl;}
     bool isWorking() {
         return working;
     };
