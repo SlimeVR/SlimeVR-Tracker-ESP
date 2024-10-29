@@ -28,13 +28,18 @@
 #include "credentials.h"
 #include <i2cscan.h>
 #include "serial/serialcommands.h"
+#include "LEDManager.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
 
 Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
+#if ESP32 && ENABLE_LEDC
+SlimeVR::LEDManager ledManager(LED_PIN, LEDC_CHANNEL_LED, LEDC_FREQ_LED, LEDC_BITS_LED);
+#else
 SlimeVR::LEDManager ledManager(LED_PIN);
+#endif
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
 SlimeVR::Network::Manager networkManager;

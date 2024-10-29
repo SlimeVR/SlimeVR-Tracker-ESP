@@ -25,12 +25,22 @@
 #include "GlobalVars.h"
 #include "status/Status.h"
 
+#define LED_RAMP_MILLIS 50
+
+#define LEDC_MAX ((1u<<m_ledcBits)-1)
+
+
 namespace SlimeVR
 {
     void LEDManager::setup()
     {
 #if ENABLE_LEDS
+#if ESP32 && ENABLE_LEDC
+        ledcSetup( m_ledcChannel, m_ledcFrequency, m_ledcBits);  // define the PWM Setup
+        ledcAttachPin(m_Pin, m_ledcChannel);
+#else
         pinMode(m_Pin, OUTPUT);
+#endif
 #endif
 
         // Do the initial pull of the state
@@ -40,14 +50,22 @@ namespace SlimeVR
     void LEDManager::on()
     {
 #if ENABLE_LEDS
+#if ESP32 && ENABLE_LEDC
+        setBrightness((unsigned int) LEDC_MAX);
+#else
         digitalWrite(m_Pin, LED__ON);
+#endif
 #endif
     }
 
     void LEDManager::off()
     {
 #if ENABLE_LEDS
+#if ESP32 && ENABLE_LEDC
+        setBrightness((unsigned int)0);
+#else
         digitalWrite(m_Pin, LED__OFF);
+#endif
 #endif
     }
 
@@ -66,6 +84,57 @@ namespace SlimeVR
             delay(timeoff);
         }
     }
+
+#if ESP32 && ENABLE_LEDC
+    void LEDManager::setBrightness(float percent)
+    {        
+        setBrightness( (unsigned int)(percent/100.0f * LEDC_MAX));
+    }
+
+    void LEDManager::setBrightness(unsigned int brightness)
+    {       
+        if (brightness > LEDC_MAX)
+            brightness = LEDC_MAX;
+        if (brightness == m_CurrentBrightness)
+            return;
+        m_CurrentBrightness = brightness;
+#if LED_INVERTED
+        m_Logger.trace("Brightness set to %d. max is %d", LEDC_MAX - brightness, LEDC_MAX);
+        ledcWrite(m_ledcChannel, LEDC_MAX - brightness * 0.10);
+#else
+        m_Logger.trace("Brightness set to %d. max is %d", brightness, LEDC_MAX);
+        ledcWrite(m_ledcChannel, brightness * 0.10);
+#endif        
+    }
+
+    void LEDManager::setRamp(float startPercent, float endPercent, unsigned long ms)
+    {
+        m_CurrentStage = RAMP;
+        setRamp((unsigned int)(startPercent/100.0f * LEDC_MAX), (unsigned int)(endPercent/100.0f * LEDC_MAX), ms);
+    }
+
+    void LEDManager::setRamp(unsigned int startBrightness, unsigned int endBrightness, unsigned long ms)
+    {
+        m_CurrentStage = RAMP;
+        m_rampStartBrightness = startBrightness;
+        m_rampEndBrightness = endBrightness;
+        m_rampDifference = ((int)m_rampEndBrightness - (int)m_rampStartBrightness) / (ms/LED_RAMP_MILLIS);
+        if (m_rampDifference > m_rampEndBrightness)
+            m_rampDifference = m_rampEndBrightness;
+        m_Logger.trace("Ramp Start: %d, end: %d, ramp: %d", startBrightness, endBrightness, m_rampDifference);
+        setBrightness(m_rampStartBrightness);
+    }
+
+    void LEDManager::rampFromCurrent(float endPercent, unsigned long ms)
+    {
+        rampFromCurrent((unsigned int)(endPercent/100.0f * LEDC_MAX), ms);
+    }
+
+    void LEDManager::rampFromCurrent(unsigned int endBrightness, unsigned long ms)
+    {
+        setRamp(m_CurrentBrightness, endBrightness, ms);
+    }
+#endif
 
     void LEDManager::update()
     {
@@ -98,6 +167,11 @@ namespace SlimeVR
             case INTERVAL:
                 length = LOW_BATTERY_INTERVAL;
                 break;
+            case RAMP:
+            case RAMP_CONTINUOUS:
+                m_CurrentStage = RAMP;
+                rampFromCurrent(0.0f,1000);
+                break;
             }
         }
         else if (statusManager.hasStatus(Status::IMU_ERROR))
@@ -114,6 +188,11 @@ namespace SlimeVR
                 break;
             case INTERVAL:
                 length = IMU_ERROR_INTERVAL;
+                break;
+            case RAMP:
+            case RAMP_CONTINUOUS:
+                m_CurrentStage = RAMP;
+                rampFromCurrent(0.0f,1000);
                 break;
             }
         }
@@ -132,6 +211,11 @@ namespace SlimeVR
             case INTERVAL:
                 length = WIFI_CONNECTING_INTERVAL;
                 break;
+            case RAMP:
+            case RAMP_CONTINUOUS:
+                m_CurrentStage = RAMP;
+                rampFromCurrent(0.0f,1000);
+                break;
             }
         }
         else if (statusManager.hasStatus(Status::SERVER_CONNECTING))
@@ -148,6 +232,11 @@ namespace SlimeVR
                 break;
             case INTERVAL:
                 length = SERVER_CONNECTING_INTERVAL;
+                break;
+            case RAMP:
+            case RAMP_CONTINUOUS:
+                m_CurrentStage = RAMP;
+                rampFromCurrent(0.0f,1000);
                 break;
             }
         }
@@ -166,6 +255,11 @@ namespace SlimeVR
             case INTERVAL:
                 length = SERVER_SEARCHING_INTERVAL;
                 break;
+            case RAMP:
+            case RAMP_CONTINUOUS:
+                m_CurrentStage = RAMP;
+                rampFromCurrent(0.0f,1000);
+                break;
             }
         }
         else
@@ -183,6 +277,11 @@ namespace SlimeVR
                 break;
             case INTERVAL:
                 length = LED_INTERVAL_STANDBY;
+                break;
+            case RAMP:
+            case RAMP_CONTINUOUS:
+                m_CurrentStage = RAMP;
+                rampFromCurrent(0.0f,1000);
                 break;
             }
 #else
@@ -218,6 +317,27 @@ namespace SlimeVR
             case INTERVAL:
                 on();
                 m_CurrentStage = ON;
+                break;
+            case RAMP:
+#if ESP32 && ENABLE_LEDC
+                m_Logger.trace("RAMP: %d, %d, %d, %d", m_CurrentBrightness, m_rampDifference, m_rampStartBrightness, m_rampEndBrightness);
+                setBrightness(m_CurrentBrightness + m_rampDifference);
+                if (((m_rampDifference > 0) && (m_CurrentBrightness >= m_rampEndBrightness)) || 
+                    ((m_rampDifference < 0) && (m_CurrentBrightness <= -m_rampDifference)) || (m_rampDifference == 0))
+                    m_CurrentStage = (m_CurrentBrightness > 0)?ON:OFF;
+                break;
+            case RAMP_CONTINUOUS:
+                m_Logger.trace("RAMP CONT: %d, %d, %d, %d", m_CurrentBrightness, m_rampDifference, m_rampStartBrightness, m_rampEndBrightness);
+                setBrightness(m_CurrentBrightness + m_rampDifference);
+                if (((m_rampDifference > 0) && (m_CurrentBrightness >= m_rampEndBrightness)) || 
+                    ((m_rampDifference < 0) && (m_CurrentBrightness <= -m_rampDifference)) || (m_rampDifference == 0))
+                {
+                    unsigned int temp = m_rampStartBrightness;
+                    m_rampStartBrightness = m_rampEndBrightness;
+                    m_rampEndBrightness = temp;
+                    m_rampDifference = - m_rampDifference;
+                }
+#endif
                 break;
             }
         }
