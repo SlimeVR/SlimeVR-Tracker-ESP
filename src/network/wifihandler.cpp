@@ -73,6 +73,10 @@ IPAddress WiFiNetwork::getAddress() {
 
 void WiFiNetwork::setUp() {
     wifiHandlerLogger.info("Setting up WiFi");
+    uint8_t mac[6];
+    String hostname = "Eros Tracker ";
+	WiFi.macAddress(mac);
+    WiFi.hostname((hostname + String(mac[3]) + String(mac[4]) + String(mac[5])).c_str());
     WiFi.persistent(true);
     WiFi.mode(WIFI_STA);
     #if ESP8266
@@ -81,7 +85,6 @@ void WiFiNetwork::setUp() {
         #endif
     WiFi.setPhyMode(WIFI_PHY_MODE_11N);
     #endif
-    WiFi.hostname("SlimeVR FBT Tracker");
     wifiHandlerLogger.info("Loaded credentials for SSID %s and pass length %d", WiFi.SSID().c_str(), WiFi.psk().length());
     setStaticIPIfDefined();
     wl_status_t status = WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
