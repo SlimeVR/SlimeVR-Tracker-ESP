@@ -101,7 +101,7 @@ bool Connection::endPacket() {
 		m_IsBundle = true;
 		return true;
 	}
-
+	
 	int r = m_UDP.endPacket();
 	if (r == 0) {
 		// This is usually just `ERR_ABRT` but the UDP client doesn't expose
@@ -590,14 +590,10 @@ void Connection::searchForServer() {
 
 	auto now = millis();
 
-	// This makes the LED blink for 20ms every second
 	if (m_LastConnectionAttemptTimestamp + 1000 < now) {
 		m_LastConnectionAttemptTimestamp = now;
 		m_Logger.info("Searching for the server on the local network...");
 		Connection::sendTrackerDiscovery();
-		ledManager.on();
-	} else if (m_LastConnectionAttemptTimestamp + 20 < now) {
-		ledManager.off();
 	}
 }
 
@@ -617,8 +613,12 @@ void Connection::update() {
 	maybeRequestFeatureFlags();
 
 	if (!m_Connected) {
+		statusManager.setStatus(SlimeVR::Status::SERVER_SEARCHING, true);
 		searchForServer();
 		return;
+	} else
+	{
+		statusManager.setStatus(SlimeVR::Status::SERVER_SEARCHING, false);
 	}
 
 	if (m_LastPacketTimestamp + TIMEOUT < millis()) {

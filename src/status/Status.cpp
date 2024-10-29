@@ -16,6 +16,8 @@ namespace SlimeVR
                 return "IMU_ERROR";
             case WIFI_CONNECTING:
                 return "WIFI_CONNECTING";
+            case SERVER_SEARCHING:
+                return "SERVER_SEARCHING";
             case SERVER_CONNECTING:
                 return "SERVER_CONNECTING";
             default:
