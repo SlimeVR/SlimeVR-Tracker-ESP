@@ -91,7 +91,7 @@ enum class ImuID {
 #define BAT_MCP3021 3
 #define BAT_INTERNAL_MCP3021 4
 
-#define LED_OFF 255
+#define LED_PIN_NONE 255
 
 #define POWER_SAVING_LEGACY 0 // No sleeping, but PS enabled
 #define POWER_SAVING_NONE 1 // No sleeping, no PS => for connection issues

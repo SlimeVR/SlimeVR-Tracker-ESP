@@ -46,7 +46,7 @@
 // If there is no pin defined for the board, use LED_PIN 255 and disable LED
 #if defined(LED_PIN)
     // LED_PIN is defined
-    #if (LED_PIN < 0) || (LED_PIN >= LED_OFF)
+    #if (LED_PIN < 0) || (LED_PIN >= LED_PIN_NONE)
         #define ENABLE_LEDS false    
     #else
         #define ENABLE_LEDS true
@@ -57,7 +57,7 @@
         #define LED_PIN LED_BUILTIN
         #define ENABLE_LEDS true
     #else
-        #define LED_PIN LED_OFF
+        #define LED_PIN LED_PIN_NONE
         #define ENABLE_LEDS false
     #endif
 #endif
