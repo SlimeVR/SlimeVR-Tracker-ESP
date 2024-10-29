@@ -267,6 +267,9 @@ namespace SerialCommands {
 
     void cmdReboot(CmdParser * parser) {
         logger.info("REBOOT");
+#ifdef PIN_IMU_ENABLE
+        digitalWrite(PIN_IMU_ENABLE, LOW);
+#endif
         ESP.restart();
     }
 
@@ -292,6 +295,9 @@ namespace SerialCommands {
         #endif
 
         delay(3000);
+#ifdef PIN_IMU_ENABLE
+        digitalWrite(PIN_IMU_ENABLE, LOW);
+#endif
         ESP.restart();
     }
 
