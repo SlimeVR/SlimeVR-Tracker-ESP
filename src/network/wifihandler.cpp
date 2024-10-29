@@ -85,6 +85,28 @@ void WiFiNetwork::setUp() {
         #endif
     WiFi.setPhyMode(WIFI_PHY_MODE_11N);
     #endif
+    #if ESP32
+    esp_err_t espStatus = esp_wifi_set_max_tx_power(17.5*4); // argument is max dBm * 4
+    int8_t power = 0;
+    switch (espStatus)
+    {
+        case ESP_OK:
+            if (ESP_OK == esp_wifi_get_max_tx_power(&power))
+                wifiHandlerLogger.debug("Max WiFi TX power set to %1.1f dBm", power/4.0f);
+            break;
+        case ESP_ERR_WIFI_NOT_INIT:
+            wifiHandlerLogger.debug("Failed to set max WiFi TX power. Reason: WiFi not initialized.");
+            break;
+        case ESP_ERR_WIFI_NOT_STARTED:
+            wifiHandlerLogger.debug("Failed to set max WiFi TX power. Reason: WiFi not started.");
+            break;
+        case ESP_ERR_INVALID_ARG:
+            wifiHandlerLogger.debug("Failed to set max WiFi TX power. Reason: Invalid Argument.");
+            break;
+        default:
+            wifiHandlerLogger.debug("Failed to set max WiFi TX power. Reason: Unknown. error code: %04x", espStatus);
+    }
+    #endif
     wifiHandlerLogger.info("Loaded credentials for SSID %s and pass length %d", WiFi.SSID().c_str(), WiFi.psk().length());
     setStaticIPIfDefined();
     wl_status_t status = WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
