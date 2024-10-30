@@ -23,6 +23,9 @@
 #ifndef SLIMEVR_DEBUG_H_
 #define SLIMEVR_DEBUG_H_
 #include "consts.h"
+#include "defines.h"
+#include "defines_bmi160.h"
+#include "defines_sensitivity.h"
 #include "logging/Level.h"
 
 #ifndef IMU_MPU6050_RUNTIME_CALIBRATION
