@@ -25,7 +25,6 @@
 #define SLIMEVR_CONFIGURATION_SENSORCONFIG_H
 
 #include <stdint.h>
-
 #include "consts.h"
 
 namespace SlimeVR {

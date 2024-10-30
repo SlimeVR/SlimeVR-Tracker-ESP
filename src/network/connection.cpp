@@ -134,7 +134,7 @@ bool Connection::endBundle() {
 	return endPacket();
 }
 
-size_t Connection::write(const uint8_t* buffer, size_t size) {
+size_t Connection::write(const uint8_t *buffer, size_t size) {
 	if (m_IsBundle) {
 		if (m_BundlePacketPosition + size > sizeof(m_Packet)) {
 			return 0;
@@ -146,7 +146,9 @@ size_t Connection::write(const uint8_t* buffer, size_t size) {
 	return m_UDP.write(buffer, size);
 }
 
-size_t Connection::write(uint8_t byte) { return write(&byte, 1); }
+size_t Connection::write(uint8_t byte) {
+	return write(&byte, 1);
+}
 
 bool Connection::sendFloat(float f) {
 	convert_to_chars(f, m_Buf);
@@ -525,7 +527,7 @@ void Connection::returnLastPacket(int len) {
 	MUST(endPacket());
 }
 
-void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>>& sensors) {
+void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>> & sensors) {
 	if (millis() - m_LastSensorInfoPacketTimestamp <= 1000) {
 		return;
 	}
@@ -589,7 +591,7 @@ void Connection::searchForServer() {
 			m_Connected = true;
 
 			m_FeatureFlagsRequestAttempts = 0;
-			m_ServerFeatures = ServerFeatures{};
+			m_ServerFeatures = ServerFeatures { };
 
 			statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, false);
 			ledManager.off();
@@ -619,11 +621,7 @@ void Connection::searchForServer() {
 
 void Connection::reset() {
 	m_Connected = false;
-	std::fill(
-		m_AckedSensorState,
-		m_AckedSensorState + MAX_IMU_COUNT,
-		SensorStatus::SENSOR_OFFLINE
-	);
+	std::fill(m_AckedSensorState, m_AckedSensorState+MAX_IMU_COUNT, SensorStatus::SENSOR_OFFLINE);
 
 	m_UDP.begin(m_ServerPort);
 
@@ -631,7 +629,7 @@ void Connection::reset() {
 }
 
 void Connection::update() {
-	auto& sensors = sensorManager.getSensors();
+	auto & sensors = sensorManager.getSensors();
 
 	updateSensorState(sensors);
 	maybeRequestFeatureFlags();
@@ -645,11 +643,7 @@ void Connection::update() {
 		statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 
 		m_Connected = false;
-		std::fill(
-			m_AckedSensorState,
-			m_AckedSensorState + MAX_IMU_COUNT,
-			SensorStatus::SENSOR_OFFLINE
-		);
+		std::fill(m_AckedSensorState, m_AckedSensorState+MAX_IMU_COUNT, SensorStatus::SENSOR_OFFLINE);
 		m_Logger.warn("Connection to server timed out");
 
 		return;
@@ -726,19 +720,18 @@ void Connection::update() {
 			m_ServerFeatures = ServerFeatures::from(&m_Packet[12], flagsLength);
 
 			if (!hadFlags) {
-#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
-				if (m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
-					m_Logger.debug("Server supports packet bundling");
-				}
-#endif
+				#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+					if (m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
+						m_Logger.debug("Server supports packet bundling");
+					}
+				#endif
 			}
 
 			break;
 		}
 
 		case PACKET_SET_CONFIG_FLAG: {
-			// Packet type (4) + Packet number (8) + sensor_id(1) + flag_id (2) + state
-			// (1)
+			// Packet type (4) + Packet number (8) + sensor_id(1) + flag_id (2) + state (1)
 			if (len < 16) {
 				m_Logger.warn("Invalid sensor config flag packet: too short");
 				break;
@@ -746,18 +739,17 @@ void Connection::update() {
 			uint8_t sensorId = m_Packet[12];
 			uint16_t flagId = m_Packet[13] << 8 | m_Packet[14];
 			bool newState = m_Packet[15] > 0;
-			if (sensorId == UINT8_MAX) {
+			if(sensorId == UINT8_MAX) {
 				for (auto& sensor : sensors) {
 					sensor->setFlag(flagId, newState);
 				}
 			} else {
-				auto& sensors = sensorManager.getSensors();
-				if (sensorId < sensors.size()) {
+				auto & sensors = sensorManager.getSensors();
+				if(sensorId < sensors.size()) {
 					auto& sensor = sensors[sensorId];
 					sensor->setFlag(flagId, newState);
 				} else {
-					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id"
-					);
+					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id");
 					break;
 				}
 			}

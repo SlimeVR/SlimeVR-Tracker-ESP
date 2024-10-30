@@ -24,17 +24,17 @@
 #ifndef SLIMEVR_FEATURE_FLAGS_H_
 #define SLIMEVR_FEATURE_FLAGS_H_
 
-#include <algorithm>
 #include <cstring>
+#include <algorithm>
 
 /**
  * Bit packed flags, enum values start with 0 and indicate which bit it is.
  *
  * Change the enums and `flagsEnabled` inside to extend.
- */
+*/
 struct ServerFeatures {
 public:
-	enum EServerFeatureFlags : uint32_t {
+	enum EServerFeatureFlags: uint32_t {
 		// Server can parse bundle packets: `PACKET_BUNDLE` = 100 (0x64).
 		PROTOCOL_BUNDLE_SUPPORT,
 
@@ -51,17 +51,15 @@ public:
 	/**
 	 * Whether the server supports the "feature flags" feature,
 	 * set to true when we've received flags packet from the server.
-	 */
-	bool isAvailable() { return m_Available; }
+	*/
+	bool isAvailable() {
+		return m_Available;
+	}
 
 	static ServerFeatures from(uint8_t* received, uint32_t length) {
 		ServerFeatures res;
 		res.m_Available = true;
-		memcpy(
-			res.m_Flags,
-			received,
-			std::min(static_cast<uint32_t>(sizeof(res.m_Flags)), length)
-		);
+		memcpy(res.m_Flags, received, std::min(static_cast<uint32_t>(sizeof(res.m_Flags)), length));
 		return res;
 	}
 
@@ -73,7 +71,7 @@ private:
 
 class FirmwareFeatures {
 public:
-	enum EFirmwareFeatureFlags : uint32_t {
+	enum EFirmwareFeatureFlags: uint32_t {
 		// EXAMPLE_FEATURE,
 		B64_WIFI_SCANNING = 1,
 		SENSOR_CONFIG = 2,
@@ -90,7 +88,7 @@ public:
 		// Add enabled flags here
 	};
 
-	static constexpr auto flags = [] {
+	static constexpr auto flags = []{
 		constexpr uint32_t flagsLength = EFirmwareFeatureFlags::BITS_TOTAL / 8 + 1;
 		std::array<uint8_t, flagsLength> packed{};
 
