@@ -110,14 +110,14 @@ void BMI160Sensor::motionSetup() {
 
     // Initialize the configuration
     {
-        SlimeVR::Configuration::CalibrationConfig sensorCalibration = configuration.getCalibration(sensorId);
+        SlimeVR::Configuration::SensorConfig sensorConfig = configuration.getSensor(sensorId);
         // If no compatible calibration data is found, the calibration data will just be zero-ed out
-        switch (sensorCalibration.type) {
-        case SlimeVR::Configuration::CalibrationConfigType::BMI160:
-            m_Calibration = sensorCalibration.data.bmi160;
+        switch (sensorConfig.type) {
+        case SlimeVR::Configuration::SensorConfigType::BMI160:
+            m_Config = sensorConfig.data.bmi160;
             break;
 
-        case SlimeVR::Configuration::CalibrationConfigType::NONE:
+        case SlimeVR::Configuration::SensorConfigType::NONE:
             m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
             m_Logger.info("Calibration is advised");
             break;
@@ -161,7 +161,7 @@ void BMI160Sensor::motionSetup() {
 
     // allocate temperature memory after calibration because OOM
     gyroTempCalibrator = new GyroTemperatureCalibrator(
-        SlimeVR::Configuration::CalibrationConfigType::BMI160,
+        SlimeVR::Configuration::SensorConfigType::BMI160,
         sensorId,
         BMI160_GYRO_TYPICAL_SENSITIVITY_LSB,
         BMI160_TEMP_CALIBRATION_REQUIRED_SAMPLES_PER_STEP
@@ -171,9 +171,9 @@ void BMI160Sensor::motionSetup() {
         gyroTempCalibrator->loadConfig(BMI160_GYRO_TYPICAL_SENSITIVITY_LSB);
         if (gyroTempCalibrator->config.hasCoeffs) {
             float GOxyzAtTemp[3];
-            gyroTempCalibrator->approximateOffset(m_Calibration.temperature, GOxyzAtTemp);
+            gyroTempCalibrator->approximateOffset(m_Config.temperature, GOxyzAtTemp);
             for (uint32_t i = 0; i < 3; i++) {
-                GOxyzStaticTempCompensated[i] = m_Calibration.G_off[i] - GOxyzAtTemp[i];
+                GOxyzStaticTempCompensated[i] = m_Config.G_off[i] - GOxyzAtTemp[i];
             }
         }
     #endif
@@ -506,9 +506,9 @@ void BMI160Sensor::onGyroRawSample(uint32_t dtMicros, int16_t x, int16_t y, int1
     #endif
 
     sensor_real_t gyroCalibratedStatic[3];
-    gyroCalibratedStatic[0] = (sensor_real_t)((((double)x - m_Calibration.G_off[0]) * gscaleX));
-    gyroCalibratedStatic[1] = (sensor_real_t)((((double)y - m_Calibration.G_off[1]) * gscaleY));
-    gyroCalibratedStatic[2] = (sensor_real_t)((((double)z - m_Calibration.G_off[2]) * gscaleZ));
+    gyroCalibratedStatic[0] = (sensor_real_t)((((double)x - m_Config.G_off[0]) * gscaleX));
+    gyroCalibratedStatic[1] = (sensor_real_t)((((double)y - m_Config.G_off[1]) * gscaleY));
+    gyroCalibratedStatic[2] = (sensor_real_t)((((double)z - m_Config.G_off[2]) * gscaleZ));
 
     #if BMI160_USE_TEMPCAL
     float GOxyz[3];
@@ -629,10 +629,10 @@ void BMI160Sensor::applyAccelCalibrationAndScale(sensor_real_t Axyz[3]) {
         #if useFullCalibrationMatrix == true
             float tmp[3];
             for (uint8_t i = 0; i < 3; i++)
-                tmp[i] = (Axyz[i] - m_Calibration.A_B[i]);
-            Axyz[0] = m_Calibration.A_Ainv[0][0] * tmp[0] + m_Calibration.A_Ainv[0][1] * tmp[1] + m_Calibration.A_Ainv[0][2] * tmp[2];
-            Axyz[1] = m_Calibration.A_Ainv[1][0] * tmp[0] + m_Calibration.A_Ainv[1][1] * tmp[1] + m_Calibration.A_Ainv[1][2] * tmp[2];
-            Axyz[2] = m_Calibration.A_Ainv[2][0] * tmp[0] + m_Calibration.A_Ainv[2][1] * tmp[1] + m_Calibration.A_Ainv[2][2] * tmp[2];
+                tmp[i] = (Axyz[i] - m_Config.A_B[i]);
+            Axyz[0] = m_Config.A_Ainv[0][0] * tmp[0] + m_Config.A_Ainv[0][1] * tmp[1] + m_Config.A_Ainv[0][2] * tmp[2];
+            Axyz[1] = m_Config.A_Ainv[1][0] * tmp[0] + m_Config.A_Ainv[1][1] * tmp[1] + m_Config.A_Ainv[1][2] * tmp[2];
+            Axyz[2] = m_Config.A_Ainv[2][0] * tmp[0] + m_Config.A_Ainv[2][1] * tmp[1] + m_Config.A_Ainv[2][2] * tmp[2];
         #else
             for (uint8_t i = 0; i < 3; i++)
                 Axyz[i] = (Axyz[i] - calibration->A_B[i]);
@@ -649,20 +649,20 @@ void BMI160Sensor::applyMagCalibrationAndScale(sensor_real_t Mxyz[3]) {
         #if useFullCalibrationMatrix == true
             float temp[3];
             for (uint8_t i = 0; i < 3; i++)
-                temp[i] = (Mxyz[i] - m_Calibration.M_B[i]);
-            Mxyz[0] = m_Calibration.M_Ainv[0][0] * temp[0] + m_Calibration.M_Ainv[0][1] * temp[1] + m_Calibration.M_Ainv[0][2] * temp[2];
-            Mxyz[1] = m_Calibration.M_Ainv[1][0] * temp[0] + m_Calibration.M_Ainv[1][1] * temp[1] + m_Calibration.M_Ainv[1][2] * temp[2];
-            Mxyz[2] = m_Calibration.M_Ainv[2][0] * temp[0] + m_Calibration.M_Ainv[2][1] * temp[1] + m_Calibration.M_Ainv[2][2] * temp[2];
+                temp[i] = (Mxyz[i] - m_Config.M_B[i]);
+            Mxyz[0] = m_Config.M_Ainv[0][0] * temp[0] + m_Config.M_Ainv[0][1] * temp[1] + m_Config.M_Ainv[0][2] * temp[2];
+            Mxyz[1] = m_Config.M_Ainv[1][0] * temp[0] + m_Config.M_Ainv[1][1] * temp[1] + m_Config.M_Ainv[1][2] * temp[2];
+            Mxyz[2] = m_Config.M_Ainv[2][0] * temp[0] + m_Config.M_Ainv[2][1] * temp[1] + m_Config.M_Ainv[2][2] * temp[2];
         #else
             for (i = 0; i < 3; i++)
-                Mxyz[i] = (Mxyz[i] - m_Calibration.M_B[i]);
+                Mxyz[i] = (Mxyz[i] - m_Config.M_B[i]);
         #endif
     #endif
 }
 
 bool BMI160Sensor::hasGyroCalibration() {
     for (int i = 0; i < 3; i++) {
-        if (m_Calibration.G_off[i] != 0.0)
+        if (m_Config.G_off[i] != 0.0)
             return true;
     }
     return false;
@@ -670,10 +670,10 @@ bool BMI160Sensor::hasGyroCalibration() {
 
 bool BMI160Sensor::hasAccelCalibration() {
     for (int i = 0; i < 3; i++) {
-        if (m_Calibration.A_B[i] != 0.0 ||
-            m_Calibration.A_Ainv[0][i] != 0.0 ||
-            m_Calibration.A_Ainv[1][i] != 0.0 ||
-            m_Calibration.A_Ainv[2][i] != 0.0)
+        if (m_Config.A_B[i] != 0.0 ||
+            m_Config.A_Ainv[0][i] != 0.0 ||
+            m_Config.A_Ainv[1][i] != 0.0 ||
+            m_Config.A_Ainv[2][i] != 0.0)
             return true;
     }
     return false;
@@ -681,10 +681,10 @@ bool BMI160Sensor::hasAccelCalibration() {
 
 bool BMI160Sensor::hasMagCalibration() {
     for (int i = 0; i < 3; i++) {
-        if (m_Calibration.M_B[i] != 0.0 ||
-            m_Calibration.M_Ainv[0][i] != 0.0 ||
-            m_Calibration.M_Ainv[1][i] != 0.0 ||
-            m_Calibration.M_Ainv[2][i] != 0.0)
+        if (m_Config.M_B[i] != 0.0 ||
+            m_Config.M_Ainv[0][i] != 0.0 ||
+            m_Config.M_Ainv[1][i] != 0.0 ||
+            m_Config.M_Ainv[2][i] != 0.0)
             return true;
     }
     return false;
@@ -699,10 +699,10 @@ void BMI160Sensor::startCalibration(int calibrationType) {
 
     m_Logger.debug("Saving the calibration data");
 
-    SlimeVR::Configuration::CalibrationConfig calibration;
-    calibration.type = SlimeVR::Configuration::CalibrationConfigType::BMI160;
-    calibration.data.bmi160 = m_Calibration;
-    configuration.setCalibration(sensorId, calibration);
+    SlimeVR::Configuration::SensorConfig config;
+    config.type = SlimeVR::Configuration::SensorConfigType::BMI160;
+    config.data.bmi160 = m_Config;
+    configuration.setSensor(sensorId, config);
     configuration.save();
 
     m_Logger.debug("Saved the calibration data");
@@ -740,7 +740,7 @@ void BMI160Sensor::maybeCalibrateGyro() {
     if (!getTemperature(&temperature)) {
         m_Logger.error("Error: can't read temperature");
     }
-    m_Calibration.temperature = temperature;
+    m_Config.temperature = temperature;
 
     #ifdef DEBUG_SENSOR
         m_Logger.trace("Calibration temperature: %f", temperature);
@@ -768,12 +768,12 @@ void BMI160Sensor::maybeCalibrateGyro() {
         rawGxyz[2] += gz;
     }
     ledManager.off();
-    m_Calibration.G_off[0] = ((double)rawGxyz[0]) / gyroCalibrationSamples;
-    m_Calibration.G_off[1] = ((double)rawGxyz[1]) / gyroCalibrationSamples;
-    m_Calibration.G_off[2] = ((double)rawGxyz[2]) / gyroCalibrationSamples;
+    m_Config.G_off[0] = ((double)rawGxyz[0]) / gyroCalibrationSamples;
+    m_Config.G_off[1] = ((double)rawGxyz[1]) / gyroCalibrationSamples;
+    m_Config.G_off[2] = ((double)rawGxyz[2]) / gyroCalibrationSamples;
 
     #ifdef DEBUG_SENSOR
-        m_Logger.trace("Gyro calibration results: %f %f %f", UNPACK_VECTOR_ARRAY(m_Calibration.G_off));
+        m_Logger.trace("Gyro calibration results: %f %f %f", UNPACK_VECTOR_ARRAY(m_Config.G_off));
     #endif
 }
 
@@ -904,10 +904,10 @@ void BMI160Sensor::maybeCalibrateAccel() {
     m_Logger.debug("Accelerometer calibration matrix:");
     m_Logger.debug("{");
     for (int i = 0; i < 3; i++) {
-        m_Calibration.A_B[i] = A_BAinv[0][i];
-        m_Calibration.A_Ainv[0][i] = A_BAinv[1][i];
-        m_Calibration.A_Ainv[1][i] = A_BAinv[2][i];
-        m_Calibration.A_Ainv[2][i] = A_BAinv[3][i];
+        m_Config.A_B[i] = A_BAinv[0][i];
+        m_Config.A_Ainv[0][i] = A_BAinv[1][i];
+        m_Config.A_Ainv[1][i] = A_BAinv[2][i];
+        m_Config.A_Ainv[2][i] = A_BAinv[3][i];
         m_Logger.debug("  %f, %f, %f, %f", A_BAinv[0][i], A_BAinv[1][i], A_BAinv[2][i], A_BAinv[3][i]);
     }
     m_Logger.debug("}");
@@ -964,10 +964,10 @@ void BMI160Sensor::maybeCalibrateMag() {
     m_Logger.debug("[INFO] Magnetometer calibration matrix:");
     m_Logger.debug("{");
     for (int i = 0; i < 3; i++) {
-        m_Calibration.M_B[i] = M_BAinv[0][i];
-        m_Calibration.M_Ainv[0][i] = M_BAinv[1][i];
-        m_Calibration.M_Ainv[1][i] = M_BAinv[2][i];
-        m_Calibration.M_Ainv[2][i] = M_BAinv[3][i];
+        m_Config.M_B[i] = M_BAinv[0][i];
+        m_Config.M_Ainv[0][i] = M_BAinv[1][i];
+        m_Config.M_Ainv[1][i] = M_BAinv[2][i];
+        m_Config.M_Ainv[2][i] = M_BAinv[3][i];
         m_Logger.debug("  %f, %f, %f, %f", M_BAinv[0][i], M_BAinv[1][i], M_BAinv[2][i], M_BAinv[3][i]);
     }
     m_Logger.debug("}");
