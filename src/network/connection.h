@@ -26,11 +26,11 @@
 #include <Arduino.h>
 #include <WiFiUdp.h>
 
+#include "featureflags.h"
 #include "globals.h"
 #include "quat.h"
 #include "sensors/sensor.h"
 #include "wifihandler.h"
-#include "featureflags.h"
 
 namespace SlimeVR {
 namespace Network {
@@ -117,21 +117,19 @@ public:
 	);
 #endif
 
-	const ServerFeatures& getServerFeatureFlags() {
-		return m_ServerFeatures;
-	}
+	const ServerFeatures& getServerFeatureFlags() { return m_ServerFeatures; }
 
 	bool beginBundle();
 	bool endBundle();
 
 private:
-	void updateSensorState(std::vector<std::unique_ptr<Sensor>> & sensors);
+	void updateSensorState(std::vector<std::unique_ptr<Sensor>>& sensors);
 	void maybeRequestFeatureFlags();
 
 	bool beginPacket();
 	bool endPacket();
 
-	size_t write(const uint8_t *buffer, size_t size);
+	size_t write(const uint8_t* buffer, size_t size);
 	size_t write(uint8_t byte);
 
 	bool sendPacketType(uint8_t type);
