@@ -89,7 +89,7 @@
 // Not recommended for production
 #define ENABLE_INSPECTION false
 
-#define PROTOCOL_VERSION 17
-#define FIRMWARE_VERSION "0.4.0"
+#define PROTOCOL_VERSION 18
+#define FIRMWARE_VERSION "0.5.0"
 
 #endif // SLIMEVR_DEBUG_H_
