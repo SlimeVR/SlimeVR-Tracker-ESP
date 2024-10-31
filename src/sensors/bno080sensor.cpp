@@ -68,8 +68,6 @@ void BNO080Sensor::motionSetup()
         break;
     }
 
-	magStatus = MagnetometerStatus::MAG_NOT_SUPPORTED;
-
     if(!isMagEnabled()) {
         if ((sensorType == ImuID::BNO085 || sensorType == ImuID::BNO086) && BNO_USE_ARVR_STABILIZATION) {
             imu.enableARVRStabilizedGameRotationVector(10);
