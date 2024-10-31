@@ -71,7 +71,10 @@ void Sensor::resetTemperatureCalibrationState() { printTemperatureCalibrationUns
 
 uint16_t Sensor::getSensorConfigData() {
 	SlimeVR::Configuration::SensorConfig sensorConfig = configuration.getSensor(sensorId);
-	return SlimeVR::Configuration::configDataToNumber(sensorConfig);
+	return SlimeVR::Configuration::configDataToNumber(
+		&sensorConfig,
+		magStatus != MagnetometerStatus::MAG_NOT_SUPPORTED
+		);
 }
 
 const char * getIMUNameByType(ImuID imuType) {
