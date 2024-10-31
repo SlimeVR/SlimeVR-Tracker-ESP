@@ -4,7 +4,7 @@
 
 namespace SlimeVR {
 
-#ifdef ESP32
+#if ESP32
 void resetDelayTimerCallback(void *) {
     resetCounter.signalResetDelay();
 }
@@ -15,7 +15,7 @@ void resetTimeoutTimerCallback(void *) {
 #endif
 
 void ResetCounter::setup() {
-#ifdef ESP32
+#if ESP32
 
     if (esp_timer_early_init() != ESP_OK) {
         m_Logger.error("Couldn't initialize timer!");
@@ -56,7 +56,7 @@ void ResetCounter::setup() {
         return;
     }
 
-#elif defined ESP8266
+#elif ESP8266
 
 	timerStartMillis = millis();
 	signalResetDelay();
@@ -65,7 +65,7 @@ void ResetCounter::setup() {
 }
 
 void ResetCounter::update() {
-#ifdef ESP8266
+#if ESP8266
 
 	if (timeoutElapsed) {
 		return;
@@ -90,7 +90,7 @@ void ResetCounter::signalResetDelay() {
     resetCount++;
     configuration.saveResetCount(resetCount);
 
-#ifdef ESP32
+#if ESP32
     esp_timer_delete(delayTimerHandle);
 #endif
 }
@@ -102,7 +102,7 @@ void ResetCounter::signalResetTimeout() {
 		invokeResetCountCallbacks();
 	}
 
-#ifdef ESP32
+#if ESP32
     esp_timer_delete(timeoutTimerHandle);
 #endif
 }

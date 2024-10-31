@@ -50,10 +50,10 @@ private:
 	std::vector<std::function<void(uint32_t)>> resetCountCallbacks;
 	uint32_t resetCount = 0;
 
-#ifdef ESP32
+#if ESP32
 	esp_timer_handle_t delayTimerHandle;
 	esp_timer_handle_t timeoutTimerHandle;
-#elif defined(ESP8266)
+#elif ESP8266
 	uint32_t timerStartMillis;
 	bool timeoutElapsed = false;
 #endif
@@ -63,7 +63,7 @@ private:
 	static constexpr float resetDelaySeconds = 0.05f;
 	static constexpr float resetTimeoutSeconds = 3.0f;
 
-#ifdef ESP32
+#if ESP32
 	friend void resetDelayTimerCallback(void*);
 	friend void resetTimeoutTimerCallback(void*);
 #endif

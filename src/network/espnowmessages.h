@@ -49,6 +49,7 @@ struct ESPNowPairingAckMessage {
 
 struct ESPNowConnectionMessage {
 	ESPNowMessageHeader header = ESPNowMessageHeader::Connection;
+	uint8_t trackerId;
 };
 
 #pragma pack(push, 1)

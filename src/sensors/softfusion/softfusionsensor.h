@@ -197,7 +197,7 @@ public:
 
         // send new fusion values when time is up
         now = micros();
-        constexpr float maxSendRateHz = 120.0f;
+        constexpr float maxSendRateHz = 100.0f;
         constexpr uint32_t sendInterval = 1.0f/maxSendRateHz * 1e6;
         elapsed = now - m_lastRotationPacketSent;
         if (elapsed >= sendInterval) {
