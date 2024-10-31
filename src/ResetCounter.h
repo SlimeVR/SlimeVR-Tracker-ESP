@@ -23,19 +23,23 @@
 
 #pragma once
 
-#include "./logging/Logger.h"
-
 #include <cstdint>
 #include <functional>
 #include <vector>
+
+#include "./logging/Logger.h"
+
+#ifdef ESP32
 #include <esp_timer.h>
 #include <esp_system.h>
+#endif
 
 namespace SlimeVR {
 
 class ResetCounter {
 public:
 	void setup();
+	void update();
 	void onResetCount(std::function<void(uint32_t)> callback);
 
 private:
@@ -46,16 +50,24 @@ private:
 	std::vector<std::function<void(uint32_t)>> resetCountCallbacks;
 	uint32_t resetCount = 0;
 
+#ifdef ESP32
 	esp_timer_handle_t delayTimerHandle;
 	esp_timer_handle_t timeoutTimerHandle;
+#elif defined(ESP8266)
+	uint32_t timerStartMillis;
+	bool delayElapsed = false;
+	bool timeoutElapsed = false;
+#endif
 
 	Logging::Logger m_Logger = Logging::Logger("ESPNowConnection");
 
 	static constexpr float resetDelaySeconds = 0.05f;
 	static constexpr float resetTimeoutSeconds = 3.0f;
 
-	friend void resetDelayTimerCallback(void *);
-	friend void resetTimeoutTimerCallback(void *);
+#ifdef ESP32
+	friend void resetDelayTimerCallback(void*);
+	friend void resetTimeoutTimerCallback(void*);
+#endif
 };
 
-} // namespace SlimeVR
+}  // namespace SlimeVR

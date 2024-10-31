@@ -29,8 +29,13 @@
 #include <vector3.h>
 #include <algorithm>
 #include <cstdint>
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#include <espnow.h>
+#elif defined(ESP32)
 #include <WiFi.h>
 #include <esp_now.h>
+#endif
 #include <cmath>
 
 namespace SlimeVR::Network {
@@ -42,9 +47,10 @@ public:
 	void sendPacket(uint8_t sensorId, float batteryPercentage, float batteryVoltage, Quat fusedQuat, Vector3 accel);
 
 private:
-	bool registerPeer(const uint8_t macAddress[6]);
+	bool registerPeer(uint8_t macAddress[6]);
 	void sendConnectionRequest();
-	void handleMessage(const esp_now_recv_info_t *espnowInfo, const uint8_t *data, int dataLen);
+
+	void handleMessage(uint8_t *senderMacAddress, const uint8_t *data, uint8_t dataLen);
 
 	template<unsigned int Q>
 	static constexpr inline int16_t toFixed(float number) {
@@ -64,12 +70,21 @@ private:
 
 	Logging::Logger m_Logger = Logging::Logger("ESPNowConnection");
 
+	#if defined(ESP8266)
+	static uint8_t broadcastMacAddress[6];
+	#elif defined(ESP32)
 	static constexpr uint8_t broadcastMacAddress[6] = {
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 	};
+	#endif
+
 	static constexpr uint8_t espnowWifiChannel = 6;
 
+	#if defined(ESP8266)
+	friend void onReceive(uint8_t *, uint8_t *, uint8_t);
+	#elif defined(ESP32)
 	friend void onReceive(const esp_now_recv_info_t *, const uint8_t *, int);
+	#endif
 };
 
 }  // namespace SlimeVR::Network

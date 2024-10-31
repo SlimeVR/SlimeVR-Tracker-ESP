@@ -4,16 +4,28 @@
 #include "../GlobalVars.h"
 #include "espnowmessages.h"
 
+#ifndef ESP_OK
+#define ESP_OK 0
+#endif
+
 #define MACSTR        "%02x:%02x:%02x:%02x:%02x:%02x"
 #define MAC2ARGS(mac) mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
 
 namespace SlimeVR::Network {
 
+#if defined(ESP8266)
+void onReceive(uint8_t *senderMacAddress,
+               uint8_t *data,
+               uint8_t dataLen) {
+    espnowConnection.handleMessage(senderMacAddress, data, dataLen);
+}
+#elif defined(ESP32)
 void onReceive(const esp_now_recv_info_t *espnowInfo,
                const uint8_t *data,
                int dataLen) {
-    espnowConnection.handleMessage(espnowInfo, data, dataLen);
+    espnowConnection.handleMessage(espnowInfo->src_addr, data, static_cast<uint8_t>(dataLen));
 }
+#endif
 
 void ESPNowConnection::setup() {
     WiFi.mode(WIFI_STA);
@@ -24,6 +36,10 @@ void ESPNowConnection::setup() {
         m_Logger.fatal("Couldn't initialize ESPNow!");
         return;
     }
+
+	#ifdef ESP8266
+	esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
+	#endif
 
     if (!registerPeer(broadcastMacAddress)) {
         m_Logger.fatal("Couldn't add broadcast mac address as a peer!");
@@ -97,13 +113,17 @@ void ESPNowConnection::sendPacket(uint8_t sensorId, float batteryPercentage, flo
     }
 }
 
-bool ESPNowConnection::registerPeer(const uint8_t macAddress[6]) {
+bool ESPNowConnection::registerPeer(uint8_t macAddress[6]) {
+#if defined(ESP8266)
+	return esp_now_add_peer(macAddress, ESP_NOW_ROLE_COMBO, espnowWifiChannel, NULL, 0) == ESP_OK;
+#elif defined(ESP32)
     esp_now_peer_info_t peer;
     memcpy(peer.peer_addr, macAddress, sizeof(uint8_t[6]));
     peer.channel = 0;
     peer.encrypt = false;
     peer.ifidx = WIFI_IF_STA;
     return esp_now_add_peer(&peer) == ESP_OK;
+#endif
 }
 
 void ESPNowConnection::sendConnectionRequest() {
@@ -118,29 +138,35 @@ void ESPNowConnection::sendConnectionRequest() {
     }
 }
 
-void ESPNowConnection::handleMessage(const esp_now_recv_info_t *espnowInfo, const uint8_t *data, int dataLen) {
+void ESPNowConnection::handleMessage(uint8_t *senderMacAddress, const uint8_t *data, uint8_t dataLen) {
     const auto *message = reinterpret_cast<const ESPNow::ESPNowMessage *>(data);
     auto header = message->base.header;
 
     switch (header) {
-        using enum ESPNow::ESPNowMessageHeader;
-        case Pairing:
+		case ESPNow::ESPNowMessageHeader::Pairing:
             return;
-        case PairingAck: {
-            configuration.saveDongleConnection(espnowInfo->src_addr, message->pairingAck.trackerId);
-            m_Logger.info("Paired to dongle at mac address " MACSTR "!", MAC2ARGS(espnowInfo->src_addr));
-            registerPeer(espnowInfo->src_addr);
+		case ESPNow::ESPNowMessageHeader::PairingAck: {
+            configuration.saveDongleConnection(senderMacAddress, message->pairingAck.trackerId);
+            m_Logger.info("Paired to dongle at mac address " MACSTR "!", MAC2ARGS(senderMacAddress));
+            registerPeer(senderMacAddress);
             paired = true;
             connected = true;
             return;
         }
-        case Connection:
+		case ESPNow::ESPNowMessageHeader::Connection:
             ledManager.pattern(100, 100, 2);
             connected = true;
             return;
-        case Packet:
+		case ESPNow::ESPNowMessageHeader::Packet:
             return;
     }
 }
+
+#ifdef ESP8266
+uint8_t ESPNowConnection::broadcastMacAddress[6] = {
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+#endif
+
 
 } // namespace SlimeVR::Network
