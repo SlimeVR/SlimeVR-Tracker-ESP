@@ -663,7 +663,7 @@ void BMI160Sensor::onMagRawSample(uint32_t dtMicros, int16_t x, int16_t y, int16
 }
 
 void BMI160Sensor::printTemperatureCalibrationState() {
-	const auto degCtoF = [](float degC) { return (degC * 9.0f      /      5.0f) + 32.0f; };
+	const auto degCtoF = [](float degC) { return (degC * 9.0f / 5.0f) + 32.0f; };
 
 	m_Logger.info("Sensor %i temperature calibration state:", sensorId);
 	m_Logger
