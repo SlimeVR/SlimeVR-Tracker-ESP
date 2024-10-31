@@ -207,8 +207,9 @@ void BNO080Sensor::sendData()
         newFusedRotation = false;
         #ifndef USE_ESPNOW_COMMUNICATION
         networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
+		#else
+		espnowConnection.sendPacket(sensorId, 50, 4, fusedRotation, this->acceleration);
         #endif
-		// TODO: ESPNOW
 
 #ifdef DEBUG_SENSOR
         m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));

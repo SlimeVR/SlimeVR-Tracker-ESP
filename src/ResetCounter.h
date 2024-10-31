@@ -55,7 +55,6 @@ private:
 	esp_timer_handle_t timeoutTimerHandle;
 #elif defined(ESP8266)
 	uint32_t timerStartMillis;
-	bool delayElapsed = false;
 	bool timeoutElapsed = false;
 #endif
 

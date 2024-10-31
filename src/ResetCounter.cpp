@@ -59,6 +59,7 @@ void ResetCounter::setup() {
 #elif defined ESP8266
 
 	timerStartMillis = millis();
+	signalResetDelay();
 
 #endif
 }
@@ -71,15 +72,6 @@ void ResetCounter::update() {
 	}
 
 	uint32_t elapsedMillis = millis() - timerStartMillis;
-
-	if (elapsedMillis < resetDelaySeconds * 1e3) {
-		return;
-	}
-
-	if (!delayElapsed) {
-		signalResetDelay();
-		delayElapsed = true;
-	}
 
 	if (elapsedMillis < resetTimeoutSeconds * 1e3) {
 		return;

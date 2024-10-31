@@ -65,7 +65,6 @@ void setup()
     configuration.setup();
 	resetCounter.setup();
 #ifdef USE_ESPNOW_COMMUNICATION
-	espnowConnection.setup();
 	resetCounter.onResetCount([&](uint8_t resetCount){
 		if (resetCount == 3) {
 			espnowConnection.broadcastPairingRequest();
@@ -121,6 +120,8 @@ void setup()
 
 #ifndef USE_ESPNOW_COMMUNICATION
     networkManager.setup();
+#else
+	espnowConnection.setup();
 #endif
     // OTA::otaSetup(otaPassword);
     // battery.Setup();
@@ -136,6 +137,7 @@ void loop()
 {
     globalTimer.tick();
     SerialCommands::update();
+	resetCounter.update();
     // OTA::otaUpdate();
 #ifndef USE_ESPNOW_COMMUNICATION
     networkManager.update();
