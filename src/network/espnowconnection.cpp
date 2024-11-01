@@ -171,6 +171,8 @@ void ESPNowConnection::handleMessage(uint8_t *senderMacAddress, const uint8_t *d
             return;
 		case ESPNow::ESPNowMessageHeader::PairingAck: {
             configuration.saveDongleConnection(senderMacAddress, message->pairingAck.trackerId);
+			trackerId = message->pairingAck.trackerId;
+			memcpy(dongleMacAddress, senderMacAddress, sizeof(uint8_t) * 6);
             m_Logger.info("Paired to dongle at mac address " MACSTR "!", MAC2ARGS(senderMacAddress));
             registerPeer(senderMacAddress);
             paired = true;
