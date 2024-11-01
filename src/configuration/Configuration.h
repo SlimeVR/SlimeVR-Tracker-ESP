@@ -51,11 +51,9 @@ namespace SlimeVR {
             bool loadTemperatureCalibration(uint8_t sensorId, GyroTemperatureCalibrationConfig& config);
             bool saveTemperatureCalibration(uint8_t sensorId, const GyroTemperatureCalibrationConfig& config);
 
-#ifdef USE_ESPNOW_COMMUNICATION
             bool loadDongleConnection(uint8_t outMacAddress[6], uint8_t &outTrackerId);
             bool saveDongleConnection(const uint8_t macAddress[6], uint8_t trackerId);
-#endif
-
+            
             bool loadResetCount(uint32_t *outResetCount);
             bool saveResetCount(uint32_t resetCount);
 

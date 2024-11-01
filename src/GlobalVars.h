@@ -29,29 +29,21 @@
 #include "LEDManager.h"
 #include "ResetCounter.h"
 #include "configuration/Configuration.h"
-#ifndef USE_ESPNOW_COMMUNICATION
 #include "network/connection.h"
 #include "network/manager.h"
-#endif
 #include "sensors/SensorManager.h"
 #include "status/StatusManager.h"
 #include "batterymonitor.h"
-
-#ifdef USE_ESPNOW_COMMUNICATION
 #include "network/espnowconnection.h"
-#endif
 
 extern Timer<> globalTimer;
 extern SlimeVR::LEDManager ledManager;
 extern SlimeVR::Status::StatusManager statusManager;
 extern SlimeVR::Configuration::Configuration configuration;
 extern SlimeVR::Sensors::SensorManager sensorManager;
-#ifndef USE_ESPNOW_COMMUNICATION
 extern SlimeVR::Network::Manager networkManager;
 extern SlimeVR::Network::Connection networkConnection;
-#else
 extern SlimeVR::Network::ESPNowConnection espnowConnection;
-#endif
 extern BatteryMonitor battery;
 extern SlimeVR::ResetCounter resetCounter;
 

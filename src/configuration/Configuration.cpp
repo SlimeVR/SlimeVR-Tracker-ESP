@@ -242,7 +242,6 @@ namespace SlimeVR {
             return true;
         }
 
-#ifdef USE_ESPNOW_COMMUNICATION
 		bool Configuration::loadDongleConnection(uint8_t outMacAddress[6], uint8_t &outTrackerId) {
 			char path[] = "/dongleMac.bin";
 
@@ -273,7 +272,6 @@ namespace SlimeVR {
             m_Logger.debug("Saved dongle mac address");
             return true;
 		}
-#endif
 
 		bool Configuration::loadResetCount(uint32_t *outResetCount) {
 			char path[] = "/resetCount.bin";
