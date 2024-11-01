@@ -34,6 +34,7 @@
 #include "softfusion/drivers/lsm6ds3trc.h"
 #include "softfusion/drivers/icm42688.h"
 #include "softfusion/drivers/bmi270.h"
+#include "softfusion/drivers/bmi220.h"
 #include "softfusion/drivers/lsm6dsv.h"
 #include "softfusion/drivers/lsm6dso.h"
 #include "softfusion/drivers/lsm6dsr.h"
@@ -52,6 +53,7 @@ namespace SlimeVR
         using SoftFusionLSM6DS3TRC = SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC, SoftFusion::I2CImpl>;
         using SoftFusionICM42688 = SoftFusionSensor<SoftFusion::Drivers::ICM42688, SoftFusion::I2CImpl>;
         using SoftFusionBMI270 = SoftFusionSensor<SoftFusion::Drivers::BMI270, SoftFusion::I2CImpl>;
+        using SoftFusionBMI220 = SoftFusionSensor<SoftFusion::Drivers::BMI220, SoftFusion::I2CImpl>;
         using SoftFusionLSM6DSV = SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, SoftFusion::I2CImpl>;
         using SoftFusionLSM6DSO = SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::I2CImpl>;
         using SoftFusionLSM6DSR = SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;

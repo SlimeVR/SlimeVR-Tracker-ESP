@@ -101,6 +101,8 @@ const char * getIMUNameByType(ImuID imuType) {
             return "ICM42688";
         case ImuID::BMI270:
             return "BMI270";
+        case ImuID::BMI220:
+            return "BMI220";
         case ImuID::LSM6DS3TRC:
             return "LSM6DS3TRC";
         case ImuID::LSM6DSV:
