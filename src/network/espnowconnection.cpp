@@ -50,10 +50,7 @@ void onReceive(const esp_now_recv_info_t *espnowInfo,
 #endif
 
 void ESPNowConnection::setup() {
-
     WiFi.mode(WIFI_STA);
-    wifi_set_channel(espnowWifiChannel);
-    WiFi.begin();
 
     if (esp_now_init() != ESP_OK) {
         m_Logger.fatal("Couldn't initialize ESPNow!");
