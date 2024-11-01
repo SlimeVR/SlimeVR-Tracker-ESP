@@ -149,7 +149,7 @@ struct SensorConfig {
 	} data;
 };
 
-uint16_t configDataToNumber(SensorConfig sensorConfig);
+uint16_t configDataToNumber(SensorConfig* sensorConfig, bool magSupported);
 }  // namespace Configuration
 }  // namespace SlimeVR
 
