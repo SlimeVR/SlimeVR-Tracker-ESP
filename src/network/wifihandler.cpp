@@ -82,7 +82,7 @@ void WiFiNetwork::setUp() {
     WiFi.setPhyMode(WIFI_PHY_MODE_11N);
     #endif
     WiFi.hostname("SlimeVR FBT Tracker");
-    wifiHandlerLogger.info("Loaded credentials for SSID %s and pass length %d", WiFi.SSID().c_str(), WiFi.psk().length());
+    wifiHandlerLogger.info("Loaded credentials for SSID '%s' and pass length %d", WiFi.SSID().c_str(), WiFi.psk().length());
     setStaticIPIfDefined();
     wl_status_t status = WiFi.begin(); // Should connect to last used access point, see https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
     wifiHandlerLogger.debug("Status: %d", status);
@@ -126,7 +126,7 @@ void onConnected() {
     statusManager.setStatus(SlimeVR::Status::WIFI_CONNECTING, false);
     isWifiConnected = true;
     hadWifi = true;
-    wifiHandlerLogger.info("Connected successfully to SSID '%s', ip address %s", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+    wifiHandlerLogger.info("Connected successfully to SSID '%s', IP address %s", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
 }
 
 uint8_t WiFiNetwork::getWiFiState() {

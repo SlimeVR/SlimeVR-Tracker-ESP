@@ -76,7 +76,7 @@ namespace SerialCommands {
 					}
 
 					WiFiNetwork::setWiFiCredentials(sc_ssid, sc_pw);
-					logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
+					logger.info("CMD SET WIFI OK: New WiFi credentials set, reconnecting");
 				}
 			} else if (parser->equalCmdParam(1, "BWIFI")) {
 				if(parser->getParamCount() < 3) {
@@ -248,7 +248,7 @@ namespace SerialCommands {
 			if (scanRes >= 0) {
 				logger.info("[WSCAN] Found %d networks:", scanRes);
 				for (int i = 0; i < scanRes; i++) {
-					logger.info("[WSCAN] %d:\t%02d\t%s\t(%d)\t%s",
+					logger.info("[WSCAN] %d: %02d '%s' (%d) %s",
 						i, WiFi.SSID(i).length(), WiFi.SSID(i).c_str(), WiFi.RSSI(i),
 						((WiFi.encryptionType(i) == 0) ? "OPEN" : "PASSWD")
 					);
