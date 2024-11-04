@@ -137,6 +137,7 @@ bool ESPNowConnection::sendDeviceInfoPacket(uint8_t sensorId) {
     }
 
     ESPNow::ESPNowPacketMessage message = {};
+	message.header = ESPNow::ESPNowMessageHeader::Packet;
 	ESPNow::ESPNowPacketDeviceInfo packet;
     packet.sensorId = trackerId << 2 | (sensorId & 0x03);
 	packet.battPercentage = 50;
@@ -216,6 +217,7 @@ void ESPNowConnection::handleMessage(uint8_t *senderMacAddress, const uint8_t *d
 			}
             ledManager.pattern(100, 100, 2);
             connected = true;
+			m_Logger.info("Connected to dongle at mac address " MACSTR "!", MAC2ARGS(dongleMacAddress));
             return;
 		case ESPNow::ESPNowMessageHeader::Packet:
             return;
