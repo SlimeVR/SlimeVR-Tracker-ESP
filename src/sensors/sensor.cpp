@@ -61,9 +61,13 @@ void Sensor::sendData() {
 #endif
     }
 #else
+	if (!sentDeviceInfo) {
+		sentDeviceInfo = espnowConnection.sendDeviceInfoPacket(sensorId);
+	}
+
 	if (newFusedRotation) {
         newFusedRotation = false;
-		espnowConnection.sendPacket(sensorId, 50, 4, fusedRotation, acceleration);
+		espnowConnection.sendFusionPacket(sensorId, fusedRotation, acceleration);
 	}
 #endif
 }

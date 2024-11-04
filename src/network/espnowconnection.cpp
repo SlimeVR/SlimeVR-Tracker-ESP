@@ -25,6 +25,7 @@
 
 #include "../GlobalVars.h"
 #include "espnowmessages.h"
+#include "espnowpackets.h"
 
 #ifndef ESP_OK
 #define ESP_OK 0
@@ -100,7 +101,7 @@ void ESPNowConnection::broadcastPairingRequest() {
     }
 }
 
-void ESPNowConnection::sendPacket(uint8_t sensorId, float batteryPercentage, float batteryVoltage, Quat fusedQuat, Vector3 accel) {
+void ESPNowConnection::sendFusionPacket(uint8_t sensorId, Quat fusedQuat, Vector3 accel) {
     if (!connected) {
         return;
     }
@@ -114,13 +115,10 @@ void ESPNowConnection::sendPacket(uint8_t sensorId, float batteryPercentage, flo
     endBuffer[5] = toFixed<7>(accel.y);
     endBuffer[6] = toFixed<7>(accel.z);
 
-    ESPNow::ESPNowPacketMessage message;
-    message.packetId = 0;
-    message.sensorId = trackerId << 4 | (sensorId & 0x0f);
-    message.rssi = 0;
-    message.battPercentage = std::min(static_cast<uint8_t>(batteryPercentage), static_cast<uint8_t>(1u));
-    message.battVoltage = static_cast<uint16_t>(batteryVoltage * 1000);
-    memcpy(&message.quat, endBuffer, sizeof(endBuffer));
+    ESPNow::ESPNowPacketMessage message = {};
+	message.packet.fullSizeFusion.packetId = ESPNow::ESPNowPacketId::FullSizeFusion;
+    message.packet.fullSizeFusion.sensorId = trackerId << 2 | (sensorId & 0x03);
+    memcpy(&message.packet.fullSizeFusion.quat, endBuffer, sizeof(endBuffer));
 
     if (esp_now_send(
                 broadcastMacAddress,
@@ -131,6 +129,39 @@ void ESPNowConnection::sendPacket(uint8_t sensorId, float batteryPercentage, flo
         // m_Logger.fatal("Couldn't send packet");
         return;
     }
+}
+
+bool ESPNowConnection::sendDeviceInfoPacket(uint8_t sensorId) {
+    if (!connected) {
+        return false;
+    }
+
+    ESPNow::ESPNowPacketMessage message = {};
+	ESPNow::ESPNowPacketDeviceInfo packet;
+    packet.sensorId = trackerId << 2 | (sensorId & 0x03);
+	packet.battPercentage = 50;
+	packet.batteryVoltage = 128;
+	packet.temperature = 128;
+	packet.boardId = 0;
+	packet.firmwareId = 0;
+	packet.imuId = 0;
+	packet.magId = 0;
+	packet.firmwareDate = 0;
+	packet.firmwareMajor = 0;
+	packet.firmwareMinor = 0;
+	packet.firmwarePatch = 0;
+	message.packet.deviceInfo = packet;
+
+    if (esp_now_send(
+                broadcastMacAddress,
+                reinterpret_cast<uint8_t *>(&message),
+                sizeof(message)
+            ) != ESP_OK) {
+        // Logging this constantly would be insane
+        // m_Logger.fatal("Couldn't send packet");
+        return false;
+    }
+	return true;
 }
 
 bool ESPNowConnection::registerPeer(uint8_t macAddress[6]) {

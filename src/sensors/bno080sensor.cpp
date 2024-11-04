@@ -208,7 +208,7 @@ void BNO080Sensor::sendData()
         #ifndef USE_ESPNOW_COMMUNICATION
         networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
 		#else
-		espnowConnection.sendPacket(sensorId, 50, 4, fusedRotation, this->acceleration);
+		espnowConnection.sendFusionPacket(sensorId, fusedRotation, this->acceleration);
         #endif
 
 #ifdef DEBUG_SENSOR

@@ -43,7 +43,8 @@ class ESPNowConnection {
 public:
 	void setup();
 	void broadcastPairingRequest();
-	void sendPacket(uint8_t sensorId, float batteryPercentage, float batteryVoltage, Quat fusedQuat, Vector3 accel);
+	bool sendDeviceInfoPacket(uint8_t sensorId);
+	void sendFusionPacket(uint8_t sensorId, Quat fusedQuat, Vector3 accel);
 
 private:
 	bool registerPeer(uint8_t macAddress[6]);

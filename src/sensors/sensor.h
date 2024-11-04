@@ -130,6 +130,10 @@ public:
 
 private:
 	void printTemperatureCalibrationUnsupported();
+
+#ifdef USE_ESPNOW_COMMUNICATION
+	bool sentDeviceInfo = false;
+#endif
 };
 
 const char * getIMUNameByType(ImuID imuType);

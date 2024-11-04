@@ -25,48 +25,43 @@
 
 #include <cstdint>
 
-#include "./espnowpackets.h"
-
 namespace SlimeVR::Network::ESPNow {
 
-enum class ESPNowMessageHeader : uint8_t {
-	Pairing = 0x00,
-	PairingAck = 0x01,
-	Connection = 0x02,
-	Packet = 0x03,
+enum class ESPNowPacketId : uint8_t {
+	DeviceInfo = 0x00,
+	FullSizeFusion = 0x01,
 };
 
-struct ESPNowMessageBase {
-	ESPNowMessageHeader header;
+struct ESPNowPacketDeviceInfo {
+	ESPNowPacketId packetId = ESPNowPacketId::DeviceInfo;
+	uint8_t sensorId;
+	uint8_t battPercentage;
+	uint8_t batteryVoltage;
+	uint8_t temperature;
+	uint8_t boardId;
+	uint8_t firmwareId;
+	uint8_t reserved0;
+	uint8_t imuId;
+	uint8_t magId;
+	uint16_t firmwareDate;
+	uint8_t firmwareMajor;
+	uint8_t firmwareMinor;
+	uint8_t firmwarePatch;
+	uint8_t rssi;
 };
 
-struct ESPNowPairingMessage {
-	ESPNowMessageHeader header = ESPNowMessageHeader::Pairing;
+struct ESPNowPacketFullSizeFusion {
+	ESPNowPacketId packetId = ESPNowPacketId::FullSizeFusion;
+	uint8_t sensorId;
+	int16_t quat[4];
+	int16_t accel[3];
 };
 
-struct ESPNowPairingAckMessage {
-	ESPNowMessageHeader header = ESPNowMessageHeader::PairingAck;
-	uint8_t trackerId;
+union ESPNowPacket {
+	ESPNowPacketDeviceInfo deviceInfo;
+	ESPNowPacketFullSizeFusion fullSizeFusion;
 };
 
-struct ESPNowConnectionMessage {
-	ESPNowMessageHeader header = ESPNowMessageHeader::Connection;
-	uint8_t trackerId;
-};
+static_assert(sizeof(ESPNowPacket) == 16);
 
-#pragma pack(push, 1)
-struct ESPNowPacketMessage {
-	ESPNowMessageHeader header = ESPNowMessageHeader::Packet;
-	ESPNowPacket packet;
-};
-#pragma pack(pop)
-
-union ESPNowMessage {
-	ESPNowMessageBase base;
-	ESPNowPairingMessage pairing;
-	ESPNowPairingAckMessage pairingAck;
-	ESPNowConnectionMessage connection;
-	ESPNowPacketMessage packet;
-};
-
-}  // namespace SlimeVR::Network
+}
