@@ -39,7 +39,7 @@ struct ESPNowPacketDeviceInfo {
 	uint8_t batteryVoltage;
 	uint8_t temperature;
 	uint8_t boardId;
-	uint8_t firmwareId;
+	uint8_t protocolVersion;
 	uint8_t reserved0;
 	uint8_t imuId;
 	uint8_t magId;

@@ -61,8 +61,9 @@ void Sensor::sendData() {
 #endif
     }
 #else
-	if (!sentDeviceInfo) {
-		sentDeviceInfo = espnowConnection.sendDeviceInfoPacket(sensorId);
+	if (!sentDeviceInfo || lastDeviceInfoPacket + 30000 < millis()) {
+		sentDeviceInfo = espnowConnection.sendDeviceInfoPacket(this);
+        lastDeviceInfoPacket = millis();
 	}
 
 	if (newFusedRotation) {

@@ -133,6 +133,7 @@ private:
 
 #ifdef USE_ESPNOW_COMMUNICATION
 	bool sentDeviceInfo = false;
+	long lastDeviceInfoPacket = 0;
 #endif
 };
 

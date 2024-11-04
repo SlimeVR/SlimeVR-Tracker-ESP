@@ -36,6 +36,7 @@
 #include <esp_now.h>
 #endif
 #include <cmath>
+#include "sensors/sensor.h"
 
 namespace SlimeVR::Network {
 
@@ -43,7 +44,7 @@ class ESPNowConnection {
 public:
 	void setup();
 	void broadcastPairingRequest();
-	bool sendDeviceInfoPacket(uint8_t sensorId);
+	bool sendDeviceInfoPacket(Sensor* sensor);
 	void sendFusionPacket(uint8_t sensorId, Quat fusedQuat, Vector3 accel);
 
 private:

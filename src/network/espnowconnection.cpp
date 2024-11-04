@@ -131,7 +131,7 @@ void ESPNowConnection::sendFusionPacket(uint8_t sensorId, Quat fusedQuat, Vector
     }
 }
 
-bool ESPNowConnection::sendDeviceInfoPacket(uint8_t sensorId) {
+bool ESPNowConnection::sendDeviceInfoPacket(Sensor* sensor) {
     if (!connected) {
         return false;
     }
@@ -139,13 +139,13 @@ bool ESPNowConnection::sendDeviceInfoPacket(uint8_t sensorId) {
     ESPNow::ESPNowPacketMessage message = {};
 	message.header = ESPNow::ESPNowMessageHeader::Packet;
 	ESPNow::ESPNowPacketDeviceInfo packet;
-    packet.sensorId = trackerId << 2 | (sensorId & 0x03);
-	packet.battPercentage = 50;
-	packet.batteryVoltage = 128;
+    packet.sensorId = trackerId << 2 | (sensor->getSensorId() & 0x03);
+	packet.battPercentage = toFixed<7>(battery.getLevel());
+	packet.batteryVoltage = toFixed<7>(battery.getVoltage());
 	packet.temperature = 128;
-	packet.boardId = 0;
-	packet.firmwareId = 0;
-	packet.imuId = 0;
+	packet.boardId = BOARD;
+	packet.protocolVersion = PROTOCOL_VERSION;
+	packet.imuId = static_cast<uint8_t>(sensor->getSensorType());
 	packet.magId = 0;
 	packet.firmwareDate = 0;
 	packet.firmwareMajor = 0;
@@ -162,6 +162,7 @@ bool ESPNowConnection::sendDeviceInfoPacket(uint8_t sensorId) {
         // m_Logger.fatal("Couldn't send packet");
         return false;
     }
+    m_Logger.info("Device info packet sent...");
 	return true;
 }
 
