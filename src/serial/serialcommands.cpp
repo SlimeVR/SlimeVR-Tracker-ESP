@@ -338,12 +338,17 @@ namespace SerialCommands {
         logger.info("  Temperature calibration config saves automatically when calibration percent is at 100%");
     }
 
+    void cmdPair(CmdParser* parser) {
+        espnowConnection.broadcastPairingRequest();
+    }
+
     void setUp() {
         cmdCallbacks.addCmd("SET", &cmdSet);
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REBOOT", &cmdReboot);
         cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
+        cmdCallbacks.addCmd("PAIR", &cmdPair);
     }
 
     void update() {
