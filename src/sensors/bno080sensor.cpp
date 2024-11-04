@@ -202,30 +202,7 @@ SensorStatus BNO080Sensor::getSensorState()
 
 void BNO080Sensor::sendData()
 {
-    if (newFusedRotation)
-    {
-        newFusedRotation = false;
-        #ifndef USE_ESPNOW_COMMUNICATION
-        networkConnection.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, calibrationAccuracy);
-		#else
-		espnowConnection.sendFusionPacket(sensorId, fusedRotation, this->acceleration);
-        #endif
-
-#ifdef DEBUG_SENSOR
-        m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
-#endif
-
-#if SEND_ACCELERATION
-        if (newAcceleration)
-        {
-            newAcceleration = false;
-            #ifndef USE_ESPNOW_COMMUNICATION
-            networkConnection.sendSensorAcceleration(this->sensorId, this->acceleration);
-            #endif
-			// TODO: ESPNOW
-        }
-#endif
-    }
+    Sensor::sendData();
 
     if (tap != 0)
     {
