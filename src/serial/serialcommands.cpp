@@ -290,7 +290,7 @@ namespace SerialCommands {
 			if (scanRes >= 0) {
 				logger.info("[WSCAN] Found %d networks:", scanRes);
 				for (int i = 0; i < scanRes; i++) {
-					logger.info("[WSCAN] %d: %02d '%s' (%d dBm) %s",
+					logger.info("[WSCAN] %d:\t%02d\t'%s'\t(%d dBm)\t%s",
 						i, WiFi.SSID(i).length(), WiFi.SSID(i).c_str(), WiFi.RSSI(i),
 						getEncryptionTypeName(WiFi.encryptionType(i))
 					);
