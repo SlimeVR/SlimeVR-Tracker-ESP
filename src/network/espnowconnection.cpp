@@ -206,7 +206,7 @@ void ESPNowConnection::handleMessage(uint8_t *senderMacAddress, const uint8_t *d
             configuration.saveDongleConnection(senderMacAddress, message->pairingAck.trackerId);
 			trackerId = message->pairingAck.trackerId;
 			memcpy(dongleMacAddress, senderMacAddress, sizeof(uint8_t) * 6);
-            m_Logger.info("Paired to dongle at mac address " MACSTR "!", MAC2ARGS(senderMacAddress));
+            m_Logger.info("Paired to dongle at mac address " MACSTR " as tracker %d!", MAC2ARGS(senderMacAddress), trackerId);
             registerPeer(senderMacAddress);
             paired = true;
             connected = true;
@@ -219,7 +219,7 @@ void ESPNowConnection::handleMessage(uint8_t *senderMacAddress, const uint8_t *d
 			}
             ledManager.pattern(100, 100, 2);
             connected = true;
-			m_Logger.info("Connected to dongle at mac address " MACSTR "!", MAC2ARGS(dongleMacAddress));
+			m_Logger.info("Connected to dongle at mac address " MACSTR " as tracker %d!", MAC2ARGS(dongleMacAddress), trackerId);
             return;
 		case ESPNow::ESPNowMessageHeader::Packet:
             return;
