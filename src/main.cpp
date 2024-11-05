@@ -120,11 +120,11 @@ void setup()
 
 #ifndef USE_ESPNOW_COMMUNICATION
     networkManager.setup();
+    OTA::otaSetup(otaPassword);
 #else
 	espnowConnection.setup();
 #endif
-    // OTA::otaSetup(otaPassword);
-    // battery.Setup();
+    battery.Setup();
 
     statusManager.setStatus(SlimeVR::Status::LOADING, false);
 
@@ -138,12 +138,12 @@ void loop()
     globalTimer.tick();
     SerialCommands::update();
 	resetCounter.update();
-    // OTA::otaUpdate();
 #ifndef USE_ESPNOW_COMMUNICATION
+    OTA::otaUpdate();
     networkManager.update();
 #endif
     sensorManager.update();
-    // battery.Loop();
+    battery.Loop();
     ledManager.update();
 #ifdef TARGET_LOOPTIME_MICROS
     long elapsed = (micros() - loopTime);

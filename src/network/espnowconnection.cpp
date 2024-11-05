@@ -140,8 +140,8 @@ bool ESPNowConnection::sendDeviceInfoPacket(Sensor* sensor) {
 	message.header = ESPNow::ESPNowMessageHeader::Packet;
 	ESPNow::ESPNowPacketDeviceInfo packet;
     packet.sensorId = trackerId << 2 | (sensor->getSensorId() & 0x03);
-	packet.battPercentage = toFixed<7>(battery.getLevel());
-	packet.batteryVoltage = toFixed<7>(battery.getVoltage());
+	packet.battPercentage = 128 | static_cast<uint8_t>(CLAMP(battery.getLevel() * 100, 0, 127));
+	packet.batteryVoltage = static_cast<uint8_t>(CLAMP((battery.getVoltage() - 2.45) * 100, 0, 255));
 	packet.temperature = 128;
 	packet.boardId = BOARD;
 	packet.protocolVersion = PROTOCOL_VERSION;
@@ -210,6 +210,7 @@ void ESPNowConnection::handleMessage(uint8_t *senderMacAddress, const uint8_t *d
             registerPeer(senderMacAddress);
             paired = true;
             connected = true;
+            sendConnectionRequest();
             return;
         }
 		case ESPNow::ESPNowMessageHeader::Connection:
