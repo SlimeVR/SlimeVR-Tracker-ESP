@@ -126,10 +126,38 @@ namespace SlimeVR
                     sensor->postSetup();
                 }
             }
+#if ESP32 && SENSOR_THREADING
+            for (auto & sensor : m_Sensors) {
+                sensor->updateMutex = xSemaphoreCreateMutex();
+            }
+            xTaskCreateUniversal(updateSensors, "sensors", 16*1024, this, 10, &sensorTask, ARDUINO_RUNNING_CORE);
+#endif
         }
+        
+#if ESP32 && SENSOR_THREADING
+        void SensorManager::updateSensors(void * pxParameter) {
+            SensorManager *pthis = (SensorManager *)pxParameter;
+            for (;;) {
+                bool allIMUGood = true;
+                for (auto & sensor : pthis->m_Sensors) {
+                    if (sensor->isWorking()) {
+                        pthis->swapI2C(sensor->sclPin, sensor->sdaPin);
+                        sensor->motionLoop();
+                    }
+                    if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR)
+                    {
+                        allIMUGood = false;
+                    }
+                }
+
+                statusManager.setStatus(SlimeVR::Status::IMU_ERROR, !allIMUGood);
+            }
+        }
+#endif
 
         void SensorManager::update()
         {
+#if !(ESP32 && SENSOR_THREADING)
             // Gather IMU data
             bool allIMUGood = true;
             for (auto &sensor : m_Sensors) {
@@ -144,6 +172,7 @@ namespace SlimeVR
             }
 
             statusManager.setStatus(SlimeVR::Status::IMU_ERROR, !allIMUGood);
+#endif
 
             if (!networkConnection.isConnected()) {
                 return;

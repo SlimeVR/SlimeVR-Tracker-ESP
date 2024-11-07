@@ -58,6 +58,9 @@
     #define TARGET_LOOPTIME_MICROS (samplingRateInMillis * 1000)
 #endif
 
+// Enable threading for higher performance on ESP32 variants
+#define SENSOR_THREADING true
+
 // Packet bundling/aggregation
 #define PACKET_BUNDLING PACKET_BUNDLING_BUFFERED
 // Extra tunable for PACKET_BUNDLING_BUFFERED (10000us = 10ms timeout, 100hz target)
