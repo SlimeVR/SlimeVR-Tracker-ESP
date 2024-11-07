@@ -39,6 +39,7 @@
 #include "softfusion/drivers/lsm6dsr.h"
 #include "softfusion/drivers/mpu6050.h"
 #include "softfusion/drivers/icm45686.h"
+#include "softfusion/drivers/icm45605.h"
 
 #include "softfusion/i2cimpl.h"
 
@@ -58,6 +59,7 @@ namespace SlimeVR
         using SoftFusionLSM6DSR = SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;
         using SoftFusionMPU6050 = SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
         using SoftFusionICM45686 = SoftFusionSensor<SoftFusion::Drivers::ICM45686, SoftFusion::I2CImpl>;
+        using SoftFusionICM45605 = SoftFusionSensor<SoftFusion::Drivers::ICM45605, SoftFusion::I2CImpl>;
 
         // TODO Make it more generic in the future and move another place (abstract sensor interface)
         void SensorManager::swapI2C(uint8_t sclPin, uint8_t sdaPin)
@@ -174,7 +176,7 @@ namespace SlimeVR
 
                 m_LastBundleSentAtMicros = now;
             #endif
-            
+
             #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
                 networkConnection.beginBundle();
             #endif
