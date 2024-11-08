@@ -19,7 +19,7 @@ else:
 tag = ""
 try:
 	tag = (
-		subprocess.check_output["git", "--no-pager", "tag", "--sort", "-taggerdate", "--points-at" , "HEAD"]
+		subprocess.check_output(["git", "--no-pager", "tag", "--sort", "-taggerdate", "--points-at" , "HEAD"])
 			.split("\n")[0]
 			.strip()
 			.decode("utf-8")
@@ -33,7 +33,7 @@ except Exception:
 branch = ""
 try:
 	branch = (
-		subprocess.check_output["git", "symbolic-ref", "--short", "-q", "HEAD"]
+		subprocess.check_output(["git", "symbolic-ref", "--short", "-q", "HEAD"])
 			.strip()
 			.decode("utf-8")
 	)
