@@ -90,6 +90,9 @@
 #define ENABLE_INSPECTION false
 
 #define PROTOCOL_VERSION 18
-#define FIRMWARE_VERSION "0.5.0"
+
+#ifndef FIRMWARE_VERSION
+	#define FIRMWARE_VERSION "UNKNOWN"
+#endif
 
 #endif // SLIMEVR_DEBUG_H_
