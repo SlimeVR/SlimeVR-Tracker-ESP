@@ -9,7 +9,7 @@ if not env_rev is None and env_rev != "":
 else:
     try:
         revision = (
-            subprocess.check_output(["git", "rev-parse", "HEAD"])
+            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
             .strip()
             .decode("utf-8")
         )
