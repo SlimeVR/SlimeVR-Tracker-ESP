@@ -9,6 +9,24 @@ on:
   create:
 
 jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jidicula/clang-format-action@v4.13.0
+        with:
+          clang-format-version: "17"
+          fallback-style: google
+#      Disable clang-tidy for now
+#      - name: Get clang-tidy
+#        run: |
+#          apt-get update
+#          apt-get install -y clang-tidy
+#      - uses: ZehMatt/clang-tidy-annotations@v1.0.0
+#        with:
+#          build_dir: 'build'
+#          cmake_args: '-G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++'
+
   build:
     runs-on: ubuntu-20.04
 
