@@ -5,6 +5,8 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+  create:
 
 jobs:
   format:
@@ -55,3 +57,12 @@ jobs:
         with:
           name: binaries
           path: ./build/*.bin
+
+      - name: Upload to draft release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            ./build/BOARD_SLIMEVR-firmware.bin
