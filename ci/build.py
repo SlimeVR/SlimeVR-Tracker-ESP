@@ -22,7 +22,7 @@ class DeviceConfiguration:
         self.platformio_board = platformio_board
 
     def filename(self) -> str:
-        return f"{self.platformio_board}.bin"
+        return f"{self.board}-firmware.bin"
 
     def __str__(self) -> str:
         return f"{self.platform}@{self.board}"
