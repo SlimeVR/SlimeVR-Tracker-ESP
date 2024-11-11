@@ -25,6 +25,7 @@
 
 #include "GlobalVars.h"
 #include "logging/Logger.h"
+#include "logging/LogQueue.h"
 #include "packets.h"
 
 #define TIMEOUT 3000UL
@@ -189,7 +190,12 @@ bool Connection::sendPacketNumber() {
 }
 
 bool Connection::sendShortString(const char* str) {
-	uint8_t size = strlen(str);
+	size_t size = strlen(str);
+
+	constexpr size_t maxLength = std::numeric_limits<uint8_t>::max();
+	if (size > maxLength) {
+		size = maxLength;
+	}
 
 	MUST_TRANSFER_BOOL(sendByte(size));
 	MUST_TRANSFER_BOOL(sendBytes((const uint8_t*)str, size));
@@ -393,6 +399,31 @@ void Connection::sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configTy
 	MUST(sendShort(configType));
 
 	MUST(endPacket());
+}
+
+// PACKET_LOG 26
+void Connection::sendLogMessage(const char* message) {
+	MUST(m_Connected);
+
+	MUST(beginPacket());
+
+	MUST(sendPacketType(PACKET_LOG));
+	MUST(sendPacketNumber());
+	MUST(sendShortString(message));
+
+	MUST(endPacket());
+}
+
+void Connection::sendPendingLogMessage() {
+	MUST(m_Connected);
+	MUST(m_ServerFeatures.has(ServerFeatures::PROTOCOL_LOG_SUPPORT));
+
+	Logging::LogQueue& logQueue = Logging::LogQueue::instance();
+	if (!logQueue.empty()) {
+		const char* message = logQueue.front();
+		sendLogMessage(message);
+		logQueue.pop();
+	}
 }
 
 void Connection::sendTrackerDiscovery() {
@@ -634,6 +665,7 @@ void Connection::update() {
 	auto& sensors = sensorManager.getSensors();
 
 	updateSensorState(sensors);
+	sendPendingLogMessage();
 	maybeRequestFeatureFlags();
 
 	if (!m_Connected) {
@@ -731,6 +763,9 @@ void Connection::update() {
 					m_Logger.debug("Server supports packet bundling");
 				}
 #endif
+				if (m_ServerFeatures.has(ServerFeatures::PROTOCOL_LOG_SUPPORT)) {
+					m_Logger.debug("Server supports network logging");
+				}
 			}
 
 			break;
