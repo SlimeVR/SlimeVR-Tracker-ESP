@@ -1,3 +1,26 @@
+/*
+	SlimeVR Code is placed under the MIT license
+	Copyright (c) 2024 Jabberrock & SlimeVR contributors
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+*/
+
 #ifndef LOGGING_LOGQUEUE_H
 #define LOGGING_LOGQUEUE_H
 
@@ -8,102 +31,63 @@
 
 namespace SlimeVR::Logging {
 
-template <typename T, T Modulus>
-class Modulo {
-public:
-    Modulo(T value) : m_Value(value) {}
-
-    Modulo<T, Modulus>& operator++()
-    {
-        m_Value = (m_Value + 1) % Modulus;
-        return *this;
-    }
-
-    Modulo<T, Modulus> operator+(T other) const
-    {
-		// WARNING: Does not consider overflow or negative values
-		T newValue = (m_Value + other) % Modulus;
-        return Modulo<T, Modulus>{newValue};
-    }
-
-    T get() const
-    {
-        return m_Value;
-    }
-
-private:
-    T m_Value;
-};
-
 class LogQueue {
 public:
-    // Whether there are any messages in the queue.
-    bool empty() const
-    {
-        return m_Count == 0;
-    }
+	// Whether there are any messages in the queue.
+	bool empty() const;
 
-    // First message in the queue.
-    const char* front() const
-    {
-        if (empty())
-        {
-            return nullptr;
-        }
+	// First message in the queue.
+	const char* front() const;
 
-        return m_MessageQueue[m_StartIndex.get()].data();
-    }
+	// Adds a message to the end of the queue. Messages that are too long will be truncated.
+	void push(const char* message);
 
-    // Adds a message to the end of the queue. Messages that are too long will be truncated.
-    void push(const char* message)
-    {
-        if (m_Count < m_MessageQueue.max_size())
-        {
-            setMessageAt(m_Count, message);
-            ++m_Count;
-        }
-        else
-        {
-            // Overwrite the last message
-            setMessageAt(m_Count - 1, OverflowMessage);
-        }
-    }
+	// Removes a message from the front of the queue.
+	void pop();
 
-    // Removes a message from the front of the queue.
-    void pop()
-    {
-        if (m_Count > 0)
-        {
-            ++m_StartIndex;
-            --m_Count;
-        }
-    }
-
-    // Global instance of the log queue
-    static LogQueue& instance()
-    {
-        return s_Instance;
-    }
+	// Global instance of the log queue
+	static LogQueue& instance();
 
 private:
-    static constexpr int MaxMessages = 100;
-    static constexpr int MaxMessageLength = std::numeric_limits<uint8_t>::max();
-    static constexpr char OverflowMessage[] = "[OVERFLOW]";
+	// Sets the message at a particular offset
+	void setMessageAt(int offset, const char* message);
 
-    void setMessageAt(int offset, const char* message)
-    {
-		Modulo<size_t, MaxMessages> index = m_StartIndex + offset;
-        std::array<char, MaxMessageLength>& entry = m_MessageQueue[index.get()];
+	static constexpr size_t MaxMessages = 100;
+	static constexpr size_t MaxMessageLength = std::numeric_limits<uint8_t>::max();
+	static constexpr char OverflowMessage[] = "[OVERFLOW]";
 
-        std::strncpy(entry.data(), message, entry.max_size());
-        entry[entry.max_size() - 1] = '\0';	// NULL terminate string in case message overflows because strncpy does not do that
-    }
+	template <typename T, T Modulus>
+	class Modulo {
+	public:
+		Modulo(T value) : m_Value(value) {}
 
-    Modulo<size_t, MaxMessages> m_StartIndex{0};
-    size_t m_Count = 0;
-    std::array<std::array<char, MaxMessageLength>, MaxMessages> m_MessageQueue;
+		Modulo<T, Modulus>& operator++()
+		{
+			m_Value = (m_Value + 1) % Modulus;
+			return *this;
+		}
 
-    static LogQueue s_Instance;
+		Modulo<T, Modulus> operator+(T other) const
+		{
+			// WARNING: Does not consider overflow or negative values
+			T newValue = (m_Value + other) % Modulus;
+			return Modulo<T, Modulus>{newValue};
+		}
+
+		T get() const
+		{
+			return m_Value;
+		}
+
+	private:
+		T m_Value;
+	};
+
+	Modulo<size_t, MaxMessages> m_StartIndex{0};
+	size_t m_Count = 0;
+	std::array<std::array<char, MaxMessageLength>, MaxMessages> m_MessageQueue;
+
+	static LogQueue s_Instance;
 };
 
 } // namespace SlimeVR::Logging
