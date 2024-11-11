@@ -398,15 +398,18 @@ struct BMI270 {
 
 		for (uint32_t i = 0u; i < bytes_to_read;) {
 			const uint8_t header = getFromFifo<uint8_t>(i, read_buffer);
-			if ((header & Fifo::ModeMask) == Fifo::SkipFrame
-				&& (i - bytes_to_read) >= 1) {
+			if ((header & Fifo::ModeMask) == Fifo::SkipFrame) {
+				if (i + 1 > bytes_to_read) {
+					// incomplete frame, nothing left to process
+					break;
+				}
 				getFromFifo<uint8_t>(i, read_buffer);  // skip 1 byte
 			} else if ((header & Fifo::ModeMask) == Fifo::DataFrame) {
 				const uint8_t required_length
 					= (((header & Fifo::GyrDataBit) >> Fifo::GyrDataBit)
 					   + ((header & Fifo::AccelDataBit) >> Fifo::AccelDataBit))
 					* 6;
-				if (i - bytes_to_read < required_length) {
+				if (i + required_length > bytes_to_read) {
 					// incomplete frame, will be re-read next time
 					break;
 				}
