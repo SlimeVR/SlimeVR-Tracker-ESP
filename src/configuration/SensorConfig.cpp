@@ -21,29 +21,46 @@
 	THE SOFTWARE.
 */
 
-#include "CalibrationConfig.h"
+#include "SensorConfig.h"
 
 namespace SlimeVR {
 namespace Configuration {
-const char* calibrationConfigTypeToString(CalibrationConfigType type) {
+const char* calibrationConfigTypeToString(SensorConfigType type) {
 	switch (type) {
-		case NONE:
+		case SensorConfigType::NONE:
 			return "NONE";
-		case BMI160:
+		case SensorConfigType::BMI160:
 			return "BMI160";
-		case MPU6050:
+		case SensorConfigType::MPU6050:
 			return "MPU6050";
-		case MPU9250:
+		case SensorConfigType::MPU9250:
 			return "MPU9250";
-		case ICM20948:
+		case SensorConfigType::ICM20948:
 			return "ICM20948";
-		case SFUSION:
+		case SensorConfigType::SFUSION:
 			return "SoftFusion (common)";
-		case NONBLOCKING:
-			return "Non Blocking (common)";
+		case SensorConfigType::NONBLOCKING:
+			return "NonBlocking (common)";
+		case SensorConfigType::BNO0XX:
+			return "BNO0XX";
 		default:
 			return "UNKNOWN";
 	}
+}
+
+uint16_t configDataToNumber(SensorConfig sensorConfig) {
+	uint16_t data = 0;
+	switch (sensorConfig.type) {
+		case SensorConfigType::BNO0XX: {
+			auto config = &sensorConfig.data.bno0XX;
+			data += config->magEnabled;
+			break;
+		}
+		case SensorConfigType::NONE:
+		default:
+			break;
+	}
+	return data;
 }
 }  // namespace Configuration
 }  // namespace SlimeVR

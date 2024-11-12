@@ -21,8 +21,8 @@
 	THE SOFTWARE.
 */
 
-#ifndef SLIMEVR_CONFIGURATION_CALIBRATIONCONFIG_H
-#define SLIMEVR_CONFIGURATION_CALIBRATIONCONFIG_H
+#ifndef SLIMEVR_CONFIGURATION_SENSORCONFIG_H
+#define SLIMEVR_CONFIGURATION_SENSORCONFIG_H
 
 #include <stdint.h>
 
@@ -30,7 +30,7 @@
 
 namespace SlimeVR {
 namespace Configuration {
-struct BMI160CalibrationConfig {
+struct BMI160SensorConfig {
 	// accelerometer offsets and correction matrix
 	float A_B[3];
 	float A_Ainv[3][3];
@@ -46,7 +46,7 @@ struct BMI160CalibrationConfig {
 	float temperature;
 };
 
-struct SoftFusionCalibrationConfig {
+struct SoftFusionSensorConfig {
 	ImuID ImuType;
 	uint16_t MotionlessDataLen;
 
@@ -68,7 +68,6 @@ struct SoftFusionCalibrationConfig {
 	float A_Ts;
 	float G_Ts;
 	float M_Ts;
-	float T_Ts;
 
 	// gyro sensitivity multiplier
 	float G_Sens[3];
@@ -76,7 +75,7 @@ struct SoftFusionCalibrationConfig {
 	uint8_t MotionlessData[60];
 };
 
-struct NonBlockingCalibrationConfig {
+struct NonBlockingSensorConfig {
 	ImuID ImuType;
 	uint16_t MotionlessDataLen;
 
@@ -99,7 +98,7 @@ struct NonBlockingCalibrationConfig {
 	float A_off[3];
 };
 
-struct MPU6050CalibrationConfig {
+struct MPU6050SensorConfig {
 	// accelerometer offsets and correction matrix
 	float A_B[3];
 
@@ -107,7 +106,7 @@ struct MPU6050CalibrationConfig {
 	float G_off[3];
 };
 
-struct MPU9250CalibrationConfig {
+struct MPU9250SensorConfig {
 	// accelerometer offsets and correction matrix
 	float A_B[3];
 	float A_Ainv[3][3];
@@ -120,7 +119,7 @@ struct MPU9250CalibrationConfig {
 	float G_off[3];
 };
 
-struct ICM20948CalibrationConfig {
+struct ICM20948SensorConfig {
 	// gyroscope bias
 	int32_t G[3];
 
@@ -131,7 +130,7 @@ struct ICM20948CalibrationConfig {
 	int32_t C[3];
 };
 
-struct ICM42688CalibrationConfig {
+struct ICM42688SensorConfig {
 	// accelerometer offsets and correction matrix
 	float A_B[3];
 	float A_Ainv[3][3];
@@ -144,30 +143,38 @@ struct ICM42688CalibrationConfig {
 	float G_off[3];
 };
 
-enum CalibrationConfigType {
+struct BNO0XXSensorConfig {
+	bool magEnabled;
+};
+
+enum class SensorConfigType {
 	NONE,
 	BMI160,
 	MPU6050,
 	MPU9250,
 	ICM20948,
 	SFUSION,
-	NONBLOCKING
+	NONBLOCKING,
+	BNO0XX
 };
 
-const char* calibrationConfigTypeToString(CalibrationConfigType type);
+const char* calibrationConfigTypeToString(SensorConfigType type);
 
-struct CalibrationConfig {
-	CalibrationConfigType type;
+struct SensorConfig {
+	SensorConfigType type;
 
 	union {
-		BMI160CalibrationConfig bmi160;
-		SoftFusionCalibrationConfig sfusion;
-		NonBlockingCalibrationConfig nonblocking;
-		MPU6050CalibrationConfig mpu6050;
-		MPU9250CalibrationConfig mpu9250;
-		ICM20948CalibrationConfig icm20948;
+		BMI160SensorConfig bmi160;
+		SoftFusionSensorConfig sfusion;
+		NonBlockingSensorConfig nonblocking;
+		MPU6050SensorConfig mpu6050;
+		MPU9250SensorConfig mpu9250;
+		ICM20948SensorConfig icm20948;
+		BNO0XXSensorConfig bno0XX;
 	} data;
 };
+
+uint16_t configDataToNumber(SensorConfig sensorConfig);
 }  // namespace Configuration
 }  // namespace SlimeVR
 

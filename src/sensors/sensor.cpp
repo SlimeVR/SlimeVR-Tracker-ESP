@@ -87,6 +87,12 @@ void Sensor::resetTemperatureCalibrationState() {
 	printTemperatureCalibrationUnsupported();
 };
 
+uint16_t Sensor::getSensorConfigData() {
+	SlimeVR::Configuration::SensorConfig sensorConfig
+		= configuration.getSensor(sensorId);
+	return SlimeVR::Configuration::configDataToNumber(sensorConfig);
+}
+
 const char* getIMUNameByType(ImuID imuType) {
 	switch (imuType) {
 		case ImuID::MPU9250:

@@ -36,10 +36,8 @@ public:
 		DONE,
 	};
 
-	CalibrationStep(
-		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig
-	)
-		: calibrationConfig{calibrationConfig} {}
+	CalibrationStep(SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig)
+		: sensorConfig{sensorConfig} {}
 
 	virtual ~CalibrationStep() = default;
 
@@ -59,7 +57,7 @@ public:
 	}
 
 protected:
-	SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig;
+	SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig;
 
 	float restDetectionDelaySeconds = 5.0f;
 

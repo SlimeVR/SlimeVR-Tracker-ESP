@@ -33,15 +33,15 @@ namespace SlimeVR::Sensors::NonBlockingCalibration {
 
 template <typename SensorRawT>
 class AccelBiasCalibrationStep : public CalibrationStep<SensorRawT> {
-	using CalibrationStep<SensorRawT>::calibrationConfig;
+	using CalibrationStep<SensorRawT>::sensorConfig;
 	using typename CalibrationStep<SensorRawT>::TickResult;
 
 public:
 	AccelBiasCalibrationStep(
-		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig,
+		SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig,
 		float accelScale
 	)
-		: CalibrationStep<SensorRawT>{calibrationConfig}
+		: CalibrationStep<SensorRawT>{sensorConfig}
 		, accelScale{accelScale} {}
 
 	void start() override final {
@@ -69,8 +69,8 @@ public:
 
 		float accelOffset = accelAverage * accelScale - expected;
 
-		calibrationConfig.A_off[calibrationData.value().largestAxis] = accelOffset;
-		calibrationConfig.accelCalibrated[calibrationData.value().largestAxis] = true;
+		sensorConfig.A_off[calibrationData.value().largestAxis] = accelOffset;
+		sensorConfig.accelCalibrated[calibrationData.value().largestAxis] = true;
 
 		return TickResult::DONE;
 	}
@@ -100,7 +100,7 @@ public:
 			largestAxis = 2;
 		}
 
-		if (calibrationConfig.accelCalibrated[largestAxis]) {
+		if (sensorConfig.accelCalibrated[largestAxis]) {
 			calibrationData.value().axisDetermined = true;
 			calibrationData.value().largestAxis = -1;
 			return;
@@ -127,14 +127,12 @@ public:
 	}
 
 	bool allAxesCalibrated() {
-		return calibrationConfig.accelCalibrated[0]
-			&& calibrationConfig.accelCalibrated[1]
-			&& calibrationConfig.accelCalibrated[2];
+		return sensorConfig.accelCalibrated[0] && sensorConfig.accelCalibrated[1]
+			&& sensorConfig.accelCalibrated[2];
 	}
 	bool anyAxesCalibrated() {
-		return calibrationConfig.accelCalibrated[0]
-			|| calibrationConfig.accelCalibrated[1]
-			|| calibrationConfig.accelCalibrated[2];
+		return sensorConfig.accelCalibrated[0] || sensorConfig.accelCalibrated[1]
+			|| sensorConfig.accelCalibrated[2];
 	}
 
 private:

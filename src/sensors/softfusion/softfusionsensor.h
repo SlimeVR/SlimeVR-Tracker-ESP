@@ -430,19 +430,19 @@ void motionSetup() override final {
 		return;
 	}
 
-	SlimeVR::Configuration::CalibrationConfig sensorCalibration
-		= configuration.getCalibration(sensorId);
+	SlimeVR::Configuration::SensorConfig sensorCalibration
+		= configuration.getSensor(sensorId);
 
 #ifndef USE_NONBLOCKING_CALIBRATION
 	// If no compatible calibration data is found, the calibration data will just be
 	// zero-ed out
-	if (sensorCalibration.type == SlimeVR::Configuration::CalibrationConfigType::SFUSION
+	if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::SFUSION
 		&& (sensorCalibration.data.sfusion.ImuType == imu::Type)
 		&& (sensorCalibration.data.sfusion.MotionlessDataLen
 			== MotionlessCalibDataSize())) {
 		m_calibration = sensorCalibration.data.sfusion;
 		recalcFusion();
-	} else if (sensorCalibration.type == SlimeVR::Configuration::CalibrationConfigType::NONE) {
+	} else if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::NONE) {
 		m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
 		m_Logger.info("Calibration is advised");
 	} else {
@@ -454,7 +454,7 @@ void motionSetup() override final {
 	}
 #else
 		if (sensorCalibration.type
-				== SlimeVR::Configuration::CalibrationConfigType::NONBLOCKING
+				== SlimeVR::Configuration::SensorConfigType::NONBLOCKING
 			&& (sensorCalibration.data.sfusion.ImuType == imu::Type)
 			&& (sensorCalibration.data.sfusion.MotionlessDataLen
 				== MotionlessCalibDataSize())) {
@@ -466,7 +466,7 @@ void motionSetup() override final {
 			m_calibration.A_off[1] = 0;
 			m_calibration.A_off[2] = 0;
 			recalcFusion();
-		} else if (sensorCalibration.type != SlimeVR::Configuration::CalibrationConfigType::NONE) {
+		} else if (sensorCalibration.type != SlimeVR::Configuration::SensorConfigType::NONE) {
 			m_Logger.warn(
 				"Incompatible calibration data found for sensor %d, ignoring...",
 				sensorId
@@ -575,10 +575,10 @@ void startCalibration(int calibrationType) override final {
 
 void saveCalibration() {
 	m_Logger.debug("Saving the calibration data");
-	SlimeVR::Configuration::CalibrationConfig calibration;
-	calibration.type = SlimeVR::Configuration::CalibrationConfigType::SFUSION;
+	SlimeVR::Configuration::SensorConfig calibration;
+	calibration.type = SlimeVR::Configuration::SensorConfigType::SFUSION;
 	calibration.data.sfusion = m_calibration;
-	configuration.setCalibration(sensorId, calibration);
+	configuration.setSensor(sensorId, calibration);
 	configuration.save();
 }
 
@@ -829,7 +829,7 @@ NonBlockingCalibration::NonBlockingCalibrator<imu, RawSensorT> nonBlockingCalibr
 #endif
 
 #ifndef USE_NONBLOCKING_CALIBRATION
-SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration
+SlimeVR::Configuration::SoftFusionSensorConfig m_calibration
 	= {  // let's create here transparent calibration that doesn't affect input data
 		.ImuType = {imu::Type},
 		.MotionlessDataLen = {MotionlessCalibDataSize()},
@@ -846,7 +846,7 @@ SlimeVR::Configuration::SoftFusionCalibrationConfig m_calibration
 		.G_Sens = {1.0, 1.0, 1.0},
 		.MotionlessData = {}};
 #else
-	SlimeVR::Configuration::NonBlockingCalibrationConfig m_calibration = {
+	SlimeVR::Configuration::NonBlockingSensorConfig m_calibration = {
 		// let's create here transparent calibration that doesn't affect input data
 		.ImuType = {imu::Type},
 		.MotionlessDataLen = {MotionlessCalibDataSize()},

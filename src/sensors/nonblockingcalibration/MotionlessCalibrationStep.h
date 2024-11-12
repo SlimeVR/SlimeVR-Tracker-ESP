@@ -32,15 +32,15 @@ namespace SlimeVR::Sensors::NonBlockingCalibration {
 
 template <typename IMU, typename SensorRawT>
 class MotionlessCalibrationStep : public CalibrationStep<SensorRawT> {
-	using CalibrationStep<SensorRawT>::calibrationConfig;
+	using CalibrationStep<SensorRawT>::sensorConfig;
 	using typename CalibrationStep<SensorRawT>::TickResult;
 
 public:
 	MotionlessCalibrationStep(
-		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig,
+		SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig,
 		IMU& imu
 	)
-		: CalibrationStep<SensorRawT>{calibrationConfig}
+		: CalibrationStep<SensorRawT>{sensorConfig}
 		, imu{imu} {}
 
 	void start() override final {
@@ -61,11 +61,11 @@ public:
 			}
 
 			std::memcpy(
-				calibrationConfig.MotionlessData,
+				sensorConfig.MotionlessData,
 				&motionlessCalibrationData,
 				sizeof(motionlessCalibrationData)
 			);
-			calibrationConfig.motionlessCalibrated = true;
+			sensorConfig.motionlessCalibrated = true;
 
 			return TickResult::DONE;
 		} else {

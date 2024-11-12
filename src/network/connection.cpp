@@ -89,7 +89,7 @@ bool Connection::endPacket() {
 		MUST_TRANSFER_BOOL((innerPacketSize > 0));
 
 		m_IsBundle = false;
-		
+
 		if (m_BundlePacketInnerCount == 0) {
 			sendPacketType(PACKET_BUNDLE);
 			sendPacketNumber();
@@ -128,7 +128,7 @@ bool Connection::endBundle() {
 	MUST_TRANSFER_BOOL(m_IsBundle);
 
 	m_IsBundle = false;
-	
+
 	MUST_TRANSFER_BOOL((m_BundlePacketInnerCount > 0));
 
 	return endPacket();
@@ -298,6 +298,7 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(sendByte(sensor.getSensorId()));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
+	MUST(sendShort(sensor.getSensorConfigData()));
 
 	MUST(endPacket());
 }
@@ -377,6 +378,21 @@ void Connection::sendFeatureFlags() {
 	MUST(sendPacketType(PACKET_FEATURE_FLAGS));
 	MUST(sendPacketNumber());
 	MUST(write(FirmwareFeatures::flags.data(), FirmwareFeatures::flags.size()));
+
+	MUST(endPacket());
+}
+
+// PACKET_ACKNOWLEDGE_CONFIG_CHANGE 24
+
+void Connection::sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configType) {
+	MUST(m_Connected);
+
+	MUST(beginPacket());
+
+	MUST(sendPacketType(PACKET_ACKNOWLEDGE_CONFIG_CHANGE));
+	MUST(sendPacketNumber());
+	MUST(sendByte(sensorId));
+	MUST(sendShort(configType));
 
 	MUST(endPacket());
 }
@@ -525,7 +541,7 @@ void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>> & sensor
 	}
 }
 
-void Connection::maybeRequestFeatureFlags() {	
+void Connection::maybeRequestFeatureFlags() {
 	if (m_ServerFeatures.isAvailable() || m_FeatureFlagsRequestAttempts >= 15) {
 		return;
 	}
@@ -557,6 +573,8 @@ void Connection::searchForServer() {
 			m_UDP.remotePort()
 		);
 		m_Logger.traceArray("UDP packet contents: ", m_Packet, len);
+#else
+		(void)len;
 #endif
 
 		// Handshake is different, it has 3 in the first byte, not the 4th, and data
@@ -571,7 +589,7 @@ void Connection::searchForServer() {
 			m_ServerPort = m_UDP.remotePort();
 			m_LastPacketTimestamp = millis();
 			m_Connected = true;
-			
+
 			m_FeatureFlagsRequestAttempts = 0;
 			m_ServerFeatures = ServerFeatures { };
 
@@ -689,7 +707,7 @@ void Connection::update() {
 
 			break;
 
-		case PACKET_FEATURE_FLAGS:
+		case PACKET_FEATURE_FLAGS: {
 			// Packet type (4) + Packet number (8) + flags (len - 12)
 			if (len < 13) {
 				m_Logger.warn("Invalid feature flags packet: too short");
@@ -697,7 +715,7 @@ void Connection::update() {
 			}
 
 			bool hadFlags = m_ServerFeatures.isAvailable();
-			
+
 			uint32_t flagsLength = len - 12;
 			m_ServerFeatures = ServerFeatures::from(&m_Packet[12], flagsLength);
 
@@ -710,6 +728,35 @@ void Connection::update() {
 			}
 
 			break;
+		}
+
+		case PACKET_SET_CONFIG_FLAG: {
+			// Packet type (4) + Packet number (8) + sensor_id(1) + flag_id (2) + state (1)
+			if (len < 16) {
+				m_Logger.warn("Invalid sensor config flag packet: too short");
+				break;
+			}
+			uint8_t sensorId = m_Packet[12];
+			uint16_t flagId = m_Packet[13] << 8 | m_Packet[14];
+			bool newState = m_Packet[15] > 0;
+			if(sensorId == UINT8_MAX) {
+				for (auto& sensor : sensors) {
+					sensor->setFlag(flagId, newState);
+				}
+			} else {
+				auto & sensors = sensorManager.getSensors();
+				if(sensorId < sensors.size()) {
+					auto& sensor = sensors[sensorId];
+					sensor->setFlag(flagId, newState);
+				} else {
+					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id");
+					break;
+				}
+			}
+			sendAcknowledgeConfigChange(sensorId, flagId);
+			configuration.save();
+			break;
+		}
 	}
 }
 

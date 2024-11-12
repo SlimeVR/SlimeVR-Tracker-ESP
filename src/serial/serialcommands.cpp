@@ -368,7 +368,7 @@ void cmdTemperatureCalibration(CmdParser* parser) {
 void cmdDeleteCalibration(CmdParser* parser) {
 	logger.info("ERASE CALIBRATION");
 
-	configuration.eraseCalibration();
+	configuration.eraseSensors();
 }
 
 void setUp() {

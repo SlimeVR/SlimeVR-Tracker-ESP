@@ -57,8 +57,8 @@ public:
 		, accelScale{accelScale}
 		, sensorId{sensorId} {}
 
-	void setup(Configuration::NonBlockingCalibrationConfig& baseCalibrationConfig) {
-		calibrationConfig = baseCalibrationConfig;
+	void setup(Configuration::NonBlockingSensorConfig& baseCalibrationConfig) {
+		sensorConfig = baseCalibrationConfig;
 		startupMillis = millis();
 
 		gyroBiasCalibrationStep.swapCalibrationIfNecessary();
@@ -69,8 +69,11 @@ public:
 	}
 
 	void tick() {
-		if (fusion.getRestDetected()) ledManager.on();
-		else ledManager.off();
+		if (fusion.getRestDetected()) {
+			ledManager.on();
+		} else {
+			ledManager.off();
+		}
 		if (skippedAStep && !lastTickRest && fusion.getRestDetected()) {
 			computeNextCalibrationStep();
 			skippedAStep = false;
@@ -144,13 +147,13 @@ private:
 	};
 
 	void computeNextCalibrationStep() {
-		if (!calibrationConfig.sensorTimestepsCalibrated) {
+		if (!sensorConfig.sensorTimestepsCalibrated) {
 			nextCalibrationStep = CalibrationStepEnum::SAMPLING_RATE;
 			currentStep = &sampleRateCalibrationStep;
-		} else if (!calibrationConfig.motionlessCalibrated && HasMotionlessCalib) {
+		} else if (!sensorConfig.motionlessCalibrated && HasMotionlessCalib) {
 			nextCalibrationStep = CalibrationStepEnum::MOTIONLESS;
 			currentStep = &motionlessCalibrationStep;
-		} else if (calibrationConfig.gyroPointsCalibrated == 0) {
+		} else if (sensorConfig.gyroPointsCalibrated == 0) {
 			nextCalibrationStep = CalibrationStepEnum::GYRO_BIAS;
 			currentStep = &gyroBiasCalibrationStep;
 			// } else if (!accelBiasCalibrationStep.allAxesCalibrated()) {
@@ -182,7 +185,7 @@ private:
 				}
 				break;
 			case CalibrationStepEnum::GYRO_BIAS:
-				if (calibrationConfig.gyroPointsCalibrated == 1) {
+				if (sensorConfig.gyroPointsCalibrated == 1) {
 					// nextCalibrationStep = CalibrationStepEnum::ACCEL_BIAS;
 					// currentStep = &accelBiasCalibrationStep;
 					nextCalibrationStep = CalibrationStepEnum::GYRO_BIAS;
@@ -215,10 +218,10 @@ private:
 	}
 
 	void saveCalibration() {
-		SlimeVR::Configuration::CalibrationConfig calibration;
-		calibration.type = SlimeVR::Configuration::CalibrationConfigType::NONBLOCKING;
-		calibration.data.nonblocking = calibrationConfig;
-		configuration.setCalibration(sensorId, calibration);
+		SlimeVR::Configuration::SensorConfig calibration;
+		calibration.type = SlimeVR::Configuration::SensorConfigType::NONBLOCKING;
+		calibration.data.nonblocking = sensorConfig;
+		configuration.setSensor(sensorId, calibration);
 		configuration.save();
 
 		ledManager.blink(100);
@@ -237,12 +240,12 @@ private:
 
 	void printCalibration(CalibrationPrintFlags toPrint = PrintAllCalibration) {
 		if (any(toPrint & CalibrationPrintFlags::TIMESTEPS)) {
-			if (calibrationConfig.sensorTimestepsCalibrated) {
+			if (sensorConfig.sensorTimestepsCalibrated) {
 				logger.info(
 					"Calibrated timesteps: Accel %f, Gyro %f, Temperature %f",
-					calibrationConfig.A_Ts,
-					calibrationConfig.G_Ts,
-					calibrationConfig.T_Ts
+					sensorConfig.A_Ts,
+					sensorConfig.G_Ts,
+					sensorConfig.T_Ts
 				);
 			} else {
 				logger.info("Sensor timesteps not calibrated");
@@ -250,7 +253,7 @@ private:
 		}
 
 		if (HasMotionlessCalib && any(toPrint & CalibrationPrintFlags::MOTIONLESS)) {
-			if (calibrationConfig.motionlessCalibrated) {
+			if (sensorConfig.motionlessCalibrated) {
 				logger.info("Motionless calibration done");
 			} else {
 				logger.info("Motionless calibration not done");
@@ -258,25 +261,25 @@ private:
 		}
 
 		if (any(toPrint & CalibrationPrintFlags::GYRO_BIAS)) {
-			if (calibrationConfig.gyroPointsCalibrated != 0) {
+			if (sensorConfig.gyroPointsCalibrated != 0) {
 				logger.info(
 					"Calibrated gyro bias at %fC: %f %f %f",
-					calibrationConfig.gyroMeasurementTemperature1,
-					calibrationConfig.G_off1[0],
-					calibrationConfig.G_off1[1],
-					calibrationConfig.G_off1[2]
+					sensorConfig.gyroMeasurementTemperature1,
+					sensorConfig.G_off1[0],
+					sensorConfig.G_off1[1],
+					sensorConfig.G_off1[2]
 				);
 			} else {
 				logger.info("Gyro bias not calibrated");
 			}
 
-			if (calibrationConfig.gyroPointsCalibrated == 2) {
+			if (sensorConfig.gyroPointsCalibrated == 2) {
 				logger.info(
 					"Calibrated gyro bias at %fC: %f %f %f",
-					calibrationConfig.gyroMeasurementTemperature2,
-					calibrationConfig.G_off2[0],
-					calibrationConfig.G_off2[1],
-					calibrationConfig.G_off2[2]
+					sensorConfig.gyroMeasurementTemperature2,
+					sensorConfig.G_off2[0],
+					sensorConfig.G_off2[1],
+					sensorConfig.G_off2[2]
 				);
 			}
 		}
@@ -285,16 +288,16 @@ private:
 			if (accelBiasCalibrationStep.allAxesCalibrated()) {
 				logger.info(
 					"Calibrated accel bias: %f %f %f",
-					calibrationConfig.A_off[0],
-					calibrationConfig.A_off[1],
-					calibrationConfig.A_off[2]
+					sensorConfig.A_off[0],
+					sensorConfig.A_off[1],
+					sensorConfig.A_off[2]
 				);
 			} else if (accelBiasCalibrationStep.anyAxesCalibrated()) {
 				logger.info(
 					"Partially calibrated accel bias: %f %f %f",
-					calibrationConfig.A_off[0],
-					calibrationConfig.A_off[1],
-					calibrationConfig.A_off[2]
+					sensorConfig.A_off[0],
+					sensorConfig.A_off[1],
+					sensorConfig.A_off[2]
 				);
 			} else {
 				logger.info("Accel bias not calibrated");
@@ -315,17 +318,17 @@ private:
 	static constexpr float initialStartupDelaySeconds = 5;
 	uint64_t startupMillis;
 
-	SlimeVR::Configuration::NonBlockingCalibrationConfig calibrationConfig;
+	SlimeVR::Configuration::NonBlockingSensorConfig sensorConfig;
 
-	SampleRateCalibrationStep<SensorRawT> sampleRateCalibrationStep{calibrationConfig};
+	SampleRateCalibrationStep<SensorRawT> sampleRateCalibrationStep{sensorConfig};
 	MotionlessCalibrationStep<IMU, SensorRawT> motionlessCalibrationStep{
-		calibrationConfig,
+		sensorConfig,
 		imu};
-	GyroBiasCalibrationStep<SensorRawT> gyroBiasCalibrationStep{calibrationConfig};
+	GyroBiasCalibrationStep<SensorRawT> gyroBiasCalibrationStep{sensorConfig};
 	AccelBiasCalibrationStep<SensorRawT> accelBiasCalibrationStep{
-		calibrationConfig,
+		sensorConfig,
 		accelScale};
-	NullCalibrationStep<SensorRawT> nullCalibrationStep{calibrationConfig};
+	NullCalibrationStep<SensorRawT> nullCalibrationStep{sensorConfig};
 
 	CalibrationStep<SensorRawT>* currentStep = &nullCalibrationStep;
 

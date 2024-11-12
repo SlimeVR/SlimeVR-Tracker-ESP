@@ -31,14 +31,14 @@ namespace SlimeVR::Sensors::NonBlockingCalibration {
 
 template <typename SensorRawT>
 class SampleRateCalibrationStep : public CalibrationStep<SensorRawT> {
-	using CalibrationStep<SensorRawT>::calibrationConfig;
+	using CalibrationStep<SensorRawT>::sensorConfig;
 	using typename CalibrationStep<SensorRawT>::TickResult;
 
 public:
 	SampleRateCalibrationStep(
-		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig
+		SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig
 	)
-		: CalibrationStep<SensorRawT>{calibrationConfig} {}
+		: CalibrationStep<SensorRawT>{sensorConfig} {}
 
 	void start() override final {
 		CalibrationStep<SensorRawT>::start();
@@ -56,10 +56,10 @@ public:
 		float gyroTimestep = elapsedTime / calibrationData.value().gyroSamples;
 		float tempTimestep = elapsedTime / calibrationData.value().tempSamples;
 
-		calibrationConfig.A_Ts = accelTimestep;
-		calibrationConfig.G_Ts = gyroTimestep;
-		calibrationConfig.T_Ts = tempTimestep;
-		calibrationConfig.sensorTimestepsCalibrated = true;
+		sensorConfig.A_Ts = accelTimestep;
+		sensorConfig.G_Ts = gyroTimestep;
+		sensorConfig.T_Ts = tempTimestep;
+		sensorConfig.sensorTimestepsCalibrated = true;
 
 		return TickResult::DONE;
 	}

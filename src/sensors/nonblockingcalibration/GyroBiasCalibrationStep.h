@@ -32,14 +32,14 @@ namespace SlimeVR::Sensors::NonBlockingCalibration {
 
 template <typename SensorRawT>
 class GyroBiasCalibrationStep : public CalibrationStep<SensorRawT> {
-	using CalibrationStep<SensorRawT>::calibrationConfig;
+	using CalibrationStep<SensorRawT>::sensorConfig;
 	using typename CalibrationStep<SensorRawT>::TickResult;
 
 public:
 	GyroBiasCalibrationStep(
-		SlimeVR::Configuration::NonBlockingCalibrationConfig& calibrationConfig
+		SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig
 	)
-		: CalibrationStep<SensorRawT>{calibrationConfig} {}
+		: CalibrationStep<SensorRawT>{sensorConfig} {}
 
 	void start() override final {
 		CalibrationStep<SensorRawT>::start();
@@ -59,56 +59,56 @@ public:
 		float gyroOffsetZ = calibrationData.value().gyroSums[2]
 						  / static_cast<float>(calibrationData.value().sampleCount);
 
-		if (calibrationConfig.gyroPointsCalibrated == 0) {
-			calibrationConfig.G_off1[0] = gyroOffsetX;
-			calibrationConfig.G_off1[1] = gyroOffsetY;
-			calibrationConfig.G_off1[2] = gyroOffsetZ;
-			calibrationConfig.gyroPointsCalibrated = 1;
-			calibrationConfig.gyroMeasurementTemperature1
+		if (sensorConfig.gyroPointsCalibrated == 0) {
+			sensorConfig.G_off1[0] = gyroOffsetX;
+			sensorConfig.G_off1[1] = gyroOffsetY;
+			sensorConfig.G_off1[2] = gyroOffsetZ;
+			sensorConfig.gyroPointsCalibrated = 1;
+			sensorConfig.gyroMeasurementTemperature1
 				= calibrationData.value().temperature;
 
 			return TickResult::DONE;
 		}
 
-		if (calibrationConfig.gyroPointsCalibrated == 1) {
+		if (sensorConfig.gyroPointsCalibrated == 1) {
 			if (calibrationData.value().temperature
-				> calibrationConfig.gyroMeasurementTemperature1) {
-				calibrationConfig.G_off2[0] = gyroOffsetX;
-				calibrationConfig.G_off2[1] = gyroOffsetY;
-				calibrationConfig.G_off2[2] = gyroOffsetZ;
-				calibrationConfig.gyroMeasurementTemperature2
+				> sensorConfig.gyroMeasurementTemperature1) {
+				sensorConfig.G_off2[0] = gyroOffsetX;
+				sensorConfig.G_off2[1] = gyroOffsetY;
+				sensorConfig.G_off2[2] = gyroOffsetZ;
+				sensorConfig.gyroMeasurementTemperature2
 					= calibrationData.value().temperature;
 			} else {
-				calibrationConfig.G_off2[0] = calibrationConfig.G_off1[0];
-				calibrationConfig.G_off2[1] = calibrationConfig.G_off1[1];
-				calibrationConfig.G_off2[2] = calibrationConfig.G_off1[2];
-				calibrationConfig.gyroMeasurementTemperature2
-					= calibrationConfig.gyroMeasurementTemperature1;
+				sensorConfig.G_off2[0] = sensorConfig.G_off1[0];
+				sensorConfig.G_off2[1] = sensorConfig.G_off1[1];
+				sensorConfig.G_off2[2] = sensorConfig.G_off1[2];
+				sensorConfig.gyroMeasurementTemperature2
+					= sensorConfig.gyroMeasurementTemperature1;
 
-				calibrationConfig.G_off1[0] = gyroOffsetX;
-				calibrationConfig.G_off1[1] = gyroOffsetY;
-				calibrationConfig.G_off1[2] = gyroOffsetZ;
-				calibrationConfig.gyroMeasurementTemperature1
+				sensorConfig.G_off1[0] = gyroOffsetX;
+				sensorConfig.G_off1[1] = gyroOffsetY;
+				sensorConfig.G_off1[2] = gyroOffsetZ;
+				sensorConfig.gyroMeasurementTemperature1
 					= calibrationData.value().temperature;
 			}
 
-			calibrationConfig.gyroPointsCalibrated = 2;
+			sensorConfig.gyroPointsCalibrated = 2;
 
 			return TickResult::DONE;
 		}
 
 		if (calibrationData.value().temperature
-			< calibrationConfig.gyroMeasurementTemperature1) {
-			calibrationConfig.G_off1[0] = gyroOffsetX;
-			calibrationConfig.G_off1[1] = gyroOffsetY;
-			calibrationConfig.G_off1[2] = gyroOffsetZ;
-			calibrationConfig.gyroMeasurementTemperature1
+			< sensorConfig.gyroMeasurementTemperature1) {
+			sensorConfig.G_off1[0] = gyroOffsetX;
+			sensorConfig.G_off1[1] = gyroOffsetY;
+			sensorConfig.G_off1[2] = gyroOffsetZ;
+			sensorConfig.gyroMeasurementTemperature1
 				= calibrationData.value().temperature;
 		} else {
-			calibrationConfig.G_off2[0] = gyroOffsetX;
-			calibrationConfig.G_off2[1] = gyroOffsetY;
-			calibrationConfig.G_off2[2] = gyroOffsetZ;
-			calibrationConfig.gyroMeasurementTemperature2
+			sensorConfig.G_off2[0] = gyroOffsetX;
+			sensorConfig.G_off2[1] = gyroOffsetY;
+			sensorConfig.G_off2[2] = gyroOffsetZ;
+			sensorConfig.gyroMeasurementTemperature2
 				= calibrationData.value().temperature;
 		}
 
@@ -126,13 +126,13 @@ public:
 	void processTempSample(float tempSample) override final {
 		calibrationData.value().temperature = tempSample;
 
-		if (calibrationConfig.gyroPointsCalibrated == 0) {
+		if (sensorConfig.gyroPointsCalibrated == 0) {
 			return;
 		}
 
-		if (calibrationConfig.gyroPointsCalibrated == 1) {
+		if (sensorConfig.gyroPointsCalibrated == 1) {
 			float tempDiff
-				= std::abs(calibrationConfig.gyroMeasurementTemperature1 - tempSample);
+				= std::abs(sensorConfig.gyroMeasurementTemperature1 - tempSample);
 
 			if (tempDiff < gyroBiasTemperatureDifference) {
 				calibrationData.value().gyroSums[0] = 0;
@@ -145,8 +145,8 @@ public:
 			return;
 		}
 
-		if (tempSample >= calibrationConfig.gyroMeasurementTemperature1
-			&& tempSample <= calibrationConfig.gyroMeasurementTemperature2) {
+		if (tempSample >= sensorConfig.gyroMeasurementTemperature1
+			&& tempSample <= sensorConfig.gyroMeasurementTemperature2) {
 			calibrationData.value().gyroSums[0] = 0;
 			calibrationData.value().gyroSums[1] = 0;
 			calibrationData.value().gyroSums[2] = 0;
@@ -156,26 +156,26 @@ public:
 	}
 
 	void swapCalibrationIfNecessary() {
-		if (calibrationConfig.gyroPointsCalibrated == 2
-			&& calibrationConfig.gyroMeasurementTemperature1
-				   > calibrationConfig.gyroMeasurementTemperature2) {
+		if (sensorConfig.gyroPointsCalibrated == 2
+			&& sensorConfig.gyroMeasurementTemperature1
+				   > sensorConfig.gyroMeasurementTemperature2) {
 			float tempG_off[3]{
-				calibrationConfig.G_off1[0],
-				calibrationConfig.G_off1[1],
-				calibrationConfig.G_off1[2],
+				sensorConfig.G_off1[0],
+				sensorConfig.G_off1[1],
+				sensorConfig.G_off1[2],
 			};
-			float tempGTemperature = calibrationConfig.gyroMeasurementTemperature1;
+			float tempGTemperature = sensorConfig.gyroMeasurementTemperature1;
 
-			calibrationConfig.G_off1[0] = calibrationConfig.G_off2[0];
-			calibrationConfig.G_off1[1] = calibrationConfig.G_off2[1];
-			calibrationConfig.G_off1[2] = calibrationConfig.G_off2[2];
-			calibrationConfig.gyroMeasurementTemperature1
-				= calibrationConfig.gyroMeasurementTemperature2;
+			sensorConfig.G_off1[0] = sensorConfig.G_off2[0];
+			sensorConfig.G_off1[1] = sensorConfig.G_off2[1];
+			sensorConfig.G_off1[2] = sensorConfig.G_off2[2];
+			sensorConfig.gyroMeasurementTemperature1
+				= sensorConfig.gyroMeasurementTemperature2;
 
-			calibrationConfig.G_off2[0] = tempG_off[0];
-			calibrationConfig.G_off2[1] = tempG_off[1];
-			calibrationConfig.G_off2[2] = tempG_off[2];
-			calibrationConfig.gyroMeasurementTemperature2 = tempGTemperature;
+			sensorConfig.G_off2[0] = tempG_off[0];
+			sensorConfig.G_off2[1] = tempG_off[1];
+			sensorConfig.G_off2[2] = tempG_off[2];
+			sensorConfig.gyroMeasurementTemperature2 = tempGTemperature;
 		}
 	}
 
