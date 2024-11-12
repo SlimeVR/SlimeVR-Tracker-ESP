@@ -44,6 +44,7 @@ enum class ImuID {
 	LSM6DSR,
 	LSM6DS3,
 	ICM45686,
+	ICM45605,
 	Empty = 255
 };
 
@@ -66,6 +67,7 @@ enum class ImuID {
 #define IMU_MPU6050_SF SoftFusionMPU6050
 #define IMU_LSM6DS3 SoftFusionLSM6DS3
 #define IMU_ICM45686 SoftFusionICM45686
+#define IMU_ICM45605 SoftFusionICM45605
 
 #define IMU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 

@@ -35,9 +35,9 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 template <typename I2CImpl>
-struct ICM45686 : public ICM45Base<I2CImpl> {
-	static constexpr auto Name = "ICM-45686";
-	static constexpr auto Type = ImuID::ICM45686;
+struct ICM45605 : public ICM45Base<I2CImpl> {
+	static constexpr auto Name = "ICM-45605";
+	static constexpr auto Type = ImuID::ICM45605;
 
 	// VQF parameters
 	// biasSigmaInit and and restThGyr should be the sensor's typical gyro bias
@@ -51,32 +51,18 @@ struct ICM45686 : public ICM45Base<I2CImpl> {
 		.restThAcc = 0.0098f,
 	};
 
-	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
+	ICM45605(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
 		: ICM45Base<I2CImpl>{i2c, logger} {}
 
 	struct Regs {
 		struct WhoAmI {
 			static constexpr uint8_t reg = 0x72;
-			static constexpr uint8_t value = 0xe9;
-		};
-
-		struct Pin9Config {
-			static constexpr uint8_t reg = 0x31;
-			static constexpr uint8_t value = 0b00000110;  // pin 9 to clkin
-		};
-
-		struct RtcConfig {
-			static constexpr uint8_t reg = 0x26;
-			static constexpr uint8_t value = 0b00100011;  // enable RTC
+			static constexpr uint8_t value = 0xe5;
 		};
 	};
 
-	using ICM45Base<I2CImpl>::i2c;
-
 	bool initialize() {
 		ICM45Base<I2CImpl>::softResetIMU();
-		i2c.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
-		i2c.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
 		return ICM45Base<I2CImpl>::initializeBase();
 	}
 };
