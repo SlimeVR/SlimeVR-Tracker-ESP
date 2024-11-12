@@ -277,7 +277,7 @@ void cmdGet(CmdParser* parser) {
 					WiFi.SSID(i).length(),
 					WiFi.SSID(i).c_str(),
 					WiFi.RSSI(i),
-					((WiFi.encryptionType(i) == 0) ? "OPEN" : "PASS")
+					((WiFi.encryptionType(i) == 0) ? "OPEN" : "PASSWD")
 				);
 			}
 			WiFi.scanDelete();
