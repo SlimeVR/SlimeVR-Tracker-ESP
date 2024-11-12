@@ -107,7 +107,7 @@ class SoftFusionSensor : public Sensor {
 	float zroChangeOverTemperature = 0;
 
 	void handleTemperatureMeasurement(float temperature, float timeStep) {
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 		nonBlockingCalibrator.provideTempSample(temperature);
 #endif
 
@@ -128,7 +128,7 @@ class SoftFusionSensor : public Sensor {
 		lastTemperatureAverage = averageTemperature;
 
 		if (DefinedTemperatureZROChange
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 			|| m_calibration.gyroPointsCalibrated == 2
 #endif
 		) {
@@ -169,7 +169,7 @@ class SoftFusionSensor : public Sensor {
 				m_calibration.M_Ts
 			);
 
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 			if (m_calibration.gyroPointsCalibrated > 0) {
 				m_fusion.updateRestDetectionParams(
 					imu::SensorVQFParams.restThGyr / 2,
@@ -184,7 +184,7 @@ class SoftFusionSensor : public Sensor {
 				m_calibration.M_Ts
 			);
 
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 			if (m_calibration.gyroPointsCalibrated > 0) {
 				VQFParams defaultParams;
 				m_fusion.updateRestDetectionParams(
@@ -202,7 +202,7 @@ class SoftFusionSensor : public Sensor {
 			   static_cast<sensor_real_t>(xyz[1]),
 			   static_cast<sensor_real_t>(xyz[2])};
 
-#ifndef USE_NONBLOCKING_CALIBRATION
+#if !USE_NONBLOCKING_CALIBRATION
 		float tmp[3];
 		for (uint8_t i = 0; i < 3; i++) {
 			tmp[i] = (accelData[i] - m_calibration.A_B[i]);
@@ -228,13 +228,13 @@ class SoftFusionSensor : public Sensor {
 
 		m_fusion.updateAcc(accelData, m_calibration.A_Ts);
 
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 		nonBlockingCalibrator.provideAccelSample(xyz);
 #endif
 	}
 
 	void processGyroSample(const RawSensorT xyz[3], const sensor_real_t timeDelta) {
-#ifndef USE_NONBLOCKING_CALIBRATION
+#if !USE_NONBLOCKING_CALIBRATION
 		const sensor_real_t scaledData[] = {
 			static_cast<sensor_real_t>(
 				GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off[0])
@@ -259,7 +259,7 @@ class SoftFusionSensor : public Sensor {
 #endif
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 		nonBlockingCalibrator.provideGyroSample(xyz);
 #endif
 	}
@@ -354,7 +354,7 @@ public:
 				  : SensorFusionRestDetect(imu::GyrTs, imu::AccTs, imu::MagTs)
 		  )
 		, m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger)
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 		, nonBlockingCalibrator(m_fusion, AScale, m_sensor, sensorId)
 #endif
 	{
@@ -364,7 +364,7 @@ public:
 	void motionLoop() override final {
 		sendTempIfNeeded();
 
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 		nonBlockingCalibrator.tick();
 #endif
 
@@ -421,7 +421,7 @@ public:
 		SlimeVR::Configuration::SensorConfig sensorCalibration
 			= configuration.getSensor(sensorId);
 
-#ifndef USE_NONBLOCKING_CALIBRATION
+#if !USE_NONBLOCKING_CALIBRATION
 		// If no compatible calibration data is found, the calibration data will just be
 		// zero-ed out
 		if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::SFUSION
@@ -506,7 +506,7 @@ public:
 		m_status = SensorStatus::SENSOR_OK;
 		working = true;
 
-#ifndef USE_NONBLOCKING_CALIBRATION
+#if !USE_NONBLOCKING_CALIBRATION
 		[[maybe_unused]] auto lastRawSample = eatSamplesReturnLast(1000);
 		if constexpr (UpsideDownCalibrationInit) {
 			auto gravity = static_cast<sensor_real_t>(
@@ -536,7 +536,7 @@ public:
 #endif
 	}
 
-#ifndef USE_NONBLOCKING_CALIBRATION
+#if !USE_NONBLOCKING_CALIBRATION
 	void startCalibration(int calibrationType) override final {
 		if (calibrationType == 0) {
 			// ALL
@@ -811,11 +811,11 @@ public:
 		);
 		m_calibration.A_Ts = millisFromStart / (accelSamples * 1000.0);
 		m_calibration.G_Ts = millisFromStart / (gyroSamples * 1000.0);
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 		m_calibration.T_Ts = millisFromStart / (temperatureSamples * 1000.0);
 #endif
 
-#ifndef USE_NONBLOCKING_CALIBRATION
+#if !USE_NONBLOCKING_CALIBRATION
 		m_Logger.debug(
 			"Gyro frequency %fHz, accel frequency: %fHz",
 			1.0 / m_calibration.G_Ts,
@@ -840,12 +840,12 @@ public:
 
 	SensorFusionRestDetect m_fusion;
 	T<I2CImpl> m_sensor;
-#ifdef USE_NONBLOCKING_CALIBRATION
+#if USE_NONBLOCKING_CALIBRATION
 	NonBlockingCalibration::NonBlockingCalibrator<imu, RawSensorT>
 		nonBlockingCalibrator;
 #endif
 
-#ifndef USE_NONBLOCKING_CALIBRATION
+#if !USE_NONBLOCKING_CALIBRATION
 	SlimeVR::Configuration::SoftFusionSensorConfig m_calibration
 		= {// let's create here transparent calibration that doesn't affect input data
 		   .ImuType = {imu::Type},
@@ -872,6 +872,7 @@ public:
 		   .T_Ts = imu::TempTs,
 		   .G_Sens = {1.0, 1.0, 1.0},
 		   .MotionlessData = {}};
+
 #else
 	SlimeVR::Configuration::NonBlockingSensorConfig m_calibration = {
 		// let's create here transparent calibration that doesn't affect input data

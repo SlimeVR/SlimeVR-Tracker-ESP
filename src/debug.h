@@ -38,7 +38,7 @@
 	false  // monitor accel for (triple) tap events and send them. Uses more cpu,
 		   // disable if problems. Server does nothing with value so disabled atm
 #define SEND_ACCELERATION true  // send linear acceleration to the server
-#define USE_NONBLOCKING_CALIBRATION
+#define USE_NONBLOCKING_CALIBRATION true
 // Debug information
 
 #define LOG_LEVEL LOG_LEVEL_DEBUG
