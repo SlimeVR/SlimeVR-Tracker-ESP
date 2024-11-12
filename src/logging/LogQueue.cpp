@@ -38,36 +38,34 @@ const char* LogQueue::front() const
 		return nullptr;
 	}
 
-	return m_MessageQueue[m_StartIndex.get()].data();
+	return m_MessageQueue[m_StartIndex].data();
 }
 
 void LogQueue::push(const char* message)
 {
-	if (m_Count < m_MessageQueue.max_size())
+	if (m_Count >= m_MessageQueue.max_size())
 	{
-		setMessageAt(m_Count, message);
-		++m_Count;
+		// Drop the earliest message to make space
+		pop();
 	}
-	else
-	{
-		// Overwrite the last message
-		setMessageAt(m_Count - 1, OverflowMessage);
-	}
+
+	setMessageAt(m_Count, message);
+	++m_Count;
 }
 
 void LogQueue::pop()
 {
 	if (m_Count > 0)
 	{
-		++m_StartIndex;
+		m_StartIndex = (m_StartIndex + 1) % m_MessageQueue.max_size();
 		--m_Count;
 	}
 }
 
 void LogQueue::setMessageAt(int offset, const char* message)
 {
-	Modulo<size_t, MaxMessages> index = m_StartIndex + offset;
-	std::array<char, MaxMessageLength>& entry = m_MessageQueue[index.get()];
+	size_t index = (m_StartIndex + offset) % m_MessageQueue.max_size();
+	std::array<char, MaxMessageLength>& entry = m_MessageQueue[index];
 
 	std::strncpy(entry.data(), message, entry.max_size());
 	entry[entry.max_size() - 1] = '\0';	// NULL terminate string in case message overflows because strncpy does not do that

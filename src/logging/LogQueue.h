@@ -39,7 +39,9 @@ public:
 	// First message in the queue.
 	const char* front() const;
 
-	// Adds a message to the end of the queue. Messages that are too long will be truncated.
+	// Adds a message to the end of the queue.
+	// - Messages that are too long will be truncated.
+	// - If the queue is full, the earliest message will be silently dropped
 	void push(const char* message);
 
 	// Removes a message from the front of the queue.
@@ -54,36 +56,8 @@ private:
 
 	static constexpr size_t MaxMessages = 100;
 	static constexpr size_t MaxMessageLength = std::numeric_limits<uint8_t>::max();
-	static constexpr char OverflowMessage[] = "[OVERFLOW]";
 
-	template <typename T, T Modulus>
-	class Modulo {
-	public:
-		Modulo(T value) : m_Value(value) {}
-
-		Modulo<T, Modulus>& operator++()
-		{
-			m_Value = (m_Value + 1) % Modulus;
-			return *this;
-		}
-
-		Modulo<T, Modulus> operator+(T other) const
-		{
-			// WARNING: Does not consider overflow or negative values
-			T newValue = (m_Value + other) % Modulus;
-			return Modulo<T, Modulus>{newValue};
-		}
-
-		T get() const
-		{
-			return m_Value;
-		}
-
-	private:
-		T m_Value;
-	};
-
-	Modulo<size_t, MaxMessages> m_StartIndex{0};
+	size_t m_StartIndex = 0;
 	size_t m_Count = 0;
 	std::array<std::array<char, MaxMessageLength>, MaxMessages> m_MessageQueue;
 
