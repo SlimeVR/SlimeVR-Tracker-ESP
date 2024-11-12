@@ -48,11 +48,14 @@ const char* calibrationConfigTypeToString(SensorConfigType type) {
 	}
 }
 
-uint16_t configDataToNumber(SensorConfig sensorConfig) {
+// 1st bit specifies if magnetometer is enabled or disabled
+// 2nd bit specifies if magnetometer is supported
+uint16_t configDataToNumber(SensorConfig* sensorConfig, bool magSupported) {
 	uint16_t data = 0;
-	switch (sensorConfig.type) {
+	data += magSupported << 1;
+	switch (sensorConfig->type) {
 		case SensorConfigType::BNO0XX: {
-			auto config = &sensorConfig.data.bno0XX;
+			auto config = &sensorConfig->data.bno0XX;
 			data += config->magEnabled;
 			break;
 		}

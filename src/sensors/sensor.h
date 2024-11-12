@@ -27,6 +27,9 @@
 #include <Arduino.h>
 #include <quat.h>
 #include <vector3.h>
+
+#include <cstdint>
+
 #include "configuration/Configuration.h"
 #include "globals.h"
 #include "logging/Logger.h"
@@ -47,13 +50,24 @@ enum class MagnetometerStatus : uint8_t {
 	MAG_ENABLED = 2,
 };
 
-class Sensor
-{
+class Sensor {
 public:
-	Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, uint8_t sclpin=0, uint8_t sdapin=0)
-		: addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
-			sclPin(sclpin), sdaPin(sdapin)
-	{
+	Sensor(
+		const char* sensorName,
+		ImuID type,
+		uint8_t id,
+		uint8_t address,
+		float rotation,
+		uint8_t sclpin = 0,
+		uint8_t sdapin = 0
+	)
+		: addr(address)
+		, sensorId(id)
+		, sensorType(type)
+		, sensorOffset({Quat(Vector3(0, 0, 1), rotation)})
+		, m_Logger(SlimeVR::Logging::Logger(sensorName))
+		, sclPin(sclpin)
+		, sdaPin(sdapin) {
 		char buf[4];
 		sprintf(buf, "%u", id);
 		m_Logger.setTag(buf);
@@ -74,36 +88,16 @@ public:
 	virtual void saveTemperatureCalibration();
 	virtual void setFlag(uint16_t flagId, bool state){};
 	virtual uint16_t getSensorConfigData();
-	bool isWorking() {
-		return working;
-	};
-	bool getHadData() const {
-		return hadData;
-	};
-	bool isValid() {
-		return sclPin != sdaPin;
-	};
-	bool isMagEnabled() {
-		return magStatus == MagnetometerStatus::MAG_ENABLED;
-	};
-	uint8_t getSensorId() {
-		return sensorId;
-	};
-	ImuID getSensorType() {
-		return sensorType;
-	};
-	MagnetometerStatus getMagStatus() {
-		return magStatus;
-	};
-	const Vector3& getAcceleration() {
-		return acceleration;
-	};
-	const Quat& getFusedRotation() {
-		return fusedRotation;
-	};
-	bool hasNewDataToSend() {
-		return newFusedRotation || newAcceleration;
-	};
+	bool isWorking() { return working; };
+	bool getHadData() const { return hadData; };
+	bool isValid() { return sclPin != sdaPin; };
+	bool isMagEnabled() { return magStatus == MagnetometerStatus::MAG_ENABLED; };
+	uint8_t getSensorId() { return sensorId; };
+	ImuID getSensorType() { return sensorType; };
+	MagnetometerStatus getMagStatus() { return magStatus; };
+	const Vector3& getAcceleration() { return acceleration; };
+	const Quat& getFusedRotation() { return fusedRotation; };
+	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
 
 protected:
 	uint8_t addr = 0;
@@ -132,6 +126,6 @@ private:
 	void printTemperatureCalibrationUnsupported();
 };
 
-const char * getIMUNameByType(ImuID imuType);
+const char* getIMUNameByType(ImuID imuType);
 
-#endif // SLIMEVR_SENSOR_H_
+#endif  // SLIMEVR_SENSOR_H_
