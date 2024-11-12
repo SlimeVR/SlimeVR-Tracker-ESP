@@ -12,7 +12,7 @@ class Logger {
 public:
 	Logger(const char* prefix)
 		: m_Prefix(prefix)
-		, m_Tag(nullptr) {};
+		, m_Tag(nullptr){};
 	Logger(const char* prefix, const char* tag)
 		: m_Prefix(prefix)
 		, m_Tag(nullptr) {
