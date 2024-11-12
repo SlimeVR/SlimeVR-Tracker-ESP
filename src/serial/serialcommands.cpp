@@ -144,11 +144,12 @@ void cmdSet(CmdParser* parser) {
 
 void printState() {
 	logger.info(
-		"SlimeVR Tracker, board: %d, hardware: %d, build: %d, firmware: %s, address: "
+		"SlimeVR Tracker, board: %d, hardware: %d, protocol: %d, firmware: %s, "
+		"address: "
 		"%s, mac: %s, status: %d, wifi state: %d",
 		BOARD,
 		HARDWARE_MCU,
-		FIRMWARE_BUILD_NUMBER,
+		PROTOCOL_VERSION,
 		FIRMWARE_VERSION,
 		WiFiNetwork::getAddress().toString().c_str(),
 		WiFi.macAddress().c_str(),
@@ -165,11 +166,11 @@ void printState() {
 			sensor->getHadData() ? "true" : "false"
 		);
 	}
-        logger.info(
-            "Battery voltage: %.3f, level: %.1f%%",
-            battery.getVoltage(),
-			battery.getLevel() * 100
-        );
+	logger.info(
+		"Battery voltage: %.3f, level: %.1f%%",
+		battery.getVoltage(),
+		battery.getLevel() * 100
+	);
 }
 
 void cmdGet(CmdParser* parser) {
@@ -226,11 +227,11 @@ void cmdGet(CmdParser* parser) {
 
 	if (parser->equalCmdParam(1, "TEST")) {
 		logger.info(
-			"[TEST] Board: %d, hardware: %d, build: %d, firmware: %s, address: %s, "
+			"[TEST] Board: %d, hardware: %d, protocol: %d, firmware: %s, address: %s, "
 			"mac: %s, status: %d, wifi state: %d",
 			BOARD,
 			HARDWARE_MCU,
-			FIRMWARE_BUILD_NUMBER,
+			PROTOCOL_VERSION,
 			FIRMWARE_VERSION,
 			WiFiNetwork::getAddress().toString().c_str(),
 			WiFi.macAddress().c_str(),
