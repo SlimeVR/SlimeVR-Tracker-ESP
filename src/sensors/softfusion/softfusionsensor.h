@@ -267,7 +267,8 @@ class SoftFusionSensor : public Sensor {
 			),
 			static_cast<sensor_real_t>(
 				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off1[2])
-			)};
+			)
+		};
 #endif
 	m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 
@@ -347,22 +348,22 @@ SoftFusionSensor(
 	uint8_t
 )
 	: Sensor(
-		imu::Name,
-		imu::Type,
-		id,
-		imu::Address + addrSuppl,
-		rotation,
-		sclPin,
-		sdaPin
-	)
+		  imu::Name,
+		  imu::Type,
+		  id,
+		  imu::Address + addrSuppl,
+		  rotation,
+		  sclPin,
+		  sdaPin
+	  )
 	, m_fusion(
 		  HasPerSensorVQFParams
 			  ? SensorFusionRestDetect(
-				  imu::SensorVQFParams,
-				  imu::GyrTs,
-				  imu::AccTs,
-				  imu::MagTs
-			  )
+					imu::SensorVQFParams,
+					imu::GyrTs,
+					imu::AccTs,
+					imu::MagTs
+				)
 			  : SensorFusionRestDetect(imu::GyrTs, imu::AccTs, imu::MagTs)
 	  )
 	, m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger)
@@ -442,7 +443,8 @@ void motionSetup() override final {
 			== MotionlessCalibDataSize())) {
 		m_calibration = sensorCalibration.data.sfusion;
 		recalcFusion();
-	} else if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::NONE) {
+	} else if (sensorCalibration.type
+			   == SlimeVR::Configuration::SensorConfigType::NONE) {
 		m_Logger.warn("No calibration data found for sensor %d, ignoring...", sensorId);
 		m_Logger.info("Calibration is advised");
 	} else {
@@ -466,7 +468,8 @@ void motionSetup() override final {
 			m_calibration.A_off[1] = 0;
 			m_calibration.A_off[2] = 0;
 			recalcFusion();
-		} else if (sensorCalibration.type != SlimeVR::Configuration::SensorConfigType::NONE) {
+		} else if (sensorCalibration.type
+				   != SlimeVR::Configuration::SensorConfigType::NONE) {
 			m_Logger.warn(
 				"Incompatible calibration data found for sensor %d, ignoring...",
 				sensorId
@@ -844,7 +847,8 @@ SlimeVR::Configuration::SoftFusionSensorConfig m_calibration
 		.M_Ts = imu::MagTs,
 		.T_Ts = imu::TempTs,
 		.G_Sens = {1.0, 1.0, 1.0},
-		.MotionlessData = {}};
+		.MotionlessData = {}
+};
 #else
 	SlimeVR::Configuration::NonBlockingSensorConfig m_calibration = {
 		// let's create here transparent calibration that doesn't affect input data

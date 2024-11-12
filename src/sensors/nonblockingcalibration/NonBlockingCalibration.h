@@ -323,11 +323,13 @@ private:
 	SampleRateCalibrationStep<SensorRawT> sampleRateCalibrationStep{sensorConfig};
 	MotionlessCalibrationStep<IMU, SensorRawT> motionlessCalibrationStep{
 		sensorConfig,
-		imu};
+		imu
+	};
 	GyroBiasCalibrationStep<SensorRawT> gyroBiasCalibrationStep{sensorConfig};
 	AccelBiasCalibrationStep<SensorRawT> accelBiasCalibrationStep{
 		sensorConfig,
-		accelScale};
+		accelScale
+	};
 	NullCalibrationStep<SensorRawT> nullCalibrationStep{sensorConfig};
 
 	CalibrationStep<SensorRawT>* currentStep = &nullCalibrationStep;
