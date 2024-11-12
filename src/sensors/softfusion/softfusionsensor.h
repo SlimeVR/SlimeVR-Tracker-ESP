@@ -77,9 +77,8 @@ class SoftFusionSensor : public Sensor {
 		{ imu::TemperatureZROChange } -> std::same_as<float>;
 	};
 
-	static constexpr bool HasPerSensorVQFParams = requires(imu i) {
-		imu:: SensorVQFParams;
-	};
+	static constexpr bool HasPerSensorVQFParams
+		= requires(imu i) { imu::SensorVQFParams; };
 
 	bool detected() const {
 		const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
@@ -330,6 +329,7 @@ std::tuple<RawVectorT, RawVectorT, float> eatSamplesReturnLast(
 				}
 			}
 		);
+		yield();
 	}
 	return std::make_tuple(accel, gyro, temperature);
 }
@@ -792,6 +792,7 @@ void calibrateSampleRate() {
 				temperatureSamples++;
 			}
 		);
+		yield();
 	}
 
 	const auto millisFromStart
