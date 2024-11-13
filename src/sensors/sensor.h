@@ -73,20 +73,20 @@ public:
 		m_Logger.setTag(buf);
 	}
 
-	virtual ~Sensor() {};
-	virtual void motionSetup() {};
-	virtual void postSetup() {};
-	virtual void motionLoop() {};
+	virtual ~Sensor(){};
+	virtual void motionSetup(){};
+	virtual void postSetup(){};
+	virtual void motionLoop(){};
 	virtual void sendData();
 	virtual void setAcceleration(Vector3 a);
 	virtual void setFusedRotation(Quat r);
-	virtual void startCalibration(int calibrationType) {};
+	virtual void startCalibration(int calibrationType){};
 	virtual SensorStatus getSensorState();
 	virtual void printTemperatureCalibrationState();
 	virtual void printDebugTemperatureCalibrationState();
 	virtual void resetTemperatureCalibrationState();
 	virtual void saveTemperatureCalibration();
-	virtual void setFlag(uint16_t flagId, bool state) {};
+	virtual void setFlag(uint16_t flagId, bool state){};
 	virtual uint16_t getSensorConfigData();
 	bool isWorking() { return working; };
 	bool getHadData() const { return hadData; };
