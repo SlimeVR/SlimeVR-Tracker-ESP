@@ -28,8 +28,6 @@
 #include <quat.h>
 #include <vector3.h>
 
-#include <cstdint>
-
 #include "configuration/Configuration.h"
 #include "globals.h"
 #include "logging/Logger.h"
