@@ -44,7 +44,7 @@ output = f"'-DGIT_REV=\"{revision}\"'"
 
 if tag != "":
 	output += f" '-DFIRMWARE_VERSION=\"{tag}\"'"
-if tag == "" and branch != "":
+elif branch != "":
 	output += f" '-DFIRMWARE_VERSION=\"{branch}\"'"
 else:
 	output += f" '-DFIRMWARE_VERSION=\"git-{revision}\"'"
