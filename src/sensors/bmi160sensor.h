@@ -164,7 +164,7 @@ public:
 			axisRemap = axisRemapParam;
 		}
 	};
-	~BMI160Sensor() {};
+	~BMI160Sensor(){};
 	void initHMC(BMI160MagRate magRate);
 	void initQMC(BMI160MagRate magRate);
 

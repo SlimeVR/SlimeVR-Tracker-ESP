@@ -67,8 +67,8 @@ public:
 #if !MPU_USE_DMPMAG
 		, sfusion(MPU9250_ODR_TS)
 #endif
-	{};
-	~MPU9250Sensor() {};
+			  {};
+	~MPU9250Sensor(){};
 	void motionSetup() override final;
 	void motionLoop() override final;
 	void startCalibration(int calibrationType) override final;

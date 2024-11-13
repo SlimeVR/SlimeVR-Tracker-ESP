@@ -73,7 +73,7 @@ public:
 		m_Logger.setTag(buf);
 	}
 
-	virtual ~Sensor() {};
+	virtual ~Sensor(){};
 	virtual void motionSetup() {};
 	virtual void postSetup() {};
 	virtual void motionLoop() {};

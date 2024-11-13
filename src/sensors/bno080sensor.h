@@ -52,8 +52,8 @@ public:
 			  sclPin,
 			  sdaPin
 		  )
-		, m_IntPin(intPin) {};
-	~BNO080Sensor() {};
+		, m_IntPin(intPin){};
+	~BNO080Sensor(){};
 	void motionSetup() override final;
 	void postSetup() override { lastData = millis(); }
 
@@ -76,7 +76,7 @@ protected:
 		uint8_t intPin
 	)
 		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sclPin, sdaPin)
-		, m_IntPin(intPin) {};
+		, m_IntPin(intPin){};
 
 private:
 	BNO080 imu{};
@@ -117,7 +117,7 @@ public:
 			  sclPin,
 			  sdaPin,
 			  intPin
-		  ) {};
+		  ){};
 };
 
 class BNO086Sensor : public BNO080Sensor {
@@ -140,7 +140,7 @@ public:
 			  sclPin,
 			  sdaPin,
 			  intPin
-		  ) {};
+		  ){};
 };
 
 #endif
