@@ -54,7 +54,7 @@ private:
 	// Sets the message at a particular offset
 	void setMessageAt(int offset, const char* message);
 
-	static constexpr size_t MaxMessages = 100;
+	static constexpr size_t MaxMessages = 30;
 	static constexpr size_t MaxMessageLength = std::numeric_limits<uint8_t>::max();
 
 	size_t m_StartIndex = 0;
