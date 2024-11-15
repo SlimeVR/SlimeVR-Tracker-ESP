@@ -82,21 +82,6 @@ void SensorManager::setup()
 		return directPinInterfaces[pin];
 	};
 
-	std::map<int, DirectPinInterface*> directPinInterfaces;
-	std::map<int, MCP23X17PinInterface*> mcpPinInterfaces;
-	std::map<std::tuple<int, int>, I2CWireSensorInterface*> i2cWireInterfaces;
-	std::map<std::tuple<int, int, int, int>, I2CPCASensorInterface*> pcaWireInterfaces;
-
-	auto directPin = [&] (int pin)
-	{
-		if(!directPinInterfaces.contains(pin))
-		{
-			auto ptr = new DirectPinInterface(pin);
-			directPinInterfaces[pin] = ptr;
-		}
-		return directPinInterfaces[pin];
-	};
-
 	auto mcpPin = [&](int pin)
 	{
 		if(!mcpPinInterfaces.contains(pin))
