@@ -17,15 +17,15 @@ jobs:
         with:
           clang-format-version: "17"
           fallback-style: google
-#      Disable clang-tidy for now
-#      - name: Get clang-tidy
-#        run: |
-#          apt-get update
-#          apt-get install -y clang-tidy
-#      - uses: ZehMatt/clang-tidy-annotations@v1.0.0
-#        with:
-#          build_dir: 'build'
-#          cmake_args: '-G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++'
+  #      Disable clang-tidy for now
+  #      - name: Get clang-tidy
+  #        run: |
+  #          apt-get update
+  #          apt-get install -y clang-tidy
+  #      - uses: ZehMatt/clang-tidy-annotations@v1.0.0
+  #        with:
+  #          build_dir: 'build'
+  #          cmake_args: '-G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++'
 
   build:
     runs-on: ubuntu-20.04
@@ -38,6 +38,9 @@ jobs:
             ~/.cache/pip
             ~/.platformio/.cache
           key: ${{ runner.os }}-pio
+
+      - name: Get tags
+        run: git fetch --tags origin --recurse-submodules=no --force
 
       - name: Set up Python
         uses: actions/setup-python@v5
