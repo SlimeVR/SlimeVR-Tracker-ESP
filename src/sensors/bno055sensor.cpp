@@ -46,7 +46,7 @@ void BNO055Sensor::motionSetup() {
 	imu.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
 	m_Logger.info("Connected to BNO055 at address 0x%02x", addr);
 
-    working = true;
+	working = true;
 	m_tpsCounter.reset();
 	m_dataCounter.reset();
 }

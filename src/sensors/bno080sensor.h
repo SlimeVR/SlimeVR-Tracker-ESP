@@ -44,15 +44,15 @@ public:
 		int
 	)
 		: Sensor(
-			"BNO080Sensor",
-			ImuID::BNO080,
-			id,
-			Address + addrSuppl,
-			rotation,
-			sensorInterface
-		)
-		, m_IntPin(intPin){};
-	~BNO080Sensor(){};
+			  "BNO080Sensor",
+			  ImuID::BNO080,
+			  id,
+			  Address + addrSuppl,
+			  rotation,
+			  sensorInterface
+		  )
+		, m_IntPin(intPin) {};
+	~BNO080Sensor() {};
 	void motionSetup() override final;
 	void postSetup() override { lastData = millis(); }
 
@@ -75,12 +75,12 @@ protected:
 		int
 	)
 		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sensorInterface)
-		, m_IntPin(intPin){};
+		, m_IntPin(intPin) {};
 
 private:
 	BNO080 imu{};
 
-    PinInterface* m_IntPin;
+	PinInterface* m_IntPin;
 
 	uint8_t tap;
 	unsigned long lastData = 0;
@@ -108,15 +108,15 @@ public:
 		int extraParam
 	)
 		: BNO080Sensor(
-			"BNO085Sensor",
-			ImuID::BNO085,
-			id,
-			address,
-			rotation,
-			sensorInterface,
-			intPin,
-			extraParam
-		){};
+			  "BNO085Sensor",
+			  ImuID::BNO085,
+			  id,
+			  address,
+			  rotation,
+			  sensorInterface,
+			  intPin,
+			  extraParam
+		  ) {};
 };
 
 class BNO086Sensor : public BNO080Sensor {
@@ -131,15 +131,15 @@ public:
 		int extraParam
 	)
 		: BNO080Sensor(
-			"BNO086Sensor",
-			ImuID::BNO086,
-			id,
-			address,
-			rotation,
-			sensorInterface,
-			intPin,
-			extraParam
-		){};
+			  "BNO086Sensor",
+			  ImuID::BNO086,
+			  id,
+			  address,
+			  rotation,
+			  sensorInterface,
+			  intPin,
+			  extraParam
+		  ) {};
 };
 
 #endif

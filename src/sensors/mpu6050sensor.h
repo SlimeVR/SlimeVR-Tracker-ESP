@@ -43,14 +43,14 @@ public:
 		uint8_t
 	)
 		: Sensor(
-			"MPU6050Sensor",
-			ImuID::MPU6050,
-			id,
-			Address + addrSuppl,
-			rotation,
-			sensorInterface
-		){};
-	~MPU6050Sensor(){};
+			  "MPU6050Sensor",
+			  ImuID::MPU6050,
+			  id,
+			  Address + addrSuppl,
+			  rotation,
+			  sensorInterface
+		  ) {};
+	~MPU6050Sensor() {};
 	void motionSetup() override final;
 	void motionLoop() override final;
 	void startCalibration(int calibrationType) override final;

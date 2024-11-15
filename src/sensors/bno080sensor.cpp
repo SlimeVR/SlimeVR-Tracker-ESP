@@ -100,36 +100,56 @@ void BNO080Sensor::motionSetup() {
 	// EXPERIMENTAL Enable periodic calibration save to permanent memory
 	imu.saveCalibrationPeriodically(true);
 	imu.requestCalibrationStatus();
-	// EXPERIMENTAL Disable accelerometer calibration after 1 minute to prevent "stomping" bug
-	// WARNING : Executing IMU commands outside of the update loop is not allowed
-	// since the address might have changed when the timer is executed!
-	if(sensorType == ImuID::BNO085) {
+	// EXPERIMENTAL Disable accelerometer calibration after 1 minute to prevent
+	// "stomping" bug WARNING : Executing IMU commands outside of the update loop is not
+	// allowed since the address might have changed when the timer is executed!
+	if (sensorType == ImuID::BNO085) {
 		// For BNO085, disable accel calibration
-		globalTimer.in(60000, [](void *sensor) {((BNO080*) sensor)->sendCalibrateCommand(SH2_CAL_MAG | SH2_CAL_ON_TABLE); return true;}, &imu);
-	} else if(sensorType == ImuID::BNO086) {
+		globalTimer.in(
+			60000,
+			[](void* sensor) {
+				((BNO080*)sensor)->sendCalibrateCommand(SH2_CAL_MAG | SH2_CAL_ON_TABLE);
+				return true;
+			},
+			&imu
+		);
+	} else if (sensorType == ImuID::BNO086) {
 		// For BNO086, disable accel calibration
 		// TODO: Find default flags for BNO086
-		globalTimer.in(60000, [](void *sensor) {((BNO080*) sensor)->sendCalibrateCommand(SH2_CAL_MAG | SH2_CAL_ON_TABLE); return true;}, &imu);
+		globalTimer.in(
+			60000,
+			[](void* sensor) {
+				((BNO080*)sensor)->sendCalibrateCommand(SH2_CAL_MAG | SH2_CAL_ON_TABLE);
+				return true;
+			},
+			&imu
+		);
 	} else {
-		globalTimer.in(60000, [](void *sensor) {((BNO080*) sensor)->requestCalibrationStatus(); return true;}, &imu);
+		globalTimer.in(
+			60000,
+			[](void* sensor) {
+				((BNO080*)sensor)->requestCalibrationStatus();
+				return true;
+			},
+			&imu
+		);
 	}
-	//imu.sendCalibrateCommand(SH2_CAL_ACCEL | SH2_CAL_GYRO_IN_HAND | SH2_CAL_MAG | SH2_CAL_ON_TABLE | SH2_CAL_PLANAR);
+	// imu.sendCalibrateCommand(SH2_CAL_ACCEL | SH2_CAL_GYRO_IN_HAND | SH2_CAL_MAG |
+	// SH2_CAL_ON_TABLE | SH2_CAL_PLANAR);
 
-
-    lastReset = 0;
-    lastData = millis();
-    working = true;
-    configured = true;
+	lastReset = 0;
+	lastData = millis();
+	working = true;
+	configured = true;
 	m_tpsCounter.reset();
 	m_dataCounter.reset();
 }
 
 void BNO080Sensor::motionLoop() {
 	m_tpsCounter.update();
-    //Look for reports from the IMU
-    while (imu.dataAvailable())
-    {
-        hadData = true;
+	// Look for reports from the IMU
+	while (imu.dataAvailable()) {
+		hadData = true;
 #if ENABLE_INSPECTION
 		{
 			int16_t rX = imu.getRawGyroX();
@@ -215,18 +235,34 @@ void BNO080Sensor::motionLoop() {
 		if (imu.getTapDetected()) {
 			tap = imu.getTapDetector();
 		}
-		if(imu.hasNewCliabrationStatus()) {
+		if (imu.hasNewCliabrationStatus()) {
 			uint8_t calibrationResponseStatus;
 			uint8_t accelCalEnabled;
 			uint8_t gyroCalEnabled;
 			uint8_t magCalEnabled;
 			uint8_t planarAccelCalEnabled;
 			uint8_t onTableCalEnabled;
-			imu.getCalibrationStatus(calibrationResponseStatus, accelCalEnabled, gyroCalEnabled, magCalEnabled, planarAccelCalEnabled, onTableCalEnabled);
-			m_Logger.info("BNO08X calibration satus received: Status: %d, Accel: %d, Gyro: %d, Mag: %d, Planar: %d, OnTable: %d",
-					calibrationResponseStatus, accelCalEnabled, gyroCalEnabled, magCalEnabled, planarAccelCalEnabled, onTableCalEnabled);
+			imu.getCalibrationStatus(
+				calibrationResponseStatus,
+				accelCalEnabled,
+				gyroCalEnabled,
+				magCalEnabled,
+				planarAccelCalEnabled,
+				onTableCalEnabled
+			);
+			m_Logger.info(
+				"BNO08X calibration satus received: Status: %d, Accel: %d, Gyro: %d, "
+				"Mag: %d, Planar: %d, OnTable: %d",
+				calibrationResponseStatus,
+				accelCalEnabled,
+				gyroCalEnabled,
+				magCalEnabled,
+				planarAccelCalEnabled,
+				onTableCalEnabled
+			);
 			// Default calibration flags for BNO085:
-			// Accel: 1, Gyro: 0, Mag: 1, Planar: 0, OnTable: 0 (OnTable can't be disabled)
+			// Accel: 1, Gyro: 0, Mag: 1, Planar: 0, OnTable: 0 (OnTable can't be
+			// disabled)
 		}
 		if (m_IntPin == nullptr || imu.I2CTimedOut()) {
 			break;

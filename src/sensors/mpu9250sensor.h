@@ -56,18 +56,18 @@ public:
 		uint8_t
 	)
 		: Sensor(
-			"MPU9250Sensor",
-			ImuID::MPU9250,
-			id,
-			Address + addrSuppl,
-			rotation,
-			sensorInterface
-		)
+			  "MPU9250Sensor",
+			  ImuID::MPU9250,
+			  id,
+			  Address + addrSuppl,
+			  rotation,
+			  sensorInterface
+		  )
 #if !MPU_USE_DMPMAG
 		, sfusion(MPU9250_ODR_TS)
 #endif
-			  {};
-	~MPU9250Sensor(){};
+	{};
+	~MPU9250Sensor() {};
 	void motionSetup() override final;
 	void motionLoop() override final;
 	void startCalibration(int calibrationType) override final;

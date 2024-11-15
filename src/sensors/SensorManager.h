@@ -25,15 +25,6 @@
 #define SLIMEVR_SENSORMANAGER
 
 #include <i2cscan.h>
-#include "globals.h"
-#include "sensor.h"
-#include "EmptySensor.h"
-#include "ErroneousSensor.h"
-#include "logging/Logger.h"
-#include "sensorinterface/I2CWireSensorInterface.h"
-#include "sensorinterface/DirectPinInterface.h"
-#include "sensorinterface/MCP23X17PinInterface.h"
-#include "sensorinterface/I2CPCAInterface.h"
 
 #include <memory>
 
@@ -42,6 +33,10 @@
 #include "globals.h"
 #include "logging/Logger.h"
 #include "sensor.h"
+#include "sensorinterface/DirectPinInterface.h"
+#include "sensorinterface/I2CPCAInterface.h"
+#include "sensorinterface/I2CWireSensorInterface.h"
+#include "sensorinterface/MCP23X17PinInterface.h"
 
 namespace SlimeVR {
 namespace Sensors {
@@ -70,15 +65,27 @@ private:
 
 	template <typename ImuType>
 	std::unique_ptr<Sensor> buildSensor(
-		uint8_t sensorID, int addrSuppl, float rotation, SensorInterface* sensorInterface,
-		bool optional = false, PinInterface* intPin = nullptr, int extraParam = 0)
-	{
+		uint8_t sensorID,
+		int addrSuppl,
+		float rotation,
+		SensorInterface* sensorInterface,
+		bool optional = false,
+		PinInterface* intPin = nullptr,
+		int extraParam = 0
+	) {
 		const uint8_t address = ImuType::Address + addrSuppl;
-		m_Logger.trace("Building IMU with: id=%d,\n\
+		m_Logger.trace(
+			"Building IMU with: id=%d,\n\
 						address=0x%02X, rotation=%f,\n\
 						interface=%s, int=%s, extraParam=%d, optional=%d",
-						sensorID, address, rotation,
-						sensorInterface, intPin, extraParam, optional);
+			sensorID,
+			address,
+			rotation,
+			sensorInterface,
+			intPin,
+			extraParam,
+			optional
+		);
 
 		// Now start detecting and building the IMU
 		std::unique_ptr<Sensor> sensor;
@@ -108,7 +115,14 @@ private:
 			return sensor;
 		}
 
-        sensor = std::make_unique<ImuType>(sensorID, addrSuppl, rotation, sensorInterface, intPin, extraParam);
+		sensor = std::make_unique<ImuType>(
+			sensorID,
+			addrSuppl,
+			rotation,
+			sensorInterface,
+			intPin,
+			extraParam
+		);
 
 		sensor->motionSetup();
 		return sensor;

@@ -124,14 +124,14 @@ void MPU6050Sensor::motionSetup() {
 		// get expected DMP packet size for later comparison
 		packetSize = imu.dmpGetFIFOPacketSize();
 
-        working = true;
-    } else {
-        // ERROR!
-        // 1 = initial memory load failed
-        // 2 = DMP configuration updates failed
-        // (if it's going to break, usually the code will be 1)
-        m_Logger.error("DMP Initialization failed (code %d)", devStatus);
-    }
+		working = true;
+	} else {
+		// ERROR!
+		// 1 = initial memory load failed
+		// 2 = DMP configuration updates failed
+		// (if it's going to break, usually the code will be 1)
+		m_Logger.error("DMP Initialization failed (code %d)", devStatus);
+	}
 	m_tpsCounter.reset();
 	m_dataCounter.reset();
 }

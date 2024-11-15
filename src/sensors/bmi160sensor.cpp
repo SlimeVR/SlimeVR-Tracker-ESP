@@ -279,7 +279,7 @@ void BMI160Sensor::motionSetup() {
 		m_Logger.error("Failed to get error register value");
 	}
 
-    working = true;
+	working = true;
 	m_tpsCounter.reset();
 	m_dataCounter.reset();
 }
@@ -287,10 +287,10 @@ void BMI160Sensor::motionSetup() {
 void BMI160Sensor::motionLoop() {
 	m_tpsCounter.update();
 #if ENABLE_INSPECTION
-    {
-        int16_t rX, rY, rZ, aX, aY, aZ;
-        getRemappedRotation(&rX, &rY, &rZ);
-        getRemappedAcceleration(&aX, &aY, &aZ);
+	{
+		int16_t rX, rY, rZ, aX, aY, aZ;
+		getRemappedRotation(&rX, &rY, &rZ);
+		getRemappedAcceleration(&aX, &aY, &aZ);
 
 		networkConnection.sendInspectionRawIMUData(
 			sensorId,

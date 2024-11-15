@@ -42,13 +42,13 @@ public:
 		uint8_t
 	)
 		: Sensor(
-			"ICM20948Sensor",
-			ImuID::ICM20948,
-			id,
-			Address + addrSuppl,
-			rotation,
-			sensorInterface
-		) {}
+			  "ICM20948Sensor",
+			  ImuID::ICM20948,
+			  id,
+			  Address + addrSuppl,
+			  rotation,
+			  sensorInterface
+		  ) {}
 	~ICM20948Sensor() override = default;
 	void motionSetup() override final;
 	void postSetup() override { this->lastData = millis(); }
