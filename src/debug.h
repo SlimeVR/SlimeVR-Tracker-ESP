@@ -29,117 +29,117 @@
 #include "logging/Level.h"
 
 #ifndef IMU_MPU6050_RUNTIME_CALIBRATION
-	// Set to false to revert to startup/traditional-calibration
-	#define IMU_MPU6050_RUNTIME_CALIBRATION true
+// Set to false to revert to startup/traditional-calibration
+#define IMU_MPU6050_RUNTIME_CALIBRATION true
 #endif
 
 #ifndef BNO_USE_ARVR_STABILIZATION
-	// Set to false to disable stabilization for BNO085+ IMUs
-	#define BNO_USE_ARVR_STABILIZATION true
+// Set to false to disable stabilization for BNO085+ IMUs
+#define BNO_USE_ARVR_STABILIZATION true
 #endif
 
 #ifndef BNO_USE_MAGNETOMETER_CORRECTION
-	// Set to true to enable magnetometer correction for BNO08x IMUs.
-	// Only works with USE_6_AXIS set to true.
-	#define BNO_USE_MAGNETOMETER_CORRECTION false
+// Set to true to enable magnetometer correction for BNO08x IMUs.
+// Only works with USE_6_AXIS set to true.
+#define BNO_USE_MAGNETOMETER_CORRECTION false
 #endif
 
 #ifndef USE_6_AXIS
-	// uses 9 DoF (with mag) if false (only for ICM-20948 and BNO0xx currently)
-	#define USE_6_AXIS true
+// uses 9 DoF (with mag) if false (only for ICM-20948 and BNO0xx currently)
+#define USE_6_AXIS true
 #endif
 
 #ifndef LOAD_BIAS
-	// Loads the bias values from NVS on start
-	#define LOAD_BIAS true
+// Loads the bias values from NVS on start
+#define LOAD_BIAS true
 #endif
 
 #ifndef SAVE_BIAS
-	// Periodically saves bias calibration data to NVS
-	#define SAVE_BIAS true
+// Periodically saves bias calibration data to NVS
+#define SAVE_BIAS true
 #endif
 
 #ifndef BIAS_DEBUG
-	// Printing BIAS Variables to serial (ICM20948 only)
-	#define BIAS_DEBUG false
+// Printing BIAS Variables to serial (ICM20948 only)
+#define BIAS_DEBUG false
 #endif
 
 #ifndef ENABLE_TAP
-	// monitor accel for (triple) tap events and send them. Uses more cpu,
-	// disable if problems. Server does nothing with value so disabled atm
-	#define ENABLE_TAP false
+// monitor accel for (triple) tap events and send them. Uses more cpu,
+// disable if problems. Server does nothing with value so disabled atm
+#define ENABLE_TAP false
 #endif
 
 #ifndef SEND_ACCELERATION
-	// send linear acceleration to the server
-	#define SEND_ACCELERATION true
+// send linear acceleration to the server
+#define SEND_ACCELERATION true
 #endif
-//Debug information
+// Debug information
 
 #ifndef LOG_LEVEL
-	#define LOG_LEVEL LOG_LEVEL_DEBUG
+#define LOG_LEVEL LOG_LEVEL_DEBUG
 #endif
 
 #if LOG_LEVEL == LOG_LEVEL_TRACE
-	#define DEBUG_SENSOR
-	#define DEBUG_NETWORK
-	#define DEBUG_CONFIGURATION
+#define DEBUG_SENSOR
+#define DEBUG_NETWORK
+#define DEBUG_CONFIGURATION
 #endif
 
 // Set to true to get Serial output for debugging
 #ifndef serialDebug
-	#define serialDebug false
+#define serialDebug false
 #endif
 
 #ifndef serialBaudRate
-	#define serialBaudRate 115200
+#define serialBaudRate 115200
 #endif
 
 #ifndef LED_INTERVAL_STANDBY
-	#define LED_INTERVAL_STANDBY 10000
+#define LED_INTERVAL_STANDBY 10000
 #endif
 
 #ifndef PRINT_STATE_EVERY_MS
-	#define PRINT_STATE_EVERY_MS 60000
+#define PRINT_STATE_EVERY_MS 60000
 #endif
 
 // Determines how often we sample and send data
 #ifndef samplingRateInMillis
-	#define samplingRateInMillis 10
+#define samplingRateInMillis 10
 #endif
 
 // Sleeping options
 #ifndef POWERSAVING_MODE
-	#define POWERSAVING_MODE POWER_SAVING_LEGACY  // Minimum causes sporadic data pauses
+#define POWERSAVING_MODE POWER_SAVING_LEGACY  // Minimum causes sporadic data pauses
 #endif
 #if POWERSAVING_MODE >= POWER_SAVING_MINIMUM
-	#define TARGET_LOOPTIME_MICROS (samplingRateInMillis * 1000)
+#define TARGET_LOOPTIME_MICROS (samplingRateInMillis * 1000)
 #endif
 
 // Packet bundling/aggregation
 #ifndef PACKET_BUNDLING
-	#define PACKET_BUNDLING PACKET_BUNDLING_BUFFERED
+#define PACKET_BUNDLING PACKET_BUNDLING_BUFFERED
 #endif
 
 // Extra tunable for PACKET_BUNDLING_BUFFERED (10000us = 10ms timeout, 100hz target)
 #ifndef PACKET_BUNDLING_BUFFER_SIZE_MICROS
-	#define PACKET_BUNDLING_BUFFER_SIZE_MICROS 10000
+#define PACKET_BUNDLING_BUFFER_SIZE_MICROS 10000
 #endif
 
 // Setup for the Magnetometer
 #ifndef useFullCalibrationMatrix
-	#define useFullCalibrationMatrix true
+#define useFullCalibrationMatrix true
 #endif
 
 // Battery configuration
 #ifndef batterySampleRate
-	#define batterySampleRate 10000
+#define batterySampleRate 10000
 #endif
 #ifndef BATTERY_LOW_VOLTAGE_DEEP_SLEEP
-	#define BATTERY_LOW_VOLTAGE_DEEP_SLEEP false
+#define BATTERY_LOW_VOLTAGE_DEEP_SLEEP false
 #endif
 #ifndef BATTERY_LOW_POWER_VOLTAGE
-	#define BATTERY_LOW_POWER_VOLTAGE 3.3f  // Voltage to raise error
+#define BATTERY_LOW_POWER_VOLTAGE 3.3f  // Voltage to raise error
 #endif
 
 // Send updates over network only when changes are substantial
@@ -147,32 +147,32 @@
 // If "true" updates will be less frequent in the time of little motion
 // Experimental
 #ifndef OPTIMIZE_UPDATES
-	#define OPTIMIZE_UPDATES true
+#define OPTIMIZE_UPDATES true
 #endif
 
 #ifndef I2C_SPEED
-	#define I2C_SPEED 400000
+#define I2C_SPEED 400000
 #endif
 
 #ifndef COMPLIANCE_MODE
-	#define COMPLIANCE_MODE true
+#define COMPLIANCE_MODE true
 #endif
 
 #define USE_ATTENUATION COMPLIANCE_MODE&& ESP8266
 #ifndef ATTENUATION_N
-	#define ATTENUATION_N 10.0 / 4.0
+#define ATTENUATION_N 10.0 / 4.0
 #endif
 #ifndef ATTENUATION_G
-	#define ATTENUATION_G 14.0 / 4.0
+#define ATTENUATION_G 14.0 / 4.0
 #endif
 #ifndef ATTENUATION_B
-	#define ATTENUATION_B 40.0 / 4.0
+#define ATTENUATION_B 40.0 / 4.0
 #endif
 
 // Send inspection packets over the network to a profiler
 // Not recommended for production
 #ifndef ENABLE_INSPECTION
-	#define ENABLE_INSPECTION false
+#define ENABLE_INSPECTION false
 #endif
 
 #define PROTOCOL_VERSION 20

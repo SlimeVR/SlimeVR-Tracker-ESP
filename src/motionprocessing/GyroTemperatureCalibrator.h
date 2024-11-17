@@ -101,7 +101,7 @@ struct GyroTemperatureCalibrationState {
 		, tSum(0.0f)
 		, xSum(0)
 		, ySum(0)
-		, zSum(0){};
+		, zSum(0) {};
 };
 
 struct GyroTemperatureOffsetSample {
