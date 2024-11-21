@@ -405,10 +405,9 @@ struct BMI270 {
 				}
 				getFromFifo<uint8_t>(i, read_buffer);  // skip 1 byte
 			} else if ((header & Fifo::ModeMask) == Fifo::DataFrame) {
-				const uint8_t required_length
-					= (((header & Fifo::GyrDataBit) >> Fifo::GyrDataBit)
-					   + ((header & Fifo::AccelDataBit) >> Fifo::AccelDataBit))
-					* 6;
+				uint8_t gyro_data_length = header & Fifo::GyrDataBit ? 6 : 0;
+				uint8_t accel_data_length = header & Fifo::AccelDataBit ? 6 : 0;
+				uint8_t required_length = gyro_data_length + accel_data_length;
 				if (i + required_length > bytes_to_read) {
 					// incomplete frame, will be re-read next time
 					break;
