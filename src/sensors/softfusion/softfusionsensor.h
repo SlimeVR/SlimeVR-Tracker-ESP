@@ -320,7 +320,6 @@ public:
 		if (calibrationType == 0) {
 			// ALL
 			calibrateSampleRate();
-			calibrateGyroOffset();
 			if constexpr (HasMotionlessCalib) {
 				typename imu::MotionlessCalibrationData calibData;
 				m_sensor.motionlessCalibration(calibData);
@@ -330,6 +329,10 @@ public:
 					sizeof(calibData)
 				);
 			}
+			// Gryoscope offset calibration can only happen after any motionless
+			// gyroscope calibration, otherwise we are calculating the offset based
+			// on an incorrect starting point
+			calibrateGyroOffset();
 			calibrateAccel();
 		} else if (calibrationType == 1) {
 			calibrateSampleRate();

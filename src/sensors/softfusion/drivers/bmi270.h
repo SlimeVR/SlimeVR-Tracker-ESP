@@ -363,6 +363,11 @@ struct BMI270 {
 			gyroSensitivity.z = crt_values[2];
 		}
 
+		// CRT seems to leave some state behind which isn't persisted after
+		// restart. If we continue without restarting, the gyroscope will behave
+		// differently on this run compared to subsequent restarts.
+		restartAndInit();
+
 		setNormalConfig(gyroSensitivity);
 	}
 
