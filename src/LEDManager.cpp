@@ -152,7 +152,43 @@ namespace SlimeVR
         unsigned int length = 0;
         unsigned int count = 0;
 
-        if (statusManager.hasStatus(Status::LOW_BATTERY))
+        if (statusManager.hasStatus(Status::BATTERY_CHARGE_COMPLETE))
+        {
+            // m_Logger.info("Battery Charge Complete: %d", m_CurrentStage);
+            switch (m_CurrentStage)
+            {
+            case ON:
+            case OFF:
+            case INTERVAL:
+            case RAMP:
+            case RAMP_CONTINUOUS:
+#if ESP32 && ENABLE_LEDC
+                rampFromCurrent(50.0f, 1000);
+                length = LED_RAMP_MILLIS;
+#endif
+                break;
+            }
+        }
+        else if (statusManager.hasStatus(Status::BATTERY_CHARGING))
+        {
+            // m_Logger.info("Battery Charging: %d", m_CurrentStage);
+#if ESP32 && ENABLE_LEDC
+            switch (m_CurrentStage)
+            {
+            case ON:
+            case OFF:
+            case INTERVAL:
+                setRamp(10.0f, 100.0f, 2000);
+                length = LED_RAMP_MILLIS;
+            case RAMP:
+                m_CurrentStage = RAMP_CONTINUOUS;
+            case RAMP_CONTINUOUS:
+                length = LED_RAMP_MILLIS;
+                break;
+            }
+#endif
+        }
+        else if (statusManager.hasStatus(Status::LOW_BATTERY))
         {
             count = LOW_BATTERY_COUNT;
             switch (m_CurrentStage)

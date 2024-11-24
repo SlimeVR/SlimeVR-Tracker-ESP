@@ -20,6 +20,10 @@ namespace SlimeVR
                 return "SERVER_SEARCHING";
             case SERVER_CONNECTING:
                 return "SERVER_CONNECTING";
+            case BATTERY_CHARGING:
+                return "BATTERY_CHARGING";
+            case BATTERY_CHARGE_COMPLETE:
+                return "BATTERY_CHARGE_COMPLETE";
             default:
                 return "UNKNOWN";
             }

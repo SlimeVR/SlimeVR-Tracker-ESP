@@ -49,6 +49,12 @@ void BatteryMonitor::Setup()
 
 void BatteryMonitor::Loop()
 {
+#ifdef PIN_BAT_STAT_CHRG
+                statusManager.setStatus(SlimeVR::Status::BATTERY_CHARGING,digitalRead(PIN_BAT_STAT_CHRG) != HIGH);
+#endif
+#ifdef PIN_BAT_STAT_CHRG_DONE
+                statusManager.setStatus(SlimeVR::Status::BATTERY_CHARGE_COMPLETE,digitalRead(PIN_BAT_STAT_CHRG_DONE) != HIGH);
+#endif    
     #if BATTERY_MONITOR == BAT_EXTERNAL || BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
         auto now_ms = millis();
         if (now_ms - last_battery_sample >= batterySampleRate)
