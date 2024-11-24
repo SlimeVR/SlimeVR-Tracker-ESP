@@ -37,7 +37,7 @@ Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
 #if ESP32 && ENABLE_LEDC
-SlimeVR::LEDManager ledManager(LED_PIN, LEDC_CHANNEL_LED, LEDC_FREQ_LED, LEDC_BITS_LED);
+SlimeVR::LEDManager ledManager(LED_PIN, LEDC_FREQ_LED, LEDC_BITS_LED);
 #else
 SlimeVR::LEDManager ledManager(LED_PIN);
 #endif

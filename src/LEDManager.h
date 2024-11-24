@@ -67,8 +67,8 @@ namespace SlimeVR
     public:
         LEDManager(uint8_t pin) : m_Pin(pin) {}
 #if ESP32 && ENABLE_LEDC
-        LEDManager(uint8_t pin, uint8_t ledcChannel = 0, int ledcFrequency = 2000, uint8_t ledcBits = 8) : 
-                            m_Pin(pin), m_ledcChannel(ledcChannel), m_ledcFrequency(ledcFrequency), m_ledcBits(ledcBits), m_CurrentBrightness(0) {}
+        LEDManager(uint8_t pin, int ledcFrequency = 2000, uint8_t ledcBits = 8) : 
+                            m_Pin(pin), m_ledcFrequency(ledcFrequency), m_ledcBits(ledcBits), m_CurrentBrightness(0) {}
 #endif
         void setup();
 
@@ -113,7 +113,6 @@ namespace SlimeVR
 
         uint8_t m_Pin;
 #if ESP32 && ENABLE_LEDC
-        uint8_t m_ledcChannel;
         int m_ledcFrequency;
         uint8_t m_ledcBits;
         int m_rampDifference;

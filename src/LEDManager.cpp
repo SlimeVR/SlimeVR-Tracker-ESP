@@ -36,8 +36,8 @@ namespace SlimeVR
     {
 #if ENABLE_LEDS
 #if ESP32 && ENABLE_LEDC
-        ledcSetup( m_ledcChannel, m_ledcFrequency, m_ledcBits);  // define the PWM Setup
-        ledcAttachPin(m_Pin, m_ledcChannel);
+        ledcAttach(m_Pin, m_ledcFrequency, m_ledcBits);  // define the PWM Setup
+        ledcOutputInvert(m_Pin, LED_INVERTED);
 #else
         pinMode(m_Pin, OUTPUT);
 #endif
@@ -98,13 +98,8 @@ namespace SlimeVR
         if (brightness == m_CurrentBrightness)
             return;
         m_CurrentBrightness = brightness;
-#if LED_INVERTED
         m_Logger.trace("Brightness set to %d. max is %d", LEDC_MAX - brightness, LEDC_MAX);
-        ledcWrite(m_ledcChannel, LEDC_MAX - brightness * 0.10);
-#else
-        m_Logger.trace("Brightness set to %d. max is %d", brightness, LEDC_MAX);
-        ledcWrite(m_ledcChannel, brightness * 0.10);
-#endif        
+        ledcWrite(m_Pin, LEDC_MAX - brightness * 0.10); 
     }
 
     void LEDManager::setRamp(float startPercent, float endPercent, unsigned long ms)
