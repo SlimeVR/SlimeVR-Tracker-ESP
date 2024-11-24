@@ -125,7 +125,7 @@ class BMI160Sensor : public Sensor {
         static constexpr uint8_t Address = 0x68;
         static constexpr auto TypeID = ImuID::BMI160;
 
-        BMI160Sensor(uint8_t id, uint8_t addrSuppl, float rotation, uint8_t sclPin, uint8_t sdaPin, int axisRemapParam) :
+        BMI160Sensor(uint8_t id, uint8_t addrSuppl, Quat rotation, uint8_t sclPin, uint8_t sdaPin, int axisRemapParam) :
             Sensor("BMI160Sensor", ImuID::BMI160, id, Address+addrSuppl, rotation, sclPin, sdaPin),
             sfusion(BMI160_ODR_GYR_MICROS / 1e6f, BMI160_ODR_ACC_MICROS / 1e6f, BMI160_ODR_MAG_MICROS / 1e6f)
         {

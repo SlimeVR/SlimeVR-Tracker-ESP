@@ -44,8 +44,8 @@ enum class SensorStatus : uint8_t {
 class Sensor
 {
 public:
-    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, float rotation, uint8_t sclpin=0, uint8_t sdapin=0)
-        : addr(address), sensorId(id), sensorType(type), sensorOffset({Quat(Vector3(0, 0, 1), rotation)}), m_Logger(SlimeVR::Logging::Logger(sensorName)),
+    Sensor(const char *sensorName, ImuID type, uint8_t id, uint8_t address, Quat rotation, uint8_t sclpin=0, uint8_t sdapin=0)
+        : addr(address), sensorId(id), sensorType(type), sensorOffset(rotation), m_Logger(SlimeVR::Logging::Logger(sensorName)),
             sclPin(sclpin), sdaPin(sdapin)
     {
         char buf[4];

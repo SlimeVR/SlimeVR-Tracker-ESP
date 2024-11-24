@@ -42,8 +42,6 @@ void BatteryMonitor::Setup()
     {
         m_Logger.error("MCP3021 not found on I2C bus");
     }
-#elif ESP32
-    analogSetPinAttenuation(PIN_BATTERY_LEVEL,ADC_11db);
 #endif    
 }
 
@@ -90,7 +88,6 @@ void BatteryMonitor::Loop()
             #endif
             #if ESP32 && BATTERY_MONITOR == BAT_EXTERNAL
                 voltage = ((float)analogReadMilliVolts(PIN_BATTERY_LEVEL)) / 1000 * ADCMultiplier;
-            #endif
             #endif
             #if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
                 if (address > 0)

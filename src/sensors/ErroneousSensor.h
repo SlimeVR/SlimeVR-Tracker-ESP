@@ -33,7 +33,7 @@ namespace SlimeVR
         class ErroneousSensor : public Sensor
         {
         public:
-            ErroneousSensor(uint8_t id, ImuID type) : Sensor("ErroneousSensor", type, id, 0, 0.0), m_ExpectedType(type){};
+            ErroneousSensor(uint8_t id, ImuID type) : Sensor("ErroneousSensor", type, id, 0, Quat(0,0,0,1)), m_ExpectedType(type){};
             ~ErroneousSensor(){};
 
             void motionSetup() override;
