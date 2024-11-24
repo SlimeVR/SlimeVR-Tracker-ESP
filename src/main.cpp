@@ -55,6 +55,29 @@ BatteryMonitor battery;
 
 void setup()
 {
+    // For Somatic Eros, pull ENABLE_LATCH high first thing, so the button doesn't need to be held down any longer.
+#ifdef PIN_ENABLE_LATCH
+    pinMode(PIN_ENABLE_LATCH, OUTPUT);
+    digitalWrite(PIN_ENABLE_LATCH, HIGH);
+#endif
+#ifdef PIN_IMU_ENABLE
+    pinMode(PIN_IMU_ENABLE, OUTPUT);
+    digitalWrite(PIN_IMU_ENABLE, LOW);
+    delay(200);
+    digitalWrite(PIN_IMU_ENABLE, HIGH);
+#endif
+#ifdef PIN_BAT_STAT_CHRG
+    pinMode(PIN_BAT_STAT_CHRG, INPUT);
+#endif
+#ifdef PIN_BAT_STAT_CHRG_DONE
+    pinMode(PIN_BAT_STAT_CHRG_DONE, INPUT);
+#endif
+
+#ifdef PIN_TACT_MOTOR
+    pinMode(PIN_TACT_MOTOR, OUTPUT);
+    digitalWrite(PIN_TACT_MOTOR, HIGH);
+#endif
+
     Serial.begin(serialBaudRate);
     globalTimer = timer_create_default();
 
@@ -72,6 +95,7 @@ void setup()
     statusManager.setStatus(SlimeVR::Status::LOADING, true);
 
     ledManager.setup();
+    ledManager.on();
     configuration.setup();
 
     SerialCommands::setUp();
