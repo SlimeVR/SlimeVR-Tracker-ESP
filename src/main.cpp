@@ -29,6 +29,7 @@
 #include <i2cscan.h>
 #include "serial/serialcommands.h"
 #include "LEDManager.h"
+#include "ButtonMonitor.h"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
 
@@ -39,6 +40,9 @@ SlimeVR::Sensors::SensorManager sensorManager;
 SlimeVR::LEDManager ledManager(LED_PIN, LEDC_CHANNEL_LED, LEDC_FREQ_LED, LEDC_BITS_LED);
 #else
 SlimeVR::LEDManager ledManager(LED_PIN);
+#endif
+#ifdef PIN_BUTTON_INPUT
+SlimeVR::ButtonMonitor buttonMonitor(PIN_BUTTON_INPUT);
 #endif
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
@@ -146,7 +150,30 @@ void loop()
     networkManager.update();
     sensorManager.update();
     battery.Loop();
+
+#ifdef PIN_BUTTON_INPUT
+    buttonMonitor.update();
+#endif
     ledManager.update();
+
+#ifdef PIN_ENABLE_LATCH
+    if (statusManager.hasStatus(SlimeVR::Status::SHUTDOWN_INITIATED))
+    {
+        ledManager.pattern(150,150,3);
+        statusManager.setStatus(SlimeVR::Status::SHUTDOWN_INITIATED,false);
+        statusManager.setStatus(SlimeVR::Status::SHUTDOWN_COMPLETE,true);
+    }
+    if (statusManager.hasStatus(SlimeVR::Status::SHUTDOWN_COMPLETE) && !buttonMonitor.isPressed())
+    {
+#ifdef PIN_IMU_ENABLE
+        digitalWrite(PIN_IMU_ENABLE, LOW);
+#endif
+#ifdef PIN_ENABLE_LATCH
+        digitalWrite(PIN_ENABLE_LATCH, LOW);
+#endif
+    }
+#endif
+
 #ifdef TARGET_LOOPTIME_MICROS
     long elapsed = (micros() - loopTime);
     if (elapsed < TARGET_LOOPTIME_MICROS)

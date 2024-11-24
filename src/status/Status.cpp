@@ -24,6 +24,10 @@ namespace SlimeVR
                 return "BATTERY_CHARGING";
             case BATTERY_CHARGE_COMPLETE:
                 return "BATTERY_CHARGE_COMPLETE";
+            case SHUTDOWN_INITIATED:
+                return "SHUTDOWN_INITIATED";
+            case SHUTDOWN_COMPLETE:
+                return "SHUTDOWN_COMPLETE";
             default:
                 return "UNKNOWN";
             }

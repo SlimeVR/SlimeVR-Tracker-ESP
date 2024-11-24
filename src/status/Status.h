@@ -14,7 +14,9 @@ namespace SlimeVR
             SERVER_SEARCHING = 1 << 4,
             SERVER_CONNECTING = 1 << 5,
             BATTERY_CHARGING = 1 << 6,
-            BATTERY_CHARGE_COMPLETE = 1 << 7
+            BATTERY_CHARGE_COMPLETE = 1 << 7,
+            SHUTDOWN_INITIATED = 1 << 8,
+            SHUTDOWN_COMPLETE = 1 << 9
         };
 
         const char *statusToString(Status status);
