@@ -23,6 +23,11 @@
 #ifndef SENSOR_POSITION_H
 #define SENSOR_POSITION_H
 
+/*
+ * The IDs should match IDs in dev.slimevr.tracking.trackers.TrackerPosition
+ * of the server
+ */
+
 #define POSITION_NO 0
 #define POSITION_HEAD 1
 #define POSITION_NECK 2
