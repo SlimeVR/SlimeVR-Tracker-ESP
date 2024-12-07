@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,51 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORS_EMPTYSENSOR_H
-#define SENSORS_EMPTYSENSOR_H
+#include "I2CWireSensorInterface.h"
 
-#include "sensor.h"
+#if ESP32
+#include "driver/i2c.h"
+#endif
+
+uint8_t activeSCLPin;
+uint8_t activeSDAPin;
+bool isI2CActive = false;
 
 namespace SlimeVR {
-namespace Sensors {
-class EmptySensor : public Sensor {
-public:
-	EmptySensor(uint8_t id)
-		: Sensor("EmptySensor", ImuID::Empty, id, 0, 0.0) {};
-	~EmptySensor() {};
+void swapI2C(uint8_t sclPin, uint8_t sdaPin) {
+	if (sclPin != activeSCLPin || sdaPin != activeSDAPin || !isI2CActive) {
+		Wire.flush();
+#if ESP32
+		if (isI2CActive) {
+		} else {
+			// Reset HWI2C to avoid being affected by I2CBUS reset
+			Wire.end();
+		}
+		// Disconnect pins from HWI2C
+		gpio_set_direction((gpio_num_t)activeSCLPin, GPIO_MODE_INPUT);
+		gpio_set_direction((gpio_num_t)activeSDAPin, GPIO_MODE_INPUT);
 
-	void motionSetup() override final {};
-	void motionLoop() override final {};
-	void sendData() override final {};
-	void startCalibration(int calibrationType) override final {};
-	SensorStatus getSensorState() override final {
-		return SensorStatus::SENSOR_OFFLINE;
-	};
-};
-}  // namespace Sensors
-}  // namespace SlimeVR
-
+		if (isI2CActive) {
+			i2c_set_pin(I2C_NUM_0, sdaPin, sclPin, false, false, I2C_MODE_MASTER);
+		} else {
+			Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin), I2C_SPEED);
+			Wire.setTimeOut(150);
+		}
+#else
+		Wire.begin(static_cast<int>(sdaPin), static_cast<int>(sclPin));
 #endif
+
+		activeSCLPin = sclPin;
+		activeSDAPin = sdaPin;
+		isI2CActive = true;
+	}
+}
+
+void disconnectI2C() {
+	Wire.flush();
+	isI2CActive = false;
+#if ESP32
+	Wire.end();
+#endif
+}
+}  // namespace SlimeVR

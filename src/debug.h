@@ -94,7 +94,7 @@
 // Not recommended for production
 #define ENABLE_INSPECTION false
 
-#define PROTOCOL_VERSION 18
+#define PROTOCOL_VERSION 19
 
 #ifndef FIRMWARE_VERSION
 #define FIRMWARE_VERSION "UNKNOWN"

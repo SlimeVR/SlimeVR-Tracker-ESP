@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,39 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORS_EMPTYSENSOR_H
-#define SENSORS_EMPTYSENSOR_H
+#ifndef SENSORINTERFACE_I2CWIRE_H
+#define SENSORINTERFACE_I2CWIRE_H
 
-#include "sensor.h"
+#include <Arduino.h>
+#include <i2cscan.h>
+
+#include "SensorInterface.h"
+#include "globals.h"
 
 namespace SlimeVR {
-namespace Sensors {
-class EmptySensor : public Sensor {
-public:
-	EmptySensor(uint8_t id)
-		: Sensor("EmptySensor", ImuID::Empty, id, 0, 0.0) {};
-	~EmptySensor() {};
+void swapI2C(uint8_t sclPin, uint8_t sdaPin);
+void disconnectI2C();
 
-	void motionSetup() override final {};
-	void motionLoop() override final {};
-	void sendData() override final {};
-	void startCalibration(int calibrationType) override final {};
-	SensorStatus getSensorState() override final {
-		return SensorStatus::SENSOR_OFFLINE;
-	};
+/**
+ * I2C Sensor interface using direct arduino Wire on provided pins
+ *
+ */
+class I2CWireSensorInterface : public SensorInterface {
+public:
+	I2CWireSensorInterface(uint8_t sclpin, uint8_t sdapin)
+		: _sdaPin(sdapin)
+		, _sclPin(sclpin) {};
+	~I2CWireSensorInterface() {};
+
+	void init() override final {}
+	void swapIn() override final { swapI2C(_sclPin, _sdaPin); }
+	void disconnect() { disconnectI2C(); }
+
+protected:
+	uint8_t _sdaPin;
+	uint8_t _sclPin;
 };
-}  // namespace Sensors
+
 }  // namespace SlimeVR
 
-#endif
+#endif  // SENSORINTERFACE_I2CWIRE_H

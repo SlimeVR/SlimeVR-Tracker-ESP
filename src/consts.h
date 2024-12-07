@@ -42,6 +42,7 @@ enum class ImuID {
 	LSM6DSV,
 	LSM6DSO,
 	LSM6DSR,
+	ADC_RESISTANCE,
 	Empty = 255
 };
 
@@ -84,6 +85,8 @@ enum class ImuID {
 #define BOARD_WEMOSWROOM02 16
 #define BOARD_XIAO_ESP32C3 17
 #define BOARD_HARITORA 18  // Used by Haritora/SlimeTora
+#define BOARD_GLOVE_IMU_SLIMEVR_DEV 19  // IMU Glove
+
 #define BOARD_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 #define BAT_EXTERNAL 1
@@ -142,6 +145,14 @@ enum class ImuID {
 #define MCU_HARITORA 8  // Used by Haritora/SlimeTora
 #define MCU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
+#define SENSOR_DATATYPE_ROTATION 0
+#define SENSOR_DATATYPE_FLEX_RESISTANCE 1
+#define SENSOR_DATATYPE_FLEX_ANGLE 2
+
+#define TRACKER_TYPE_SVR_ROTATION 0
+#define TRACKER_TYPE_SVR_GLOVE_LEFT 1
+#define TRACKER_TYPE_SVR_GLOVE_RIGHT 1
+
 #ifdef ESP8266
 #define HARDWARE_MCU MCU_ESP8266
 #elif defined(ESP32)
@@ -151,5 +162,7 @@ enum class ImuID {
 #endif
 
 #define CURRENT_CONFIGURATION_VERSION 1
+
+#include "sensors/sensorposition.h"
 
 #endif  // SLIMEVR_CONSTS_H_

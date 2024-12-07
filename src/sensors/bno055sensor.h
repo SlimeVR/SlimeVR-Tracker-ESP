@@ -37,20 +37,19 @@ public:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface*,
 		uint8_t
 	)
 		: Sensor(
-			"BNO055Sensor",
-			ImuID::BNO055,
-			id,
-			Address + addrSuppl,
-			rotation,
-			sclPin,
-			sdaPin
-		){};
-	~BNO055Sensor(){};
+			  "BNO055Sensor",
+			  ImuID::BNO055,
+			  id,
+			  Address + addrSuppl,
+			  rotation,
+			  sensorInterface
+		  ) {};
+	~BNO055Sensor() {};
 	void motionSetup() override final;
 	void motionLoop() override final;
 	void startCalibration(int calibrationType) override final;

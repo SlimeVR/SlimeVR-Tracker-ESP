@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,29 +20,38 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#ifndef I2C_PCA_INTERFACE_H
+#define I2C_PCA_INTERFACE_H
 
-#ifndef SENSORS_EMPTYSENSOR_H
-#define SENSORS_EMPTYSENSOR_H
-
-#include "sensor.h"
+#include "I2CWireSensorInterface.h"
 
 namespace SlimeVR {
-namespace Sensors {
-class EmptySensor : public Sensor {
+/**
+ * I2C Sensor interface for use with PCA9547 (8-channel I2C-buss multiplexer)
+ * or PCA9546A (4-channel I2C-bus multiplexer) or analogs
+ */
+class I2CPCASensorInterface : public SensorInterface {
 public:
-	EmptySensor(uint8_t id)
-		: Sensor("EmptySensor", ImuID::Empty, id, 0, 0.0) {};
-	~EmptySensor() {};
+	I2CPCASensorInterface(
+		uint8_t sclpin,
+		uint8_t sdapin,
+		uint8_t address,
+		uint8_t channel
+	)
+		: m_Wire(sclpin, sdapin)
+		, m_Address(address)
+		, m_Channel(channel) {};
+	~I2CPCASensorInterface() {};
 
-	void motionSetup() override final {};
-	void motionLoop() override final {};
-	void sendData() override final {};
-	void startCalibration(int calibrationType) override final {};
-	SensorStatus getSensorState() override final {
-		return SensorStatus::SENSOR_OFFLINE;
-	};
+	void init() override final;
+	void swapIn() override final;
+
+protected:
+	I2CWireSensorInterface m_Wire;
+	uint8_t m_Address;
+	uint8_t m_Channel;
 };
-}  // namespace Sensors
+
 }  // namespace SlimeVR
 
 #endif

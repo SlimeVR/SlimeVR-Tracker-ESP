@@ -76,4 +76,8 @@
 #define LED__OFF LOW
 #endif
 
+#ifndef SENSOR_INFO_LIST
+#define SENSOR_INFO_LIST
+#endif
+
 #endif  // SLIMEVR_GLOBALS_H_

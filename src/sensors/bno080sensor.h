@@ -39,21 +39,20 @@ public:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
-		uint8_t intPin
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
+		int
 	)
 		: Sensor(
-			"BNO080Sensor",
-			ImuID::BNO080,
-			id,
-			Address + addrSuppl,
-			rotation,
-			sclPin,
-			sdaPin
-		)
-		, m_IntPin(intPin){};
-	~BNO080Sensor(){};
+			  "BNO080Sensor",
+			  ImuID::BNO080,
+			  id,
+			  Address + addrSuppl,
+			  rotation,
+			  sensorInterface
+		  )
+		, m_IntPin(intPin) {};
+	~BNO080Sensor() {};
 	void motionSetup() override final;
 	void postSetup() override { lastData = millis(); }
 
@@ -71,17 +70,17 @@ protected:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
-		uint8_t intPin
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
+		int
 	)
-		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sclPin, sdaPin)
-		, m_IntPin(intPin){};
+		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sensorInterface)
+		, m_IntPin(intPin) {};
 
 private:
 	BNO080 imu{};
 
-	uint8_t m_IntPin;
+	PinInterface* m_IntPin;
 
 	uint8_t tap;
 	unsigned long lastData = 0;
@@ -104,20 +103,20 @@ public:
 		uint8_t id,
 		uint8_t address,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
-		uint8_t intPin
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
+		int extraParam
 	)
 		: BNO080Sensor(
-			"BNO085Sensor",
-			ImuID::BNO085,
-			id,
-			address,
-			rotation,
-			sclPin,
-			sdaPin,
-			intPin
-		){};
+			  "BNO085Sensor",
+			  ImuID::BNO085,
+			  id,
+			  address,
+			  rotation,
+			  sensorInterface,
+			  intPin,
+			  extraParam
+		  ) {};
 };
 
 class BNO086Sensor : public BNO080Sensor {
@@ -127,20 +126,20 @@ public:
 		uint8_t id,
 		uint8_t address,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
-		uint8_t intPin
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
+		int extraParam
 	)
 		: BNO080Sensor(
-			"BNO086Sensor",
-			ImuID::BNO086,
-			id,
-			address,
-			rotation,
-			sclPin,
-			sdaPin,
-			intPin
-		){};
+			  "BNO086Sensor",
+			  ImuID::BNO086,
+			  id,
+			  address,
+			  rotation,
+			  sensorInterface,
+			  intPin,
+			  extraParam
+		  ) {};
 };
 
 #endif

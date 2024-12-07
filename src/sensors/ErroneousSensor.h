@@ -32,13 +32,13 @@ class ErroneousSensor : public Sensor {
 public:
 	ErroneousSensor(uint8_t id, ImuID type)
 		: Sensor("ErroneousSensor", type, id, 0, 0.0)
-		, m_ExpectedType(type){};
-	~ErroneousSensor(){};
+		, m_ExpectedType(type) {};
+	~ErroneousSensor() {};
 
 	void motionSetup() override;
-	void motionLoop() override final{};
-	void sendData() override{};
-	void startCalibration(int calibrationType) override final{};
+	void motionLoop() override final {};
+	void sendData() override {};
+	void startCalibration(int calibrationType) override final {};
 	SensorStatus getSensorState() override final;
 
 private:
