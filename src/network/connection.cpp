@@ -299,8 +299,11 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(sendShort(sensor.getSensorConfigData()));
 	MUST(sendByte(sensor.getSensorPosition()));
 	MUST(sendByte(sensor.getDataType()));
+	// ADD NEW FILEDS ABOVE THIS COMMENT ^^^^^^^^
+	// WARNING! Only for debug purposes and SHOULD ALWAYS BE LAST IN THE PACKET.
+	// It WILL BE REMOVED IN THE FUTURE
+	// ADD NEW FILEDS ABOVE THIS COMMENT ^^^^^^^^
 	// Send TPS
-	// TODO : Do we keep it after testing?
 	MUST(sendFloat(sensor.m_tpsCounter.getAveragedTPS()));
 	MUST(sendFloat(sensor.m_dataCounter.getAveragedTPS()));
 
