@@ -52,7 +52,6 @@ BatteryMonitor battery;
 TPSCounter tpsCounter;
 
 void setup() {
-	delay(10000);
 	Serial.begin(serialBaudRate);
 	globalTimer = timer_create_default();
 
