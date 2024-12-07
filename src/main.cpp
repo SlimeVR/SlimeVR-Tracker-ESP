@@ -52,6 +52,7 @@ BatteryMonitor battery;
 TPSCounter tpsCounter;
 
 void setup() {
+	delay(10000);
 	Serial.begin(serialBaudRate);
 	globalTimer = timer_create_default();
 
@@ -71,15 +72,16 @@ void setup() {
 	ledManager.setup();
 	configuration.setup();
 
-    SerialCommands::setUp();
-    // Make sure the bus isn't stuck when resetting ESP without powering it down
-    // Fixes I2C issues for certain IMUs. Previously this feature was enabled for selected IMUs, now it's enabled for all.
-    // If some IMU turned out to be broken by this, check needs to be re-added.
-    auto clearResult = I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL); 
-    if(clearResult != 0) {
-        logger.error("Can't clear I2C bus, error %d", clearResult);
-        delay(60000);
-    }
+	SerialCommands::setUp();
+	// Make sure the bus isn't stuck when resetting ESP without powering it down
+	// Fixes I2C issues for certain IMUs. Previously this feature was enabled for
+	// selected IMUs, now it's enabled for all. If some IMU turned out to be broken by
+	// this, check needs to be re-added.
+	auto clearResult = I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL);
+	if (clearResult != 0) {
+		logger.error("Can't clear I2C bus, error %d", clearResult);
+		delay(60000);
+	}
 
 	// join I2C bus
 
@@ -114,20 +116,19 @@ void setup() {
 
 	sensorManager.postSetup();
 
-    loopTime = micros();
+	loopTime = micros();
 	tpsCounter.reset();
 }
 
-void loop()
-{
+void loop() {
 	tpsCounter.update();
-    globalTimer.tick();
-    SerialCommands::update();
-    OTA::otaUpdate();
-    networkManager.update();
-    sensorManager.update();
-    battery.Loop();
-    ledManager.update();
+	globalTimer.tick();
+	SerialCommands::update();
+	OTA::otaUpdate();
+	networkManager.update();
+	sensorManager.update();
+	battery.Loop();
+	ledManager.update();
 #ifdef TARGET_LOOPTIME_MICROS
 	long elapsed = (micros() - loopTime);
 	if (elapsed < TARGET_LOOPTIME_MICROS) {

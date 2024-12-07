@@ -297,7 +297,7 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
 	MUST(sendShort(sensor.getSensorConfigData()));
-	MUST(sendShort(sensor.getSensorPosition()));
+	MUST(sendByte(sensor.getSensorPosition()));
 	MUST(sendByte(sensor.getDataType()));
 	// Send TPS
 	// TODO : Do we keep it after testing?
