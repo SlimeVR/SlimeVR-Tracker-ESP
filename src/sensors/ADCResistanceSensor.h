@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,29 +20,51 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-
-#ifndef SENSORS_EMPTYSENSOR_H
-#define SENSORS_EMPTYSENSOR_H
+#ifndef ADC_FLEX_SENSOR_H
+#define ADC_FLEX_SENSOR_H
 
 #include "sensor.h"
+#include "sensorinterface/SensorInterface.h"
 
-namespace SlimeVR {
-namespace Sensors {
-class EmptySensor : public Sensor {
+class ADCResistanceSensor : Sensor {
 public:
-	EmptySensor(uint8_t id)
-		: Sensor("EmptySensor", ImuID::Empty, id, 0, 0.0) {};
-	~EmptySensor() {};
+	static constexpr auto TypeID = ImuID::ADC_RESISTANCE;
 
-	void motionSetup() override final {};
-	void motionLoop() override final {};
-	void sendData() override final {};
-	void startCalibration(int calibrationType) override final {};
-	SensorStatus getSensorState() override final {
-		return SensorStatus::SENSOR_OFFLINE;
-	};
+	ADCResistanceSensor(
+		uint8_t id,
+		uint8_t pin,
+		float VCC,
+		float resistanceDivider,
+		float smoothFactor = 0.1f
+	)
+		: Sensor(
+			  "ADCResistanceSensor",
+			  ImuID::ADC_RESISTANCE,
+			  id,
+			  pin,
+			  0.0f,
+			  new SlimeVR::EmptySensorInterface
+		  )
+		, m_Pin(pin)
+		, m_VCC(VCC)
+		, m_ResistanceDivider(resistanceDivider)
+		, m_SmoothFactor(smoothFactor) {};
+	~ADCResistanceSensor();
+
+	void motionLoop() override final;
+	void sendData() override final;
+
+	SensorStatus getSensorState() override final { return SensorStatus::SENSOR_OK; }
+
+	uint8_t getDataType() override final { return SENSOR_DATATYPE_FLEX_RESISTANCE; };
+
+private:
+	uint8_t m_Pin;
+	float m_VCC;
+	float m_ResistanceDivider;
+	float m_SmoothFactor;
+
+	float m_Data = 0.0f;
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
 
 #endif

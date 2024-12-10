@@ -140,19 +140,18 @@ public:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface*,
 		int axisRemapParam
 	)
 		: Sensor(
-			"BMI160Sensor",
-			ImuID::BMI160,
-			id,
-			Address + addrSuppl,
-			rotation,
-			sclPin,
-			sdaPin
-		)
+			  "BMI160Sensor",
+			  ImuID::BMI160,
+			  id,
+			  Address + addrSuppl,
+			  rotation,
+			  sensorInterface
+		  )
 		, sfusion(
 			  BMI160_ODR_GYR_MICROS / 1e6f,
 			  BMI160_ODR_ACC_MICROS / 1e6f,
@@ -164,7 +163,7 @@ public:
 			axisRemap = axisRemapParam;
 		}
 	};
-	~BMI160Sensor(){};
+	~BMI160Sensor() {};
 	void initHMC(BMI160MagRate magRate);
 	void initQMC(BMI160MagRate magRate);
 

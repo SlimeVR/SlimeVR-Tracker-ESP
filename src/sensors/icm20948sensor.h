@@ -37,19 +37,18 @@ public:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface*,
 		uint8_t
 	)
 		: Sensor(
-			"ICM20948Sensor",
-			ImuID::ICM20948,
-			id,
-			Address + addrSuppl,
-			rotation,
-			sclPin,
-			sdaPin
-		) {}
+			  "ICM20948Sensor",
+			  ImuID::ICM20948,
+			  id,
+			  Address + addrSuppl,
+			  rotation,
+			  sensorInterface
+		  ) {}
 	~ICM20948Sensor() override = default;
 	void motionSetup() override final;
 	void postSetup() override { this->lastData = millis(); }

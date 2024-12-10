@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,29 +20,12 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#include "MCP23X17PinInterface.h"
 
-#ifndef SENSORS_EMPTYSENSOR_H
-#define SENSORS_EMPTYSENSOR_H
+int MCP23X17PinInterface::digitalRead() { return _mcp23x17->digitalRead(_pinNum); }
 
-#include "sensor.h"
+void MCP23X17PinInterface::pinMode(uint8_t mode) { _mcp23x17->pinMode(_pinNum, mode); }
 
-namespace SlimeVR {
-namespace Sensors {
-class EmptySensor : public Sensor {
-public:
-	EmptySensor(uint8_t id)
-		: Sensor("EmptySensor", ImuID::Empty, id, 0, 0.0) {};
-	~EmptySensor() {};
-
-	void motionSetup() override final {};
-	void motionLoop() override final {};
-	void sendData() override final {};
-	void startCalibration(int calibrationType) override final {};
-	SensorStatus getSensorState() override final {
-		return SensorStatus::SENSOR_OFFLINE;
-	};
-};
-}  // namespace Sensors
-}  // namespace SlimeVR
-
-#endif
+void MCP23X17PinInterface::digitalWrite(uint8_t val) {
+	_mcp23x17->digitalWrite(_pinNum, val);
+}

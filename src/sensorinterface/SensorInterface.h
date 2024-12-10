@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,23 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORS_EMPTYSENSOR_H
-#define SENSORS_EMPTYSENSOR_H
-
-#include "sensor.h"
+#ifndef SENSORINTERFACE_H
+#define SENSORINTERFACE_H
 
 namespace SlimeVR {
-namespace Sensors {
-class EmptySensor : public Sensor {
+class SensorInterface {
 public:
-	EmptySensor(uint8_t id)
-		: Sensor("EmptySensor", ImuID::Empty, id, 0, 0.0) {};
-	~EmptySensor() {};
-
-	void motionSetup() override final {};
-	void motionLoop() override final {};
-	void sendData() override final {};
-	void startCalibration(int calibrationType) override final {};
-	SensorStatus getSensorState() override final {
-		return SensorStatus::SENSOR_OFFLINE;
-	};
+	virtual void init();
+	virtual void swapIn();
 };
-}  // namespace Sensors
+
+class EmptySensorInterface : public SensorInterface {
+public:
+	EmptySensorInterface();
+	~EmptySensorInterface();
+	void init() override final;
+	void swapIn() override final;
+};
 }  // namespace SlimeVR
 
-#endif
+#endif  // SENSORINTERFACE_H
