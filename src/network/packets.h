@@ -47,6 +47,10 @@
 #define PACKET_TEMPERATURE 20
 // #define PACKET_USER_ACTION 21 // Joycon buttons only currently
 #define PACKET_FEATURE_FLAGS 22
+// #define PACKET_ROTATION_ACCELERATION 23 // Unification of rot and accel data in one
+// packet
+#define PACKET_ACKNOWLEDGE_CONFIG_CHANGE 24
+#define PACKET_SET_CONFIG_FLAG 25
 
 #define PACKET_BUNDLE 100
 

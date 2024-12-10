@@ -2,3 +2,5 @@
 .vscode/*
 build/
 venv/
+cache/
+.idea/

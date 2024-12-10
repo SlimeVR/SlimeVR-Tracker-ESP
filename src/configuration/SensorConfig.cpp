@@ -21,53 +21,47 @@
 	THE SOFTWARE.
 */
 
-#ifndef SLIMEVR_CONFIGURATION_CONFIGURATION_H
-#define SLIMEVR_CONFIGURATION_CONFIGURATION_H
-
-#include <vector>
-
-#include "../motionprocessing/GyroTemperatureCalibrator.h"
-#include "DeviceConfig.h"
-#include "logging/Logger.h"
+#include "SensorConfig.h"
 
 namespace SlimeVR {
 namespace Configuration {
-class Configuration {
-public:
-	void setup();
+const char* calibrationConfigTypeToString(SensorConfigType type) {
+	switch (type) {
+		case SensorConfigType::NONE:
+			return "NONE";
+		case SensorConfigType::BMI160:
+			return "BMI160";
+		case SensorConfigType::MPU6050:
+			return "MPU6050";
+		case SensorConfigType::MPU9250:
+			return "MPU9250";
+		case SensorConfigType::ICM20948:
+			return "ICM20948";
+		case SensorConfigType::SFUSION:
+			return "SoftFusion (common)";
+		case SensorConfigType::BNO0XX:
+			return "BNO0XX";
+		default:
+			return "UNKNOWN";
+	}
+}
 
-	void save();
-	void reset();
-
-	void print();
-
-	int32_t getVersion() const;
-
-	size_t getSensorCount() const;
-	SensorConfig getSensor(size_t sensorID) const;
-	void setSensor(size_t sensorID, const SensorConfig& config);
-
-	bool loadTemperatureCalibration(
-		uint8_t sensorId,
-		GyroTemperatureCalibrationConfig& config
-	);
-	bool saveTemperatureCalibration(
-		uint8_t sensorId,
-		const GyroTemperatureCalibrationConfig& config
-	);
-
-private:
-	void loadSensors();
-	bool runMigrations(int32_t version);
-
-	bool m_Loaded = false;
-
-	DeviceConfig m_Config{};
-	std::vector<SensorConfig> m_Sensors;
-
-	Logging::Logger m_Logger = Logging::Logger("Configuration");
-};
+// 1st bit specifies if magnetometer is enabled or disabled
+// 2nd bit specifies if magnetometer is supported
+uint16_t configDataToNumber(SensorConfig* sensorConfig, bool magSupported) {
+	uint16_t data = 0;
+	data += magSupported << 1;
+	switch (sensorConfig->type) {
+		case SensorConfigType::BNO0XX: {
+			auto config = &sensorConfig->data.bno0XX;
+			data += config->magEnabled;
+			break;
+		}
+		case SensorConfigType::NONE:
+		default:
+			break;
+	}
+	return data;
+}
 }  // namespace Configuration
 }  // namespace SlimeVR
-
-#endif
