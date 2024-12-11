@@ -48,7 +48,7 @@ struct ICM45686 : public ICM45Base<I2CImpl> {
 		.biasSigmaInit = 0.3f,
 		.biasClip = 0.6f,
 		.restThGyr = 0.3f,
-		.restThAcc = 0.0098f,
+		.restThAcc = 0.098f,
 	};
 
 	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
