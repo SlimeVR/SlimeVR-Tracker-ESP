@@ -2,28 +2,72 @@ name: Build
 
 on:
   push:
+    branches:
+      - main
+    tags:
+      - "*"
   pull_request:
+  workflow_dispatch:
+  create:
 
 jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: "17"
+          fallback-style: google
+  #      Disable clang-tidy for now
+  #      - name: Get clang-tidy
+  #        run: |
+  #          apt-get update
+  #          apt-get install -y clang-tidy
+  #      - uses: ZehMatt/clang-tidy-annotations@v1.0.0
+  #        with:
+  #          build_dir: 'build'
+  #          cmake_args: '-G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++'
+
   build:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
+      - name: Get tags
+        run: git fetch --tags origin --recurse-submodules=no --force
 
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - name: Install pio and its dependencies
+      - name: Install PlatformIO and its dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install platformio
+          pip install --upgrade platformio
 
       - name: Run builds
         run: python ./ci/build.py
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: binaries
           path: ./build/*.bin
+
+      - name: Upload to draft release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            ./build/BOARD_SLIMEVR-firmware.bin

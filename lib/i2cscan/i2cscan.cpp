@@ -10,6 +10,11 @@ String portMap[] = {"D0", "D1", "D2", "D4", "D5", "D6", "D7"};
 uint8_t portArray[] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
 uint8_t portExclude[] = {18, 19, 20, 21, LED_PIN};
 String portMap[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10"};
+// this is for the ESP32C6 has a lot of pins (10/11 only availiable on the WROOM modules but not on the "mini")
+#elif defined(ESP32C6)
+uint8_t portArray[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 18, 19, 20, 21, 22, 23};
+String portMap[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "14", "15", "18", "19", "20", "21", "22", "23"};
+uint8_t portExclude[] = {12, 13, 16, 17, LED_PIN}; // exclude USB D+,D- and serial TX/RX
 #elif defined(ESP32)
 uint8_t portArray[] = {4, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
 String portMap[] = {"4", "13", "14", "15", "16", "17", "18", "19", "21", "22", "23", "25", "26", "27", "32", "33"};

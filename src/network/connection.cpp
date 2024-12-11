@@ -89,7 +89,7 @@ bool Connection::endPacket() {
 		MUST_TRANSFER_BOOL((innerPacketSize > 0));
 
 		m_IsBundle = false;
-		
+
 		if (m_BundlePacketInnerCount == 0) {
 			sendPacketType(PACKET_BUNDLE);
 			sendPacketNumber();
@@ -128,13 +128,13 @@ bool Connection::endBundle() {
 	MUST_TRANSFER_BOOL(m_IsBundle);
 
 	m_IsBundle = false;
-	
+
 	MUST_TRANSFER_BOOL((m_BundlePacketInnerCount > 0));
 
 	return endPacket();
 }
 
-size_t Connection::write(const uint8_t *buffer, size_t size) {
+size_t Connection::write(const uint8_t* buffer, size_t size) {
 	if (m_IsBundle) {
 		if (m_BundlePacketPosition + size > sizeof(m_Packet)) {
 			return 0;
@@ -146,9 +146,7 @@ size_t Connection::write(const uint8_t *buffer, size_t size) {
 	return m_UDP.write(buffer, size);
 }
 
-size_t Connection::write(uint8_t byte) {
-	return write(&byte, 1);
-}
+size_t Connection::write(uint8_t byte) { return write(&byte, 1); }
 
 bool Connection::sendFloat(float f) {
 	convert_to_chars(f, m_Buf);
@@ -288,16 +286,17 @@ void Connection::sendSensorError(uint8_t sensorId, uint8_t error) {
 }
 
 // PACKET_SENSOR_INFO 15
-void Connection::sendSensorInfo(Sensor* sensor) {
+void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(m_Connected);
 
 	MUST(beginPacket());
 
 	MUST(sendPacketType(PACKET_SENSOR_INFO));
 	MUST(sendPacketNumber());
-	MUST(sendByte(sensor->getSensorId()));
-	MUST(sendByte((uint8_t)sensor->getSensorState()));
-	MUST(sendByte(sensor->getSensorType()));
+	MUST(sendByte(sensor.getSensorId()));
+	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
+	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
+	MUST(sendShort(sensor.getSensorConfigData()));
 
 	MUST(endPacket());
 }
@@ -381,6 +380,21 @@ void Connection::sendFeatureFlags() {
 	MUST(endPacket());
 }
 
+// PACKET_ACKNOWLEDGE_CONFIG_CHANGE 24
+
+void Connection::sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configType) {
+	MUST(m_Connected);
+
+	MUST(beginPacket());
+
+	MUST(sendPacketType(PACKET_ACKNOWLEDGE_CONFIG_CHANGE));
+	MUST(sendPacketNumber());
+	MUST(sendByte(sensorId));
+	MUST(sendShort(configType));
+
+	MUST(endPacket());
+}
+
 void Connection::sendTrackerDiscovery() {
 	MUST(!m_Connected);
 
@@ -396,12 +410,12 @@ void Connection::sendTrackerDiscovery() {
 	// This is kept for backwards compatibility,
 	// but the latest SlimeVR server will not initialize trackers
 	// with firmware build > 8 until it recieves a sensor info packet
-	MUST(sendInt(IMU));
+	MUST(sendInt(static_cast<int>(sensorManager.getSensorType(0))));
 	MUST(sendInt(HARDWARE_MCU));
 	MUST(sendInt(0));
 	MUST(sendInt(0));
 	MUST(sendInt(0));
-	MUST(sendInt(FIRMWARE_BUILD_NUMBER));
+	MUST(sendInt(PROTOCOL_VERSION));
 	MUST(sendShortString(FIRMWARE_VERSION));
 	// MAC address string
 	MUST(sendBytes(mac, 6));
@@ -511,7 +525,7 @@ void Connection::returnLastPacket(int len) {
 	MUST(endPacket());
 }
 
-void Connection::updateSensorState(std::vector<Sensor *> & sensors) {
+void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>>& sensors) {
 	if (millis() - m_LastSensorInfoPacketTimestamp <= 1000) {
 		return;
 	}
@@ -520,12 +534,12 @@ void Connection::updateSensorState(std::vector<Sensor *> & sensors) {
 
 	for (int i = 0; i < (int)sensors.size(); i++) {
 		if (m_AckedSensorState[i] != sensors[i]->getSensorState()) {
-			sendSensorInfo(sensors[i]);
+			sendSensorInfo(*sensors[i]);
 		}
 	}
 }
 
-void Connection::maybeRequestFeatureFlags() {	
+void Connection::maybeRequestFeatureFlags() {
 	if (m_ServerFeatures.isAvailable() || m_FeatureFlagsRequestAttempts >= 15) {
 		return;
 	}
@@ -547,7 +561,7 @@ void Connection::searchForServer() {
 		}
 
 		// receive incoming UDP packets
-		int len = m_UDP.read(m_Packet, sizeof(m_Packet));
+		[[maybe_unused]] int len = m_UDP.read(m_Packet, sizeof(m_Packet));
 
 #ifdef DEBUG_NETWORK
 		m_Logger.trace(
@@ -557,6 +571,8 @@ void Connection::searchForServer() {
 			m_UDP.remotePort()
 		);
 		m_Logger.traceArray("UDP packet contents: ", m_Packet, len);
+#else
+		(void)len;
 #endif
 
 		// Handshake is different, it has 3 in the first byte, not the 4th, and data
@@ -571,9 +587,9 @@ void Connection::searchForServer() {
 			m_ServerPort = m_UDP.remotePort();
 			m_LastPacketTimestamp = millis();
 			m_Connected = true;
-			
+
 			m_FeatureFlagsRequestAttempts = 0;
-			m_ServerFeatures = ServerFeatures { };
+			m_ServerFeatures = ServerFeatures{};
 
 			statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, false);
 			ledManager.off();
@@ -603,7 +619,11 @@ void Connection::searchForServer() {
 
 void Connection::reset() {
 	m_Connected = false;
-	std::fill(m_AckedSensorState, m_AckedSensorState+MAX_IMU_COUNT, SensorStatus::SENSOR_OFFLINE);
+	std::fill(
+		m_AckedSensorState,
+		m_AckedSensorState + MAX_IMU_COUNT,
+		SensorStatus::SENSOR_OFFLINE
+	);
 
 	m_UDP.begin(m_ServerPort);
 
@@ -611,7 +631,7 @@ void Connection::reset() {
 }
 
 void Connection::update() {
-	std::vector<Sensor *> & sensors = sensorManager.getSensors();
+	auto& sensors = sensorManager.getSensors();
 
 	updateSensorState(sensors);
 	maybeRequestFeatureFlags();
@@ -625,7 +645,11 @@ void Connection::update() {
 		statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 
 		m_Connected = false;
-		std::fill(m_AckedSensorState, m_AckedSensorState+MAX_IMU_COUNT, SensorStatus::SENSOR_OFFLINE);
+		std::fill(
+			m_AckedSensorState,
+			m_AckedSensorState + MAX_IMU_COUNT,
+			SensorStatus::SENSOR_OFFLINE
+		);
 		m_Logger.warn("Connection to server timed out");
 
 		return;
@@ -689,7 +713,7 @@ void Connection::update() {
 
 			break;
 
-		case PACKET_FEATURE_FLAGS:
+		case PACKET_FEATURE_FLAGS: {
 			// Packet type (4) + Packet number (8) + flags (len - 12)
 			if (len < 13) {
 				m_Logger.warn("Invalid feature flags packet: too short");
@@ -697,19 +721,50 @@ void Connection::update() {
 			}
 
 			bool hadFlags = m_ServerFeatures.isAvailable();
-			
+
 			uint32_t flagsLength = len - 12;
 			m_ServerFeatures = ServerFeatures::from(&m_Packet[12], flagsLength);
 
 			if (!hadFlags) {
-				#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
-					if (m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
-						m_Logger.debug("Server supports packet bundling");
-					}
-				#endif
+#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
+				if (m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
+					m_Logger.debug("Server supports packet bundling");
+				}
+#endif
 			}
 
 			break;
+		}
+
+		case PACKET_SET_CONFIG_FLAG: {
+			// Packet type (4) + Packet number (8) + sensor_id(1) + flag_id (2) + state
+			// (1)
+			if (len < 16) {
+				m_Logger.warn("Invalid sensor config flag packet: too short");
+				break;
+			}
+			uint8_t sensorId = m_Packet[12];
+			uint16_t flagId = m_Packet[13] << 8 | m_Packet[14];
+			bool newState = m_Packet[15] > 0;
+			if (sensorId == UINT8_MAX) {
+				for (auto& sensor : sensors) {
+					sensor->setFlag(flagId, newState);
+				}
+			} else {
+				auto& sensors = sensorManager.getSensors();
+				if (sensorId < sensors.size()) {
+					auto& sensor = sensors[sensorId];
+					sensor->setFlag(flagId, newState);
+				} else {
+					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id"
+					);
+					break;
+				}
+			}
+			sendAcknowledgeConfigChange(sensorId, flagId);
+			configuration.save();
+			break;
+		}
 	}
 }
 
