@@ -1,4 +1,5 @@
 #include "Logger.h"
+#include "LogQueue.h"
 
 namespace SlimeVR {
 namespace Logging {
@@ -65,6 +66,9 @@ void Logger::log(Level level, const char* format, va_list args) {
 	}
 
 	Serial.printf("[%-5s] [%s] %s\n", levelToString(level), buf, buffer);
+
+	// REVIEW: Do we want to print the log level and tags too?
+	LogQueue::instance().push(buffer);
 }
 }  // namespace Logging
 }  // namespace SlimeVR
