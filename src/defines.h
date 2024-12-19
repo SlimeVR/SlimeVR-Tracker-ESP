@@ -35,39 +35,171 @@
 #define PRIMARY_IMU_OPTIONAL false
 #define SECONDARY_IMU_OPTIONAL true
 
-#define MAX_IMU_COUNT 2
-
+#if BOARD != BOARD_GLOVE_IMU_SLIMEVR_DEV
+#define MAX_SENSORS_COUNT 2
+#define TRACKER_TYPE TRACKER_TYPE_SVR_ROTATION
 // Axis mapping example
 /*
 #include "sensors/axisremap.h"
 #define BMI160_QMC_REMAP AXIS_REMAP_BUILD(AXIS_REMAP_USE_Y, AXIS_REMAP_USE_XN,
 AXIS_REMAP_USE_Z, \ AXIS_REMAP_USE_YN, AXIS_REMAP_USE_X, AXIS_REMAP_USE_Z)
 
-IMU_DESC_ENTRY(IMU_BMP160, PRIMARY_IMU_ADDRESS_ONE, IMU_ROTATION, PIN_IMU_SCL,
+SENSOR_DESC_ENTRY(IMU_BMP160, PRIMARY_IMU_ADDRESS_ONE, IMU_ROTATION, PIN_IMU_SCL,
 PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 */
 
-#ifndef IMU_DESC_LIST
-#define IMU_DESC_LIST              \
-	IMU_DESC_ENTRY(                \
-		IMU,                       \
-		PRIMARY_IMU_ADDRESS_ONE,   \
-		IMU_ROTATION,              \
-		PIN_IMU_SCL,               \
-		PIN_IMU_SDA,               \
-		PRIMARY_IMU_OPTIONAL,      \
-		PIN_IMU_INT                \
-	)                              \
-	IMU_DESC_ENTRY(                \
-		SECOND_IMU,                \
-		SECONDARY_IMU_ADDRESS_TWO, \
-		SECOND_IMU_ROTATION,       \
-		PIN_IMU_SCL,               \
-		PIN_IMU_SDA,               \
-		SECONDARY_IMU_OPTIONAL,    \
-		PIN_IMU_INT_2              \
+#ifndef SENSOR_DESC_LIST
+#define SENSOR_DESC_LIST                       \
+	SENSOR_DESC_ENTRY(                         \
+		IMU,                                   \
+		PRIMARY_IMU_ADDRESS_ONE,               \
+		IMU_ROTATION,                          \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), \
+		PRIMARY_IMU_OPTIONAL,                  \
+		DIRECT_PIN(PIN_IMU_INT),               \
+		0                                      \
+	)                                          \
+	SENSOR_DESC_ENTRY(                         \
+		SECOND_IMU,                            \
+		SECONDARY_IMU_ADDRESS_TWO,             \
+		SECOND_IMU_ROTATION,                   \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), \
+		SECONDARY_IMU_OPTIONAL,                \
+		DIRECT_PIN(PIN_IMU_INT_2),             \
+		0                                      \
 	)
 #endif
+
+#else
+
+// Predefines for the GLOVE
+#ifndef SENSOR_DESC_LIST
+#define MAX_SENSORS_COUNT 10
+#define TRACKER_TYPE TRACKER_TYPE_SVR_GLOVE_LEFT
+#define GLOVE_SIDE GLOVE_LEFT
+
+#define SENSOR_DESC_LIST                                 \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		(0x4a ^ 0x02) - 0x4a,                            \
+		IMU_ROTATION,                                    \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),           \
+		false,                                           \
+		MCP_PIN(MCP_GPA6),                               \
+		0                                                \
+	)                                                    \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		(0x4b ^ 0x02) - 0x4a,                            \
+		IMU_ROTATION,                                    \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),           \
+		true,                                            \
+		MCP_PIN(MCP_GPA5),                               \
+		0                                                \
+	)                                                    \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		PRIMARY_IMU_ADDRESS_ONE,                         \
+		IMU_ROTATION,                                    \
+		PCA_WIRE(PIN_IMU_SCL, PIN_IMU_SDA, PCA_ADDR, 0), \
+		true,                                            \
+		MCP_PIN(MCP_GPB0),                               \
+		0                                                \
+	)                                                    \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		SECONDARY_IMU_ADDRESS_TWO,                       \
+		IMU_ROTATION,                                    \
+		PCA_WIRE(PIN_IMU_SCL, PIN_IMU_SDA, PCA_ADDR, 0), \
+		true,                                            \
+		MCP_PIN(MCP_GPB1),                               \
+		0                                                \
+	)                                                    \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		PRIMARY_IMU_ADDRESS_ONE,                         \
+		IMU_ROTATION,                                    \
+		PCA_WIRE(PIN_IMU_SCL, PIN_IMU_SDA, PCA_ADDR, 1), \
+		true,                                            \
+		MCP_PIN(MCP_GPB2),                               \
+		0                                                \
+	)                                                    \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		SECONDARY_IMU_ADDRESS_TWO,                       \
+		IMU_ROTATION,                                    \
+		PCA_WIRE(PIN_IMU_SCL, PIN_IMU_SDA, PCA_ADDR, 1), \
+		true,                                            \
+		MCP_PIN(MCP_GPB3),                               \
+		0                                                \
+	)                                                    \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		PRIMARY_IMU_ADDRESS_ONE,                         \
+		IMU_ROTATION,                                    \
+		PCA_WIRE(PIN_IMU_SCL, PIN_IMU_SDA, PCA_ADDR, 2), \
+		true,                                            \
+		MCP_PIN(MCP_GPB4),                               \
+		0                                                \
+	)                                                    \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		SECONDARY_IMU_ADDRESS_TWO,                       \
+		IMU_ROTATION,                                    \
+		PCA_WIRE(PIN_IMU_SCL, PIN_IMU_SDA, PCA_ADDR, 2), \
+		true,                                            \
+		MCP_PIN(MCP_GPB5),                               \
+		0                                                \
+	)                                                    \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		PRIMARY_IMU_ADDRESS_ONE,                         \
+		IMU_ROTATION,                                    \
+		PCA_WIRE(PIN_IMU_SCL, PIN_IMU_SDA, PCA_ADDR, 3), \
+		true,                                            \
+		MCP_PIN(MCP_GPB6),                               \
+		0                                                \
+	)                                                    \
+	SENSOR_DESC_ENTRY(                                   \
+		IMU,                                             \
+		SECONDARY_IMU_ADDRESS_TWO,                       \
+		IMU_ROTATION,                                    \
+		PCA_WIRE(PIN_IMU_SCL, PIN_IMU_SDA, PCA_ADDR, 3), \
+		true,                                            \
+		MCP_PIN(MCP_GPA1),                               \
+		0                                                \
+	)
+
+#if GLOVE_SIDE == GLOVE_LEFT
+#define SENSOR_INFO_LIST                                    \
+	SENSOR_INFO_ENTRY(0, POSITION_LEFT_HAND)                \
+	SENSOR_INFO_ENTRY(1, POSITION_LEFT_LITTLE_INTERMEDIATE) \
+	SENSOR_INFO_ENTRY(2, POSITION_LEFT_RING_INTERMEDIATE)   \
+	SENSOR_INFO_ENTRY(3, POSITION_LEFT_RING_DISTAL)         \
+	SENSOR_INFO_ENTRY(4, POSITION_LEFT_MIDDLE_INTERMEDIATE) \
+	SENSOR_INFO_ENTRY(5, POSITION_LEFT_MIDDLE_DISTAL)       \
+	SENSOR_INFO_ENTRY(6, POSITION_LEFT_INDEX_INTERMEDIATE)  \
+	SENSOR_INFO_ENTRY(7, POSITION_LEFT_INDEX_DISTAL)        \
+	SENSOR_INFO_ENTRY(8, POSITION_LEFT_THUMB_PROXIMAL)      \
+	SENSOR_INFO_ENTRY(9, POSITION_LEFT_THUMB_DISTAL)
+#elif GLOVE_SDIE == GLOVE_RIGHT
+#define SENSOR_INFO_LIST                                     \
+	SENSOR_INFO_ENTRY(0, POSITION_RIGHT_HAND)                \
+	SENSOR_INFO_ENTRY(1, POSITION_RIGHT_LITTLE_INTERMEDIATE) \
+	SENSOR_INFO_ENTRY(2, POSITION_RIGHT_RING_INTERMEDIATE)   \
+	SENSOR_INFO_ENTRY(3, POSITION_RIGHT_RING_DISTAL)         \
+	SENSOR_INFO_ENTRY(4, POSITION_RIGHT_MIDDLE_INTERMEDIATE) \
+	SENSOR_INFO_ENTRY(5, POSITION_RIGHT_MIDDLE_DISTAL)       \
+	SENSOR_INFO_ENTRY(6, POSITION_RIGHT_INDEX_INTERMEDIATE)  \
+	SENSOR_INFO_ENTRY(7, POSITION_RIGHT_INDEX_DISTAL)        \
+	SENSOR_INFO_ENTRY(8, POSITION_RIGHT_THUMB_PROXIMAL)      \
+	SENSOR_INFO_ENTRY(9, POSITION_RIGHT_THUMB_DISTAL)
+#else  // GLOVE_SDIE
+#error "Glove side not defined"
+#endif  // GLOVE_SDIE
+
+#endif  // SENSOR_DESC_LIST
+#endif  // BOARD != BOARD_GLOVE_IMU_SLIMEVR_DEV
 
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin,
@@ -226,5 +358,23 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 #endif
 #ifndef BATTERY_SHIELD_R2
 #define BATTERY_SHIELD_R2 100
+#endif
+#elif BOARD == BOARD_GLOVE_IMU_SLIMEVR_DEV
+#define PIN_IMU_SDA 1
+#define PIN_IMU_SCL 0
+#define PCA_ADDR 0x70
+#define PIN_IMU_INT 16
+#define PIN_IMU_INT_2 13
+#define PIN_BATTERY_LEVEL 3
+#define LED_PIN 2
+#define LED_INVERTED true
+#ifndef BATTERY_SHIELD_RESISTANCE
+#define BATTERY_SHIELD_RESISTANCE 0
+#endif
+#ifndef BATTERY_SHIELD_R1
+#define BATTERY_SHIELD_R1 10
+#endif
+#ifndef BATTERY_SHIELD_R2
+#define BATTERY_SHIELD_R2 40.2
 #endif
 #endif

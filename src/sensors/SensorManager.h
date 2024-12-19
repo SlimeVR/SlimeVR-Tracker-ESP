@@ -33,6 +33,10 @@
 #include "globals.h"
 #include "logging/Logger.h"
 #include "sensor.h"
+#include "sensorinterface/DirectPinInterface.h"
+#include "sensorinterface/I2CPCAInterface.h"
+#include "sensorinterface/I2CWireSensorInterface.h"
+#include "sensorinterface/MCP23X17PinInterface.h"
 
 namespace SlimeVR {
 namespace Sensors {
@@ -57,27 +61,28 @@ private:
 	SlimeVR::Logging::Logger m_Logger;
 
 	std::vector<std::unique_ptr<Sensor>> m_Sensors;
+	Adafruit_MCP23X17 m_MCP;
 
 	template <typename ImuType>
 	std::unique_ptr<Sensor> buildSensor(
 		uint8_t sensorID,
-		uint8_t addrSuppl,
+		int addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		SensorInterface* sensorInterface,
 		bool optional = false,
+		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
 		const uint8_t address = ImuType::Address + addrSuppl;
 		m_Logger.trace(
 			"Building IMU with: id=%d,\n\
-                                address=0x%02X, rotation=%f,\n\
-                                sclPin=%d, sdaPin=%d, extraParam=%d, optional=%d",
+						address=0x%02X, rotation=%f,\n\
+						interface=%s, int=%s, extraParam=%d, optional=%d",
 			sensorID,
 			address,
 			rotation,
-			sclPin,
-			sdaPin,
+			sensorInterface,
+			intPin,
 			extraParam,
 			optional
 		);
@@ -85,9 +90,9 @@ private:
 		// Now start detecting and building the IMU
 		std::unique_ptr<Sensor> sensor;
 
-		// Clear and reset I2C bus for each sensor upon startup
-		I2CSCAN::clearBus(sdaPin, sclPin);
-		swapI2C(sclPin, sdaPin);
+		// Init I2C bus for each sensor upon startup
+		sensorInterface->init();
+		sensorInterface->swapIn();
 
 		if (I2CSCAN::hasDevOnBus(address)) {
 			m_Logger.trace("Sensor %d found at address 0x%02X", sensorID + 1, address);
@@ -110,23 +115,18 @@ private:
 			return sensor;
 		}
 
-		uint8_t intPin = extraParam;
 		sensor = std::make_unique<ImuType>(
 			sensorID,
 			addrSuppl,
 			rotation,
-			sclPin,
-			sdaPin,
-			intPin
+			sensorInterface,
+			intPin,
+			extraParam
 		);
 
 		sensor->motionSetup();
 		return sensor;
 	}
-	uint8_t activeSCL = 0;
-	uint8_t activeSDA = 0;
-	bool running = false;
-	void swapI2C(uint8_t scl, uint8_t sda);
 
 	uint32_t m_LastBundleSentAtMicros = micros();
 };

@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,12 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#include "MCP23X17PinInterface.h"
 
-#include "ErroneousSensor.h"
+int MCP23X17PinInterface::digitalRead() { return _mcp23x17->digitalRead(_pinNum); }
 
-#include "GlobalVars.h"
+void MCP23X17PinInterface::pinMode(uint8_t mode) { _mcp23x17->pinMode(_pinNum, mode); }
 
-namespace SlimeVR {
-namespace Sensors {
-void ErroneousSensor::motionSetup() {
-	m_Logger.error(
-		"IMU of type %s failed to initialize",
-		getIMUNameByType(m_ExpectedType)
-	);
-	m_tpsCounter.reset();
-	m_dataCounter.reset();
+void MCP23X17PinInterface::digitalWrite(uint8_t val) {
+	_mcp23x17->digitalWrite(_pinNum, val);
 }
-
-SensorStatus ErroneousSensor::getSensorState() { return SensorStatus::SENSOR_ERROR; };
-}  // namespace Sensors
-}  // namespace SlimeVR

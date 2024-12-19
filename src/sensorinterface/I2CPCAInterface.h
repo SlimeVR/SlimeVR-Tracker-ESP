@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,38 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#ifndef I2C_PCA_INTERFACE_H
+#define I2C_PCA_INTERFACE_H
 
-#include "ErroneousSensor.h"
-
-#include "GlobalVars.h"
+#include "I2CWireSensorInterface.h"
 
 namespace SlimeVR {
-namespace Sensors {
-void ErroneousSensor::motionSetup() {
-	m_Logger.error(
-		"IMU of type %s failed to initialize",
-		getIMUNameByType(m_ExpectedType)
-	);
-	m_tpsCounter.reset();
-	m_dataCounter.reset();
-}
+/**
+ * I2C Sensor interface for use with PCA9547 (8-channel I2C-buss multiplexer)
+ * or PCA9546A (4-channel I2C-bus multiplexer) or analogs
+ */
+class I2CPCASensorInterface : public SensorInterface {
+public:
+	I2CPCASensorInterface(
+		uint8_t sclpin,
+		uint8_t sdapin,
+		uint8_t address,
+		uint8_t channel
+	)
+		: m_Wire(sclpin, sdapin)
+		, m_Address(address)
+		, m_Channel(channel){};
+	~I2CPCASensorInterface(){};
 
-SensorStatus ErroneousSensor::getSensorState() { return SensorStatus::SENSOR_ERROR; };
-}  // namespace Sensors
+	void init() override final;
+	void swapIn() override final;
+
+protected:
+	I2CWireSensorInterface m_Wire;
+	uint8_t m_Address;
+	uint8_t m_Channel;
+};
+
 }  // namespace SlimeVR
+
+#endif

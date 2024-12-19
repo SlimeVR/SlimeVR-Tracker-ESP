@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,21 +21,23 @@
 	THE SOFTWARE.
 */
 
-#include "ErroneousSensor.h"
-
-#include "GlobalVars.h"
+#ifndef SENSORINTERFACE_H
+#define SENSORINTERFACE_H
 
 namespace SlimeVR {
-namespace Sensors {
-void ErroneousSensor::motionSetup() {
-	m_Logger.error(
-		"IMU of type %s failed to initialize",
-		getIMUNameByType(m_ExpectedType)
-	);
-	m_tpsCounter.reset();
-	m_dataCounter.reset();
-}
+class SensorInterface {
+public:
+	virtual void init();
+	virtual void swapIn();
+};
 
-SensorStatus ErroneousSensor::getSensorState() { return SensorStatus::SENSOR_ERROR; };
-}  // namespace Sensors
+class EmptySensorInterface : public SensorInterface {
+public:
+	EmptySensorInterface();
+	~EmptySensorInterface();
+	void init() override final;
+	void swapIn() override final;
+};
 }  // namespace SlimeVR
+
+#endif  // SENSORINTERFACE_H

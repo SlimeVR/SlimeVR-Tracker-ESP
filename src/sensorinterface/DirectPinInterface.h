@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,27 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#ifndef _H_DIRECT_PIN_INTERFACE_
+#define _H_DIRECT_PIN_INTERFACE_
 
-#include "ErroneousSensor.h"
+#include <Arduino.h>
+#include <PinInterface.h>
 
-#include "GlobalVars.h"
+/**
+ * Pin interface using direct pins
+ *
+ */
+class DirectPinInterface : public PinInterface {
+public:
+	DirectPinInterface(uint8_t pin)
+		: _pinNum(pin){};
 
-namespace SlimeVR {
-namespace Sensors {
-void ErroneousSensor::motionSetup() {
-	m_Logger.error(
-		"IMU of type %s failed to initialize",
-		getIMUNameByType(m_ExpectedType)
-	);
-	m_tpsCounter.reset();
-	m_dataCounter.reset();
-}
+	int digitalRead() override final;
+	void pinMode(uint8_t mode) override final;
+	void digitalWrite(uint8_t val) override final;
 
-SensorStatus ErroneousSensor::getSensorState() { return SensorStatus::SENSOR_ERROR; };
-}  // namespace Sensors
-}  // namespace SlimeVR
+private:
+	uint8_t _pinNum;
+};
+
+#endif  // _H_DIRECT_PIN_INTERFACE_

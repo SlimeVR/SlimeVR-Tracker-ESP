@@ -39,9 +39,9 @@ public:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
-		uint8_t intPin
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
+		int
 	)
 		: Sensor(
 			"BNO080Sensor",
@@ -49,8 +49,7 @@ public:
 			id,
 			Address + addrSuppl,
 			rotation,
-			sclPin,
-			sdaPin
+			sensorInterface
 		)
 		, m_IntPin(intPin){};
 	~BNO080Sensor(){};
@@ -71,17 +70,17 @@ protected:
 		uint8_t id,
 		uint8_t addrSuppl,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
-		uint8_t intPin
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
+		int
 	)
-		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sclPin, sdaPin)
+		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sensorInterface)
 		, m_IntPin(intPin){};
 
 private:
 	BNO080 imu{};
 
-	uint8_t m_IntPin;
+	PinInterface* m_IntPin;
 
 	uint8_t tap;
 	unsigned long lastData = 0;
@@ -104,9 +103,9 @@ public:
 		uint8_t id,
 		uint8_t address,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
-		uint8_t intPin
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
+		int extraParam
 	)
 		: BNO080Sensor(
 			"BNO085Sensor",
@@ -114,9 +113,9 @@ public:
 			id,
 			address,
 			rotation,
-			sclPin,
-			sdaPin,
-			intPin
+			sensorInterface,
+			intPin,
+			extraParam
 		){};
 };
 
@@ -127,9 +126,9 @@ public:
 		uint8_t id,
 		uint8_t address,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
-		uint8_t intPin
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin,
+		int extraParam
 	)
 		: BNO080Sensor(
 			"BNO086Sensor",
@@ -137,9 +136,9 @@ public:
 			id,
 			address,
 			rotation,
-			sclPin,
-			sdaPin,
-			intPin
+			sensorInterface,
+			intPin,
+			extraParam
 		){};
 };
 

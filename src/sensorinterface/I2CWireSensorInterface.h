@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,21 +21,39 @@
 	THE SOFTWARE.
 */
 
-#include "ErroneousSensor.h"
+#ifndef SENSORINTERFACE_I2CWIRE_H
+#define SENSORINTERFACE_I2CWIRE_H
 
-#include "GlobalVars.h"
+#include <Arduino.h>
+#include <i2cscan.h>
+
+#include "SensorInterface.h"
+#include "globals.h"
 
 namespace SlimeVR {
-namespace Sensors {
-void ErroneousSensor::motionSetup() {
-	m_Logger.error(
-		"IMU of type %s failed to initialize",
-		getIMUNameByType(m_ExpectedType)
-	);
-	m_tpsCounter.reset();
-	m_dataCounter.reset();
-}
+void swapI2C(uint8_t sclPin, uint8_t sdaPin);
+void disconnectI2C();
 
-SensorStatus ErroneousSensor::getSensorState() { return SensorStatus::SENSOR_ERROR; };
-}  // namespace Sensors
+/**
+ * I2C Sensor interface using direct arduino Wire on provided pins
+ *
+ */
+class I2CWireSensorInterface : public SensorInterface {
+public:
+	I2CWireSensorInterface(uint8_t sclpin, uint8_t sdapin)
+		: _sdaPin(sdapin)
+		, _sclPin(sclpin){};
+	~I2CWireSensorInterface(){};
+
+	void init() override final {}
+	void swapIn() override final { swapI2C(_sclPin, _sdaPin); }
+	void disconnect() { disconnectI2C(); }
+
+protected:
+	uint8_t _sdaPin;
+	uint8_t _sclPin;
+};
+
 }  // namespace SlimeVR
+
+#endif  // SENSORINTERFACE_I2CWIRE_H
