@@ -42,8 +42,8 @@ class I2CWireSensorInterface : public SensorInterface {
 public:
 	I2CWireSensorInterface(uint8_t sclpin, uint8_t sdapin)
 		: _sdaPin(sdapin)
-		, _sclPin(sclpin) {};
-	~I2CWireSensorInterface() {};
+		, _sclPin(sclpin){};
+	~I2CWireSensorInterface(){};
 
 	void init() override final {}
 	void swapIn() override final { swapI2C(_sclPin, _sdaPin); }

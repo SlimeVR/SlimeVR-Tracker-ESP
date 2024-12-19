@@ -428,7 +428,8 @@ void Connection::sendTrackerDiscovery() {
 	MUST(sendShortString(FIRMWARE_VERSION));
 	// MAC address string
 	MUST(sendBytes(mac, 6));
-	MUST(sendByte(TRACKER_TYPE)); // Tracker type to hint the server if it's a glove or normal tracker or something else
+	MUST(sendByte(TRACKER_TYPE));  // Tracker type to hint the server if it's a glove or
+								   // normal tracker or something else
 
 	MUST(endPacket());
 }
@@ -660,7 +661,7 @@ void Connection::update() {
 		return;
 	}
 
-	auto & sensors = sensorManager.getSensors();
+	auto& sensors = sensorManager.getSensors();
 
 	updateSensorState(sensors);
 	maybeRequestFeatureFlags();

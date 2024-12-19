@@ -33,7 +33,7 @@
 class DirectPinInterface : public PinInterface {
 public:
 	DirectPinInterface(uint8_t pin)
-		: _pinNum(pin) {};
+		: _pinNum(pin){};
 
 	int digitalRead() override final;
 	void pinMode(uint8_t mode) override final;

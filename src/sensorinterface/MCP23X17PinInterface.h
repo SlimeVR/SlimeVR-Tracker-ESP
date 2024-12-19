@@ -50,7 +50,7 @@ class MCP23X17PinInterface : public PinInterface {
 public:
 	MCP23X17PinInterface(Adafruit_MCP23X17* mcp, uint8_t pin)
 		: _mcp23x17(mcp)
-		, _pinNum(pin) {};
+		, _pinNum(pin){};
 
 	int digitalRead() override final;
 	void pinMode(uint8_t mode) override final;

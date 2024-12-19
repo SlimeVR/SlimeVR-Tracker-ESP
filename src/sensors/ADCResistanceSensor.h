@@ -38,17 +38,17 @@ public:
 		float smoothFactor = 0.1f
 	)
 		: Sensor(
-			  "ADCResistanceSensor",
-			  ImuID::ADC_RESISTANCE,
-			  id,
-			  pin,
-			  0.0f,
-			  new SlimeVR::EmptySensorInterface
-		  )
+			"ADCResistanceSensor",
+			ImuID::ADC_RESISTANCE,
+			id,
+			pin,
+			0.0f,
+			new SlimeVR::EmptySensorInterface
+		)
 		, m_Pin(pin)
 		, m_VCC(VCC)
 		, m_ResistanceDivider(resistanceDivider)
-		, m_SmoothFactor(smoothFactor) {};
+		, m_SmoothFactor(smoothFactor){};
 	~ADCResistanceSensor();
 
 	void motionLoop() override final;
