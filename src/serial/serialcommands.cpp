@@ -172,6 +172,48 @@ void printState() {
 	);
 }
 
+#if ESP32
+char* getEncryptionTypeName(wifi_auth_mode_t type) {
+	switch (type) {
+		case WIFI_AUTH_OPEN:
+			return "OPEN";
+		case WIFI_AUTH_WEP:
+			return "WEP";
+		case WIFI_AUTH_WPA_PSK:
+			return "WPA_PSK";
+		case WIFI_AUTH_WPA2_PSK:
+			return "WPA2_PSK";
+		case WIFI_AUTH_WPA_WPA2_PSK:
+			return "WPA_WPA2_PSK";
+		case WIFI_AUTH_WPA2_ENTERPRISE:
+			return "WPA2_ENTERPRISE";
+		case WIFI_AUTH_WPA3_PSK:
+			return "WPA3_PSK";
+		case WIFI_AUTH_WPA2_WPA3_PSK:
+			return "WPA2_WPA3_PSK";
+		case WIFI_AUTH_WAPI_PSK:
+			return "WAPI_PSK";
+		case WIFI_AUTH_WPA3_ENT_192:
+			return "WPA3_ENT_192";
+	}
+#else
+char* getEncryptionTypeName(uint8_t type) {
+	switch (type) {
+		case ENC_TYPE_NONE:
+			return "OPEN";
+		case ENC_TYPE_WEP:
+			return "WEP";
+		case ENC_TYPE_TKIP:
+			return "WPA_PSK";
+		case ENC_TYPE_CCMP:
+			return "WPA2_PSK";
+		case ENC_TYPE_AUTO:
+			return "WPA_WPA2_PSK";
+	}
+#endif
+	return "UNKNOWN";
+}
+
 void cmdGet(CmdParser* parser) {
 	if (parser->getParamCount() < 2) {
 		return;
@@ -271,12 +313,12 @@ void cmdGet(CmdParser* parser) {
 			logger.info("[WSCAN] Found %d networks:", scanRes);
 			for (int i = 0; i < scanRes; i++) {
 				logger.info(
-					"[WSCAN] %d:\t%02d\t%s\t(%d)\t%s",
+					"[WSCAN] %d:\t%02d\t'%s'\t(%d dBm)\t%s",
 					i,
 					WiFi.SSID(i).length(),
 					WiFi.SSID(i).c_str(),
 					WiFi.RSSI(i),
-					((WiFi.encryptionType(i) == 0) ? "OPEN" : "PASSWD")
+					getEncryptionTypeName(WiFi.encryptionType(i))
 				);
 			}
 			WiFi.scanDelete();
