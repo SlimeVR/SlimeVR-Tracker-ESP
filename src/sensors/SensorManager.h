@@ -20,9 +20,16 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-
 #ifndef SLIMEVR_SENSORMANAGER
 #define SLIMEVR_SENSORMANAGER
+
+#ifndef PRIMARY_IMU_ADDRESS_ONE
+#define PRIMARY_IMU_ADDRESS_ONE std::nullopt
+#endif
+
+#ifndef SECONDARY_IMU_ADDRESS_TWO
+#define SECONDARY_IMU_ADDRESS_TWO std::nullopt
+#endif
 
 #include <i2cscan.h>
 
@@ -61,13 +68,14 @@ private:
 	template <typename ImuType>
 	std::unique_ptr<Sensor> buildSensor(
 		uint8_t sensorID,
-		uint8_t i2cAddress,
+		std::optional<uint8_t> imuAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
 		bool optional = false,
 		int extraParam = 0
 	) {
+		uint8_t i2cAddress = imuAddress.value_or(ImuType::Address + sensorID);
 		m_Logger.trace(
 			"Building IMU with: id=%d,\n\
                                 address=0x%02X, rotation=%f,\n\
