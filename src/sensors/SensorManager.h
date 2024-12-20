@@ -89,7 +89,8 @@ private:
 		swapI2C(sclPin, sdaPin);
 
 		if (I2CSCAN::hasDevOnBus(i2cAddress)) {
-			m_Logger.trace("Sensor %d found at address 0x%02X", sensorID + 1, i2cAddress);
+			m_Logger
+				.trace("Sensor %d found at address 0x%02X", sensorID + 1, i2cAddress);
 		} else {
 			if (!optional) {
 				m_Logger.error(
