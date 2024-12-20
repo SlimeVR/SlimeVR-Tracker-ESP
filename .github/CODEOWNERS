@@ -1,0 +1,13 @@
+# Global code owner
+* @Eirenliel
+
+# Make Loucas code owner of the defines to keep fw tool compatibility
+/src/defines.h @loucass003
+/src/consts.h @loucass003
+/src/debug.h @loucass003
+
+# Sfusion framework
+/src/sensors/softfusion/ @gorbit99 @l0ud
+/srs/sensors/SensorFusion* @gorbit99 @l0ud
+/srs/sensors/motionprocessing/ @gorbit99 @l0ud
+/lib/vqf/
