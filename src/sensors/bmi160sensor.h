@@ -138,7 +138,7 @@ public:
 
 	BMI160Sensor(
 		uint8_t id,
-		uint8_t addrSuppl,
+		uint8_t i2cAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
@@ -148,7 +148,7 @@ public:
 			"BMI160Sensor",
 			ImuID::BMI160,
 			id,
-			Address + addrSuppl,
+			i2cAddress,
 			rotation,
 			sclPin,
 			sdaPin
