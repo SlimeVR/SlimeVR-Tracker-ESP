@@ -34,6 +34,7 @@
 #include <i2cscan.h>
 
 #include <memory>
+#include <optional>
 
 #include "EmptySensor.h"
 #include "ErroneousSensor.h"
