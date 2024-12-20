@@ -20,13 +20,21 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-
 #ifndef SLIMEVR_SENSORMANAGER
 #define SLIMEVR_SENSORMANAGER
+
+#ifndef PRIMARY_IMU_ADDRESS_ONE
+#define PRIMARY_IMU_ADDRESS_ONE std::nullopt
+#endif
+
+#ifndef SECONDARY_IMU_ADDRESS_TWO
+#define SECONDARY_IMU_ADDRESS_TWO std::nullopt
+#endif
 
 #include <i2cscan.h>
 
 #include <memory>
+#include <optional>
 
 #include "EmptySensor.h"
 #include "ErroneousSensor.h"
@@ -61,20 +69,20 @@ private:
 	template <typename ImuType>
 	std::unique_ptr<Sensor> buildSensor(
 		uint8_t sensorID,
-		uint8_t addrSuppl,
+		std::optional<uint8_t> imuAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
 		bool optional = false,
 		int extraParam = 0
 	) {
-		const uint8_t address = ImuType::Address + addrSuppl;
+		uint8_t i2cAddress = imuAddress.value_or(ImuType::Address + sensorID);
 		m_Logger.trace(
 			"Building IMU with: id=%d,\n\
                                 address=0x%02X, rotation=%f,\n\
                                 sclPin=%d, sdaPin=%d, extraParam=%d, optional=%d",
 			sensorID,
-			address,
+			i2cAddress,
 			rotation,
 			sclPin,
 			sdaPin,
@@ -89,21 +97,22 @@ private:
 		I2CSCAN::clearBus(sdaPin, sclPin);
 		swapI2C(sclPin, sdaPin);
 
-		if (I2CSCAN::hasDevOnBus(address)) {
-			m_Logger.trace("Sensor %d found at address 0x%02X", sensorID + 1, address);
+		if (I2CSCAN::hasDevOnBus(i2cAddress)) {
+			m_Logger
+				.trace("Sensor %d found at address 0x%02X", sensorID + 1, i2cAddress);
 		} else {
 			if (!optional) {
 				m_Logger.error(
 					"Mandatory sensor %d not found at address 0x%02X",
 					sensorID + 1,
-					address
+					i2cAddress
 				);
 				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
 			} else {
 				m_Logger.debug(
 					"Optional sensor %d not found at address 0x%02X",
 					sensorID + 1,
-					address
+					i2cAddress
 				);
 				sensor = std::make_unique<EmptySensor>(sensorID);
 			}
@@ -113,7 +122,7 @@ private:
 		uint8_t intPin = extraParam;
 		sensor = std::make_unique<ImuType>(
 			sensorID,
-			addrSuppl,
+			i2cAddress,
 			rotation,
 			sclPin,
 			sdaPin,

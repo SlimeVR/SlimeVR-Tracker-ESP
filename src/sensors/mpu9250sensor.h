@@ -49,7 +49,7 @@ public:
 
 	MPU9250Sensor(
 		uint8_t id,
-		uint8_t addrSuppl,
+		uint8_t i2cAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
@@ -59,7 +59,7 @@ public:
 			"MPU9250Sensor",
 			ImuID::MPU9250,
 			id,
-			Address + addrSuppl,
+			i2cAddress,
 			rotation,
 			sclPin,
 			sdaPin

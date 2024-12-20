@@ -35,6 +35,11 @@
 #define PRIMARY_IMU_OPTIONAL false
 #define SECONDARY_IMU_OPTIONAL true
 
+// Set I2C address here or directly in IMU_DESC_ENTRY for each IMU used
+// If not set, default address is used based on the IMU and Sensor ID
+// #define PRIMARY_IMU_ADDRESS_ONE 0x4a
+// #define SECONDARY_IMU_ADDRESS_TWO 0x4b
+
 #define MAX_IMU_COUNT 2
 
 // Axis mapping example

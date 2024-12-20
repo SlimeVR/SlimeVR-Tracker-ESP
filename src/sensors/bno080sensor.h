@@ -37,7 +37,7 @@ public:
 
 	BNO080Sensor(
 		uint8_t id,
-		uint8_t addrSuppl,
+		uint8_t i2cAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
@@ -47,7 +47,7 @@ public:
 			"BNO080Sensor",
 			ImuID::BNO080,
 			id,
-			Address + addrSuppl,
+			i2cAddress,
 			rotation,
 			sclPin,
 			sdaPin
@@ -69,13 +69,13 @@ protected:
 		const char* sensorName,
 		ImuID imuId,
 		uint8_t id,
-		uint8_t addrSuppl,
+		uint8_t i2cAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
 		uint8_t intPin
 	)
-		: Sensor(sensorName, imuId, id, Address + addrSuppl, rotation, sclPin, sdaPin)
+		: Sensor(sensorName, imuId, id, i2cAddress, rotation, sclPin, sdaPin)
 		, m_IntPin(intPin){};
 
 private:
@@ -102,7 +102,7 @@ public:
 	static constexpr auto TypeID = ImuID::BNO085;
 	BNO085Sensor(
 		uint8_t id,
-		uint8_t address,
+		uint8_t i2cAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
@@ -112,7 +112,7 @@ public:
 			"BNO085Sensor",
 			ImuID::BNO085,
 			id,
-			address,
+			i2cAddress,
 			rotation,
 			sclPin,
 			sdaPin,
@@ -125,7 +125,7 @@ public:
 	static constexpr auto TypeID = ImuID::BNO086;
 	BNO086Sensor(
 		uint8_t id,
-		uint8_t address,
+		uint8_t i2cAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
@@ -135,7 +135,7 @@ public:
 			"BNO086Sensor",
 			ImuID::BNO086,
 			id,
-			address,
+			i2cAddress,
 			rotation,
 			sclPin,
 			sdaPin,
