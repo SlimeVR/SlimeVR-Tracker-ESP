@@ -45,10 +45,10 @@ struct ICM45686 : public ICM45Base<I2CImpl> {
 	// restThAcc should be the sensor's typical acceleration bias
 	static constexpr VQFParams SensorVQFParams{
 		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 0.3f,
-		.biasClip = 0.6f,
-		.restThGyr = 0.3f,
-		.restThAcc = 0.098f,
+		.biasSigmaInit = 0.5f,
+		.biasClip = 1.0f,
+		.restThGyr = 0.5f,
+		.restThAcc = 0.196f,
 	};
 
 	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
