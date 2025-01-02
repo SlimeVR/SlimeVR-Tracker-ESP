@@ -173,7 +173,7 @@ void printState() {
 }
 
 #if ESP32
-char* getEncryptionTypeName(wifi_auth_mode_t type) {
+String getEncryptionTypeName(wifi_auth_mode_t type) {
 	switch (type) {
 		case WIFI_AUTH_OPEN:
 			return "OPEN";
@@ -197,7 +197,7 @@ char* getEncryptionTypeName(wifi_auth_mode_t type) {
 			return "WPA3_ENT_192";
 	}
 #else
-char* getEncryptionTypeName(uint8_t type) {
+String getEncryptionTypeName(uint8_t type) {
 	switch (type) {
 		case ENC_TYPE_NONE:
 			return "OPEN";

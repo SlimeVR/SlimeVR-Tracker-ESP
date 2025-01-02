@@ -35,7 +35,7 @@ public:
 
 	BNO055Sensor(
 		uint8_t id,
-		uint8_t addrSuppl,
+		uint8_t i2cAddress,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface*,
@@ -45,7 +45,7 @@ public:
 			"BNO055Sensor",
 			ImuID::BNO055,
 			id,
-			Address + addrSuppl,
+			i2cAddress,
 			rotation,
 			sensorInterface
 		){};

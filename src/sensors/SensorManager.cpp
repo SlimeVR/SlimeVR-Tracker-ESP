@@ -31,7 +31,6 @@
 #include "icm20948sensor.h"
 #include "mpu6050sensor.h"
 #include "mpu9250sensor.h"
-#include "sensoraddresses.h"
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
 #include "softfusion/drivers/bmi270.h"
