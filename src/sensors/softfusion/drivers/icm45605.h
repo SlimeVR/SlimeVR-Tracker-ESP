@@ -49,9 +49,7 @@ struct ICM45605 : public ICM45Base<I2CImpl> {
 		};
 	};
 
-	float getDirectTemp() const {
-		return ICM45Base<I2CImpl>::getDirectTemp();
-	}
+	float getDirectTemp() const { return ICM45Base<I2CImpl>::getDirectTemp(); }
 
 	bool initialize() {
 		ICM45Base<I2CImpl>::softResetIMU();

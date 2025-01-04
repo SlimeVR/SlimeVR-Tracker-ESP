@@ -567,9 +567,10 @@ public:
 		uint32_t currentTime;
 		while ((currentTime = millis()) < calibTarget) {
 			m_sensor.bulkRead(
-				[&accelSamples](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
-					accelSamples++;
-				},
+				[&accelSamples](
+					const RawSensorT xyz[3],
+					const sensor_real_t timeDelta
+				) { accelSamples++; },
 				[&gyroSamples](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					gyroSamples++;
 				}

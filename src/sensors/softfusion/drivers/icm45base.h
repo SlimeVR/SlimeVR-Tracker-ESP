@@ -145,10 +145,7 @@ struct ICM45Base {
 	}
 
 	template <typename AccelCall, typename GyroCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample
-	) {
+	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
 		const auto fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
 		const auto fifo_bytes = fifo_packets * sizeof(FullFifoEntrySize);
 
