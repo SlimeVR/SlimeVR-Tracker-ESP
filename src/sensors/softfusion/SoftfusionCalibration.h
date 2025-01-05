@@ -36,27 +36,25 @@
 
 namespace SlimeVR::Sensor {
 
-template <
-	typename IMU,
-	float TempTs,
-	double AScale,
-	double GScale,
-	typename RawSensorT,
-	typename RawVectorT>
-class SoftfusionCalibrator
-	: public CalibrationBase<IMU, TempTs, AScale, GScale, RawSensorT, RawVectorT> {
+template <typename IMU, typename RawSensorT, typename RawVectorT>
+class SoftfusionCalibrator : public CalibrationBase<IMU, RawSensorT, RawVectorT> {
 public:
 	static constexpr bool HasUpsideDownCalibration = true;
 
-	using Base = CalibrationBase<IMU, TempTs, AScale, GScale, RawSensorT, RawVectorT>;
+	using Base = CalibrationBase<IMU, RawSensorT, RawVectorT>;
 
 	SoftfusionCalibrator(
 		Sensors::SensorFusionRestDetect& fusion,
 		IMU& sensor,
 		uint8_t sensorId,
-		SlimeVR::Logging::Logger& logger
+		SlimeVR::Logging::Logger& logger,
+		float TempTs,
+		double AScale,
+		double GScale
 	)
-		: Base{fusion, sensor, sensorId, logger} {}
+		: Base{fusion, sensor, sensorId, logger, TempTs, AScale, GScale} {
+		calibration.T_Ts = TempTs;
+	}
 
 	void startCalibration(
 		int calibrationType,
@@ -426,10 +424,12 @@ private:
 		.M_Ts = IMU::MagTs,
 		.G_Sens = {1.0, 1.0, 1.0},
 		.MotionlessData = {},
-		.T_Ts = TempTs,
+		.T_Ts = 0,
 	};
 
 private:
+	using Base::AScale;
+	using Base::GScale;
 	using Base::logger;
 	using Base::sensor;
 	using Base::sensorId;
