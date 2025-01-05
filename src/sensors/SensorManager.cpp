@@ -21,14 +21,17 @@
 	THE SOFTWARE.
 */
 
-#include "SensorManager.h"
+#include <type_traits>
 
+#include "SensorManager.h"
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
+#include "debug.h"
 #include "icm20948sensor.h"
 #include "mpu6050sensor.h"
 #include "mpu9250sensor.h"
+#include "sensors/softfusion/SoftfusionCalibration.h"
 #include "softfusion/drivers/bmi270.h"
 #include "softfusion/drivers/icm42688.h"
 #include "softfusion/drivers/icm45605.h"
@@ -45,26 +48,39 @@
 #include "driver/i2c.h"
 #endif
 
+#if USE_NONBLOCKING_CALIBRATION
+#else
+#define SFCALIBRATOR SlimeVR::Sensor::SoftfusionCalibrator
+#endif
+
 namespace SlimeVR {
 namespace Sensors {
-using SoftFusionLSM6DS3TRC
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC, SoftFusion::I2CImpl>;
-using SoftFusionICM42688
-	= SoftFusionSensor<SoftFusion::Drivers::ICM42688, SoftFusion::I2CImpl>;
+using SoftFusionLSM6DS3TRC = SoftFusionSensor<
+	SoftFusion::Drivers::LSM6DS3TRC,
+	SoftFusion::I2CImpl,
+	SFCALIBRATOR>;
+using SoftFusionICM42688 = SoftFusionSensor<
+	SoftFusion::Drivers::ICM42688,
+	SoftFusion::I2CImpl,
+	SFCALIBRATOR>;
 using SoftFusionBMI270
-	= SoftFusionSensor<SoftFusion::Drivers::BMI270, SoftFusion::I2CImpl>;
+	= SoftFusionSensor<SoftFusion::Drivers::BMI270, SoftFusion::I2CImpl, SFCALIBRATOR>;
 using SoftFusionLSM6DSV
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, SoftFusion::I2CImpl>;
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, SoftFusion::I2CImpl, SFCALIBRATOR>;
 using SoftFusionLSM6DSO
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::I2CImpl>;
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::I2CImpl, SFCALIBRATOR>;
 using SoftFusionLSM6DSR
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl, SFCALIBRATOR>;
 using SoftFusionMPU6050
-	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
-using SoftFusionICM45686
-	= SoftFusionSensor<SoftFusion::Drivers::ICM45686, SoftFusion::I2CImpl>;
-using SoftFusionICM45605
-	= SoftFusionSensor<SoftFusion::Drivers::ICM45605, SoftFusion::I2CImpl>;
+	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl, SFCALIBRATOR>;
+using SoftFusionICM45686 = SoftFusionSensor<
+	SoftFusion::Drivers::ICM45686,
+	SoftFusion::I2CImpl,
+	SFCALIBRATOR>;
+using SoftFusionICM45605 = SoftFusionSensor<
+	SoftFusion::Drivers::ICM45605,
+	SoftFusion::I2CImpl,
+	SFCALIBRATOR>;
 
 // TODO Make it more generic in the future and move another place (abstract sensor
 // interface)

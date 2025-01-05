@@ -78,6 +78,29 @@ struct SoftFusionSensorConfig {
 	float T_Ts;
 };
 
+struct NonBlockingSensorConfig {
+	ImuID ImuType;
+	uint16_t MotionlessDataLen;
+
+	bool sensorTimestepsCalibrated;
+	float A_Ts;
+	float G_Ts;
+	float M_Ts;
+	float T_Ts;
+
+	bool motionlessCalibrated;
+	uint8_t MotionlessData[60];
+
+	uint8_t gyroPointsCalibrated;
+	float gyroMeasurementTemperature1;
+	float G_off1[3];
+	float gyroMeasurementTemperature2;
+	float G_off2[3];
+
+	bool accelCalibrated[3];
+	float A_off[3];
+};
+
 struct MPU6050SensorConfig {
 	// accelerometer offsets and correction matrix
 	float A_B[3];
