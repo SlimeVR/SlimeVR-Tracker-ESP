@@ -27,6 +27,8 @@
 #include <array>
 #include <cstdint>
 
+#include "vqf.h"
+
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 8g

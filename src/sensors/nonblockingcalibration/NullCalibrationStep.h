@@ -23,45 +23,24 @@
 
 #pragma once
 
-#include "icm45base.h"
-#include "vqf.h"
+#include "CalibrationStep.h"
 
-namespace SlimeVR::Sensors::SoftFusion::Drivers {
+namespace SlimeVR::Sensors::NonBlockingCalibration {
 
-// Driver uses acceleration range at 32g
-// and gyroscope range at 4000dps
-// using high resolution mode
-// Uses 32.768kHz clock
-// Gyroscope ODR = 409.6Hz, accel ODR = 204.8Hz
-// Timestamps reading not used, as they're useless (constant predefined increment)
+template <typename SensorRawT>
+class NullCalibrationStep : public CalibrationStep<SensorRawT> {
+	using CalibrationStep<SensorRawT>::sensorConfig;
+	using typename CalibrationStep<SensorRawT>::TickResult;
 
-template <typename I2CImpl>
-struct ICM45605 : public ICM45Base<I2CImpl> {
-	static constexpr auto Name = "ICM-45605";
-	static constexpr auto Type = SensorTypeID::ICM45605;
+public:
+	NullCalibrationStep(SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig)
+		: CalibrationStep<SensorRawT>{sensorConfig} {}
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 0.3f,
-		.biasClip = 0.6f,
-		.restThGyr = 0.3f,
-		.restThAcc = 0.0098f,
-	};
+	void start() override final { CalibrationStep<SensorRawT>::start(); }
 
-	ICM45605(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: ICM45Base<I2CImpl>{i2c, logger} {}
+	TickResult tick() override final { return TickResult::CONTINUE; }
 
-	struct Regs {
-		struct WhoAmI {
-			static constexpr uint8_t reg = 0x72;
-			static constexpr uint8_t value = 0xe5;
-		};
-	};
-
-	bool initialize() {
-		ICM45Base<I2CImpl>::softResetIMU();
-		return ICM45Base<I2CImpl>::initializeBase();
-	}
+	void cancel() override final {}
 };
 
-}  // namespace SlimeVR::Sensors::SoftFusion::Drivers
+}  // namespace SlimeVR::Sensors::NonBlockingCalibration

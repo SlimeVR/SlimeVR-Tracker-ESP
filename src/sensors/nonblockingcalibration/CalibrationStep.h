@@ -23,45 +23,46 @@
 
 #pragma once
 
-#include "icm45base.h"
-#include "vqf.h"
+#include "../../configuration/Configuration.h"
 
-namespace SlimeVR::Sensors::SoftFusion::Drivers {
+namespace SlimeVR::Sensors::NonBlockingCalibration {
 
-// Driver uses acceleration range at 32g
-// and gyroscope range at 4000dps
-// using high resolution mode
-// Uses 32.768kHz clock
-// Gyroscope ODR = 409.6Hz, accel ODR = 204.8Hz
-// Timestamps reading not used, as they're useless (constant predefined increment)
-
-template <typename I2CImpl>
-struct ICM45605 : public ICM45Base<I2CImpl> {
-	static constexpr auto Name = "ICM-45605";
-	static constexpr auto Type = SensorTypeID::ICM45605;
-
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 0.3f,
-		.biasClip = 0.6f,
-		.restThGyr = 0.3f,
-		.restThAcc = 0.0098f,
+template <typename SensorRawT>
+class CalibrationStep {
+public:
+	enum class TickResult {
+		CONTINUE,
+		SKIP,
+		DONE,
 	};
 
-	ICM45605(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: ICM45Base<I2CImpl>{i2c, logger} {}
+	CalibrationStep(SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig)
+		: sensorConfig{sensorConfig} {}
 
-	struct Regs {
-		struct WhoAmI {
-			static constexpr uint8_t reg = 0x72;
-			static constexpr uint8_t value = 0xe5;
-		};
-	};
+	virtual ~CalibrationStep() = default;
 
-	bool initialize() {
-		ICM45Base<I2CImpl>::softResetIMU();
-		return ICM45Base<I2CImpl>::initializeBase();
+	virtual void start() { restDetectionDelayStartMillis = millis(); }
+
+	virtual TickResult tick() = 0;
+	virtual void cancel() = 0;
+
+	virtual bool requiresRest() { return true; }
+	virtual void processAccelSample(const SensorRawT accelSample[3]) {}
+	virtual void processGyroSample(const SensorRawT accelSample[3]) {}
+	virtual void processTempSample(float tempSample) {}
+
+	bool restDetectionDelayElapsed() {
+		return (millis() - restDetectionDelayStartMillis)
+			>= restDetectionDelaySeconds * 1e3;
 	}
+
+protected:
+	SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig;
+
+	float restDetectionDelaySeconds = 5.0f;
+
+private:
+	uint32_t restDetectionDelayStartMillis;
 };
 
-}  // namespace SlimeVR::Sensors::SoftFusion::Drivers
+}  // namespace SlimeVR::Sensors::NonBlockingCalibration
