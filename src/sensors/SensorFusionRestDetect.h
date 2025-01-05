@@ -33,6 +33,21 @@ public:
 	{
 	}
 
+#if SENSOR_USE_VQF
+	SensorFusionRestDetect(
+		VQFParams vqfParams,
+		float gyrTs,
+		float accTs = -1.0,
+		float magTs = -1.0
+	)
+		: SensorFusion(vqfParams, gyrTs, accTs, magTs)
+#if !SENSOR_FUSION_WITH_RESTDETECT
+		, restDetection(restDetectionParams, gyrTs, (accTs < 0) ? gyrTs : accTs)
+#endif
+	{
+	}
+#endif
+
 	bool getRestDetected();
 
 #if !SENSOR_FUSION_WITH_RESTDETECT

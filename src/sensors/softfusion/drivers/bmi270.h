@@ -30,6 +30,7 @@
 #include <limits>
 
 #include "bmi270fw.h"
+#include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -53,6 +54,14 @@ struct BMI270 {
 	static constexpr float AccelSensitivity = 2048.0f;
 
 	static constexpr float TemperatureZROChange = 6.667f;
+
+	static constexpr VQFParams SensorVQFParams{
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 0.5f,
+		.biasClip = 1.0f,
+		.restThGyr = 0.5f,
+		.restThAcc = 0.196f,
+	};
 
 	struct MotionlessCalibrationData {
 		bool valid;

@@ -24,6 +24,7 @@
 #pragma once
 
 #include "icm45base.h"
+#include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -38,6 +39,14 @@ template <typename I2CImpl>
 struct ICM45686 : public ICM45Base<I2CImpl> {
 	static constexpr auto Name = "ICM-45686";
 	static constexpr auto Type = ImuID::ICM45686;
+
+	static constexpr VQFParams SensorVQFParams{
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 0.5f,
+		.biasClip = 1.0f,
+		.restThGyr = 0.5f,
+		.restThAcc = 0.196f,
+	};
 
 	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
 		: ICM45Base<I2CImpl>{i2c, logger} {}

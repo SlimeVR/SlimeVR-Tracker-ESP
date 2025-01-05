@@ -27,6 +27,8 @@
 #include <array>
 #include <cstdint>
 
+#include "vqf.h"
+
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 8g
@@ -53,6 +55,14 @@ struct LSM6DS3TRC {
 	static constexpr float TemperatureSensitivity = 256.0f;
 
 	static constexpr float TemperatureZROChange = 2.0f;
+
+	static constexpr VQFParams SensorVQFParams{
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 3.0f,
+		.biasClip = 6.0f,
+		.restThGyr = 3.0f,
+		.restThAcc = 0.392f,
+	};
 
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger logger;
