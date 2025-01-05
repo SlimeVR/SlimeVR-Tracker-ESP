@@ -33,25 +33,25 @@
 
 namespace SlimeVR::Sensor {
 
-template <
-	typename IMU,
-	float TempTs,
-	double AScale,
-	double GScale,
-	typename RawSensorT,
-	typename RawVectorT>
+template <typename IMU, typename RawSensorT, typename RawVectorT>
 class CalibrationBase {
 public:
 	CalibrationBase(
 		SlimeVR::Sensors::SensorFusionRestDetect& fusion,
 		IMU& sensor,
 		uint8_t sensorId,
-		SlimeVR::Logging::Logger& logger
+		SlimeVR::Logging::Logger& logger,
+		float TempTs,
+		double AScale,
+		double GScale
 	)
 		: fusion{fusion}
 		, sensor{sensor}
 		, sensorId{sensorId}
-		, logger{logger} {}
+		, logger{logger}
+		, TempTs{TempTs}
+		, AScale{AScale}
+		, GScale{GScale} {}
 
 	static constexpr bool HasMotionlessCalib
 		= requires(IMU& i) { typename IMU::MotionlessCalibrationData; };
@@ -112,6 +112,9 @@ protected:
 	IMU& sensor;
 	SlimeVR::Logging::Logger& logger;
 	uint8_t sensorId;
+	float TempTs;
+	double AScale;
+	double GScale;
 };
 
 }  // namespace SlimeVR::Sensor

@@ -41,29 +41,27 @@
 
 namespace SlimeVR::Sensors::NonBlockingCalibration {
 
-template <
-	typename IMU,
-	float TempTs,
-	double AScale,
-	double GScale,
-	typename RawSensorT,
-	typename RawVectorT>
+template <typename IMU, typename RawSensorT, typename RawVectorT>
 class NonBlockingCalibrator
-	: public Sensor::
-		  CalibrationBase<IMU, TempTs, AScale, GScale, RawSensorT, RawVectorT> {
+	: public Sensor::CalibrationBase<IMU, RawSensorT, RawVectorT> {
 public:
 	static constexpr bool HasUpsideDownCalibration = false;
 
-	using Base
-		= Sensor::CalibrationBase<IMU, TempTs, AScale, GScale, RawSensorT, RawVectorT>;
+	using Base = Sensor::CalibrationBase<IMU, RawSensorT, RawVectorT>;
 
 	NonBlockingCalibrator(
 		SensorFusionRestDetect& fusion,
 		IMU& imu,
 		uint8_t sensorId,
-		Logging::Logger& logger
+		Logging::Logger& logger,
+		float TempTs,
+		double AScale,
+		double GScale
 	)
-		: Base(fusion, imu, sensorId, logger) {}
+		: Base(fusion, imu, sensorId, logger, TempTs, AScale, GScale) {
+		calibration.T_Ts = TempTs;
+		activeCalibration.T_Ts = TempTs;
+	}
 
 	bool calibrationMatches(const Configuration::SensorConfig& sensorCalibration
 	) final {
@@ -370,7 +368,7 @@ private:
 	bool skippedAStep = false;
 	bool lastTickRest = false;
 
-	SlimeVR::Configuration::NonBlockingSensorConfig calibration = {
+	SlimeVR::Configuration::NonBlockingSensorConfig calibration{
 		// let's create here transparent calibration that doesn't affect input data
 		.ImuType = {IMU::Type},
 		.MotionlessDataLen = {Base::MotionlessCalibDataSize()},
@@ -379,7 +377,7 @@ private:
 		.A_Ts = IMU::AccTs,
 		.G_Ts = IMU::GyrTs,
 		.M_Ts = IMU::MagTs,
-		.T_Ts = TempTs,
+		.T_Ts = 0,
 
 		.motionlessCalibrated = false,
 		.MotionlessData = {},
@@ -396,7 +394,9 @@ private:
 
 	Configuration::NonBlockingSensorConfig activeCalibration = calibration;
 
+	using Base::AScale;
 	using Base::fusion;
+	using Base::GScale;
 	using Base::logger;
 	using Base::sensor;
 	using Base::sensorId;

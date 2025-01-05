@@ -39,7 +39,7 @@ template <
 	template <typename I2CImpl>
 	typename T,
 	typename I2CImpl,
-	template <typename, float, double, double, typename, typename>
+	template <typename IMU, typename RawSensorT, typename RawVectorT>
 	typename Calibrator>
 class SoftFusionSensor : public Sensor {
 	using imu = T<I2CImpl>;
@@ -65,8 +65,7 @@ class SoftFusionSensor : public Sensor {
 		= ((32768. / imu::GyroSensitivity) / 32768.) * (PI / 180.0);
 	static constexpr double AScale = CONST_EARTH_GRAVITY / imu::AccelSensitivity;
 
-	using Calib
-		= Calibrator<imu, getDefaultTempTs(), AScale, GScale, RawSensorT, RawVectorT>;
+	using Calib = Calibrator<imu, RawSensorT, RawVectorT>;
 
 	static constexpr auto UpsideDownCalibrationInit = Calib::HasUpsideDownCalibration;
 
@@ -366,7 +365,15 @@ public:
 
 	SensorFusionRestDetect m_fusion;
 	imu m_sensor;
-	Calib calibrator{m_fusion, m_sensor, sensorId, m_Logger};
+	Calib calibrator{
+		m_fusion,
+		m_sensor,
+		sensorId,
+		m_Logger,
+		getDefaultTempTs(),
+		AScale,
+		GScale
+	};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
