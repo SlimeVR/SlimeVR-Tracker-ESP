@@ -62,8 +62,6 @@ class SoftFusionSensor : public Sensor {
 		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
 	using RawVectorT = std::array<RawSensorT, 3>;
 
-	static constexpr auto UpsideDownCalibrationInit = true;
-
 	static constexpr double GScale
 		= ((32768. / imu::GyroSensitivity) / 32768.) * (PI / 180.0);
 	static constexpr double AScale = CONST_EARTH_GRAVITY / imu::AccelSensitivity;
@@ -71,15 +69,7 @@ class SoftFusionSensor : public Sensor {
 	using Calib
 		= Calibrator<imu, getDefaultTempTs(), AScale, GScale, RawSensorT, RawVectorT>;
 
-	static constexpr bool HasMotionlessCalib
-		= requires(imu& i) { typename imu::MotionlessCalibrationData; };
-	static constexpr size_t MotionlessCalibDataSize() {
-		if constexpr (HasMotionlessCalib) {
-			return sizeof(typename imu::MotionlessCalibrationData);
-		} else {
-			return 0;
-		}
-	}
+	static constexpr auto UpsideDownCalibrationInit = Calib::HasUpsideDownCalibration;
 
 	static constexpr float DirectTempReadFreq = 15;
 	static constexpr float DirectTempReadTs = 1.0f / DirectTempReadFreq;
@@ -119,13 +109,11 @@ class SoftFusionSensor : public Sensor {
 	}};
 
 	void recalcFusion() {
-		auto& calibration = calibrator.getCalibration();
-
 		m_fusion = SensorFusionRestDetect(
 			imu::SensorVQFParams,
-			calibration.G_Ts,
-			calibration.A_Ts,
-			calibration.M_Ts
+			calibrator.getGyroTimestep(),
+			calibrator.getAccelTimestep(),
+			calibrator.getTempTimestep()
 		);
 	}
 
