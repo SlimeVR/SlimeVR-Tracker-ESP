@@ -26,7 +26,7 @@
 #include <cmath>
 #include <optional>
 
-#include "../../consts.h"
+#include "../../../consts.h"
 #include "CalibrationStep.h"
 
 namespace SlimeVR::Sensors::NonBlockingCalibration {

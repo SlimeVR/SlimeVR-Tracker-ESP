@@ -157,7 +157,8 @@ enum class SensorConfigType {
 	MPU9250,
 	ICM20948,
 	SFUSION,
-	BNO0XX
+	BNO0XX,
+	NONBLOCKING,
 };
 
 const char* calibrationConfigTypeToString(SensorConfigType type);
@@ -172,6 +173,7 @@ struct SensorConfig {
 		MPU9250SensorConfig mpu9250;
 		ICM20948SensorConfig icm20948;
 		BNO0XXSensorConfig bno0XX;
+		NonBlockingSensorConfig nonblocking;
 	} data;
 };
 
