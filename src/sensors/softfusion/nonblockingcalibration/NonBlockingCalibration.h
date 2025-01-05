@@ -179,6 +179,26 @@ public:
 		}
 	}
 
+	float getZROChange() final {
+		if (activeCalibration.gyroPointsCalibrated < 2) {
+			return IMU::TemperatureZROChange;
+		}
+
+		float diffX
+			= (activeCalibration.G_off2[0] - activeCalibration.G_off1[0]) * GScale;
+		float diffY
+			= (activeCalibration.G_off2[1] - activeCalibration.G_off1[1]) * GScale;
+		float diffZ
+			= (activeCalibration.G_off2[2] - activeCalibration.G_off1[2]) * GScale;
+
+		float maxDiff
+			= std::max(std::max(std::abs(diffX), std::abs(diffY)), std::abs(diffZ));
+
+		return 0.1f / maxDiff
+			 / (activeCalibration.gyroMeasurementTemperature2
+				- activeCalibration.gyroMeasurementTemperature1);
+	}
+
 private:
 	enum class CalibrationStepEnum {
 		NONE,

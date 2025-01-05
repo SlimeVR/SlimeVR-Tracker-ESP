@@ -103,7 +103,7 @@ class SoftFusionSensor : public Sensor {
 
 	TemperatureGradientCalculator tempGradientCalculator{[&](float gradient) {
 		m_fusion.updateBiasForgettingTime(
-			std::fabs(gradient) * imu::TemperatureZROChange
+			calibrator.getZROChange() / std::fabs(gradient)
 		);
 	}};
 
