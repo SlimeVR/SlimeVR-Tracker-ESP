@@ -25,6 +25,7 @@
 
 #include <cstring>
 #include <functional>
+#include <tuple>
 #include <vector>
 
 #include "GlobalVars.h"
@@ -44,6 +45,8 @@ template <
 	typename RawVectorT>
 class SoftfusionCalibrator {
 public:
+	static constexpr bool HasUpsideDownCalibration = true;
+
 	static constexpr bool HasMotionlessCalib
 		= requires(IMU& i) { typename IMU::MotionlessCalibrationData; };
 	static constexpr size_t MotionlessCalibDataSize() {
@@ -53,6 +56,11 @@ public:
 			return 0;
 		}
 	}
+
+	using EatSamplesFn = std::function<void(const uint32_t)>;
+	using ReturnLastFn
+		= std::function<std::tuple<RawVectorT, RawVectorT, int16_t>(const uint32_t)>;
+	using RecalcFusionFn = std::function<void()>;
 
 	SoftfusionCalibrator(
 		IMU& sensor,
@@ -69,10 +77,9 @@ public:
 
 	void startCalibration(
 		int calibrationType,
-		const std::function<void(const uint32_t)>& eatSamplesForSeconds,
-		const std::function<std::tuple<RawVectorT, RawVectorT, int16_t>(const uint32_t
-		)>& eatSamplesReturnLast,
-		const std::function<void()>& recalcFusion
+		const EatSamplesFn& eatSamplesForSeconds,
+		const ReturnLastFn& eatSamplesReturnLast,
+		const RecalcFusionFn& recalcFusion
 	) {
 		if (calibrationType == 0) {
 			// ALL
@@ -184,10 +191,7 @@ private:
 		configuration.save();
 	}
 
-	void calibrateGyroOffset(
-		const std::function<std::tuple<RawVectorT, RawVectorT, int16_t>(const uint32_t
-		)>& eatSamplesReturnLast
-	) {
+	void calibrateGyroOffset(const ReturnLastFn& eatSamplesReturnLast) {
 		// Wait for sensor to calm down before calibration
 		m_Logger.info(
 			"Put down the device and wait for baseline gyro reading calibration (%d "
@@ -243,8 +247,7 @@ private:
 		);
 	}
 
-	void calibrateAccel(const std::function<void(const uint32_t)>& eatSamplesForSeconds
-	) {
+	void calibrateAccel(const EatSamplesFn& eatSamplesForSeconds) {
 		auto magneto = std::make_unique<MagnetoCalibration>();
 		m_Logger.info(
 			"Put the device into 6 unique orientations (all sides), leave it still and "
@@ -373,8 +376,8 @@ private:
 	}
 
 	void calibrateSampleRate(
-		const std::function<void(const uint32_t)>& eatSamplesForSeconds,
-		const std::function<void()>& recalcFusion
+		const EatSamplesFn& eatSamplesForSeconds,
+		const RecalcFusionFn& recalcFusion
 	) {
 		m_Logger.debug(
 			"Calibrating IMU sample rate in %d second(s)...",
