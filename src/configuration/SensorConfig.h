@@ -73,6 +73,9 @@ struct SoftFusionSensorConfig {
 	float G_Sens[3];
 
 	uint8_t MotionlessData[60];
+
+	// temperature sampling rate (placed at the end to not break existing configs)
+	float T_Ts;
 };
 
 struct MPU6050SensorConfig {

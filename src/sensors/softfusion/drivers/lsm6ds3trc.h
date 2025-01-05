@@ -44,9 +44,13 @@ struct LSM6DS3TRC {
 	static constexpr float GyrTs = 1.0 / Freq;
 	static constexpr float AccTs = 1.0 / Freq;
 	static constexpr float MagTs = 1.0 / Freq;
+	static constexpr float TempTs = 1.0 / Freq;
 
 	static constexpr float GyroSensitivity = 28.571428571f;
 	static constexpr float AccelSensitivity = 4098.360655738f;
+
+	static constexpr float TemperatureBias = 25.0f;
+	static constexpr float TemperatureSensitivity = 256.0f;
 
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger logger;
@@ -59,7 +63,6 @@ struct LSM6DS3TRC {
 			static constexpr uint8_t reg = 0x0f;
 			static constexpr uint8_t value = 0x6a;
 		};
-		static constexpr uint8_t OutTemp = 0x20;
 		struct Ctrl1XL {
 			static constexpr uint8_t reg = 0x10;
 			static constexpr uint8_t value = (0b11 << 2) | (0b0110 << 4);  // 8g, 416Hz
@@ -74,6 +77,10 @@ struct LSM6DS3TRC {
 			static constexpr uint8_t valueSwReset = 1;
 			static constexpr uint8_t value = (1 << 6) | (1 << 2);  // BDU = 1, IF_INC =
 																   // 1
+		};
+		struct FifoCtrl2 {
+			static constexpr uint8_t reg = 0x07;
+			static constexpr uint8_t value = 0b1000;  // temperature in fifo
 		};
 		struct FifoCtrl3 {
 			static constexpr uint8_t reg = 0x08;
@@ -97,20 +104,18 @@ struct LSM6DS3TRC {
 		i2c.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
 		i2c.writeReg(Regs::Ctrl2G::reg, Regs::Ctrl2G::value);
 		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
+		i2c.writeReg(Regs::FifoCtrl2::reg, Regs::FifoCtrl2::value);
 		i2c.writeReg(Regs::FifoCtrl3::reg, Regs::FifoCtrl3::value);
 		i2c.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
 		return true;
 	}
 
-	float getDirectTemp() const {
-		const auto value = static_cast<int16_t>(i2c.readReg16(Regs::OutTemp));
-		float result = ((float)value / 256.0f) + 25.0f;
-
-		return result;
-	}
-
-	template <typename AccelCall, typename GyroCall>
-	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
+	template <typename AccelCall, typename GyroCall, typename TempCall>
+	void bulkRead(
+		AccelCall&& processAccelSample,
+		GyroCall&& processGyroSample,
+		TempCall&& processTemperatureSample
+	) {
 		const auto read_result = i2c.readReg16(Regs::FifoStatus);
 		if (read_result & 0x4000) {  // overrun!
 			// disable and re-enable fifo to clear it
@@ -145,6 +150,7 @@ struct LSM6DS3TRC {
 				reinterpret_cast<const int16_t*>(&read_buffer[i + 3]),
 				AccTs
 			);
+			processTemperatureSample(read_buffer[i + 9], TempTs);
 		}
 	}
 };

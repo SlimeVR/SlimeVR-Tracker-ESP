@@ -23,10 +23,14 @@
 
 #pragma once
 
+#include <cstdint>
+#include <tuple>
+
 #include "../RestCalibrationDetector.h"
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
+#include "motionprocessing/types.h"
 
 namespace SlimeVR::Sensors {
 
@@ -36,6 +40,8 @@ class SoftFusionSensor : public Sensor {
 
 	static constexpr bool Uses32BitSensorData
 		= requires(imu& i) { i.Uses32BitSensorData; };
+
+	static constexpr bool DirectTempReadOnly = requires(imu& i) { i.getDirectTemp(); };
 
 	using RawSensorT =
 		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
@@ -64,6 +70,20 @@ class SoftFusionSensor : public Sensor {
 		}
 	}
 
+	static constexpr float DirectTempReadFreq = 15;
+	static constexpr uint32_t DirectTempReadMicros
+		= static_cast<uint32_t>(1e6 / DirectTempReadFreq);
+	float lastReadTemperature = 0;
+	uint32_t lastTempPollTime = micros();
+
+	constexpr sensor_real_t getImuTempTs() const {
+		if constexpr (DirectTempReadOnly) {
+			return static_cast<sensor_real_t>(1.0) / DirectTempReadFreq;
+		} else {
+			return imu::TempTs;
+		}
+	}
+
 	bool detected() const {
 		const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
 		if (imu::Regs::WhoAmI::value != value) {
@@ -85,9 +105,8 @@ class SoftFusionSensor : public Sensor {
 		constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6;
 		uint32_t elapsed = now - m_lastTemperaturePacketSent;
 		if (elapsed >= sendInterval) {
-			const float temperature = m_sensor.getDirectTemp();
 			m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
-			networkConnection.sendTemperature(sensorId, temperature);
+			networkConnection.sendTemperature(sensorId, lastReadTemperature);
 		}
 	}
 
@@ -141,6 +160,17 @@ class SoftFusionSensor : public Sensor {
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 	}
 
+	void
+	processTempSample(const int16_t rawTemperature, const sensor_real_t timeDelta) {
+		if constexpr (!DirectTempReadOnly) {
+			const float scaledTemperature = imu::TemperatureBias
+										  + static_cast<float>(rawTemperature)
+												* (1.0 / imu::TemperatureSensitivity);
+
+			lastReadTemperature = scaledTemperature;
+		}
+	}
+
 	void eatSamplesForSeconds(const uint32_t seconds) {
 		const auto targetDelay = millis() + 1000 * seconds;
 		auto lastSecondsRemaining = seconds;
@@ -155,15 +185,18 @@ class SoftFusionSensor : public Sensor {
 			}
 			m_sensor.bulkRead(
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {}
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+				[](const int16_t xyz, const sensor_real_t timeDelta) {}
 			);
 		}
 	}
 
-	std::pair<RawVectorT, RawVectorT> eatSamplesReturnLast(const uint32_t milliseconds
+	std::tuple<RawVectorT, RawVectorT, int16_t> eatSamplesReturnLast(
+		const uint32_t milliseconds
 	) {
 		RawVectorT accel = {0};
 		RawVectorT gyro = {0};
+		int16_t temp = 0;
 		const auto targetDelay = millis() + milliseconds;
 		while (millis() < targetDelay) {
 			m_sensor.bulkRead(
@@ -176,11 +209,14 @@ class SoftFusionSensor : public Sensor {
 					gyro[0] = xyz[0];
 					gyro[1] = xyz[1];
 					gyro[2] = xyz[2];
+				},
+				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
+					temp = rawTemp;
 				}
 			);
 			yield();
 		}
-		return std::make_pair(accel, gyro);
+		return std::make_tuple(accel, gyro, temp);
 	}
 
 public:
@@ -225,6 +261,15 @@ public:
 
 		// read fifo updating fusion
 		uint32_t now = micros();
+
+		if constexpr (DirectTempReadOnly) {
+			uint32_t tempElapsed = now - lastTempPollTime;
+			if (tempElapsed >= DirectTempReadMicros) {
+				lastTempPollTime = now - (tempElapsed - DirectTempReadMicros);
+				lastReadTemperature = m_sensor.getDirectTemp();
+			}
+		}
+
 		constexpr uint32_t targetPollIntervalMicros = 6000;
 		uint32_t elapsed = now - m_lastPollTime;
 		if (elapsed >= targetPollIntervalMicros) {
@@ -235,6 +280,9 @@ public:
 				},
 				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					processGyroSample(xyz, timeDelta);
+				},
+				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
+					processTempSample(rawTemp, timeDelta);
 				}
 			);
 			optimistic_yield(100);
@@ -317,7 +365,7 @@ public:
 		[[maybe_unused]] auto lastRawSample = eatSamplesReturnLast(1000);
 		if constexpr (UpsideDownCalibrationInit) {
 			auto gravity = static_cast<sensor_real_t>(
-				AScale * static_cast<sensor_real_t>(lastRawSample.first[2])
+				AScale * static_cast<sensor_real_t>(std::get<0>(lastRawSample)[2])
 			);
 			m_Logger.info(
 				"Gravity read: %.1f (need < -7.5 to start calibration)",
@@ -328,7 +376,7 @@ public:
 				m_Logger.info("Flip front in 5 seconds to start calibration");
 				lastRawSample = eatSamplesReturnLast(5000);
 				gravity = static_cast<sensor_real_t>(
-					AScale * static_cast<sensor_real_t>(lastRawSample.first[2])
+					AScale * static_cast<sensor_real_t>(std::get<0>(lastRawSample)[2])
 				);
 				if (gravity > 7.5f) {
 					m_Logger.debug("Starting calibration...");
@@ -404,7 +452,7 @@ public:
 		eatSamplesForSeconds(GyroCalibDelaySeconds);
 		ledManager.off();
 
-		m_calibration.temperature = m_sensor.getDirectTemp();
+		m_calibration.temperature = lastReadTemperature;
 		m_Logger.trace("Calibration temperature: %f", m_calibration.temperature);
 
 		ledManager.pattern(100, 100, 3);
@@ -427,7 +475,8 @@ public:
 					sumXYZ[1] += xyz[1];
 					sumXYZ[2] += xyz[2];
 					++sampleCount;
-				}
+				},
+				[](const int16_t rawTemp, const sensor_real_t timeDelta) {}
 			);
 		}
 
@@ -541,7 +590,8 @@ public:
 						samplesGathered = true;
 					}
 				},
-				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {}
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+				[](const int16_t rawTemp, const sensor_real_t timeDelta) {}
 			);
 		}
 		ledManager.off();
@@ -580,18 +630,21 @@ public:
 
 		uint32_t accelSamples = 0;
 		uint32_t gyroSamples = 0;
+		uint32_t tempSamples = 0;
 
 		const auto calibTarget = millis() + 1000 * SampleRateCalibSeconds;
 		m_Logger.debug("Counting samples now...");
 		uint32_t currentTime;
 		while ((currentTime = millis()) < calibTarget) {
 			m_sensor.bulkRead(
-				[&accelSamples](
-					const RawSensorT xyz[3],
-					const sensor_real_t timeDelta
-				) { accelSamples++; },
-				[&gyroSamples](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
+				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
+					accelSamples++;
+				},
+				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					gyroSamples++;
+				},
+				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
+					tempSamples++;
 				}
 			);
 			yield();
@@ -607,11 +660,13 @@ public:
 		);
 		m_calibration.A_Ts = millisFromStart / (accelSamples * 1000.0);
 		m_calibration.G_Ts = millisFromStart / (gyroSamples * 1000.0);
+		m_calibration.T_Ts = millisFromStart / (tempSamples * 1000.0);
 
 		m_Logger.debug(
-			"Gyro frequency %fHz, accel frequency: %fHz",
+			"Gyro frequency %fHz, accel frequency: %fHz, temperature frequency: %fHz",
 			1.0 / m_calibration.G_Ts,
-			1.0 / m_calibration.A_Ts
+			1.0 / m_calibration.A_Ts,
+			1.0 / m_calibration.T_Ts
 		);
 		ledManager.off();
 
@@ -623,22 +678,23 @@ public:
 
 	SensorFusionRestDetect m_fusion;
 	T<I2CImpl> m_sensor;
-	SlimeVR::Configuration::SoftFusionSensorConfig m_calibration
-		= {// let's create here transparent calibration that doesn't affect input data
-		   .ImuType = {imu::Type},
-		   .MotionlessDataLen = {MotionlessCalibDataSize()},
-		   .A_B = {0.0, 0.0, 0.0},
-		   .A_Ainv = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
-		   .M_B = {0.0, 0.0, 0.0},
-		   .M_Ainv = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
-		   .G_off = {0.0, 0.0, 0.0},
-		   .temperature = 0.0,
-		   .A_Ts = imu::AccTs,
-		   .G_Ts = imu::GyrTs,
-		   .M_Ts = imu::MagTs,
-		   .G_Sens = {1.0, 1.0, 1.0},
-		   .MotionlessData = {}
-		};
+	SlimeVR::Configuration::SoftFusionSensorConfig m_calibration = {
+		// let's create here transparent calibration that doesn't affect input data
+		.ImuType = {imu::Type},
+		.MotionlessDataLen = {MotionlessCalibDataSize()},
+		.A_B = {0.0, 0.0, 0.0},
+		.A_Ainv = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
+		.M_B = {0.0, 0.0, 0.0},
+		.M_Ainv = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}},
+		.G_off = {0.0, 0.0, 0.0},
+		.temperature = 0.0,
+		.A_Ts = imu::AccTs,
+		.G_Ts = imu::GyrTs,
+		.M_Ts = imu::MagTs,
+		.G_Sens = {1.0, 1.0, 1.0},
+		.MotionlessData = {},
+		.T_Ts = getImuTempTs(),
+	};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
