@@ -98,6 +98,8 @@ public:
 	virtual void provideGyroSample(const RawSensorT gyroSample[3]) {}
 	virtual void provideTempSample(float tempSample) {}
 
+	virtual float getZROChange() { return IMU::TemperatureZROChange; };
+
 protected:
 	void recalcFusion() {
 		fusion = Sensors::SensorFusionRestDetect(
