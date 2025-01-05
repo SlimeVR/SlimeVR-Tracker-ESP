@@ -44,13 +44,18 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 	static constexpr float GyrFreq = 480;
 	static constexpr float AccFreq = 120;
 	static constexpr float MagFreq = 120;
+	static constexpr float TempFreq = 60;
 
 	static constexpr float GyrTs = 1.0 / GyrFreq;
 	static constexpr float AccTs = 1.0 / AccFreq;
 	static constexpr float MagTs = 1.0 / MagFreq;
+	static constexpr float TempTs = 1.0 / TempFreq;
 
 	static constexpr float GyroSensitivity = 1000 / 35.0f;
 	static constexpr float AccelSensitivity = 1000 / 0.244f;
+
+	static constexpr float TemperatureBias = 25.0f;
+	static constexpr float TemperatureSensitivity = 256.0f;
 
 	using LSM6DSOutputHandler<I2CImpl>::i2c;
 
@@ -59,7 +64,6 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 			static constexpr uint8_t reg = 0x0f;
 			static constexpr uint8_t value = 0x70;
 		};
-		static constexpr uint8_t OutTemp = 0x20;
 		struct HAODRCFG {
 			static constexpr uint8_t reg = 0x62;
 			static constexpr uint8_t value = (0b00);  // 1st ODR table
@@ -93,7 +97,8 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 		};
 		struct FifoCtrl4Mode {
 			static constexpr uint8_t reg = 0x0a;
-			static constexpr uint8_t value = (0b110);  // continuous mode
+			static constexpr uint8_t value = (0b110110);  // continuous mode,
+														  // temperature at 60Hz
 		};
 
 		static constexpr uint8_t FifoStatus = 0x1b;
@@ -118,18 +123,21 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 		return true;
 	}
 
-	float getDirectTemp() const {
-		return LSM6DSOutputHandler<I2CImpl>::template getDirectTemp<Regs>();
-	}
-
-	template <typename AccelCall, typename GyroCall>
-	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
-		LSM6DSOutputHandler<I2CImpl>::template bulkRead<AccelCall, GyroCall, Regs>(
-			processAccelSample,
-			processGyroSample,
-			GyrTs,
-			AccTs
-		);
+	template <typename AccelCall, typename GyroCall, typename TempCall>
+	void bulkRead(
+		AccelCall&& processAccelSample,
+		GyroCall&& processGyroSample,
+		TempCall&& processTempSample
+	) {
+		LSM6DSOutputHandler<I2CImpl>::
+			template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
+				processAccelSample,
+				processGyroSample,
+				processTempSample,
+				GyrTs,
+				AccTs,
+				TempTs
+			);
 	}
 };
 

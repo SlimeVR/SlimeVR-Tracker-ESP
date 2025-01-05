@@ -138,14 +138,12 @@ struct ICM45Base {
 		return true;
 	}
 
-	float getDirectTemp() const {
-		const auto value = static_cast<int16_t>(i2c.readReg16(BaseRegs::TempData));
-		float result = ((float)value / 132.48f) + 25.0f;
-		return result;
-	}
-
-	template <typename AccelCall, typename GyroCall>
-	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
+	template <typename AccelCall, typename GyroCall, typename TempCall>
+	void bulkRead(
+		AccelCall&& processAccelSample,
+		GyroCall&& processGyroSample,
+		TempCall&& processTemperatureSample
+	) {
 		const auto fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
 		const auto fifo_bytes = fifo_packets * sizeof(FullFifoEntrySize);
 
@@ -183,6 +181,10 @@ struct ICM45Base {
 						| (static_cast<int32_t>(entry.part.lsb[2]) & 0xf0 >> 4),
 				};
 				processAccelSample(accelData, AccTs);
+			}
+
+			if (entry.part.temp != 0x8000) {
+				processTemperatureSample(static_cast<int16_t>(entry.part.temp), TempTs);
 			}
 		}
 	}

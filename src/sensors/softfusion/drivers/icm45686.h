@@ -59,8 +59,6 @@ struct ICM45686 : public ICM45Base<I2CImpl> {
 		};
 	};
 
-	float getDirectTemp() const { return ICM45Base<I2CImpl>::getDirectTemp(); }
-
 	using ICM45Base<I2CImpl>::i2c;
 
 	bool initialize() {
