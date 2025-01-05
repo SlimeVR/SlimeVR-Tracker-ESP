@@ -18,41 +18,6 @@
 
 inline vqf_real_t square(vqf_real_t x) { return x*x; }
 
-
-VQFParams::VQFParams()
-    : tauAcc(3.0)
-    , tauMag(9.0)
-#ifndef VQF_NO_MOTION_BIAS_ESTIMATION
-    , motionBiasEstEnabled(true)
-#endif
-    , restBiasEstEnabled(true)
-    , magDistRejectionEnabled(true)
-    , biasSigmaInit(0.5)
-    , biasForgettingTime(100.0)
-    , biasClip(2.0)
-#ifndef VQF_NO_MOTION_BIAS_ESTIMATION
-    , biasSigmaMotion(0.1)
-    , biasVerticalForgettingFactor(0.0001)
-#endif
-    , biasSigmaRest(0.03)
-    , restMinT(1.5)
-    , restFilterTau(0.5)
-    , restThGyr(2.0)
-    , restThAcc(0.5)
-    , magCurrentTau(0.05)
-    , magRefTau(20.0)
-    , magNormTh(0.1)
-    , magDipTh(10.0)
-    , magNewTime(20.0)
-    , magNewFirstTime(5.0)
-    , magNewMinGyr(20.0)
-    , magMinUndisturbedTime(0.5)
-    , magMaxRejectionTime(60.0)
-    , magRejectionFactor(2.0)
-{
-
-}
-
 VQF::VQF(vqf_real_t gyrTs, vqf_real_t accTs, vqf_real_t magTs)
 {
     coeffs.gyrTs = gyrTs;
