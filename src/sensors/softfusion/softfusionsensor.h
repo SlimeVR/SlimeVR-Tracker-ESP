@@ -108,15 +108,6 @@ class SoftFusionSensor : public Sensor {
 		);
 	}};
 
-	void recalcFusion() {
-		m_fusion = SensorFusionRestDetect(
-			imu::SensorVQFParams,
-			calibrator.getGyroTimestep(),
-			calibrator.getAccelTimestep(),
-			calibrator.getTempTimestep()
-		);
-	}
-
 	void processAccelSample(const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 		sensor_real_t accelData[]
 			= {static_cast<sensor_real_t>(xyz[0]),
@@ -126,6 +117,8 @@ class SoftFusionSensor : public Sensor {
 		calibrator.scaleAccelSample(accelData);
 
 		m_fusion.updateAcc(accelData, calibrator.getAccelTimestep());
+
+		calibrator.provideAccelSample(xyz);
 	}
 
 	void processGyroSample(const RawSensorT xyz[3], const sensor_real_t timeDelta) {
@@ -135,6 +128,8 @@ class SoftFusionSensor : public Sensor {
 			   static_cast<sensor_real_t>(xyz[2])};
 		calibrator.scaleGyroSample(gyroData);
 		m_fusion.updateGyro(gyroData, calibrator.getGyroTimestep());
+
+		calibrator.provideGyroSample(xyz);
 	}
 
 	void
@@ -149,6 +144,8 @@ class SoftFusionSensor : public Sensor {
 				lastReadTemperature,
 				calibrator.getTempTimestep()
 			);
+
+			calibrator.provideTempSample(lastReadTemperature);
 		}
 	}
 
@@ -240,6 +237,8 @@ public:
 	void motionLoop() override final {
 		sendTempIfNeeded();
 
+		calibrator.tick();
+
 		// read fifo updating fusion
 		uint32_t now = micros();
 
@@ -250,6 +249,7 @@ public:
 					= now
 					- (tempElapsed - static_cast<uint32_t>(DirectTempReadTs * 1e6));
 				lastReadTemperature = m_sensor.getDirectTemp();
+				calibrator.provideTempSample(lastReadTemperature);
 				tempGradientCalculator.feedSample(
 					lastReadTemperature,
 					DirectTempReadTs
@@ -315,7 +315,6 @@ public:
 		// zero-ed out
 		if (calibrator.calibrationMatches(sensorCalibration)) {
 			calibrator.assignCalibration(sensorCalibration);
-			recalcFusion();
 		} else if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::NONE) {
 			m_Logger.warn(
 				"No calibration data found for sensor %d, ignoring...",
@@ -330,13 +329,15 @@ public:
 			m_Logger.info("Please recalibrate");
 		}
 
+		calibrator.begin();
+
 		bool initResult = false;
 
 		if constexpr (Calib::HasMotionlessCalib) {
 			typename imu::MotionlessCalibrationData calibData;
 			std::memcpy(
 				&calibData,
-				calibrator.getCalibration().MotionlessData,
+				calibrator.getMotionlessCalibrationData(),
 				sizeof(calibData)
 			);
 			initResult = m_sensor.initialize(calibData);
@@ -380,15 +381,11 @@ public:
 		}
 	}
 
-	Calib calibrator{m_sensor, sensorId, m_Logger};
-
 	void startCalibration(int calibrationType) final {
 		calibrator.startCalibration(
 			calibrationType,
-
 			[&](const uint32_t seconds) { eatSamplesForSeconds(seconds); },
-			[&](const uint32_t millis) { return eatSamplesReturnLast(millis); },
-			[&]() { recalcFusion(); }
+			[&](const uint32_t millis) { return eatSamplesReturnLast(millis); }
 		);
 	}
 
@@ -396,6 +393,7 @@ public:
 
 	SensorFusionRestDetect m_fusion;
 	imu m_sensor;
+	Calib calibrator{m_fusion, m_sensor, sensorId, m_Logger};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();

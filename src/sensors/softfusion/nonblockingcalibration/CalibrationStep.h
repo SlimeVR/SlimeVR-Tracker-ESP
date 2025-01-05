@@ -23,8 +23,6 @@
 
 #pragma once
 
-#include "../../configuration/Configuration.h"
-
 namespace SlimeVR::Sensors::NonBlockingCalibration {
 
 template <typename SensorRawT>
