@@ -30,6 +30,7 @@
 #include "../sensor.h"
 #include "GlobalVars.h"
 #include "motionprocessing/types.h"
+#include "sensors/softfusion/TempGradientCalculator.h"
 
 namespace SlimeVR::Sensors {
 
@@ -70,8 +71,7 @@ class SoftFusionSensor : public Sensor {
 	}
 
 	static constexpr float DirectTempReadFreq = 15;
-	static constexpr uint32_t DirectTempReadMicros
-		= static_cast<uint32_t>(1e6 / DirectTempReadFreq);
+	static constexpr float DirectTempReadTs = 1.0f / DirectTempReadFreq;
 	float lastReadTemperature = 0;
 	uint32_t lastTempPollTime = micros();
 
@@ -108,6 +108,12 @@ class SoftFusionSensor : public Sensor {
 			networkConnection.sendTemperature(sensorId, lastReadTemperature);
 		}
 	}
+
+	TemperatureGradientCalculator tempGradientCalculator{[&](float gradient) {
+		m_fusion.updateBiasForgettingTime(
+			std::fabs(gradient) * imu::TemperatureZROChange
+		);
+	}};
 
 	void recalcFusion() {
 		m_fusion = SensorFusionRestDetect(
@@ -167,6 +173,7 @@ class SoftFusionSensor : public Sensor {
 												* (1.0 / imu::TemperatureSensitivity);
 
 			lastReadTemperature = scaledTemperature;
+			tempGradientCalculator.feedSample(lastReadTemperature, timeDelta);
 		}
 	}
 
@@ -243,11 +250,17 @@ public:
 
 		if constexpr (DirectTempReadOnly) {
 			uint32_t tempElapsed = now - lastTempPollTime;
-			if (tempElapsed >= DirectTempReadMicros) {
-				lastTempPollTime = now - (tempElapsed - DirectTempReadMicros);
+			if (tempElapsed >= DirectTempReadTs * 1e6) {
+				lastTempPollTime = now - (tempElapsed - DirectTempReadTs * 1e6);
 				lastReadTemperature = m_sensor.getDirectTemp();
+				tempGradientCalculator.feedSample(
+					lastReadTemperature,
+					DirectTempReadTs
+				);
 			}
 		}
+
+		tempGradientCalculator.tick();
 
 		constexpr uint32_t targetPollIntervalMicros = 6000;
 		uint32_t elapsed = now - m_lastPollTime;

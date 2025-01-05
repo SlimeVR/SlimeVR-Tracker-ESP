@@ -49,6 +49,8 @@ struct ICM45Base {
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 128.0f;
 
+	static constexpr float TemperatureZROChange = 20.0f;
+
 	static constexpr bool Uses32BitSensorData = true;
 
 	I2CImpl i2c;

@@ -106,6 +106,10 @@ public:
 		sensor_real_t accout[3]
 	);
 
+#if SENSOR_USE_VQF
+	void updateBiasForgettingTime(float biasForgettingTime);
+#endif
+
 protected:
 	sensor_real_t gyrTs;
 	sensor_real_t accTs;

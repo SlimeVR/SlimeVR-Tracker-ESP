@@ -54,6 +54,8 @@ struct ICM42688 {
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 2.07f;
 
+	static constexpr float TemperatureZROChange = 20.0f;
+
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
 	ICM42688(I2CImpl i2c, SlimeVR::Logging::Logger& logger)

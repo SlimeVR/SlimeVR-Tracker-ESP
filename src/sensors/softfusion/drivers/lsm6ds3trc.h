@@ -52,6 +52,8 @@ struct LSM6DS3TRC {
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
 
+	static constexpr float TemperatureZROChange = 2.0f;
+
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger logger;
 	LSM6DS3TRC(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
