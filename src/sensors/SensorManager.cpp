@@ -21,9 +21,10 @@
 	THE SOFTWARE.
 */
 
+#include "SensorManager.h"
+
 #include <type_traits>
 
-#include "SensorManager.h"
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"

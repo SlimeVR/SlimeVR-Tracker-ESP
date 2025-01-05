@@ -1,6 +1,6 @@
-#include <functional>
-
 #include "TempGradientCalculator.h"
+
+#include <functional>
 
 TemperatureGradientCalculator::TemperatureGradientCalculator(
 	const std::function<void(float gradient)>& callback
