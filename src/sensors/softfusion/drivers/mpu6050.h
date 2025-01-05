@@ -65,6 +65,8 @@ struct MPU6050 {
 	static constexpr float GyroSensitivity = 32.8f;
 	static constexpr float AccelSensitivity = 4096.0f;
 
+	static constexpr float TemperatureZROChange = 1.6f;
+
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
 	MPU6050(I2CImpl i2c, SlimeVR::Logging::Logger& logger)

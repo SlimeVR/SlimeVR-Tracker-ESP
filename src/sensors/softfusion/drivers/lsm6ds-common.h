@@ -94,7 +94,7 @@ struct LSM6DSOutputHandler {
 					processAccelSample(entry.xyz, AccTs);
 					break;
 				case 0x03:  // Temperature
-					processTempSample(entry.x, TempTs);
+					processTempSample(entry.xyz[0], TempTs);
 					break;
 			}
 		}

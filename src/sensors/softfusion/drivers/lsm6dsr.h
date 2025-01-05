@@ -57,6 +57,8 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
 
+	static constexpr float TemperatureZROChange = 20.0f;
+
 	using LSM6DSOutputHandler<I2CImpl>::i2c;
 
 	struct Regs {
