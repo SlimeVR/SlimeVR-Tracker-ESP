@@ -52,6 +52,11 @@ BatteryMonitor battery;
 TPSCounter tpsCounter;
 
 void setup() {
+	// For some reason, serial on C3 just doesn't work without the delay
+	// It can probably be less, but it needs investigation
+#ifdef ESP32C3
+	delay(3000);
+#endif
 	Serial.begin(serialBaudRate);
 	globalTimer = timer_create_default();
 

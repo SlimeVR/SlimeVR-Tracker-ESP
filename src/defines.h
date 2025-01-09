@@ -82,11 +82,13 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 #define MAX_SENSORS_COUNT 10
 #define TRACKER_TYPE TRACKER_TYPE_SVR_GLOVE_LEFT
 #define GLOVE_SIDE GLOVE_LEFT
+#define PRIMARY_IMU_ADDRESS_ONE 0x4a
+#define SECONDARY_IMU_ADDRESS_TWO 0x4b
 
 #define SENSOR_DESC_LIST                                 \
 	SENSOR_DESC_ENTRY(                                   \
 		IMU,                                             \
-		(0x4a ^ 0x02) - 0x4a,                            \
+		(PRIMARY_IMU_ADDRESS_ONE ^ 0x02),                \
 		IMU_ROTATION,                                    \
 		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),           \
 		false,                                           \
@@ -95,7 +97,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 	)                                                    \
 	SENSOR_DESC_ENTRY(                                   \
 		IMU,                                             \
-		(0x4b ^ 0x02) - 0x4a,                            \
+		(SECONDARY_IMU_ADDRESS_TWO ^ 0x02),              \
 		IMU_ROTATION,                                    \
 		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),           \
 		true,                                            \
