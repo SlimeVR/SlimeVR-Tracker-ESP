@@ -201,16 +201,19 @@ public:
 
 	void checkSensorTimeout() {
 		uint32_t now = micros();
-		if (m_lastRotationUpdate + 2_000_000 < now) {
-			working = false;
-			m_status = SensorStatus::SENSOR_ERROR;
-			m_Logger.error(
-				"Sensor timeout I2C Address 0x%02x delaytime: %d ms",
-				addr,
-				now - m_lastRotationUpdate
-			);
-			networkConnection.sendSensorError(this->sensorId, 1);
+		constexpr uint32_t sensorTimeoutMicros = 2e6;  // 2 seconds
+		if (m_lastRotationUpdate + sensorTimeoutMicros > now) {
+			return;
 		}
+
+		working = false;
+		m_status = SensorStatus::SENSOR_ERROR;
+		m_Logger.error(
+			"Sensor timeout I2C Address 0x%02x delaytime: %d ms",
+			addr,
+			now - m_lastRotationUpdate
+		);
+		networkConnection.sendSensorError(this->sensorId, 1);
 	}
 
 	void motionLoop() override final {
