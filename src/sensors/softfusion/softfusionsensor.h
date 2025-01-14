@@ -213,7 +213,7 @@ public:
 			addr,
 			now - m_lastRotationUpdate
 		);
-		networkConnection.sendSensorError(this->sensorId, 1);
+		networkConnection.sendSensorError(this->sensorId, PACKET_ERROR_SENSOR_TIMEOUT);
 	}
 
 	void motionLoop() override final {
