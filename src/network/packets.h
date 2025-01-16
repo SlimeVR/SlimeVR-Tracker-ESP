@@ -67,6 +67,8 @@
 #define PACKET_INSPECTION_DATATYPE_INT 1
 #define PACKET_INSPECTION_DATATYPE_FLOAT 2
 
-#define PACKET_ERROR_SENSOR_TIMEOUT 1
+enum class PacketErrorCode : uint8_t {
+	SENSOR_TIMEOUT = 1,
+};
 
 #endif  // SLIMEVR_PACKETS_H_
