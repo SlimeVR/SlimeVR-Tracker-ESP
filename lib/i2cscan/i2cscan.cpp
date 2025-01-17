@@ -3,50 +3,47 @@
 
 #ifdef ESP8266
 uint8_t portArray[] = {16, 5, 4, 2, 14, 12, 13};
-uint8_t portExclude[] = {LED_PIN};
 String portMap[] = {"D0", "D1", "D2", "D4", "D5", "D6", "D7"};
 #elif defined(ESP32C3)
 uint8_t portArray[] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
-uint8_t portExclude[] = {18, 19, 20, 21, LED_PIN};
 String portMap[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10"};
 #elif defined(ESP32C6)
 uint8_t portArray[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 18, 19, 20, 21, 22, 23};
 String portMap[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "14", "15", "18", "19", "20", "21", "22", "23"};
-uint8_t portExclude[] = {12, 13, 16, 17, LED_PIN};
 #elif defined(ESP32)
 uint8_t portArray[] = {4, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
 String portMap[] = {"4", "13", "14", "15", "16", "17", "18", "19", "21", "22", "23", "25", "26", "27", "32", "33"};
-uint8_t portExclude[] = {LED_PIN};
 #endif
 
 namespace I2CSCAN
 {
-    enum ScanState {
+    enum class ScanState {
         IDLE,
         SCANNING,
         DONE
     };
 
-    ScanState scanState = IDLE;
-    uint8_t currentI = 0;
-    uint8_t currentJ = 0;
+    ScanState scanState = ScanState::IDLE;
+    uint8_t currentSDA = 0;
+    uint8_t currentSCL = 0;
     uint8_t currentAddress = 1;
     bool found = false;
 
     void scani2cports()
     {
-        if (scanState == IDLE) {
-            found = false;
-            currentI = 0;
-            currentJ = 0;
-            currentAddress = 1;
-            scanState = SCANNING;
+        if (scanState != ScanState::IDLE) {
+            return;
         }
+            found = false;
+            currentSDA = 0;
+            currentSCL = 0;
+            currentAddress = 1;
+            scanState = ScanState::SCANNING;
     }
 
-    void continueScan()
+    void update()
     {
-        if (scanState != SCANNING) {
+        if (scanState != ScanState::SCANNING) {
             return;
         }
 
@@ -54,7 +51,7 @@ namespace I2CSCAN
 #if ESP32
             Wire.end();
 #endif
-            Wire.begin((int)portArray[currentI], (int)portArray[currentJ]);
+            Wire.begin((int)portArray[currentSDA], (int)portArray[currentSCL]);
         }
 
         Wire.beginTransmission(currentAddress);
@@ -63,26 +60,26 @@ namespace I2CSCAN
         if (error == 0)
         {
             Serial.printf("[DBG] I2C (@ %s(%d) : %s(%d)): I2C device found at address 0x%02x  !\n", 
-                            portMap[currentI].c_str(), portArray[currentI], portMap[currentJ].c_str(), portArray[currentJ], currentAddress);
+                            portMap[currentSDA].c_str(), portArray[currentSDA], portMap[currentSCL].c_str(), portArray[currentSCL], currentAddress);
             found = true;
         }
         else if (error == 4)
         {
             Serial.printf("[ERR] I2C (@ %s(%d) : %s(%d)): Unknown error at address 0x%02x\n",
-                            portMap[currentI].c_str(), portArray[currentI], portMap[currentJ].c_str(), portArray[currentJ], currentAddress);
+                            portMap[currentSDA].c_str(), portArray[currentSDA], portMap[currentSCL].c_str(), portArray[currentSCL], currentAddress);
         }
 
         currentAddress++;
         if (currentAddress >= 127) {
             currentAddress = 1;
-            currentJ++;
-            if (currentJ >= sizeof(portArray)) {
-                currentJ = 0;
-                currentI++;
+            currentSCL++;
+            if (currentSCL >= sizeof(portArray)) {
+                currentSCL = 0;
+                currentSDA++;
             }
         }
 
-        if (currentI >= sizeof(portArray)) {
+        if (currentSDA >= sizeof(portArray)) {
             if (!found) {
                 Serial.println("[ERR] I2C: No I2C devices found");
             }
@@ -92,7 +89,7 @@ namespace I2CSCAN
 #endif
 
             Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
-            scanState = DONE;
+            scanState = ScanState::DONE;
         }
     }
 
