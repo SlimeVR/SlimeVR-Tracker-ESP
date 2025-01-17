@@ -118,6 +118,7 @@ void loop() {
 	sensorManager.update();
 	battery.Loop();
 	ledManager.update();
+	I2CSCAN::continueScan();
 #ifdef TARGET_LOOPTIME_MICROS
 	long elapsed = (micros() - loopTime);
 	if (elapsed < TARGET_LOOPTIME_MICROS) {
