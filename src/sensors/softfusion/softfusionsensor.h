@@ -202,7 +202,7 @@ public:
 	void checkSensorTimeout() {
 		uint32_t now = micros();
 		constexpr uint32_t sensorTimeoutMicros = 2e6;  // 2 seconds
-		if (now - m_lastRotationUpdate < sensorTimeoutMicros) {
+		if (m_lastRotationUpdate + sensorTimeoutMicros > now) {
 			return;
 		}
 
