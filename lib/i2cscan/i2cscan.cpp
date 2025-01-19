@@ -55,6 +55,7 @@ namespace I2CSCAN
 #if ESP32
             Wire.end();
 #endif
+            // Skip excluded SDA ports
             while (inArray(portArray[currentSDA], portExclude, sizeof(portExclude))) {
                 currentSDA++;
                 if (currentSDA >= sizeof(portArray)) {
@@ -62,6 +63,7 @@ namespace I2CSCAN
                     return;
                 }
             }
+            // Skip excluded SCL ports
             while (inArray(portArray[currentSCL], portExclude, sizeof(portExclude))) {
                 currentSCL++;
                 if (currentSCL >= sizeof(portArray)) {
@@ -95,11 +97,13 @@ namespace I2CSCAN
         if (currentAddress >= 127) {
             currentAddress = 1;
             currentSCL++;
+            // Skip excluded SCL ports
             while (inArray(portArray[currentSCL], portExclude, sizeof(portExclude))) {
                 currentSCL++;
                 if (currentSCL >= sizeof(portArray)) {
                     currentSCL = 0;
                     currentSDA++;
+                    // Skip excluded SDA ports
                     while (inArray(portArray[currentSDA], portExclude, sizeof(portExclude))) {
                         currentSDA++;
                         if (currentSDA >= sizeof(portArray)) {
@@ -139,6 +143,7 @@ namespace I2CSCAN
         do {
 #endif
             Wire.beginTransmission(addr);
+            // The return value of endTransmission is used to determine if a device is present
             error = Wire.endTransmission();
 #if ESP32C3
         }
@@ -149,9 +154,25 @@ namespace I2CSCAN
         return false;
     }
 
+    /**
+     * This routine turns off the I2C bus and clears it
+     * on return SCA and SCL pins are tri-state inputs.
+     * You need to call Wire.begin() after this to re-enable I2C
+     * This routine does NOT use the Wire library at all.
+     *
+     * returns 0 if bus cleared
+     *         1 if SCL held low.
+     *         2 if SDA held low by slave clock stretch for > 2sec
+     *         3 if SDA held low after 20 clocks.
+     * From: http://www.forward.com.au/pfod/ArduinoProgramming/I2C_ClearBus/index.html
+     * (c)2014 Forward Computing and Control Pty. Ltd.
+     * NSW Australia, www.forward.com.au
+     * This code may be freely used for both private and commerical use
+     */
+
     int clearBus(uint8_t SDA, uint8_t SCL) {
         #if defined(TWCR) && defined(TWEN)
-        TWCR &= ~(_BV(TWEN));
+        TWCR &= ~(_BV(TWEN)); // Disable the Atmel 2-Wire interface so we can control the SDA and SCL pins directly
         #endif
 
         pinMode(SDA, INPUT_PULLUP);
@@ -159,11 +180,11 @@ namespace I2CSCAN
 
         boolean SCL_LOW = (digitalRead(SCL) == LOW);
         if (SCL_LOW) {
-            return 1;
+            return 1; // I2C bus error. Could not clear SCL, clock line held low.
         }
 
         boolean SDA_LOW = (digitalRead(SDA) == LOW);
-        int clockCount = 20;
+        int clockCount = 20; // > 2x9 clock
 
         while (SDA_LOW && (clockCount > 0)) {
             clockCount--;
