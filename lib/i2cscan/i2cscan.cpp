@@ -32,12 +32,21 @@ namespace I2CSCAN
     uint8_t currentSCL = 0;
     uint8_t currentAddress = 1;
     bool found = false;
+    std::vector<uint8_t> validPorts;
 
     void scani2cports()
     {
         if (scanState != ScanState::IDLE) {
             return;
         }
+
+        // Filter out excluded ports
+        for (size_t i = 0; i < sizeof(portArray); i++) {
+            if (!inArray(portArray[i], portExclude, sizeof(portExclude))) {
+                validPorts.push_back(portArray[i]);
+            }
+        }
+
         found = false;
         currentSDA = 0;
         currentSCL = 0;
@@ -55,27 +64,22 @@ namespace I2CSCAN
 #if ESP32
             Wire.end();
 #endif
-            // Skip excluded SDA ports
-            while (inArray(portArray[currentSDA], portExclude, sizeof(portExclude))) {
-                currentSDA++;
-                if (currentSDA >= sizeof(portArray)) {
-                    scanState = ScanState::DONE;
-                    return;
-                }
-            }
-            // Skip excluded SCL ports
-            while (inArray(portArray[currentSCL], portExclude, sizeof(portExclude))) {
+            while (true) {
+                // Select next port
                 currentSCL++;
-                if (currentSCL >= sizeof(portArray)) {
+                if (currentSCL >= validPorts.size()) {
                     currentSCL = 0;
                     currentSDA++;
-                    if (currentSDA >= sizeof(portArray)) {
+                    if (currentSDA >= validPorts.size()) {
                         scanState = ScanState::DONE;
                         return;
                     }
                 }
+
+                // Check port
+                Wire.begin((int)validPorts[currentSDA], (int)validPorts[currentSCL]);
+                break;
             }
-            Wire.begin((int)portArray[currentSDA], (int)portArray[currentSCL]);
         }
 
         Wire.beginTransmission(currentAddress);
@@ -84,41 +88,40 @@ namespace I2CSCAN
         if (error == 0)
         {
             Serial.printf("[DBG] I2C (@ %s(%d) : %s(%d)): I2C device found at address 0x%02x  !\n", 
-                            portMap[currentSDA].c_str(), portArray[currentSDA], portMap[currentSCL].c_str(), portArray[currentSCL], currentAddress);
+                            portMap[currentSDA].c_str(), validPorts[currentSDA], portMap[currentSCL].c_str(), validPorts[currentSCL], currentAddress);
             found = true;
         }
         else if (error == 4)
         {
             Serial.printf("[ERR] I2C (@ %s(%d) : %s(%d)): Unknown error at address 0x%02x\n",
-                            portMap[currentSDA].c_str(), portArray[currentSDA], portMap[currentSCL].c_str(), portArray[currentSCL], currentAddress);
+                            portMap[currentSDA].c_str(), validPorts[currentSDA], portMap[currentSCL].c_str(), validPorts[currentSCL], currentAddress);
         }
 
         currentAddress++;
         if (currentAddress >= 127) {
             currentAddress = 1;
-            currentSCL++;
-            // Skip excluded SCL ports
-            while (inArray(portArray[currentSCL], portExclude, sizeof(portExclude))) {
+            while (true) {
+                // Select next port
                 currentSCL++;
-                if (currentSCL >= sizeof(portArray)) {
+                if (currentSCL >= validPorts.size()) {
                     currentSCL = 0;
                     currentSDA++;
-                    // Skip excluded SDA ports
-                    while (inArray(portArray[currentSDA], portExclude, sizeof(portExclude))) {
-                        currentSDA++;
-                        if (currentSDA >= sizeof(portArray)) {
-                            if (!found) {
-                                Serial.println("[ERR] I2C: No I2C devices found");
-                            }
-#if ESP32
-                            Wire.end();
-#endif
-                            Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
-                            scanState = ScanState::DONE;
-                            return;
+                    if (currentSDA >= validPorts.size()) {
+                        if (!found) {
+                            Serial.println("[ERR] I2C: No I2C devices found");
                         }
+#if ESP32
+                        Wire.end();
+#endif
+                        Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
+                        scanState = ScanState::DONE;
+                        return;
                     }
                 }
+
+                // Check port
+                Wire.begin((int)validPorts[currentSDA], (int)validPorts[currentSCL]);
+                break;
             }
         }
     }
