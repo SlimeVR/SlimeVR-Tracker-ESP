@@ -89,10 +89,7 @@ namespace I2CSCAN
         if (currentAddress == 1) {
 #if ESP32
             Wire.end();
-#endif
-            if (!selectNextPort()) {
-                return;
-            }
+#endif   
         }
 
         Wire.beginTransmission(currentAddress);
@@ -111,7 +108,7 @@ namespace I2CSCAN
         }
 
         currentAddress++;
-        if (currentAddress < 127) {
+        if (currentAddress <= 127) {
             return;
         }
 
