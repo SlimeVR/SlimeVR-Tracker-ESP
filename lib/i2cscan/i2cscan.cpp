@@ -64,22 +64,19 @@ namespace I2CSCAN
 #if ESP32
             Wire.end();
 #endif
-            while (true) {
-                // Select next port
-                currentSCL++;
-                if (currentSCL >= validPorts.size()) {
-                    currentSCL = 0;
-                    currentSDA++;
-                    if (currentSDA >= validPorts.size()) {
-                        scanState = ScanState::DONE;
-                        return;
-                    }
+            // Select next port
+            currentSCL++;
+            if (currentSCL >= validPorts.size()) {
+                currentSCL = 0;
+                currentSDA++;
+                if (currentSDA >= validPorts.size()) {
+                    scanState = ScanState::DONE;
+                    return;
                 }
-
-                // Check port
-                Wire.begin((int)validPorts[currentSDA], (int)validPorts[currentSCL]);
-                break;
             }
+
+            // Check port
+            Wire.begin((int)validPorts[currentSDA], (int)validPorts[currentSCL]);
         }
 
         Wire.beginTransmission(currentAddress);
