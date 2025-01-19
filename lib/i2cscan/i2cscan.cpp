@@ -63,7 +63,7 @@ namespace I2CSCAN
 
         currentSCL = 0;
         currentSDA++;
-        
+
         if (currentSDA >= validPorts.size()) {
             if (!found) {
                 Serial.println("[ERR] I2C: No I2C devices found");
@@ -89,7 +89,7 @@ namespace I2CSCAN
         if (currentAddress == 1) {
 #if ESP32
             Wire.end();
-#endif   
+#endif
         }
 
         Wire.beginTransmission(currentAddress);
@@ -97,7 +97,7 @@ namespace I2CSCAN
 
         if (error == 0)
         {
-            Serial.printf("[DBG] I2C (@ %s(%d) : %s(%d)): I2C device found at address 0x%02x  !\n", 
+            Serial.printf("[DBG] I2C (@ %s(%d) : %s(%d)): I2C device found at address 0x%02x  !\n",
                             portMap[currentSDA].c_str(), validPorts[currentSDA], portMap[currentSCL].c_str(), validPorts[currentSCL], currentAddress);
             found = true;
         }
@@ -120,7 +120,7 @@ namespace I2CSCAN
     {
         for (size_t i = 0; i < arraySize; i++)
         {
-            if (value == array[i]) 
+            if (value == array[i])
             {
                 return true;
             }
@@ -135,7 +135,7 @@ namespace I2CSCAN
         int retries = 2;
         do {
 #endif
-            Wire.beginTransmission(addr);    
+            Wire.beginTransmission(addr);
             error = Wire.endTransmission(); // The return value of endTransmission is used to determine if a device is present
 #if ESP32C3
         }
