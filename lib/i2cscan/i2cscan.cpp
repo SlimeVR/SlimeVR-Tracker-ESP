@@ -65,10 +65,8 @@ namespace I2CSCAN
             Wire.end();
 #endif
             // Select next port
-            currentSCL++;
             if (currentSCL >= validPorts.size()) {
                 currentSCL = 0;
-                currentSDA++;
                 if (currentSDA >= validPorts.size()) {
                     scanState = ScanState::DONE;
                     return;
@@ -97,29 +95,26 @@ namespace I2CSCAN
         currentAddress++;
         if (currentAddress >= 127) {
             currentAddress = 1;
-            while (true) {
-                // Select next port
-                currentSCL++;
-                if (currentSCL >= validPorts.size()) {
-                    currentSCL = 0;
-                    currentSDA++;
-                    if (currentSDA >= validPorts.size()) {
-                        if (!found) {
-                            Serial.println("[ERR] I2C: No I2C devices found");
-                        }
-#if ESP32
-                        Wire.end();
-#endif
-                        Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
-                        scanState = ScanState::DONE;
-                        return;
+            // Select next port
+            currentSCL++;
+            if (currentSCL >= validPorts.size()) {
+                currentSCL = 0;
+                currentSDA++;
+                if (currentSDA >= validPorts.size()) {
+                    if (!found) {
+                        Serial.println("[ERR] I2C: No I2C devices found");
                     }
+#if ESP32
+                    Wire.end();
+#endif
+                    Wire.begin(static_cast<int>(PIN_IMU_SDA), static_cast<int>(PIN_IMU_SCL));
+                    scanState = ScanState::DONE;
+                    return;
                 }
-
-                // Check port
-                Wire.begin((int)validPorts[currentSDA], (int)validPorts[currentSCL]);
-                break;
             }
+
+            // Check port
+            Wire.begin((int)validPorts[currentSDA], (int)validPorts[currentSCL]);
         }
     }
 
