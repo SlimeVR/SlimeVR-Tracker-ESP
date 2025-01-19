@@ -200,9 +200,9 @@ public:
 	~SoftFusionSensor() {}
 
 	void checkSensorTimeout() {
-		uint32_t now = micros();
-		constexpr uint32_t sensorTimeoutMicros = 2e6;  // 2 seconds
-		if (m_lastRotationUpdate + sensorTimeoutMicros > now) {
+		uint32_t now = millis();
+		constexpr uint32_t sensorTimeoutMillis = 2e3;  // 2 seconds
+		if (m_lastRotationUpdateMillis + sensorTimeoutMillis > now) {
 			return;
 		}
 
@@ -211,7 +211,7 @@ public:
 		m_Logger.error(
 			"Sensor timeout I2C Address 0x%02x delaytime: %d ms",
 			addr,
-			now - m_lastRotationUpdate
+			now - m_lastRotationUpdateMillis
 		);
 		networkConnection.sendSensorError(
 			this->sensorId,
@@ -242,7 +242,7 @@ public:
 				return;
 			}
 			hadData = true;
-			m_lastRotationUpdate = now;
+			m_lastRotationUpdateMillis = millis();
 			m_fusion.clearUpdated();
 		}
 
@@ -637,7 +637,7 @@ public:
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
-	uint32_t m_lastRotationUpdate = 0;
+	uint32_t m_lastRotationUpdateMillis = 0;
 	uint32_t m_lastRotationPacketSent = 0;
 	uint32_t m_lastTemperaturePacketSent = 0;
 };
