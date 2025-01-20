@@ -331,7 +331,7 @@ void ICM20948Sensor::checkSensorTimeout() {
 		);
 		networkConnection.sendSensorError(
 			this->sensorId,
-			static_cast<uint8_t>(PacketErrorCode::SENSOR_TIMEOUT)
+			static_cast<uint8_t>(PacketErrorCode::WATCHDOG_TIMEOUT)
 		);
 		lastData = currenttime;
 	}
