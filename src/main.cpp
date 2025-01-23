@@ -132,6 +132,10 @@ void loop() {
 
 #ifdef ON_OFF_BUTTON_PIN
 	OnOffButton::getInstance().tick();
+
+	if (!sensorManager.allAtRest()) {
+		OnOffButton::getInstance().signalTrackerMoved();
+	}
 #endif
 
 #ifdef TARGET_LOOPTIME_MICROS

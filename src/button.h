@@ -38,6 +38,7 @@ public:
 	void setup();
 	void tick();
 	void onBeforeSleep(std::function<void()> callback);
+	void signalTrackerMoved();
 
 	static OnOffButton& getInstance();
 
@@ -50,11 +51,14 @@ private:
 	bool getButton();
 	void signalPressStart();
 	void emitOnBeforeSleep();
+	void goToSleep();
 
 	bool buttonPressed = false;
 	uint64_t buttonPressStartMillis = 0;
 	uint64_t buttonCircularBuffer = 0;
 	std::vector<std::function<void()>> callbacks;
+
+	uint64_t lastActivityMillis = 0;
 
 	friend void IRAM_ATTR buttonInterruptHandler();
 };

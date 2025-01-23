@@ -1190,3 +1190,5 @@ void BMI160Sensor::getMagnetometerXYZFromBuffer(
 }
 
 void BMI160Sensor::deinit() { imu.deinit(); }
+
+bool BMI160Sensor::isAtRest() { return sfusion.getRestDetected(); }

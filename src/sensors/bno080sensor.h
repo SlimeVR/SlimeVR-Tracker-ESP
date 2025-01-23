@@ -62,6 +62,7 @@ public:
 	SensorStatus getSensorState() override final;
 	void setFlag(uint16_t flagId, bool state) override final;
 	void deinit() final;
+	bool isAtRest() final;
 
 protected:
 	// forwarding constructor

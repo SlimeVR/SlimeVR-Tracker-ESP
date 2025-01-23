@@ -209,6 +209,7 @@ public:
 	bool getTemperature(float* out);
 
 	void deinit() final;
+	bool isAtRest() final;
 
 private:
 	BMI160 imu{};

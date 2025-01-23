@@ -42,6 +42,12 @@ void OnOffButton::setup() {
 }
 
 void OnOffButton::tick() {
+	uint64_t elapsed = millis() - lastActivityMillis;
+
+	if (elapsed >= BUTTON_AUTO_SLEEP_TIME_SECONDS * 1e3) {
+		goToSleep();
+	}
+
 	if (!buttonPressed) {
 		return;
 	}
@@ -53,19 +59,7 @@ void OnOffButton::tick() {
 	}
 
 	if (timeTaken >= longPressSeconds * 1e3) {
-		emitOnBeforeSleep();
-
-#ifdef BUTTON_IMU_ENABLE_PIN
-		digitalWrite(BUTTON_IMU_ENABLE_PIN, LOW);
-		gpio_hold_en(static_cast<gpio_num_t>(BUTTON_IMU_ENABLE_PIN));
-#endif
-
-		ledManager.pattern(100, 100, 3);
-
-		while (getButton())
-			;
-
-		esp_deep_sleep_start();
+		goToSleep();
 	}
 
 	buttonPressed = false;
@@ -74,6 +68,8 @@ void OnOffButton::tick() {
 void OnOffButton::onBeforeSleep(std::function<void()> callback) {
 	callbacks.push_back(callback);
 }
+
+void OnOffButton::signalTrackerMoved() { lastActivityMillis = millis(); }
 
 OnOffButton& OnOffButton::getInstance() { return instance; }
 
@@ -98,6 +94,22 @@ void OnOffButton::emitOnBeforeSleep() {
 	for (auto& callback : callbacks) {
 		callback();
 	}
+}
+
+void OnOffButton::goToSleep() {
+	emitOnBeforeSleep();
+
+#ifdef BUTTON_IMU_ENABLE_PIN
+	digitalWrite(BUTTON_IMU_ENABLE_PIN, LOW);
+	gpio_hold_en(static_cast<gpio_num_t>(BUTTON_IMU_ENABLE_PIN));
+#endif
+
+	ledManager.pattern(100, 100, 3);
+
+	while (buttonPressed && getButton())
+		;
+
+	esp_deep_sleep_start();
 }
 
 OnOffButton OnOffButton::instance;

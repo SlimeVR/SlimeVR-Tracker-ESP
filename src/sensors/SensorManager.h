@@ -71,6 +71,16 @@ public:
 		}
 	}
 
+	bool allAtRest() {
+		for (auto& sensor : m_Sensors) {
+			if (!sensor->isAtRest()) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 private:
 	SlimeVR::Logging::Logger m_Logger;
 
