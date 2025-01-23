@@ -116,6 +116,8 @@ struct LSM6DSO : LSM6DSOutputHandler<I2CImpl> {
 			AccTs
 		);
 	}
+
+	void deinit() { i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset); }
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers

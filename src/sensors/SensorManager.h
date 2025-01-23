@@ -65,6 +65,12 @@ public:
 		return SensorTypeID::Unknown;
 	}
 
+	void deinitAll() {
+		for (auto& sensor : m_Sensors) {
+			sensor->deinit();
+		}
+	}
+
 private:
 	SlimeVR::Logging::Logger m_Logger;
 

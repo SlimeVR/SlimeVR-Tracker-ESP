@@ -61,6 +61,7 @@ public:
 	void startCalibration(int calibrationType) override final;
 	SensorStatus getSensorState() override final;
 	void setFlag(uint16_t flagId, bool state) override final;
+	void deinit() final;
 
 protected:
 	// forwarding constructor

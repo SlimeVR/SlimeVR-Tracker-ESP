@@ -137,6 +137,12 @@ uint8_t BMI160::getDeviceID() {
     return buffer[0];
 }
 
+void BMI160::deinit() {
+    // Issue a soft-reset to bring the device into a clean state
+    setRegister(BMI160_RA_CMD, BMI160_CMD_SOFT_RESET);
+    delay(12);
+}
+
 /** Verify the SPI connection.
  * Make sure the device is connected and responds as expected.
  * @return True if connection is valid, false otherwise

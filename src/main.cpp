@@ -26,6 +26,7 @@
 #include "GlobalVars.h"
 #include "Wire.h"
 #include "batterymonitor.h"
+#include "button.h"
 #include "credentials.h"
 #include "globals.h"
 #include "logging/Logger.h"
@@ -58,6 +59,11 @@ void setup() {
 	Serial.println();
 	Serial.println();
 	Serial.println();
+
+#ifdef ON_OFF_BUTTON_PIN
+	OnOffButton::getInstance().setup();
+	OnOffButton::getInstance().onBeforeSleep([]() { sensorManager.deinitAll(); });
+#endif
 
 	logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
 
@@ -123,6 +129,11 @@ void loop() {
 	battery.Loop();
 	ledManager.update();
 	I2CSCAN::update();
+
+#ifdef ON_OFF_BUTTON_PIN
+	OnOffButton::getInstance().tick();
+#endif
+
 #ifdef TARGET_LOOPTIME_MICROS
 	long elapsed = (micros() - loopTime);
 	if (elapsed < TARGET_LOOPTIME_MICROS) {

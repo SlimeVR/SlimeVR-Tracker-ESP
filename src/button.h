@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,43 +21,42 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORS_BNO055SENSOR_H
-#define SENSORS_BNO055SENSOR_H
+#pragma once
 
-#include <Adafruit_BNO055.h>
+#include <Arduino.h>
 
-#include "sensor.h"
+#include <cstdint>
+#include <functional>
+#include <vector>
 
-class BNO055Sensor : public Sensor {
+#include "GlobalVars.h"
+
+#ifdef ON_OFF_BUTTON_PIN
+
+class OnOffButton {
 public:
-	static constexpr auto TypeID = SensorTypeID::BNO055;
-	static constexpr uint8_t Address = 0x28;
+	void setup();
+	void tick();
+	void onBeforeSleep(std::function<void()> callback);
 
-	BNO055Sensor(
-		uint8_t id,
-		uint8_t i2cAddress,
-		float rotation,
-		SlimeVR::SensorInterface* sensorInterface,
-		PinInterface*,
-		uint8_t
-	)
-		: Sensor(
-			"BNO055Sensor",
-			SensorTypeID::BNO055,
-			id,
-			i2cAddress,
-			rotation,
-			sensorInterface
-		){};
-	~BNO055Sensor(){};
-	void motionSetup() override final;
-	void motionLoop() override final;
-	void startCalibration(int calibrationType) override final;
-	void deinit() final;
+	static OnOffButton& getInstance();
 
 private:
-	Adafruit_BNO055 imu;
-	SlimeVR::Configuration::BNO0XXSensorConfig m_Config = {};
+	OnOffButton() = default;
+	static OnOffButton instance;
+
+	static constexpr float longPressSeconds = 1.0f;
+
+	bool getButton();
+	void signalPressStart();
+	void emitOnBeforeSleep();
+
+	bool buttonPressed = false;
+	uint64_t buttonPressStartMillis = 0;
+	uint64_t buttonCircularBuffer = 0;
+	std::vector<std::function<void()>> callbacks;
+
+	friend void IRAM_ATTR buttonInterruptHandler();
 };
 
 #endif

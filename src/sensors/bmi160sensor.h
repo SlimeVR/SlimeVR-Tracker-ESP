@@ -208,6 +208,8 @@ public:
 
 	bool getTemperature(float* out);
 
+	void deinit() final;
+
 private:
 	BMI160 imu{};
 	int axisRemap;

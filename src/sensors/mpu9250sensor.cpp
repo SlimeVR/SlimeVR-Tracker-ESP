@@ -520,3 +520,5 @@ bool MPU9250Sensor::getNextSample(
 	swapFifoData(buffer);
 	return true;
 }
+
+void MPU9250Sensor::deinit() { imu.reset(); }

@@ -446,6 +446,8 @@ struct BMI270 {
 			}
 		}
 	}
+
+	void deinit() { i2c.writeReg(Regs::Cmd::reg, Regs::Cmd::valueSwReset); }
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers

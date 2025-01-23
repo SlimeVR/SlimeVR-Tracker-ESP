@@ -31,8 +31,11 @@
 // saved to NVS. Increments through the list then stops; to prevent unwelcome eeprom
 // wear.
 int bias_save_periods[]
-	= {120, 180, 300, 600, 600
-};  // 2min + 3min + 5min + 10min + 10min (no more saves after 30min)
+	= {120,
+	   180,
+	   300,
+	   600,
+	   600};  // 2min + 3min + 5min + 10min + 10min (no more saves after 30min)
 
 #define ACCEL_SENSITIVITY_4G 8192.0f
 
@@ -993,3 +996,5 @@ ICM_20948_Status_e ICM_20948::initializeDMP(void) {
 	return worstResult;
 }
 #endif  // OVERRIDEDMPSETUP
+
+void ICM20948Sensor::deinit() { imu.swReset(); }
