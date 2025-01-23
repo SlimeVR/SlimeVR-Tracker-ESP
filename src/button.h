@@ -47,6 +47,7 @@ private:
 	static OnOffButton instance;
 
 	static constexpr float longPressSeconds = 1.0f;
+	static constexpr float batteryBadTimeoutSeconds = 10.0f;
 
 	bool getButton();
 	void signalPressStart();
@@ -57,6 +58,8 @@ private:
 	uint64_t buttonPressStartMillis = 0;
 	uint64_t buttonCircularBuffer = 0;
 	std::vector<std::function<void()>> callbacks;
+	bool batteryBad = false;
+	uint64_t batteryBadSinceMillis = 0;
 
 	uint64_t lastActivityMillis = 0;
 

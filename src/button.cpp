@@ -5,6 +5,8 @@
 
 #include <climits>
 
+#include "GlobalVars.h"
+
 #ifdef ON_OFF_BUTTON_PIN
 
 void IRAM_ATTR buttonInterruptHandler() {
@@ -42,11 +44,30 @@ void OnOffButton::setup() {
 }
 
 void OnOffButton::tick() {
-	uint64_t elapsed = millis() - lastActivityMillis;
+#ifdef BUTTON_AUTO_SLEEP_TIME_SECONDS
+	uint64_t autoSleepElapsed = millis() - lastActivityMillis;
 
-	if (elapsed >= BUTTON_AUTO_SLEEP_TIME_SECONDS * 1e3) {
+	if (autoSleepElapsed >= BUTTON_AUTO_SLEEP_TIME_SECONDS * 1e3) {
 		goToSleep();
 	}
+#endif
+
+#ifdef BUTTON_BATTERY_VOLTAGE_THRESHOLD
+	if (battery.getVoltage() >= BUTTON_BATTERY_VOLTAGE_THRESHOLD) {
+		batteryBad = false;
+	} else if (!batteryBad) {
+		batteryBad = true;
+		batteryBadSinceMillis = millis();
+	}
+
+	if (batteryBad) {
+		uint64_t batteryBadElapsed = millis() - batteryBadSinceMillis;
+
+		if (batteryBadElapsed >= batteryBadTimeoutSeconds * 1e3) {
+			goToSleep();
+		}
+	}
+#endif
 
 	if (!buttonPressed) {
 		return;
