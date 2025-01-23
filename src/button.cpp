@@ -1,9 +1,11 @@
 #include "button.h"
 
+#include <climits>
+
+#if ESP32
 #include <driver/rtc_io.h>
 #include <esp_sleep.h>
-
-#include <climits>
+#endif
 
 #include "GlobalVars.h"
 
@@ -18,15 +20,16 @@ void IRAM_ATTR buttonInterruptHandler() {
 }
 
 void OnOffButton::setup() {
+#if ESP8266
+	digitalWrite(D0, LOW);
+	pinMode(D0, OUTPUT);
+	pinMode(ON_OFF_BUTTON_PIN, INPUT);
+#endif
+
+#if ESP32
 	pinMode(
 		ON_OFF_BUTTON_PIN,
 		BUTTON_ACTIVE_LEVEL == 0 ? INPUT_PULLUP : INPUT_PULLDOWN
-	);
-
-	attachInterrupt(
-		ON_OFF_BUTTON_PIN,
-		buttonInterruptHandler,
-		BUTTON_ACTIVE_LEVEL == 0 ? FALLING : RISING
 	);
 
 	esp_deep_sleep_enable_gpio_wakeup(
@@ -41,6 +44,13 @@ void OnOffButton::setup() {
 #endif
 
 	gpio_deep_sleep_hold_en();
+#endif
+
+	attachInterrupt(
+		ON_OFF_BUTTON_PIN,
+		buttonInterruptHandler,
+		BUTTON_ACTIVE_LEVEL == 0 ? FALLING : RISING
+	);
 }
 
 void OnOffButton::tick() {
@@ -52,7 +62,7 @@ void OnOffButton::tick() {
 	}
 #endif
 
-#ifdef BUTTON_BATTERY_VOLTAGE_THRESHOLD
+#if defined(BUTTON_BATTERY_VOLTAGE_THRESHOLD) && BATTERY_MONITOR == BAT_EXTERNAL
 	if (battery.getVoltage() >= BUTTON_BATTERY_VOLTAGE_THRESHOLD) {
 		batteryBad = false;
 	} else if (!batteryBad) {
@@ -120,7 +130,7 @@ void OnOffButton::emitOnBeforeSleep() {
 void OnOffButton::goToSleep() {
 	emitOnBeforeSleep();
 
-#ifdef BUTTON_IMU_ENABLE_PIN
+#if defined(BUTTON_IMU_ENABLE_PIN) && ESP32
 	digitalWrite(BUTTON_IMU_ENABLE_PIN, LOW);
 	gpio_hold_en(static_cast<gpio_num_t>(BUTTON_IMU_ENABLE_PIN));
 #endif
@@ -130,7 +140,11 @@ void OnOffButton::goToSleep() {
 	while (buttonPressed && getButton())
 		;
 
+#if ESP8266
+	ESP.deepSleep(0);
+#elif ESP32
 	esp_deep_sleep_start();
+#endif
 }
 
 OnOffButton OnOffButton::instance;
