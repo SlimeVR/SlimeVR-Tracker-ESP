@@ -57,7 +57,7 @@ public:
 
 	void update();
 
-	std::vector<std::unique_ptr<Sensor>>& getSensors() { return m_Sensors; };
+	std::vector<std::unique_ptr<::Sensor>>& getSensors() { return m_Sensors; };
 	SensorTypeID getSensorType(size_t id) {
 		if (id < m_Sensors.size()) {
 			return m_Sensors[id]->getSensorType();
@@ -68,11 +68,11 @@ public:
 private:
 	SlimeVR::Logging::Logger m_Logger;
 
-	std::vector<std::unique_ptr<Sensor>> m_Sensors;
+	std::vector<std::unique_ptr<::Sensor>> m_Sensors;
 	Adafruit_MCP23X17 m_MCP;
 
 	template <typename ImuType>
-	std::unique_ptr<Sensor> buildSensor(
+	std::unique_ptr<::Sensor> buildSensor(
 		uint8_t sensorID,
 		std::optional<uint8_t> imuAddress,
 		float rotation,
@@ -96,7 +96,7 @@ private:
 		);
 
 		// Now start detecting and building the IMU
-		std::unique_ptr<Sensor> sensor;
+		std::unique_ptr<::Sensor> sensor;
 
 		// Init I2C bus for each sensor upon startup
 		sensorInterface->init();

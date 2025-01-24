@@ -112,8 +112,8 @@ protected:
 
 	Sensors::SensorFusionRestDetect& fusion;
 	IMU& sensor;
-	SlimeVR::Logging::Logger& logger;
 	uint8_t sensorId;
+	SlimeVR::Logging::Logger& logger;
 	float TempTs;
 	double AScale;
 	double GScale;
