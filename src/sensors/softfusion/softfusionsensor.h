@@ -89,6 +89,11 @@ class SoftFusionSensor : public Sensor {
 		return true;
 	}
 
+	void sendData() {
+		Sensor::sendData();
+		sendTempIfNeeded();
+	}
+
 	void sendTempIfNeeded() {
 		uint32_t now = micros();
 		constexpr float maxSendRateHz = 2.0f;
@@ -213,7 +218,6 @@ public:
 	~SoftFusionSensor() override = default;
 
 	void motionLoop() final {
-		sendTempIfNeeded();
 
 		calibrator.tick();
 
