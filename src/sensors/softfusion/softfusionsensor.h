@@ -136,7 +136,8 @@ class SoftFusionSensor : public Sensor {
 			),
 			static_cast<sensor_real_t>(
 				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2])
-			)};
+			)
+		};
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 	}
 
@@ -636,7 +637,8 @@ public:
 		   .G_Ts = imu::GyrTs,
 		   .M_Ts = imu::MagTs,
 		   .G_Sens = {1.0, 1.0, 1.0},
-		   .MotionlessData = {}};
+		   .MotionlessData = {}
+		};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
