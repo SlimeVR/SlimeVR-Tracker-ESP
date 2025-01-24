@@ -46,6 +46,7 @@ public:
 	size_t getSensorCount() const;
 	SensorConfig getSensor(size_t sensorID) const;
 	void setSensor(size_t sensorID, const SensorConfig& config);
+	void eraseSensors();
 
 	bool loadTemperatureCalibration(
 		uint8_t sensorId,
