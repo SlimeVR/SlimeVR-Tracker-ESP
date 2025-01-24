@@ -406,11 +406,18 @@ void cmdTemperatureCalibration(CmdParser* parser) {
 	);
 }
 
+void cmdDeleteCalibration(CmdParser* parser) {
+	logger.info("ERASE CALIBRATION");
+
+	configuration.eraseSensors();
+}
+
 void setUp() {
 	cmdCallbacks.addCmd("SET", &cmdSet);
 	cmdCallbacks.addCmd("GET", &cmdGet);
 	cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
 	cmdCallbacks.addCmd("REBOOT", &cmdReboot);
+	cmdCallbacks.addCmd("DELCAL", &cmdDeleteCalibration);
 	cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
 }
 
