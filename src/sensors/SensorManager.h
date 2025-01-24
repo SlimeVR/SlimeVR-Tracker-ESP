@@ -53,7 +53,7 @@ public:
 
 	void update();
 
-	std::vector<std::unique_ptr<Sensor>>& getSensors() { return m_Sensors; };
+	std::vector<std::unique_ptr<::Sensor>>& getSensors() { return m_Sensors; };
 	ImuID getSensorType(size_t id) {
 		if (id < m_Sensors.size()) {
 			return m_Sensors[id]->getSensorType();
@@ -64,10 +64,10 @@ public:
 private:
 	SlimeVR::Logging::Logger m_Logger;
 
-	std::vector<std::unique_ptr<Sensor>> m_Sensors;
+	std::vector<std::unique_ptr<::Sensor>> m_Sensors;
 
 	template <typename ImuType>
-	std::unique_ptr<Sensor> buildSensor(
+	std::unique_ptr<::Sensor> buildSensor(
 		uint8_t sensorID,
 		std::optional<uint8_t> imuAddress,
 		float rotation,

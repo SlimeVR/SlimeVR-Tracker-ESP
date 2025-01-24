@@ -379,7 +379,7 @@ private:
 		sensor
 	};
 	GyroBiasCalibrationStep<RawSensorT> gyroBiasCalibrationStep{calibration};
-	AccelBiasCalibrationStep<RawSensorT> accelBiasCalibrationStep{calibration, AScale};
+	AccelBiasCalibrationStep<RawSensorT> accelBiasCalibrationStep{calibration, static_cast<float>(Base::AScale)};
 	NullCalibrationStep<RawSensorT> nullCalibrationStep{calibration};
 
 	CalibrationStep<RawSensorT>* currentStep = &nullCalibrationStep;
