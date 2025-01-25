@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,53 +21,40 @@
 	THE SOFTWARE.
 */
 
-#ifndef SLIMEVR_CONFIGURATION_CONFIGURATION_H
-#define SLIMEVR_CONFIGURATION_CONFIGURATION_H
+#pragma once
 
-#include <vector>
+#include "icm45base.h"
 
-#include "../motionprocessing/GyroTemperatureCalibrator.h"
-#include "DeviceConfig.h"
-#include "logging/Logger.h"
+namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-namespace SlimeVR {
-namespace Configuration {
-class Configuration {
-public:
-	void setup();
+// Driver uses acceleration range at 32g
+// and gyroscope range at 4000dps
+// using high resolution mode
+// Uses 32.768kHz clock
+// Gyroscope ODR = 409.6Hz, accel ODR = 204.8Hz
+// Timestamps reading not used, as they're useless (constant predefined increment)
 
-	void save();
-	void reset();
+template <typename I2CImpl>
+struct ICM45605 : public ICM45Base<I2CImpl> {
+	static constexpr auto Name = "ICM-45605";
+	static constexpr auto Type = ImuID::ICM45605;
 
-	void print();
+	ICM45605(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
+		: ICM45Base<I2CImpl>{i2c, logger} {}
 
-	int32_t getVersion() const;
+	struct Regs {
+		struct WhoAmI {
+			static constexpr uint8_t reg = 0x72;
+			static constexpr uint8_t value = 0xe5;
+		};
+	};
 
-	size_t getSensorCount() const;
-	SensorConfig getSensor(size_t sensorID) const;
-	void setSensor(size_t sensorID, const SensorConfig& config);
+	float getDirectTemp() const { return ICM45Base<I2CImpl>::getDirectTemp(); }
 
-	bool loadTemperatureCalibration(
-		uint8_t sensorId,
-		GyroTemperatureCalibrationConfig& config
-	);
-	bool saveTemperatureCalibration(
-		uint8_t sensorId,
-		const GyroTemperatureCalibrationConfig& config
-	);
-
-private:
-	void loadSensors();
-	bool runMigrations(int32_t version);
-
-	bool m_Loaded = false;
-
-	DeviceConfig m_Config{};
-	std::vector<SensorConfig> m_Sensors;
-
-	Logging::Logger m_Logger = Logging::Logger("Configuration");
+	bool initialize() {
+		ICM45Base<I2CImpl>::softResetIMU();
+		return ICM45Base<I2CImpl>::initializeBase();
+	}
 };
-}  // namespace Configuration
-}  // namespace SlimeVR
 
-#endif
+}  // namespace SlimeVR::Sensors::SoftFusion::Drivers
