@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <limits>
 #include "bmi323_lib.h"
+#include "GlobalVars.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers
 {
