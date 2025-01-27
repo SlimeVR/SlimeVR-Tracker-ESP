@@ -106,7 +106,22 @@ struct ICM45Base {
 		static constexpr uint8_t FifoData = 0x14;
 	};
 
-	static constexpr size_t FullFifoEntrySize = 20;
+#pragma pack(push, 1)
+	struct FifoEntryAligned {
+		union {
+			struct {
+				int16_t accel[3];
+				int16_t gyro[3];
+				uint16_t temp;
+				uint16_t timestamp;
+				uint8_t lsb[3];
+			} part;
+			uint8_t raw[19];
+		};
+	};
+#pragma pack(pop)
+
+	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
 	void softResetIMU() {
 		i2c.writeReg(BaseRegs::DeviceConfig::reg, BaseRegs::DeviceConfig::valueSwReset);
@@ -142,74 +157,38 @@ struct ICM45Base {
 								 / FullFifoEntrySize * FullFifoEntrySize;
 		i2c.readBytes(BaseRegs::FifoData, bytes_to_read, read_buffer.data());
 		for (auto i = 0u; i < bytes_to_read; i += FullFifoEntrySize) {
-			int32_t gyroData[3];
-			gyroFromBytes(read_buffer, i, gyroData);
+			FifoEntryAligned entry;
+			memcpy(
+				entry.raw,
+				&read_buffer[i + 0x1],
+				sizeof(FifoEntryAligned)
+			);  // skip fifo header
+			const int32_t gyroData[3]{
+				static_cast<int32_t>(entry.part.gyro[0]) << 4
+					| (entry.part.lsb[0] & 0xf),
+				static_cast<int32_t>(entry.part.gyro[1]) << 4
+					| (entry.part.lsb[1] & 0xf),
+				static_cast<int32_t>(entry.part.gyro[2]) << 4
+					| (entry.part.lsb[2] & 0xf),
+			};
 			processGyroSample(gyroData, GyrTs);
 
-			int32_t accelData[3];
-			accelFromBytes(read_buffer, i, accelData);
-
-			if (accelData[0] >> 4 != -32768) {
+			if (entry.part.accel[0] != -32768) {
+				const int32_t accelData[3]{
+					static_cast<int32_t>(entry.part.accel[0]) << 4
+						| (static_cast<int32_t>(entry.part.lsb[0]) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.part.accel[1]) << 4
+						| (static_cast<int32_t>(entry.part.lsb[1]) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.part.accel[2]) << 4
+						| (static_cast<int32_t>(entry.part.lsb[2]) & 0xf0 >> 4),
+				};
 				processAccelSample(accelData, AccTs);
 			}
 
-			int16_t temp = tempFromBytes(read_buffer, i);
-			if (temp != -32768) {
-				processTemperatureSample(static_cast<int16_t>(temp), TempTs);
+			if (entry.part.temp != 0x8000) {
+				processTemperatureSample(static_cast<int16_t>(entry.part.temp), TempTs);
 			}
 		}
-	}
-
-	static inline void gyroFromBytes(
-		std::array<uint8_t, FullFifoEntrySize * 8>& read_buffer,
-		size_t offset,
-		int32_t gyro_data[3]
-	) {
-		int16_t gyroBase[3] = {
-			static_cast<int16_t>(
-				read_buffer[offset + 8] << 8 | read_buffer[offset + 7]
-			),
-			static_cast<int16_t>(
-				read_buffer[offset + 10] << 8 | read_buffer[offset + 9]
-			),
-			static_cast<int16_t>(
-				read_buffer[offset + 12] << 8 | read_buffer[offset + 11]
-			),
-		};
-		gyro_data[0] = gyroBase[0] << 4 | read_buffer[offset + 17] & 0x0f;
-		gyro_data[1] = gyroBase[1] << 4 | read_buffer[offset + 18] & 0x0f;
-		gyro_data[2] = gyroBase[2] << 4 | read_buffer[offset + 19] & 0x0f;
-	}
-
-	static inline void accelFromBytes(
-		std::array<uint8_t, FullFifoEntrySize * 8>& read_buffer,
-		size_t offset,
-		int32_t accel_data[3]
-	) {
-		int16_t accelBase[3] = {
-			static_cast<int16_t>(
-				read_buffer[offset + 2] << 8 | read_buffer[offset + 1]
-			),
-			static_cast<int16_t>(
-				read_buffer[offset + 4] << 8 | read_buffer[offset + 3]
-			),
-			static_cast<int16_t>(
-				read_buffer[offset + 6] << 8 | read_buffer[offset + 5]
-			),
-		};
-		accel_data[0] = accelBase[0] << 4 | read_buffer[offset + 17] >> 4;
-		accel_data[1] = accelBase[1] << 4 | read_buffer[offset + 18] >> 4;
-		accel_data[2] = accelBase[2] << 4 | read_buffer[offset + 19] >> 4;
-	}
-
-	static inline int16_t tempFromBytes(
-
-		std::array<uint8_t, FullFifoEntrySize * 8>& read_buffer,
-		size_t offset
-	) {
-		return static_cast<int16_t>(
-			read_buffer[offset + 14] << 8 | read_buffer[offset + 13]
-		);
 	}
 };
 
