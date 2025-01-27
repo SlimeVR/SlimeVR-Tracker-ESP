@@ -267,6 +267,14 @@ public:
 		uint32_t elapsed = now - m_lastPollTime;
 		if (elapsed >= targetPollIntervalMicros) {
 			m_lastPollTime = now - (elapsed - targetPollIntervalMicros);
+		}
+
+		// send new fusion values when time is up
+		now = micros();
+		constexpr float maxSendRateHz = 100.0f;
+		constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6;
+		elapsed = now - m_lastRotationPacketSent;
+		if (elapsed >= sendInterval) {
 			m_sensor.bulkRead(
 				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					processAccelSample(xyz, timeDelta);
@@ -278,7 +286,6 @@ public:
 					processTempSample(rawTemp, timeDelta);
 				}
 			);
-			optimistic_yield(100);
 			if (!m_fusion.isUpdated()) {
 				checkSensorTimeout();
 				return;
@@ -286,14 +293,7 @@ public:
 			hadData = true;
 			m_lastRotationUpdateMillis = millis();
 			m_fusion.clearUpdated();
-		}
 
-		// send new fusion values when time is up
-		now = micros();
-		constexpr float maxSendRateHz = 120.0f;
-		constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6;
-		elapsed = now - m_lastRotationPacketSent;
-		if (elapsed >= sendInterval) {
 			m_lastRotationPacketSent = now - (elapsed - sendInterval);
 
 			setFusedRotation(m_fusion.getQuaternionQuat());
