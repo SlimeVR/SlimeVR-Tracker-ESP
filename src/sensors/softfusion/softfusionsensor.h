@@ -61,9 +61,9 @@ class SoftFusionSensor : public Sensor {
 		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
 	using RawVectorT = std::array<RawSensorT, 3>;
 
-	static constexpr double GScale
+	static constexpr float GScale
 		= ((32768. / imu::GyroSensitivity) / 32768.) * (PI / 180.0);
-	static constexpr double AScale = CONST_EARTH_GRAVITY / imu::AccelSensitivity;
+	static constexpr float AScale = CONST_EARTH_GRAVITY / imu::AccelSensitivity;
 
 	using Calib = Calibrator<imu, RawSensorT, RawVectorT>;
 
