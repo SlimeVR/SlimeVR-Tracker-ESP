@@ -55,8 +55,8 @@ public:
 		uint8_t sensorId,
 		Logging::Logger& logger,
 		float TempTs,
-		double AScale,
-		double GScale
+		float AScale,
+		float GScale
 	)
 		: Base(fusion, imu, sensorId, logger, TempTs, AScale, GScale) {
 		calibration.T_Ts = TempTs;

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Modified to add timestamps in: updateGyr(const vqf_real_t gyr[3], double gyrTs)
+// Modified to add timestamps in: updateGyr(const vqf_real_t gyr[3], vqf_real_t gyrTs)
 // Removed batch update functions
 
 #include "vqf.h"
@@ -38,7 +38,7 @@ VQF::VQF(const VQFParams &params, vqf_real_t gyrTs, vqf_real_t accTs, vqf_real_t
     setup();
 }
 
-void VQF::updateGyr(const vqf_real_t gyr[3], double gyrTs)
+void VQF::updateGyr(const vqf_real_t gyr[3], vqf_real_t gyrTs)
 {
     // rest detection
     if (params.restBiasEstEnabled || params.magDistRejectionEnabled) {
@@ -502,8 +502,8 @@ void VQF::setTauAcc(vqf_real_t tauAcc)
         return;
     }
     params.tauAcc = tauAcc;
-    double newB[3];
-    double newA[3];
+    vqf_real_t newB[3];
+    vqf_real_t newA[3];
 
     filterCoeffs(params.tauAcc, coeffs.accTs, newB, newA);
     filterAdaptStateForCoeffChange(state.lastAccLp, 3, coeffs.accLpB, coeffs.accLpA, newB, newA, state.accLpState);
@@ -696,15 +696,15 @@ vqf_real_t VQF::gainFromTau(vqf_real_t tau, vqf_real_t Ts)
     }
 }
 
-void VQF::filterCoeffs(vqf_real_t tau, vqf_real_t Ts, double outB[], double outA[])
+void VQF::filterCoeffs(vqf_real_t tau, vqf_real_t Ts, vqf_real_t outB[], vqf_real_t outA[])
 {
     assert(tau > 0);
     assert(Ts > 0);
     // second order Butterworth filter based on https://stackoverflow.com/a/52764064
-    double fc = (M_SQRT2 / (2.0*M_PI))/double(tau); // time constant of dampened, non-oscillating part of step response
-    double C = tan(M_PI*fc*double(Ts));
-    double D = C*C + sqrt(2)*C + 1;
-    double b0 = C*C/D;
+    vqf_real_t fc = (M_SQRT2 / (2.0*M_PI))/vqf_real_t(tau); // time constant of dampened, non-oscillating part of step response
+    vqf_real_t C = tan(M_PI*fc*vqf_real_t(Ts));
+    vqf_real_t D = C*C + sqrt(2)*C + 1;
+    vqf_real_t b0 = C*C/D;
     outB[0] = b0;
     outB[1] = 2*b0;
     outB[2] = b0;
@@ -713,7 +713,7 @@ void VQF::filterCoeffs(vqf_real_t tau, vqf_real_t Ts, double outB[], double outA
     outA[1] = (1-sqrt(2)*C+C*C)/D; // a2
 }
 
-void VQF::filterInitialState(vqf_real_t x0, const double b[3], const double a[2], double out[])
+void VQF::filterInitialState(vqf_real_t x0, const vqf_real_t b[3], const vqf_real_t a[2], vqf_real_t out[])
 {
     // initial state for steady state (equivalent to scipy.signal.lfilter_zi, obtained by setting y=x=x0 in the filter
     // update equation)
@@ -721,9 +721,9 @@ void VQF::filterInitialState(vqf_real_t x0, const double b[3], const double a[2]
     out[1] = x0*(b[2] - a[1]);
 }
 
-void VQF::filterAdaptStateForCoeffChange(vqf_real_t last_y[], size_t N, const double b_old[],
-                                         const double a_old[], const double b_new[],
-                                         const double a_new[], double state[])
+void VQF::filterAdaptStateForCoeffChange(vqf_real_t last_y[], size_t N, const vqf_real_t b_old[],
+                                         const vqf_real_t a_old[], const vqf_real_t b_new[],
+                                         const vqf_real_t a_new[], vqf_real_t state[])
 {
     if (isnan(state[0])) {
         return;
@@ -734,18 +734,18 @@ void VQF::filterAdaptStateForCoeffChange(vqf_real_t last_y[], size_t N, const do
     }
 }
 
-vqf_real_t VQF::filterStep(vqf_real_t x, const double b[3], const double a[2], double state[2])
+vqf_real_t VQF::filterStep(vqf_real_t x, const vqf_real_t b[3], const vqf_real_t a[2], vqf_real_t state[2])
 {
     // difference equations based on scipy.signal.lfilter documentation
     // assumes that a0 == 1.0
-    double y = b[0]*x + state[0];
+    vqf_real_t y = b[0]*x + state[0];
     state[0] = b[1]*x - a[0]*y + state[1];
     state[1] = b[2]*x - a[1]*y;
     return y;
 }
 
-void VQF::filterVec(const vqf_real_t x[], size_t N, vqf_real_t tau, vqf_real_t Ts, const double b[3],
-                    const double a[2], double state[], vqf_real_t out[])
+void VQF::filterVec(const vqf_real_t x[], size_t N, vqf_real_t tau, vqf_real_t Ts, const vqf_real_t b[3],
+                    const vqf_real_t a[2], vqf_real_t state[], vqf_real_t out[])
 {
     assert(N>=2);
 
@@ -838,17 +838,17 @@ void VQF::matrix3MultiplyTpsSecond(const vqf_real_t in1[9], const vqf_real_t in2
 bool VQF::matrix3Inv(const vqf_real_t in[9], vqf_real_t out[9])
 {
     // in = [a b c; d e f; g h i]
-    double A = in[4]*in[8] - in[5]*in[7]; // (e*i - f*h)
-    double D = in[2]*in[7] - in[1]*in[8]; // -(b*i - c*h)
-    double G = in[1]*in[5] - in[2]*in[4]; // (b*f - c*e)
-    double B = in[5]*in[6] - in[3]*in[8]; // -(d*i - f*g)
-    double E = in[0]*in[8] - in[2]*in[6]; // (a*i - c*g)
-    double H = in[2]*in[3] - in[0]*in[5]; // -(a*f - c*d)
-    double C = in[3]*in[7] - in[4]*in[6]; // (d*h - e*g)
-    double F = in[1]*in[6] - in[0]*in[7]; // -(a*h - b*g)
-    double I = in[0]*in[4] - in[1]*in[3]; // (a*e - b*d)
+    vqf_real_t A = in[4]*in[8] - in[5]*in[7]; // (e*i - f*h)
+    vqf_real_t D = in[2]*in[7] - in[1]*in[8]; // -(b*i - c*h)
+    vqf_real_t G = in[1]*in[5] - in[2]*in[4]; // (b*f - c*e)
+    vqf_real_t B = in[5]*in[6] - in[3]*in[8]; // -(d*i - f*g)
+    vqf_real_t E = in[0]*in[8] - in[2]*in[6]; // (a*i - c*g)
+    vqf_real_t H = in[2]*in[3] - in[0]*in[5]; // -(a*f - c*d)
+    vqf_real_t C = in[3]*in[7] - in[4]*in[6]; // (d*h - e*g)
+    vqf_real_t F = in[1]*in[6] - in[0]*in[7]; // -(a*h - b*g)
+    vqf_real_t I = in[0]*in[4] - in[1]*in[3]; // (a*e - b*d)
 
-    double det = in[0]*A + in[1]*B + in[2]*C; // a*A + b*B + c*C;
+    vqf_real_t det = in[0]*A + in[1]*B + in[2]*C; // a*A + b*B + c*C;
 
     if (det >= -EPS && det <= EPS) {
         std::fill(out, out+9, 0);
