@@ -75,6 +75,7 @@ public:
 	void assignCalibration(const Configuration::SensorConfig& sensorCalibration) final {
 		calibration = sensorCalibration.data.nonblocking;
 		activeCalibration = sensorCalibration.data.nonblocking;
+		calculateZROChange();
 	}
 
 	void begin() final {
@@ -83,6 +84,7 @@ public:
 		gyroBiasCalibrationStep.swapCalibrationIfNecessary();
 
 		computeNextCalibrationStep();
+		calculateZROChange();
 
 		printCalibration();
 	}
@@ -179,9 +181,9 @@ public:
 		}
 	}
 
-	float getZROChange() final {
+	void calculateZROChange() {
 		if (activeCalibration.gyroPointsCalibrated < 2) {
-			return IMU::TemperatureZROChange;
+			activeZROChange = IMU::TemperatureZROChange;
 		}
 
 		float diffX
@@ -194,10 +196,12 @@ public:
 		float maxDiff
 			= std::max(std::max(std::abs(diffX), std::abs(diffY)), std::abs(diffZ));
 
-		return 0.1f / maxDiff
-			 / (activeCalibration.gyroMeasurementTemperature2
-				- activeCalibration.gyroMeasurementTemperature1);
+		activeZROChange = 0.1f / maxDiff
+						/ (activeCalibration.gyroMeasurementTemperature2
+						   - activeCalibration.gyroMeasurementTemperature1);
 	}
+
+	float getZROChange() final { return activeZROChange; }
 
 private:
 	enum class CalibrationStepEnum {
@@ -376,10 +380,11 @@ private:
 	SampleRateCalibrationStep<RawSensorT> sampleRateCalibrationStep{calibration};
 	MotionlessCalibrationStep<IMU, RawSensorT> motionlessCalibrationStep{
 		calibration,
-		sensor
-	};
+		sensor};
 	GyroBiasCalibrationStep<RawSensorT> gyroBiasCalibrationStep{calibration};
-	AccelBiasCalibrationStep<RawSensorT> accelBiasCalibrationStep{calibration, static_cast<float>(Base::AScale)};
+	AccelBiasCalibrationStep<RawSensorT> accelBiasCalibrationStep{
+		calibration,
+		static_cast<float>(Base::AScale)};
 	NullCalibrationStep<RawSensorT> nullCalibrationStep{calibration};
 
 	CalibrationStep<RawSensorT>* currentStep = &nullCalibrationStep;
@@ -411,6 +416,8 @@ private:
 		.accelCalibrated = {false, false, false},
 		.A_off = {0.0, 0.0, 0.0},
 	};
+
+	float activeZROChange = 0;
 
 	Configuration::NonBlockingSensorConfig activeCalibration = calibration;
 
