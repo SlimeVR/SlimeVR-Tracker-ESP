@@ -53,7 +53,8 @@ struct ICM45Base {
 
 	static constexpr bool Uses32BitSensorData = true;
 
-	static constexpr int fifoReadSize = 8; // Can't be more than 12 or it will overflow i2c read size, default 8
+	static constexpr int fifoReadSize
+		= 8;  // Can't be more than 12 or it will overflow i2c read size, default 8
 
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
@@ -110,17 +111,12 @@ struct ICM45Base {
 
 #pragma pack(push, 1)
 	struct FifoEntryAligned {
-		union {
-			struct {
-				uint8_t header;
-				int16_t accel[3];
-				int16_t gyro[3];
-				uint16_t temp;
-				uint16_t timestamp;
-				uint8_t lsb[3];
-			} part;
-			uint8_t raw[19];
-		};
+		uint8_t header;
+		int16_t accel[3];
+		int16_t gyro[3];
+		uint16_t temp;
+		uint16_t timestamp;
+		uint8_t lsb[3];
 	};
 	struct FifoBuffer {
 		FifoEntryAligned entry[fifoReadSize];
@@ -158,38 +154,35 @@ struct ICM45Base {
 
 		FifoBuffer read_buffer;
 		const auto bytes_to_read = std::min(
-									static_cast<size_t>(FullFifoBufferSize),
-									static_cast<size_t>(fifo_bytes)
-								)
-								/ FullFifoEntrySize * FullFifoEntrySize;
-		i2c.readBytes(BaseRegs::FifoData, bytes_to_read, (uint8_t*) &read_buffer);
+									   static_cast<size_t>(FullFifoBufferSize),
+									   static_cast<size_t>(fifo_bytes)
+								   )
+								 / FullFifoEntrySize * FullFifoEntrySize;
+		i2c.readBytes(BaseRegs::FifoData, bytes_to_read, (uint8_t*)&read_buffer);
 		uint8_t index = 0;
 		for (auto i = 0u; i < bytes_to_read; i += FullFifoEntrySize) {
 			FifoEntryAligned entry = read_buffer.entry[index++];
 			const int32_t gyroData[3]{
-				static_cast<int32_t>(entry.part.gyro[0]) << 4
-					| (entry.part.lsb[0] & 0xf),
-				static_cast<int32_t>(entry.part.gyro[1]) << 4
-					| (entry.part.lsb[1] & 0xf),
-				static_cast<int32_t>(entry.part.gyro[2]) << 4
-					| (entry.part.lsb[2] & 0xf),
+				static_cast<int32_t>(entry.gyro[0]) << 4 | (entry.lsb[0] & 0xf),
+				static_cast<int32_t>(entry.gyro[1]) << 4 | (entry.lsb[1] & 0xf),
+				static_cast<int32_t>(entry.gyro[2]) << 4 | (entry.lsb[2] & 0xf),
 			};
 			processGyroSample(gyroData, GyrTs);
 
-			if (entry.part.accel[0] != -32768) {
+			if (entry.accel[0] != -32768) {
 				const int32_t accelData[3]{
-					static_cast<int32_t>(entry.part.accel[0]) << 4
-						| (static_cast<int32_t>(entry.part.lsb[0]) & 0xf0 >> 4),
-					static_cast<int32_t>(entry.part.accel[1]) << 4
-						| (static_cast<int32_t>(entry.part.lsb[1]) & 0xf0 >> 4),
-					static_cast<int32_t>(entry.part.accel[2]) << 4
-						| (static_cast<int32_t>(entry.part.lsb[2]) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.accel[0]) << 4
+						| (static_cast<int32_t>(entry.lsb[0]) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.accel[1]) << 4
+						| (static_cast<int32_t>(entry.lsb[1]) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.accel[2]) << 4
+						| (static_cast<int32_t>(entry.lsb[2]) & 0xf0 >> 4),
 				};
 				processAccelSample(accelData, AccTs);
 			}
 
-			if (entry.part.temp != 0x8000) {
-				processTemperatureSample(static_cast<int16_t>(entry.part.temp), TempTs);
+			if (entry.temp != 0x8000) {
+				processTemperatureSample(static_cast<int16_t>(entry.temp), TempTs);
 			}
 		}
 	}
