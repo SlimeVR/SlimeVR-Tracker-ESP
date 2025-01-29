@@ -125,13 +125,13 @@ void loop() {
 	OTA::otaUpdate();
 	networkManager.update();
 
-	if constexpr (DEBUG_MEASURE_SENSOR_TIME_TAKEN) {
-		sensorMeasurer.before();
-	}
+#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
+	sensorMeasurer.before();
+#endif
 	sensorManager.update();
-	if constexpr (DEBUG_MEASURE_SENSOR_TIME_TAKEN) {
-		sensorMeasurer.after();
-	}
+#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
+	sensorMeasurer.after();
+#endif
 
 	battery.Loop();
 	ledManager.update();

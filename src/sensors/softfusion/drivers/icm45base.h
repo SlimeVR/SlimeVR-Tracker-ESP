@@ -188,4 +188,4 @@ struct ICM45Base {
 	}
 };
 
-}  // namespace SlimeVR::Sensors::SoftFusion::Drivers
+};  // namespace SlimeVR::Sensors::SoftFusion::Drivers
