@@ -29,6 +29,7 @@
 #include "../motionprocessing/GyroTemperatureCalibrator.h"
 #include "../motionprocessing/RestDetection.h"
 #include "../motionprocessing/types.h"
+#include "RestCalibrationDetector.h"
 #include "SensorFusionRestDetect.h"
 #include "magneto1.4.h"
 #include "sensor.h"
@@ -265,6 +266,8 @@ private:
 	bool isMagCalibrated = false;
 
 	SlimeVR::Configuration::BMI160SensorConfig m_Config = {};
+
+	SlimeVR::Sensors::RestCalibrationDetector calibrationDetector;
 };
 
 #endif

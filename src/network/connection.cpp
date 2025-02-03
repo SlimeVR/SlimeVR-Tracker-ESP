@@ -297,6 +297,7 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
 	MUST(sendShort(sensor.getSensorConfigData()));
+	MUST(sendByte(sensor.completedRestCalibration()));
 
 	MUST(endPacket());
 }
