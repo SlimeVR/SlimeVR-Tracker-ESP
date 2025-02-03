@@ -96,7 +96,7 @@ public:
 	const Vector3& getAcceleration() { return acceleration; };
 	const Quat& getFusedRotation() { return fusedRotation; };
 	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
-	bool completedRestCalibration();
+	inline bool hasCompletedRestCalibration() { return restCalibrationComplete; }
 
 protected:
 	uint8_t addr = 0;

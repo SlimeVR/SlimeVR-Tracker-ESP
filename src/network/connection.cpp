@@ -297,7 +297,7 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
 	MUST(sendShort(sensor.getSensorConfigData()));
-	MUST(sendByte(sensor.completedRestCalibration()));
+	MUST(sendByte(sensor.hasCompletedRestCalibration()));
 
 	MUST(endPacket());
 }
@@ -556,7 +556,7 @@ void Connection::maybeRequestFeatureFlags() {
 
 bool Connection::isSensorStateUpdated(int i, std::unique_ptr<Sensor>& sensor) {
 	return m_AckedSensorState[i] != sensor->getSensorState()
-		|| m_AckedSensorCalibration[i] != sensor->completedRestCalibration();
+		|| m_AckedSensorCalibration[i] != sensor->hasCompletedRestCalibration();
 }
 
 void Connection::searchForServer() {
