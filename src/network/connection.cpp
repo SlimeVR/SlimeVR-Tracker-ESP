@@ -534,7 +534,7 @@ void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>>& sensors
 	m_LastSensorInfoPacketTimestamp = millis();
 
 	for (int i = 0; i < (int)sensors.size(); i++) {
-		if (m_AckedSensorState[i] != sensors[i]->getSensorState()) {
+		if (isSensorStateUpdated(i, sensors[i])) {
 			sendSensorInfo(*sensors[i]);
 		}
 	}
@@ -552,6 +552,11 @@ void Connection::maybeRequestFeatureFlags() {
 	sendFeatureFlags();
 	m_FeatureFlagsRequestTimestamp = millis();
 	m_FeatureFlagsRequestAttempts++;
+}
+
+bool Connection::isSensorStateUpdated(int i, std::unique_ptr<Sensor>& sensor) {
+	return m_AckedSensorState[i] != sensor->getSensorState()
+		|| m_AckedSensorCalibration[i] != sensor->completedRestCalibration();
 }
 
 void Connection::searchForServer() {
@@ -625,6 +630,11 @@ void Connection::reset() {
 		m_AckedSensorState + MAX_IMU_COUNT,
 		SensorStatus::SENSOR_OFFLINE
 	);
+	std::fill(
+		m_AckedSensorCalibration,
+		m_AckedSensorCalibration + MAX_IMU_COUNT,
+		false
+	);
 
 	m_UDP.begin(m_ServerPort);
 
@@ -650,6 +660,11 @@ void Connection::update() {
 			m_AckedSensorState,
 			m_AckedSensorState + MAX_IMU_COUNT,
 			SensorStatus::SENSOR_OFFLINE
+		);
+		std::fill(
+			m_AckedSensorCalibration,
+			m_AckedSensorCalibration + MAX_IMU_COUNT,
+			false
 		);
 		m_Logger.warn("Connection to server timed out");
 
@@ -708,6 +723,7 @@ void Connection::update() {
 			for (int i = 0; i < (int)sensors.size(); i++) {
 				if (m_Packet[4] == sensors[i]->getSensorId()) {
 					m_AckedSensorState[i] = (SensorStatus)m_Packet[5];
+					m_AckedSensorCalibration[i] = (bool)m_Packet[9];
 					break;
 				}
 			}
