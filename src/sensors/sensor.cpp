@@ -138,3 +138,9 @@ const char* getIMUNameByType(ImuID imuType) {
 	}
 	return "Unknown";
 }
+
+void Sensor::markRestCalibrationComplete(bool completed) {
+	if(restCalibrationComplete != completed)
+		m_Logger.info("Rest calibration completed");
+	restCalibrationComplete = completed;
+}

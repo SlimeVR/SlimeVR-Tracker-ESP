@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../RestCalibrationDetector.h"
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
@@ -235,6 +236,10 @@ public:
 			setFusedRotation(m_fusion.getQuaternionQuat());
 			setAcceleration(m_fusion.getLinearAccVec());
 			optimistic_yield(100);
+		}
+
+		if (calibrationDetector.update(m_fusion)) {
+			markRestCalibrationComplete();
 		}
 	}
 
@@ -617,6 +622,8 @@ public:
 	uint32_t m_lastPollTime = micros();
 	uint32_t m_lastRotationPacketSent = 0;
 	uint32_t m_lastTemperaturePacketSent = 0;
+
+	RestCalibrationDetector calibrationDetector;
 };
 
 }  // namespace SlimeVR::Sensors
