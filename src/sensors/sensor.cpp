@@ -143,7 +143,8 @@ const char* getIMUNameByType(ImuID imuType) {
 }
 
 void Sensor::markRestCalibrationComplete(bool completed) {
-	if(restCalibrationComplete != completed)
+	if (restCalibrationComplete != completed) {
 		m_Logger.info("Rest calibration completed");
+	}
 	restCalibrationComplete = completed;
 }
