@@ -49,13 +49,15 @@ namespace I2CSCAN
 
         found = false;
         currentSDA = 0;
-        currentSCL = 0;
+        currentSCL = 1;
         currentAddress = 1;
         scanState = ScanState::SCANNING;
     }
 
     bool selectNextPort() {
         currentSCL++;
+        if(validPorts[currentSCL] == validPorts[currentSDA])
+            currentSCL++;
         if (currentSCL < validPorts.size()) {
             Wire.begin((int)validPorts[currentSDA], (int)validPorts[currentSCL]);
             return true;
