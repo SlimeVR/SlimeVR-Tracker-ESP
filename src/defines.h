@@ -35,6 +35,11 @@
 #define PRIMARY_IMU_OPTIONAL false
 #define SECONDARY_IMU_OPTIONAL true
 
+// Set I2C address here or directly in IMU_DESC_ENTRY for each IMU used
+// If not set, default address is used based on the IMU and Sensor ID
+// #define PRIMARY_IMU_ADDRESS_ONE 0x4a
+// #define SECONDARY_IMU_ADDRESS_TWO 0x4b
+
 #define MAX_IMU_COUNT 2
 
 // Axis mapping example
@@ -192,7 +197,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 #define PIN_BATTERY_LEVEL 3
 #define LED_PIN 10
 #define LED_INVERTED false
-#elif BOARD == BOARD_ES32C3DEVKITM1
+#elif BOARD == BOARD_ES32C3DEVKITM1 || BOARD == BOARD_ES32C6DEVKITC1
 #define PIN_IMU_SDA 5
 #define PIN_IMU_SCL 4
 #define PIN_IMU_INT 6

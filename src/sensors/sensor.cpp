@@ -128,9 +128,19 @@ const char* getIMUNameByType(ImuID imuType) {
 			return "LSM6DSO";
 		case ImuID::LSM6DSR:
 			return "LSM6DSR";
+		case ImuID::ICM45686:
+			return "ICM45686";
+		case ImuID::ICM45605:
+			return "ICM45605";
 		case ImuID::Unknown:
 		case ImuID::Empty:
 			return "UNKNOWN";
 	}
 	return "Unknown";
+}
+
+void Sensor::markRestCalibrationComplete(bool completed) {
+	if(restCalibrationComplete != completed)
+		m_Logger.info("Rest calibration completed");
+	restCalibrationComplete = completed;
 }

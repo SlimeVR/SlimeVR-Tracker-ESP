@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../RestCalibrationDetector.h"
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
@@ -32,7 +33,14 @@ namespace SlimeVR::Sensors {
 template <template <typename I2CImpl> typename T, typename I2CImpl>
 class SoftFusionSensor : public Sensor {
 	using imu = T<I2CImpl>;
-	using RawVectorT = std::array<int16_t, 3>;
+
+	static constexpr bool Uses32BitSensorData
+		= requires(imu& i) { i.Uses32BitSensorData; };
+
+	using RawSensorT =
+		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
+	using RawVectorT = std::array<RawSensorT, 3>;
+
 	static constexpr auto UpsideDownCalibrationInit = true;
 	static constexpr auto GyroCalibDelaySeconds = 5;
 	static constexpr auto GyroCalibSeconds = 5;
@@ -91,7 +99,7 @@ class SoftFusionSensor : public Sensor {
 		);
 	}
 
-	void processAccelSample(const int16_t xyz[3], const sensor_real_t timeDelta) {
+	void processAccelSample(const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 		sensor_real_t accelData[]
 			= {static_cast<sensor_real_t>(xyz[0]),
 			   static_cast<sensor_real_t>(xyz[1]),
@@ -118,7 +126,7 @@ class SoftFusionSensor : public Sensor {
 		m_fusion.updateAcc(accelData, m_calibration.A_Ts);
 	}
 
-	void processGyroSample(const int16_t xyz[3], const sensor_real_t timeDelta) {
+	void processGyroSample(const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 		const sensor_real_t scaledData[] = {
 			static_cast<sensor_real_t>(
 				GScale * (static_cast<sensor_real_t>(xyz[0]) - m_calibration.G_off[0])
@@ -146,8 +154,8 @@ class SoftFusionSensor : public Sensor {
 				lastSecondsRemaining = currentSecondsRemaining;
 			}
 			m_sensor.bulkRead(
-				[](const int16_t xyz[3], const sensor_real_t timeDelta) {},
-				[](const int16_t xyz[3], const sensor_real_t timeDelta) {}
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {}
 			);
 		}
 	}
@@ -159,12 +167,12 @@ class SoftFusionSensor : public Sensor {
 		const auto targetDelay = millis() + milliseconds;
 		while (millis() < targetDelay) {
 			m_sensor.bulkRead(
-				[&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					accel[0] = xyz[0];
 					accel[1] = xyz[1];
 					accel[2] = xyz[2];
 				},
-				[&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					gyro[0] = xyz[0];
 					gyro[1] = xyz[1];
 					gyro[2] = xyz[2];
@@ -181,24 +189,36 @@ public:
 
 	SoftFusionSensor(
 		uint8_t id,
-		uint8_t addrSuppl,
+		uint8_t i2cAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
 		uint8_t
 	)
-		: Sensor(
-			imu::Name,
-			imu::Type,
-			id,
-			imu::Address + addrSuppl,
-			rotation,
-			sclPin,
-			sdaPin
-		)
+		: Sensor(imu::Name, imu::Type, id, i2cAddress, rotation, sclPin, sdaPin)
 		, m_fusion(imu::GyrTs, imu::AccTs, imu::MagTs)
-		, m_sensor(I2CImpl(imu::Address + addrSuppl), m_Logger) {}
+		, m_sensor(I2CImpl(i2cAddress), m_Logger) {}
 	~SoftFusionSensor() {}
+
+	void checkSensorTimeout() {
+		uint32_t now = millis();
+		constexpr uint32_t sensorTimeoutMillis = 2e3;  // 2 seconds
+		if (m_lastRotationUpdateMillis + sensorTimeoutMillis > now) {
+			return;
+		}
+
+		working = false;
+		m_status = SensorStatus::SENSOR_ERROR;
+		m_Logger.error(
+			"Sensor timeout I2C Address 0x%02x delaytime: %d ms",
+			addr,
+			now - m_lastRotationUpdateMillis
+		);
+		networkConnection.sendSensorError(
+			this->sensorId,
+			static_cast<uint8_t>(PacketErrorCode::WATCHDOG_TIMEOUT)
+		);
+	}
 
 	void motionLoop() override final {
 		sendTempIfNeeded();
@@ -210,18 +230,20 @@ public:
 		if (elapsed >= targetPollIntervalMicros) {
 			m_lastPollTime = now - (elapsed - targetPollIntervalMicros);
 			m_sensor.bulkRead(
-				[&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					processAccelSample(xyz, timeDelta);
 				},
-				[&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					processGyroSample(xyz, timeDelta);
 				}
 			);
 			optimistic_yield(100);
 			if (!m_fusion.isUpdated()) {
+				checkSensorTimeout();
 				return;
 			}
 			hadData = true;
+			m_lastRotationUpdateMillis = millis();
 			m_fusion.clearUpdated();
 		}
 
@@ -236,6 +258,10 @@ public:
 			setFusedRotation(m_fusion.getQuaternionQuat());
 			setAcceleration(m_fusion.getLinearAccVec());
 			optimistic_yield(100);
+		}
+
+		if (calibrationDetector.update(m_fusion)) {
+			markRestCalibrationComplete();
 		}
 	}
 
@@ -320,7 +346,6 @@ public:
 		if (calibrationType == 0) {
 			// ALL
 			calibrateSampleRate();
-			calibrateGyroOffset();
 			if constexpr (HasMotionlessCalib) {
 				typename imu::MotionlessCalibrationData calibData;
 				m_sensor.motionlessCalibration(calibData);
@@ -330,6 +355,10 @@ public:
 					sizeof(calibData)
 				);
 			}
+			// Gryoscope offset calibration can only happen after any motionless
+			// gyroscope calibration, otherwise we are calculating the offset based
+			// on an incorrect starting point
+			calibrateGyroOffset();
 			calibrateAccel();
 		} else if (calibrationType == 1) {
 			calibrateSampleRate();
@@ -391,9 +420,9 @@ public:
 			ESP.wdtFeed();
 #endif
 			m_sensor.bulkRead(
-				[](const int16_t xyz[3], const sensor_real_t timeDelta) {},
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
 				[&sumXYZ,
-				 &sampleCount](const int16_t xyz[3], const sensor_real_t timeDelta) {
+				 &sampleCount](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					sumXYZ[0] += xyz[0];
 					sumXYZ[1] += xyz[1];
 					sumXYZ[2] += xyz[2];
@@ -457,7 +486,7 @@ public:
 			ESP.wdtFeed();
 #endif
 			m_sensor.bulkRead(
-				[&](const int16_t xyz[3], const sensor_real_t timeDelta) {
+				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					const sensor_real_t scaledData[]
 						= {static_cast<sensor_real_t>(
 							   AScale * static_cast<sensor_real_t>(xyz[0])
@@ -512,7 +541,7 @@ public:
 						samplesGathered = true;
 					}
 				},
-				[](const int16_t xyz[3], const sensor_real_t timeDelta) {}
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {}
 			);
 		}
 		ledManager.off();
@@ -557,10 +586,11 @@ public:
 		uint32_t currentTime;
 		while ((currentTime = millis()) < calibTarget) {
 			m_sensor.bulkRead(
-				[&accelSamples](const int16_t xyz[3], const sensor_real_t timeDelta) {
-					accelSamples++;
-				},
-				[&gyroSamples](const int16_t xyz[3], const sensor_real_t timeDelta) {
+				[&accelSamples](
+					const RawSensorT xyz[3],
+					const sensor_real_t timeDelta
+				) { accelSamples++; },
+				[&gyroSamples](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					gyroSamples++;
 				}
 			);
@@ -612,8 +642,11 @@ public:
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
+	uint32_t m_lastRotationUpdateMillis = 0;
 	uint32_t m_lastRotationPacketSent = 0;
 	uint32_t m_lastTemperaturePacketSent = 0;
+
+	RestCalibrationDetector calibrationDetector;
 };
 
 }  // namespace SlimeVR::Sensors

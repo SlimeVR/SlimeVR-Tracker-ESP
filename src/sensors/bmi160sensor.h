@@ -29,6 +29,7 @@
 #include "../motionprocessing/GyroTemperatureCalibrator.h"
 #include "../motionprocessing/RestDetection.h"
 #include "../motionprocessing/types.h"
+#include "RestCalibrationDetector.h"
 #include "SensorFusionRestDetect.h"
 #include "magneto1.4.h"
 #include "sensor.h"
@@ -138,7 +139,7 @@ public:
 
 	BMI160Sensor(
 		uint8_t id,
-		uint8_t addrSuppl,
+		uint8_t i2cAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
@@ -148,7 +149,7 @@ public:
 			"BMI160Sensor",
 			ImuID::BMI160,
 			id,
-			Address + addrSuppl,
+			i2cAddress,
 			rotation,
 			sclPin,
 			sdaPin
@@ -265,6 +266,8 @@ private:
 	bool isMagCalibrated = false;
 
 	SlimeVR::Configuration::BMI160SensorConfig m_Config = {};
+
+	SlimeVR::Sensors::RestCalibrationDetector calibrationDetector;
 };
 
 #endif

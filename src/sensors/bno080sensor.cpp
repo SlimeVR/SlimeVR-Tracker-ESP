@@ -97,6 +97,8 @@ void BNO080Sensor::motionSetup() {
 	imu.enableRawMagnetometer(10);
 #endif
 
+	imu.enableStabilityClassifier(500);
+
 	lastReset = 0;
 	lastData = millis();
 	working = true;
@@ -237,6 +239,10 @@ void BNO080Sensor::motionLoop() {
 			lastError.error_module,
 			lastError.error_code
 		);
+	}
+
+	if (imu.getStabilityClassifier() == 1) {
+		markRestCalibrationComplete();
 	}
 }
 

@@ -53,11 +53,6 @@ void setup() {
 	Serial.begin(serialBaudRate);
 	globalTimer = timer_create_default();
 
-#ifdef ESP32C3
-	// Wait for the Computer to be able to connect.
-	delay(2000);
-#endif
-
 	Serial.println();
 	Serial.println();
 	Serial.println();
@@ -123,6 +118,7 @@ void loop() {
 	sensorManager.update();
 	battery.Loop();
 	ledManager.update();
+	I2CSCAN::update();
 #ifdef TARGET_LOOPTIME_MICROS
 	long elapsed = (micros() - loopTime);
 	if (elapsed < TARGET_LOOPTIME_MICROS) {

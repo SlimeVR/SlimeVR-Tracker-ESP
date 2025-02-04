@@ -29,9 +29,10 @@
 #include "icm20948sensor.h"
 #include "mpu6050sensor.h"
 #include "mpu9250sensor.h"
-#include "sensoraddresses.h"
 #include "softfusion/drivers/bmi270.h"
 #include "softfusion/drivers/icm42688.h"
+#include "softfusion/drivers/icm45605.h"
+#include "softfusion/drivers/icm45686.h"
 #include "softfusion/drivers/lsm6ds3trc.h"
 #include "softfusion/drivers/lsm6dso.h"
 #include "softfusion/drivers/lsm6dsr.h"
@@ -60,6 +61,10 @@ using SoftFusionLSM6DSR
 	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;
 using SoftFusionMPU6050
 	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
+using SoftFusionICM45686
+	= SoftFusionSensor<SoftFusion::Drivers::ICM45686, SoftFusion::I2CImpl>;
+using SoftFusionICM45605
+	= SoftFusionSensor<SoftFusion::Drivers::ICM45605, SoftFusion::I2CImpl>;
 
 // TODO Make it more generic in the future and move another place (abstract sensor
 // interface)
@@ -117,7 +122,7 @@ void SensorManager::setup() {
 	if (activeSensorCount == 0) {
 		m_Logger.error(
 			"Can't find I2C device on provided addresses, scanning for all I2C devices "
-			"and returning"
+			"in the background"
 		);
 		I2CSCAN::scani2cports();
 	}

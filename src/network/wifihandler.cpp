@@ -79,7 +79,7 @@ void WiFiNetwork::setUp() {
 #endif
 	WiFi.hostname("SlimeVR FBT Tracker");
 	wifiHandlerLogger.info(
-		"Loaded credentials for SSID %s and pass length %d",
+		"Loaded credentials for SSID '%s' and pass length %d",
 		WiFi.SSID().c_str(),
 		WiFi.psk().length()
 	);
@@ -127,7 +127,7 @@ void onConnected() {
 	isWifiConnected = true;
 	hadWifi = true;
 	wifiHandlerLogger.info(
-		"Connected successfully to SSID '%s', ip address %s",
+		"Connected successfully to SSID '%s', IP address %s",
 		WiFi.SSID().c_str(),
 		WiFi.localIP().toString().c_str()
 	);

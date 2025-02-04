@@ -36,7 +36,7 @@ public:
 
 	MPU6050Sensor(
 		uint8_t id,
-		uint8_t addrSuppl,
+		uint8_t i2cAddress,
 		float rotation,
 		uint8_t sclPin,
 		uint8_t sdaPin,
@@ -46,7 +46,7 @@ public:
 			"MPU6050Sensor",
 			ImuID::MPU6050,
 			id,
-			Address + addrSuppl,
+			i2cAddress,
 			rotation,
 			sclPin,
 			sdaPin
