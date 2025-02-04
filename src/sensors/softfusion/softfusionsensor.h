@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "../RestCalibrationDetector.h"
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
@@ -199,6 +200,26 @@ public:
 		, m_sensor(I2CImpl(i2cAddress), m_Logger) {}
 	~SoftFusionSensor() {}
 
+	void checkSensorTimeout() {
+		uint32_t now = millis();
+		constexpr uint32_t sensorTimeoutMillis = 2e3;  // 2 seconds
+		if (m_lastRotationUpdateMillis + sensorTimeoutMillis > now) {
+			return;
+		}
+
+		working = false;
+		m_status = SensorStatus::SENSOR_ERROR;
+		m_Logger.error(
+			"Sensor timeout I2C Address 0x%02x delaytime: %d ms",
+			addr,
+			now - m_lastRotationUpdateMillis
+		);
+		networkConnection.sendSensorError(
+			this->sensorId,
+			static_cast<uint8_t>(PacketErrorCode::WATCHDOG_TIMEOUT)
+		);
+	}
+
 	void motionLoop() override final {
 		sendTempIfNeeded();
 
@@ -218,9 +239,11 @@ public:
 			);
 			optimistic_yield(100);
 			if (!m_fusion.isUpdated()) {
+				checkSensorTimeout();
 				return;
 			}
 			hadData = true;
+			m_lastRotationUpdateMillis = millis();
 			m_fusion.clearUpdated();
 		}
 
@@ -235,6 +258,10 @@ public:
 			setFusedRotation(m_fusion.getQuaternionQuat());
 			setAcceleration(m_fusion.getLinearAccVec());
 			optimistic_yield(100);
+		}
+
+		if (calibrationDetector.update(m_fusion)) {
+			markRestCalibrationComplete();
 		}
 	}
 
@@ -615,8 +642,11 @@ public:
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
+	uint32_t m_lastRotationUpdateMillis = 0;
 	uint32_t m_lastRotationPacketSent = 0;
 	uint32_t m_lastTemperaturePacketSent = 0;
+
+	RestCalibrationDetector calibrationDetector;
 };
 
 }  // namespace SlimeVR::Sensors

@@ -128,6 +128,7 @@ public:
 private:
 	void updateSensorState(std::vector<std::unique_ptr<Sensor>>& sensors);
 	void maybeRequestFeatureFlags();
+	bool isSensorStateUpdated(int i, std::unique_ptr<Sensor>& sensor);
 
 	bool beginPacket();
 	bool endPacket();
@@ -174,6 +175,7 @@ private:
 	unsigned long m_LastPacketTimestamp;
 
 	SensorStatus m_AckedSensorState[MAX_SENSORS_COUNT] = {SensorStatus::SENSOR_OFFLINE};
+	bool m_AckedSensorCalibration[MAX_SENSORS_COUNT] = {false};
 	unsigned long m_LastSensorInfoPacketTimestamp = 0;
 
 	uint8_t m_FeatureFlagsRequestAttempts = 0;

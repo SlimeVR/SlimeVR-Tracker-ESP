@@ -22,6 +22,8 @@
 */
 #include "bno055sensor.h"
 
+#include <cstdint>
+
 #include "GlobalVars.h"
 #include "globals.h"
 
@@ -70,6 +72,12 @@ void BNO055Sensor::motionLoop() {
 		);
 	}
 #endif
+
+	uint8_t gyroCalibrationState;
+	imu.getCalibration(nullptr, &gyroCalibrationState, nullptr, nullptr);
+	if (gyroCalibrationState == 3) {
+		markRestCalibrationComplete();
+	}
 
 	// TODO Optimize a bit with setting rawQuat directly
 	setFusedRotation(imu.getQuat());

@@ -148,7 +148,7 @@ void SensorManager::setup() {
 	if (activeSensorCount == 0) {
 		m_Logger.error(
 			"Can't find I2C device on provided addresses, scanning for all I2C devices "
-			"and returning"
+			"in the background"
 		);
 		I2CSCAN::scani2cports();
 	}

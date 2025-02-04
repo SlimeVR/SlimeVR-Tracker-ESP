@@ -99,6 +99,7 @@ public:
 	const Vector3& getAcceleration() { return acceleration; };
 	const Quat& getFusedRotation() { return fusedRotation; };
 	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
+	inline bool hasCompletedRestCalibration() { return restCalibrationComplete; }
 
 	virtual uint8_t getDataType() { return SENSOR_DATATYPE_ROTATION; };
 
@@ -128,11 +129,15 @@ protected:
 	Vector3 acceleration{};
 
 	uint16_t m_SensorPosition = POSITION_NO;
+	
+	void markRestCalibrationComplete(bool completed = true);
 
 	mutable SlimeVR::Logging::Logger m_Logger;
 
 private:
 	void printTemperatureCalibrationUnsupported();
+
+	bool restCalibrationComplete;
 };
 
 const char* getIMUNameByType(ImuID imuType);

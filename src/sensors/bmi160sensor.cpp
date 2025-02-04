@@ -310,6 +310,10 @@ void BMI160Sensor::motionLoop() {
 	}
 #endif
 
+	if (calibrationDetector.update(sfusion)) {
+		markRestCalibrationComplete();
+	}
+
 	{
 		uint32_t now = micros();
 		constexpr uint32_t BMI160_TARGET_SYNC_INTERVAL_MICROS = 25000;
