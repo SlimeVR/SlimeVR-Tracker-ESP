@@ -129,7 +129,7 @@ protected:
 	Vector3 acceleration{};
 
 	uint16_t m_SensorPosition = POSITION_NO;
-	
+
 	void markRestCalibrationComplete(bool completed = true);
 
 	mutable SlimeVR::Logging::Logger m_Logger;
