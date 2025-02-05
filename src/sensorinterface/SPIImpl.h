@@ -27,21 +27,35 @@
 
 #include <cstdint>
 
+#include "../logging/Logger.h"
 #include "RegisterInterface.h"
 
-#define ICM_READ_FLAG 1 << 7
+#define ICM_READ_FLAG 0x80
 
 namespace SlimeVR::Sensors::SoftFusion {
 
 struct SPIImpl : public RegisterInterface {
-	SPIImpl(uint8_t address): m_spiClass(SPI),m_spiSettings(SPISettings()), m_csPin(nullptr) {
+	SPIImpl(uint8_t address)
+		: m_spiClass(SPI)
+		, m_spiSettings(SPISettings())
+		, m_csPin(nullptr) {
 		static_assert("SPI requires explicit declaration");
 	}
 
 	SPIImpl(SPIClass& spiClass, SPISettings spiSettings, PinInterface* csPin)
 		: m_spiClass(spiClass)
 		, m_spiSettings(spiSettings)
-		, m_csPin(csPin) {}
+		, m_csPin(csPin) {
+		m_Logger.info(
+			"SPI settings: clock: %d, bit order: 0x%02X, data mode: 0x%02X",
+			spiSettings._clock,
+			spiSettings._bitOrder,
+			spiSettings._dataMode
+		);
+		csPin->pinMode(OUTPUT);
+		csPin->digitalWrite(HIGH);
+		spiClass.begin();
+	}
 
 	uint8_t readReg(uint8_t regAddr) const override {
 		m_spiClass.beginTransaction(m_spiSettings);
@@ -130,14 +144,13 @@ struct SPIImpl : public RegisterInterface {
 
 	operator uint8_t() const { return getAddress(); }
 
-	operator std::string() const {
-		return std::string("SPI");
-	}
+	operator std::string() const { return std::string("SPI"); }
 
 private:
 	SPIClass& m_spiClass;
 	SPISettings m_spiSettings;
 	PinInterface* m_csPin;
+	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("SPI");
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion

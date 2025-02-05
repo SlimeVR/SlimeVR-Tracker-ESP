@@ -45,8 +45,8 @@
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/I2CWireSensorInterface.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
-#include "sensorinterface/i2cimpl.h"
 #include "sensorinterface/SPIImpl.h"
+#include "sensorinterface/i2cimpl.h"
 
 namespace SlimeVR {
 namespace Sensors {
@@ -83,7 +83,9 @@ private:
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
-		RegInterface interface = imuInterface.value_or(RegInterface(ImuType::Address + sensorID));
+		RegInterface interface = imuInterface.value_or(
+			RegInterface(ImuType::Address + sensorID)
+		);
 		m_Logger.trace(
 			"Building IMU with: id=%d,\n\
 						address=0x%02X, rotation=%f,\n\
@@ -105,22 +107,18 @@ private:
 		sensorInterface->swapIn();
 
 		if (interface.hasSensorOnBus()) {
-			m_Logger
-				.trace("Sensor %d found at address 0x%s", sensorID + 1, interface);
+			m_Logger.trace("Sensor %d found at address 0x%s", sensorID + 1, interface);
 		} else {
 			if (!optional) {
-				m_Logger.error(
-					"Mandatory sensor %d not found at address 0x%s",
-					sensorID + 1,
-					interface
+				m_Logger
+					.error("Mandatory sensor %d not found at address 0x%s", sensorID + 1, interface);
+				sensor = std::make_unique<ErroneousSensor>(
+					sensorID,
+					ImuType::SensorTypeID
 				);
-				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::SensorTypeID);
 			} else {
-				m_Logger.debug(
-					"Optional sensor %d not found at address 0x%s",
-					sensorID + 1,
-					interface
-				);
+				m_Logger
+					.debug("Optional sensor %d not found at address 0x%s", sensorID + 1, interface);
 				sensor = std::make_unique<EmptySensor>(sensorID);
 			}
 			return sensor;

@@ -134,6 +134,7 @@ void SensorManager::setup() {
 	}
 
 #define NO_PIN nullptr
+#define NO_WIRE new EmptySensorInterface
 #define DIRECT_PIN(pin) directPin(pin)
 #define DIRECT_WIRE(scl, sda) directWire(scl, sda)
 #define MCP_PIN(pin) mcpPin(pin)
@@ -176,10 +177,6 @@ void SensorManager::setup() {
 	{ m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); }
 	SENSOR_INFO_LIST;
 
-#undef SENSOR_DESC_ENTRY
-#undef NO_PIN
-#undef DIRECT_PIN
-#undef DIRECT_WIRE
 	m_Logger.info("%d sensor(s) configured", activeSensorCount);
 	// Check and scan i2c if no sensors active
 	if (activeSensorCount == 0) {
