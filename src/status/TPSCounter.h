@@ -27,10 +27,10 @@
 
 class TPSCounter {
 public:
-	virtual void reset();
-	virtual void update();
-	virtual float getAveragedTPS();
-	virtual float getTPS();
+	void reset();
+	void update();
+	float getAveragedTPS();
+	float getTPS();
 
 private:
 	long _lastUpdate;
