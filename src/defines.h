@@ -26,8 +26,8 @@
 // ================================================
 
 // Set parameters of IMU and board used
-#define IMU IMU_BNO085
-#define SECOND_IMU IMU
+#define IMU IMU_AUTO
+#define SECOND_IMU IMU_AUTO
 #define BOARD BOARD_SLIMEVR
 #define IMU_ROTATION DEG_270
 #define SECOND_IMU_ROTATION DEG_270
@@ -54,24 +54,24 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 */
 
 #ifndef SENSOR_DESC_LIST
-#define SENSOR_DESC_LIST                       \
-	SENSOR_DESC_ENTRY(                         \
-		IMU,                                   \
-		PRIMARY_IMU_ADDRESS_ONE,               \
-		IMU_ROTATION,                          \
-		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), \
-		PRIMARY_IMU_OPTIONAL,                  \
-		DIRECT_PIN(PIN_IMU_INT),               \
-		0                                      \
-	)                                          \
-	SENSOR_DESC_ENTRY(                         \
-		SECOND_IMU,                            \
-		SECONDARY_IMU_ADDRESS_TWO,             \
-		SECOND_IMU_ROTATION,                   \
-		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), \
-		SECONDARY_IMU_OPTIONAL,                \
-		DIRECT_PIN(PIN_IMU_INT_2),             \
-		0                                      \
+#define SENSOR_DESC_LIST                                             \
+	SENSOR_DESC_ENTRY(                                           \
+		IMU,                                                         \
+		DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3, DIRECT_PIN(15)), \
+		IMU_ROTATION,                                                \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),                       \
+		PRIMARY_IMU_OPTIONAL,                                        \
+		DIRECT_PIN(PIN_IMU_INT),                                     \
+		0                                                            \
+	)                                                                \
+	SENSOR_DESC_ENTRY(                                               \
+		SECOND_IMU,                                                  \
+		SECONDARY_IMU_ADDRESS_TWO,                                   \
+		SECOND_IMU_ROTATION,                                         \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),                       \
+		SECONDARY_IMU_OPTIONAL,                                      \
+		DIRECT_PIN(PIN_IMU_INT_2),                                   \
+		0                                                            \
 	)
 #endif
 
@@ -239,10 +239,10 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 
 // Board-specific configurations
 #if BOARD == BOARD_SLIMEVR
-#define PIN_IMU_SDA 14
-#define PIN_IMU_SCL 12
-#define PIN_IMU_INT 16
-#define PIN_IMU_INT_2 13
+#define PIN_IMU_SDA 4
+#define PIN_IMU_SCL 5
+#define PIN_IMU_INT 2
+#define PIN_IMU_INT_2 16
 #define PIN_BATTERY_LEVEL 17
 #define LED_PIN 2
 #define LED_INVERTED true

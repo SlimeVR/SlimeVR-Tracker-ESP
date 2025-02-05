@@ -137,9 +137,9 @@ public:
 	bool endBundle();
 
 private:
-	void updateSensorState(std::vector<std::unique_ptr<Sensor>>& sensors);
+	void updateSensorState(std::vector<std::unique_ptr<::Sensor>>& sensors);
 	void maybeRequestFeatureFlags();
-	bool isSensorStateUpdated(int i, std::unique_ptr<Sensor>& sensor);
+	bool isSensorStateUpdated(int i, std::unique_ptr<::Sensor>& sensor);
 
 	bool beginPacket();
 	bool endPacket();
@@ -209,7 +209,7 @@ private:
 	void sendTrackerDiscovery();
 
 	// PACKET_SENSOR_INFO 15
-	void sendSensorInfo(Sensor& sensor);
+	void sendSensorInfo(::Sensor& sensor);
 
 	void sendAcknowledgeConfigChange(uint8_t sensorId, SensorToggles configType);
 

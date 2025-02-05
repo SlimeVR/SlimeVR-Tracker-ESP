@@ -139,7 +139,7 @@ public:
 
 	BMI160Sensor(
 		uint8_t id,
-		uint8_t i2cAddress,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface*,
@@ -149,7 +149,7 @@ public:
 			"BMI160Sensor",
 			SensorTypeID::BMI160,
 			id,
-			i2cAddress,
+			registerInterface,
 			rotation,
 			sensorInterface
 		)

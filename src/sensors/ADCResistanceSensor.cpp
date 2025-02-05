@@ -24,6 +24,8 @@
 
 #include "GlobalVars.h"
 
+namespace SlimeVR {
+namespace Sensors {
 void ADCResistanceSensor::motionLoop() {
 #if ESP8266
 	float voltage = ((float)analogRead(m_Pin)) * ADCVoltageMax / ADCResolution;
@@ -39,3 +41,6 @@ void ADCResistanceSensor::motionLoop() {
 void ADCResistanceSensor::sendData() {
 	networkConnection.sendFlexData(sensorId, m_Data);
 }
+
+}  // namespace Sensors
+}  // namespace SlimeVR

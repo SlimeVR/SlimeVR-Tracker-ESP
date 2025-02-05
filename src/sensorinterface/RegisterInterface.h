@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Tailsy13 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,26 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#pragma once
 
-#ifndef SENSORS_ERRONEOUSSENSOR_H
-#define SENSORS_ERRONEOUSSENSOR_H
+#include <cstdint>
 
-#include "sensor.h"
+#include "I2Cdev.h"
 
-namespace SlimeVR {
-namespace Sensors {
-class ErroneousSensor : public Sensor {
-public:
-	ErroneousSensor(uint8_t id, SensorTypeID type)
-		: Sensor("ErroneousSensor", type, id, *(new I2CImpl(0)), 0.0)
-		, m_ExpectedType(type){};
-	~ErroneousSensor(){};
+namespace SlimeVR::Sensors {
 
-	void motionSetup() override;
-	void motionLoop() override final{};
-	void sendData() override{};
-	void startCalibration(int calibrationType) override final{};
-	SensorStatus getSensorState() override final;
+struct RegisterInterface {
+	static constexpr size_t MaxTransactionLength = I2C_BUFFER_LENGTH - 2;
 
-private:
-	SensorTypeID m_ExpectedType;
+	virtual uint8_t readReg(uint8_t regAddr) const = 0;
+	virtual uint16_t readReg16(uint8_t regAddr) const = 0;
+	virtual void writeReg(uint8_t regAddr, uint8_t value) const = 0;
+	virtual void writeReg16(uint8_t regAddr, uint16_t value) const = 0;
+	virtual void readBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const = 0;
+	virtual void writeBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const = 0;
+	virtual uint8_t getAddress() const = 0;
+	virtual bool hasSensorOnBus() = 0;
+	virtual std::string toString() const = 0;
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
 
-#endif
+}  // namespace SlimeVR::Sensors::SoftFusion
