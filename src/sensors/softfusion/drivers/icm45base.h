@@ -24,13 +24,15 @@
 #include <array>
 #include <cstdint>
 
+#include "GlobalVars.h"
+
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 32g
 // and gyroscope range at 4000dps
 // using high resolution mode
 // Uses 32.768kHz clock
-// Gyroscope ODR = 409.6Hz, accel ODR = 204.8Hz
+// Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 template <typename I2CImpl>
@@ -38,7 +40,7 @@ struct ICM45Base {
 	static constexpr uint8_t Address = 0x68;
 
 	static constexpr float GyrTs = 1.0 / 409.6;
-	static constexpr float AccTs = 1.0 / 204.8;
+	static constexpr float AccTs = 1.0 / 102.4;
 	static constexpr float TempTs = 1.0 / 409.6;
 
 	static constexpr float MagTs = 1.0 / 100;
@@ -49,7 +51,12 @@ struct ICM45Base {
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 128.0f;
 
-	static constexpr bool Uses32BitSensorData = true;
+	static constexpr float TemperatureZROChange = 20.0f;
+
+	static constexpr bool Uses32BitSensorData = USE_6_AXIS;
+
+	static constexpr int fifoReadSize
+		= 8;  // Can't be more than 12 or it will overflow i2c read size, default 8
 
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
@@ -74,7 +81,7 @@ struct ICM45Base {
 		struct AccelConfig {
 			static constexpr uint8_t reg = 0x1b;
 			static constexpr uint8_t value
-				= (0b000 << 4) | 0b1000;  // 32g, odr = 204.8Hz
+				= (0b000 << 4) | 0b1001;  // 32g, odr = 102.4Hz
 		};
 
 		struct FifoConfig0 {
@@ -100,30 +107,147 @@ struct ICM45Base {
 				= 0b11 | (0b11 << 2);  // accel in low noise mode, gyro in low noise
 		};
 
+		static constexpr uint8_t IRegAddr = 0x7c;
+		static constexpr uint8_t IRegData = 0x7e;
+
+		struct IOCPadScenarioAuxOvrd {
+			static constexpr uint8_t reg = 0x2f;
+			static constexpr uint8_t value
+				= 0b1 | (0b1 << 1) | (0b01 << 2) | (0b1 << 4);  // override aux
+																// enable and mode
+		};
+
+		struct I2CMCommand {
+			static constexpr uint8_t bank = 0xa2;
+			static constexpr uint8_t reg = 0x06;
+		};
+
+		struct I2CMDevProfile0 {
+			static constexpr uint8_t bank = 0xa2;
+			static constexpr uint8_t reg = 0x0e;
+		};
+
+		struct I2CMDevProfile1 {
+			static constexpr uint8_t bank = 0xa2;
+			static constexpr uint8_t reg = 0x0f;
+		};
+
+		struct I2CMWRData {
+			static constexpr uint8_t bank = 0xa2;
+			static constexpr uint8_t reg = 0x33;
+		};
+
+		struct I2CMRDData {
+			static constexpr uint8_t bank = 0xa2;
+			static constexpr uint8_t reg = 0x1b;
+		};
+
+		struct I2CMControl {
+			static constexpr uint8_t bank = 0xa2;
+			static constexpr uint8_t reg = 0x16;
+		};
+
+		struct I2CMStatus {
+			static constexpr uint8_t bank = 0xa2;
+			static constexpr uint8_t reg = 0x18;
+		};
+
+		struct I2CMDevStatus {
+			static constexpr uint8_t bank = 0xa2;
+			static constexpr uint8_t reg = 0x18;
+		};
+
+		struct RegMisc1 {
+			static constexpr uint8_t reg = 0x35;
+			static constexpr uint8_t value = 0b0010;  // internal relaxation
+													  // oscillator
+		};
+
 		static constexpr uint8_t FifoCount = 0x12;
 		static constexpr uint8_t FifoData = 0x14;
 	};
 
 #pragma pack(push, 1)
 	struct FifoEntryAligned {
-		union {
-			struct {
-				int16_t accel[3];
-				int16_t gyro[3];
-				uint16_t temp;
-				uint16_t timestamp;
-				uint8_t lsb[3];
-			} part;
-			uint8_t raw[19];
-		};
+		uint8_t header;
+		int16_t accel[3];
+		int16_t gyro[3];
+		uint16_t temp;
+		uint16_t timestamp;
+		uint8_t lsb[3];
+	};
+	struct FifoEntryAlignedAux {
+		uint8_t header1;
+		uint8_t header2;
+		int16_t accel[3];
+		int16_t gyro[3];
+		uint8_t aux1[9];
+		uint8_t aux2[6];
+		uint8_t temp;
+		uint16_t timestamp;
+	};
+
+	using FifoEntry
+		= std::conditional<USE_6_AXIS, FifoEntryAligned, FifoEntryAlignedAux>::type;
+
+	static_assert(sizeof(FifoEntry) == 32);
+
+	struct FifoBuffer {
+		FifoEntry entry[fifoReadSize] = {};
 	};
 #pragma pack(pop)
 
-	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
+	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntry);
+	static constexpr size_t FullFifoBufferSize = sizeof(FifoBuffer);
 
 	void softResetIMU() {
 		i2c.writeReg(BaseRegs::DeviceConfig::reg, BaseRegs::DeviceConfig::valueSwReset);
 		delay(35);
+	}
+
+	template <typename R>
+	void writeBankRegister() {
+		uint8_t data[] = {R::bank, R::reg, R::value};
+		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
+		delayMicroseconds(4);
+	}
+
+	template <typename R>
+	void writeBankRegister(uint8_t value) {
+		uint8_t data[] = {R::bank, R::reg, value};
+		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
+		delayMicroseconds(4);
+	}
+
+	template <typename R>
+	void writeBankRegister(uint8_t* value, size_t size) {
+		uint8_t data[] = {R::bank, R::reg, value[0]};
+		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
+		delayMicroseconds(4);
+		for (size_t i = 1; i < size; i++) {
+			i2c.writeReg(BaseRegs::IRegData, value[i]);
+			delayMicroseconds(4);
+		}
+	}
+
+	template <typename R>
+	uint8_t readBankRegister() {
+		uint8_t data[] = {R::bank, R::reg};
+		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
+		delayMicroseconds(4);
+		return i2c.readReg(BaseRegs::IRegData);
+	}
+
+	template <typename R, typename T>
+	void readBankRegister(T* outData, size_t count) {
+		uint8_t data[] = {R::bank, R::reg};
+		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
+		delayMicroseconds(4);
+		auto* buffer = reinterpret_cast<uint8_t*>(outData);
+		for (size_t i = 0; i < count * sizeof(T); i++) {
+			buffer[i] = i2c.readReg(BaseRegs::IRegData);
+			delayMicroseconds(4);
+		}
 	}
 
 	bool initializeBase() {
@@ -133,6 +257,14 @@ struct ICM45Base {
 		i2c.writeReg(BaseRegs::FifoConfig0::reg, BaseRegs::FifoConfig0::value);
 		i2c.writeReg(BaseRegs::FifoConfig3::reg, BaseRegs::FifoConfig3::value);
 		i2c.writeReg(BaseRegs::PwrMgmt0::reg, BaseRegs::PwrMgmt0::value);
+
+		if constexpr (!USE_6_AXIS) {
+			i2c.writeReg(
+				BaseRegs::IOCPadScenarioAuxOvrd::reg,
+				BaseRegs::IOCPadScenarioAuxOvrd::value
+			);
+		}
+
 		delay(1);
 
 		return true;
@@ -144,48 +276,115 @@ struct ICM45Base {
 		return result;
 	}
 
-	template <typename AccelCall, typename GyroCall>
-	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
+	template <typename AccelCall, typename GyroCall, typename MagCall>
+	void bulkRead(
+		AccelCall&& processAccelSample,
+		GyroCall&& processGyroSample,
+		MagCall&& processMagSample
+	) {
 		const auto fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
 		const auto fifo_bytes = fifo_packets * sizeof(FullFifoEntrySize);
 
-		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
+		FifoBuffer read_buffer;
 		const auto bytes_to_read = std::min(
-									   static_cast<size_t>(read_buffer.size()),
+									   static_cast<size_t>(FullFifoBufferSize),
 									   static_cast<size_t>(fifo_bytes)
 								   )
 								 / FullFifoEntrySize * FullFifoEntrySize;
-		i2c.readBytes(BaseRegs::FifoData, bytes_to_read, read_buffer.data());
+		i2c.readBytes(BaseRegs::FifoData, bytes_to_read, (uint8_t*)&read_buffer);
+		uint8_t index = 0;
 		for (auto i = 0u; i < bytes_to_read; i += FullFifoEntrySize) {
-			FifoEntryAligned entry;
-			memcpy(
-				entry.raw,
-				&read_buffer[i + 0x1],
-				sizeof(FifoEntryAligned)
-			);  // skip fifo header
-			const int32_t gyroData[3]{
-				static_cast<int32_t>(entry.part.gyro[0]) << 4
-					| (entry.part.lsb[0] & 0xf),
-				static_cast<int32_t>(entry.part.gyro[1]) << 4
-					| (entry.part.lsb[1] & 0xf),
-				static_cast<int32_t>(entry.part.gyro[2]) << 4
-					| (entry.part.lsb[2] & 0xf),
-			};
-			processGyroSample(gyroData, GyrTs);
-
-			if (entry.part.accel[0] != -32768) {
-				const int32_t accelData[3]{
-					static_cast<int32_t>(entry.part.accel[0]) << 4
-						| (static_cast<int32_t>(entry.part.lsb[0]) & 0xf0 >> 4),
-					static_cast<int32_t>(entry.part.accel[1]) << 4
-						| (static_cast<int32_t>(entry.part.lsb[1]) & 0xf0 >> 4),
-					static_cast<int32_t>(entry.part.accel[2]) << 4
-						| (static_cast<int32_t>(entry.part.lsb[2]) & 0xf0 >> 4),
+			if constexpr (USE_6_AXIS) {
+				FifoEntryAligned entry = read_buffer.entry[index++];
+				const int32_t gyroData[3]{
+					static_cast<int32_t>(entry.gyro[0]) << 4 | (entry.lsb[0] & 0xf),
+					static_cast<int32_t>(entry.gyro[1]) << 4 | (entry.lsb[1] & 0xf),
+					static_cast<int32_t>(entry.gyro[2]) << 4 | (entry.lsb[2] & 0xf),
 				};
-				processAccelSample(accelData, AccTs);
+				processGyroSample(gyroData, GyrTs);
+
+				if (entry.accel[0] != -32768) {
+					const int32_t accelData[3]{
+						static_cast<int32_t>(entry.accel[0]) << 4
+							| (static_cast<int32_t>(entry.lsb[0]) & 0xf0 >> 4),
+						static_cast<int32_t>(entry.accel[1]) << 4
+							| (static_cast<int32_t>(entry.lsb[1]) & 0xf0 >> 4),
+						static_cast<int32_t>(entry.accel[2]) << 4
+							| (static_cast<int32_t>(entry.lsb[2]) & 0xf0 >> 4),
+					};
+					processAccelSample(accelData, AccTs);
+				}
+			} else {
+				FifoEntryAlignedAux entry = read_buffer.entry[index++];
+				processGyroSample(entry.gyro, GyrTs);
+
+				if (entry.accel[0] != -32768) {
+					processAccelSample(entry.accel, AccTs);
+				}
+
+				if (entry.aux1[0] != 0xff || entry.aux1[1] != 0xff) {
+					processMagSample(entry.aux1);
+				}
 			}
 		}
 	}
+
+	void setAuxDeviceId(uint8_t id) {
+		printf("Aux ID: %x\n", id);
+		writeBankRegister<typename BaseRegs::I2CMDevProfile1>(id);
+	}
+
+	void writeAux(uint8_t address, uint8_t value) {
+		printf("Reg write: %x -> %x\n", address, value);
+		uint8_t data[] = {address, value};
+		writeBankRegister<typename BaseRegs::I2CMWRData>(data, sizeof(data));
+		writeBankRegister<typename BaseRegs::I2CMCommand>(
+			0b001 | (0b00 << 3) | (0b0 << 5) | (0b1 << 6)
+		);  // Write 1 byte on channel 0, last transmission
+		writeBankRegister<typename BaseRegs::I2CMControl>(
+			0b1 | (0b0 << 2) | (0b0 << 5)
+		);  // Start i2cm, fast mode, no restarts
+		while ((readBankRegister<typename BaseRegs::I2CMControl>() & 0b1) != 0)
+			;  // Wait until operation finishes
+	}
+
+	uint8_t readAux(uint8_t address) {
+		printf("Reg read: %x -> ", address);
+		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
+		writeBankRegister<typename BaseRegs::I2CMCommand>(
+			0b000 | (0b01 << 4) | (0b0 << 6) | (0b1 << 7)
+		);  // Read (with address) on channel 0, last transmission
+		writeBankRegister<typename BaseRegs::I2CMControl>(
+			0b1 | (0b0 << 3) | (0b0 << 6)
+		);  // Start i2cm, fast mode, no restarts
+		while ((readBankRegister<typename BaseRegs::I2CMControl>() & 0b1) != 0)
+			;  // Wait until operation finishes
+		auto value = readBankRegister<typename BaseRegs::I2CMRDData>();
+		printf("%x\n", value);
+
+		uint8_t error = readBankRegister<typename BaseRegs::I2CMStatus>();
+		uint8_t status = readBankRegister<typename BaseRegs::I2CMDevStatus>();
+		printf("Errors: %x, status: %x\n", error, status);
+
+		return value;
+	}
+
+	template <typename T>
+	void readAux(uint8_t address, T* outData, size_t count) {
+		static_assert(sizeof(T) * count <= 24, "Can only read 24 bytes at once!");
+		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
+		writeBankRegister<typename BaseRegs::I2CMCommand>(
+			0b000 | (0b01 << 3) | (0b0 << 5) | (0b1 << 6)
+		);  // Read (with address) on channel 0, last transmission
+		writeBankRegister<typename BaseRegs::I2CMControl>(
+			0b1 | (0b0 << 2) | (0b0 << 5)
+		);  // Start i2cm, fast mode, no restarts
+		while ((readBankRegister<typename BaseRegs::I2CMControl>() & 0b1) != 0)
+			;  // Wait until operation finishes
+
+		readBankRegister<typename BaseRegs::I2CMRDData, T>(outData, count);
+	}
 };
 
-}  // namespace SlimeVR::Sensors::SoftFusion::Drivers
+};  // namespace SlimeVR::Sensors::SoftFusion::Drivers
+

@@ -23,9 +23,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
+#include "magdriver.h"
 
 namespace SlimeVR::Sensors {
 
@@ -33,11 +36,17 @@ template <template <typename I2CImpl> typename T, typename I2CImpl>
 class SoftFusionSensor : public Sensor {
 	using imu = T<I2CImpl>;
 
-	static constexpr bool Uses32BitSensorData
-		= requires(imu& i) { i.Uses32BitSensorData; };
+	static constexpr bool Uses32BitSensorData = []() constexpr {
+		if constexpr (requires { imu::Uses32BitSensorData; }) {
+			return imu::Uses32BitSensorData;
+		} else {
+			return false;
+		}
+	}();
 
 	using RawSensorT =
 		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
+	static_assert(!Uses32BitSensorData);
 	using RawVectorT = std::array<RawSensorT, 3>;
 
 	static constexpr auto UpsideDownCalibrationInit = true;
@@ -135,10 +144,11 @@ class SoftFusionSensor : public Sensor {
 			),
 			static_cast<sensor_real_t>(
 				GScale * (static_cast<sensor_real_t>(xyz[2]) - m_calibration.G_off[2])
-			)
-		};
+			)};
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 	}
+
+	void processMagSample(const uint8_t* rawData, const sensor_real_t timeDelta) {}
 
 	void eatSamplesForSeconds(const uint32_t seconds) {
 		const auto targetDelay = millis() + 1000 * seconds;
@@ -154,7 +164,8 @@ class SoftFusionSensor : public Sensor {
 			}
 			m_sensor.bulkRead(
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {}
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+				[](const uint8_t* magData) {}
 			);
 		}
 	}
@@ -175,7 +186,8 @@ class SoftFusionSensor : public Sensor {
 					gyro[0] = xyz[0];
 					gyro[1] = xyz[1];
 					gyro[2] = xyz[2];
-				}
+				},
+				[](const uint8_t* magData) {}
 			);
 			yield();
 		}
@@ -214,7 +226,8 @@ public:
 				},
 				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					processGyroSample(xyz, timeDelta);
-				}
+				},
+				[](const uint8_t* magData) {}
 			);
 			optimistic_yield(100);
 			if (!m_fusion.isUpdated()) {
@@ -283,6 +296,16 @@ public:
 			m_Logger.error("Sensor failed to initialize!");
 			m_status = SensorStatus::SENSOR_ERROR;
 			return;
+		}
+
+		if (!USE_6_AXIS) {
+			magDriver.init(
+				[&](uint8_t id) { m_sensor.setAuxDeviceId(id); },
+				[&](uint8_t address) { return m_sensor.readAux(address); },
+				[&](uint8_t address, uint8_t value) {
+					m_sensor.writeAux(address, value);
+				}
+			);
 		}
 
 		m_status = SensorStatus::SENSOR_OK;
@@ -400,7 +423,8 @@ public:
 					sumXYZ[1] += xyz[1];
 					sumXYZ[2] += xyz[2];
 					++sampleCount;
-				}
+				},
+				[](const uint8_t* magData) {}
 			);
 		}
 
@@ -514,7 +538,8 @@ public:
 						samplesGathered = true;
 					}
 				},
-				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {}
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+				[](const uint8_t* magData) {}
 			);
 		}
 		ledManager.off();
@@ -565,7 +590,8 @@ public:
 				) { accelSamples++; },
 				[&gyroSamples](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					gyroSamples++;
-				}
+				},
+				[](const uint8_t* magData) {}
 			);
 			yield();
 		}
@@ -610,13 +636,14 @@ public:
 		   .G_Ts = imu::GyrTs,
 		   .M_Ts = imu::MagTs,
 		   .G_Sens = {1.0, 1.0, 1.0},
-		   .MotionlessData = {}
-		};
+		   .MotionlessData = {}};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
 	uint32_t m_lastRotationPacketSent = 0;
 	uint32_t m_lastTemperaturePacketSent = 0;
+
+	[[maybe_unused]] SoftFusion::MagDriver magDriver;
 };
 
 }  // namespace SlimeVR::Sensors
