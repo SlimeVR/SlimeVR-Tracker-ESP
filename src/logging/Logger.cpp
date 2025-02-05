@@ -7,49 +7,49 @@ void Logger::setTag(const char* tag) {
 	strcpy(m_Tag, tag);
 }
 
-void Logger::trace(const char* format, ...) {
+void Logger::trace(const char* format, ...) const {
 	va_list args;
 	va_start(args, format);
 	log(TRACE, format, args);
 	va_end(args);
 }
 
-void Logger::debug(const char* format, ...) {
+void Logger::debug(const char* format, ...) const {
 	va_list args;
 	va_start(args, format);
 	log(DEBUG, format, args);
 	va_end(args);
 }
 
-void Logger::info(const char* format, ...) {
+void Logger::info(const char* format, ...) const {
 	va_list args;
 	va_start(args, format);
 	log(INFO, format, args);
 	va_end(args);
 }
 
-void Logger::warn(const char* format, ...) {
+void Logger::warn(const char* format, ...) const {
 	va_list args;
 	va_start(args, format);
 	log(WARN, format, args);
 	va_end(args);
 }
 
-void Logger::error(const char* format, ...) {
+void Logger::error(const char* format, ...) const {
 	va_list args;
 	va_start(args, format);
 	log(ERROR, format, args);
 	va_end(args);
 }
 
-void Logger::fatal(const char* format, ...) {
+void Logger::fatal(const char* format, ...) const {
 	va_list args;
 	va_start(args, format);
 	log(FATAL, format, args);
 	va_end(args);
 }
 
-void Logger::log(Level level, const char* format, va_list args) {
+void Logger::log(Level level, const char* format, va_list args) const {
 	if (level < LOG_LEVEL) {
 		return;
 	}
