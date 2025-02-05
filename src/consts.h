@@ -44,6 +44,7 @@ enum class ImuID {
 	LSM6DSR,
 	ICM45686,
 	ICM45605,
+	BMI323,
 	Empty = 255
 };
 
@@ -63,6 +64,7 @@ enum class ImuID {
 #define IMU_LSM6DSV SoftFusionLSM6DSV
 #define IMU_LSM6DSO SoftFusionLSM6DSO
 #define IMU_LSM6DSR SoftFusionLSM6DSR
+#define IMU_BMI323 SoftFusionBMI323
 #define IMU_MPU6050_SF SoftFusionMPU6050
 #define IMU_ICM45686 SoftFusionICM45686
 #define IMU_ICM45605 SoftFusionICM45605
