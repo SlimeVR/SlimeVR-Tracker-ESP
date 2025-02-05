@@ -101,11 +101,15 @@ public:
 	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
 	inline bool hasCompletedRestCalibration() { return restCalibrationComplete; }
 
-	virtual uint8_t getDataType() { return SENSOR_DATATYPE_ROTATION; };
+	virtual SensorDataType getDataType() {
+		return SensorDataType::SENSOR_DATATYPE_ROTATION;
+	};
 
-	uint16_t getSensorPosition() { return m_SensorPosition; };
+	SensorPosition getSensorPosition() { return m_SensorPosition; };
 
-	void setSensorInfo(uint16_t sensorPosition) { m_SensorPosition = sensorPosition; };
+	void setSensorInfo(SensorPosition sensorPosition) {
+		m_SensorPosition = sensorPosition;
+	};
 
 	TPSCounter m_tpsCounter;
 	TPSCounter m_dataCounter;
@@ -128,7 +132,7 @@ protected:
 	bool newAcceleration = false;
 	Vector3 acceleration{};
 
-	uint16_t m_SensorPosition = POSITION_NO;
+	SensorPosition m_SensorPosition = SensorPosition::POSITION_NO;
 
 	void markRestCalibrationComplete(bool completed = true);
 

@@ -55,7 +55,9 @@ public:
 
 	SensorStatus getSensorState() override final { return SensorStatus::SENSOR_OK; }
 
-	uint8_t getDataType() override final { return SENSOR_DATATYPE_FLEX_RESISTANCE; };
+	SensorDataType getDataType() override final {
+		return SensorDataType::SENSOR_DATATYPE_FLEX_RESISTANCE;
+	};
 
 private:
 	uint8_t m_Pin;

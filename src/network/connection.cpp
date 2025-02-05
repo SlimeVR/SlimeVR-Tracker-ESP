@@ -297,8 +297,8 @@ void Connection::sendSensorInfo(Sensor& sensor) {
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorState())));
 	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorType())));
 	MUST(sendShort(sensor.getSensorConfigData()));
-	MUST(sendByte(sensor.getSensorPosition()));
-	MUST(sendByte(sensor.getDataType()));
+	MUST(sendByte(static_cast<uint8_t>(sensor.getSensorPosition())));
+	MUST(sendByte(static_cast<uint8_t>(sensor.getDataType())));
 	MUST(sendByte(sensor.hasCompletedRestCalibration()));
 	// ADD NEW FILEDS ABOVE THIS COMMENT ^^^^^^^^
 	// WARNING! Only for debug purposes and SHOULD ALWAYS BE LAST IN THE PACKET.
@@ -429,8 +429,9 @@ void Connection::sendTrackerDiscovery() {
 	MUST(sendShortString(FIRMWARE_VERSION));
 	// MAC address string
 	MUST(sendBytes(mac, 6));
-	MUST(sendByte(TRACKER_TYPE));  // Tracker type to hint the server if it's a glove or
-								   // normal tracker or something else
+	MUST(sendByte(static_cast<uint8_t>(TRACKER_TYPE))
+	);  // Tracker type to hint the server if it's a glove or
+		// normal tracker or something else
 
 	MUST(endPacket());
 }
