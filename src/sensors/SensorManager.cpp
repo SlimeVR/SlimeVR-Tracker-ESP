@@ -46,7 +46,6 @@
 #include "softfusion/drivers/lsm6dsr.h"
 #include "softfusion/drivers/lsm6dsv.h"
 #include "softfusion/drivers/mpu6050.h"
-#include "softfusion/i2cimpl.h"
 #include "softfusion/softfusionsensor.h"
 
 #if ESP32
@@ -63,29 +62,29 @@ namespace SlimeVR {
 namespace Sensors {
 using SoftFusionLSM6DS3TRC = SoftFusionSensor<
 	SoftFusion::Drivers::LSM6DS3TRC,
-	SoftFusion::I2CImpl,
+	SoftFusion::RegisterInterface,
 	SFCALIBRATOR>;
 using SoftFusionICM42688 = SoftFusionSensor<
 	SoftFusion::Drivers::ICM42688,
-	SoftFusion::I2CImpl,
+	SoftFusion::RegisterInterface,
 	SFCALIBRATOR>;
 using SoftFusionBMI270
-	= SoftFusionSensor<SoftFusion::Drivers::BMI270, SoftFusion::I2CImpl, SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::BMI270, SoftFusion::RegisterInterface, SFCALIBRATOR>;
 using SoftFusionLSM6DSV
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, SoftFusion::I2CImpl, SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, SoftFusion::RegisterInterface, SFCALIBRATOR>;
 using SoftFusionLSM6DSO
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::I2CImpl, SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::RegisterInterface, SFCALIBRATOR>;
 using SoftFusionLSM6DSR
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl, SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::RegisterInterface, SFCALIBRATOR>;
 using SoftFusionMPU6050
-	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl, SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::RegisterInterface, SFCALIBRATOR>;
 using SoftFusionICM45686 = SoftFusionSensor<
 	SoftFusion::Drivers::ICM45686,
-	SoftFusion::I2CImpl,
+	SoftFusion::RegisterInterface,
 	SFCALIBRATOR>;
 using SoftFusionICM45605 = SoftFusionSensor<
 	SoftFusion::Drivers::ICM45605,
-	SoftFusion::I2CImpl,
+	SoftFusion::RegisterInterface,
 	SFCALIBRATOR>;
 
 void SensorManager::setup() {
@@ -141,7 +140,7 @@ void SensorManager::setup() {
 
 #define SENSOR_DESC_ENTRY(ImuType, ...)                            \
 	{                                                              \
-		auto sensor = buildSensor<ImuType>(sensorID, __VA_ARGS__); \
+		auto sensor = buildSensor<ImuType, SlimeVR::Sensors::SoftFusion::I2CImpl>(sensorID, __VA_ARGS__); \
 		if (sensor->isWorking()) {                                 \
 			m_Logger.info("Sensor %d configured", sensorID + 1);   \
 			activeSensorCount++;                                   \

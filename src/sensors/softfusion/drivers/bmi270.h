@@ -39,7 +39,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 400Hz, accel ODR = 100Hz
 // Timestamps reading are not used
 
-template <typename I2CImpl>
+template <typename RegisterInterface>
 struct BMI270 {
 	static constexpr uint8_t Address = 0x68;
 	static constexpr auto Name = "BMI270";
@@ -68,13 +68,13 @@ struct BMI270 {
 		uint8_t x, y, z;
 	};
 
-	I2CImpl i2c;
-	SlimeVR::Logging::Logger& logger;
-	int8_t zxFactor;
-	BMI270(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: i2c(i2c)
-		, logger(logger)
-		, zxFactor(0) {}
+	RegisterInterface m_RegisterInterface;
+	SlimeVR::Logging::Logger& m_Logger;
+	int8_t m_zxFactor;
+	BMI270(RegisterInterface registerInterface, SlimeVR::Logging::Logger& logger)
+		: m_RegisterInterface(registerInterface)
+		, m_Logger(logger)
+		, m_zxFactor(0) {}
 
 	struct Regs {
 		struct WhoAmI {
@@ -244,14 +244,14 @@ struct BMI270 {
 
 	bool restartAndInit() {
 		// perform initialization step
-		i2c.writeReg(Regs::Cmd::reg, Regs::Cmd::valueSwReset);
+		m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueSwReset);
 		delay(12);
 		// disable power saving
-		i2c.writeReg(Regs::PwrConf::reg, Regs::PwrConf::valueNoPowerSaving);
+		m_RegisterInterface.writeReg(Regs::PwrConf::reg, Regs::PwrConf::valueNoPowerSaving);
 		delay(1);
 
 		// firmware upload
-		i2c.writeReg(Regs::InitCtrl::reg, Regs::InitCtrl::valueStartInit);
+		m_RegisterInterface.writeReg(Regs::InitCtrl::reg, Regs::InitCtrl::valueStartInit);
 		for (uint16_t pos = 0; pos < sizeof(bmi270_firmware);) {
 			// tell the device current position
 
@@ -261,57 +261,57 @@ struct BMI270 {
 
 			const uint16_t pos_words = pos >> 1;  // convert current position to words
 			const uint16_t position = (pos_words & 0x0F) | ((pos_words << 4) & 0xff00);
-			i2c.writeReg16(Regs::InitAddr, position);
+			m_RegisterInterface.writeReg16(Regs::InitAddr, position);
 			// write actual payload chunk
 			const uint16_t burstWrite = std::min(
 				sizeof(bmi270_firmware) - pos,
-				I2CImpl::MaxTransactionLength
+				RegisterInterface::MaxTransactionLength
 			);
-			i2c.writeBytes(
+			m_RegisterInterface.writeBytes(
 				Regs::InitData,
 				burstWrite,
 				const_cast<uint8_t*>(bmi270_firmware + pos)
 			);
 			pos += burstWrite;
 		}
-		i2c.writeReg(Regs::InitCtrl::reg, Regs::InitCtrl::valueEndInit);
+		m_RegisterInterface.writeReg(Regs::InitCtrl::reg, Regs::InitCtrl::valueEndInit);
 		delay(140);
 
 		// leave fifo_self_wakeup enabled
-		i2c.writeReg(Regs::PwrConf::reg, Regs::PwrConf::valueFifoSelfWakeup);
+		m_RegisterInterface.writeReg(Regs::PwrConf::reg, Regs::PwrConf::valueFifoSelfWakeup);
 		// check if IMU initialized correctly
-		if (!(i2c.readReg(Regs::InternalStatus::reg)
+		if (!(m_RegisterInterface.readReg(Regs::InternalStatus::reg)
 			  & Regs::InternalStatus::initializedBit)) {
 			// firmware upload fail or sensor not initialized
 			return false;
 		}
 
 		// read zx factor used to reduce gyro cross-sensitivity error
-		const uint8_t zx_factor_reg = i2c.readReg(Regs::RaGyrCas);
+		const uint8_t zx_factor_reg = m_RegisterInterface.readReg(Regs::RaGyrCas);
 		const uint8_t sign_byte = (zx_factor_reg << 1) & 0x80;
-		zxFactor = static_cast<int8_t>(zx_factor_reg | sign_byte);
+		m_zxFactor = static_cast<int8_t>(zx_factor_reg | sign_byte);
 		return true;
 	}
 
 	void setNormalConfig(MotionlessCalibrationData& gyroSensitivity) {
-		i2c.writeReg(Regs::GyrConf::reg, Regs::GyrConf::value);
-		i2c.writeReg(Regs::GyrRange::reg, Regs::GyrRange::value);
+		m_RegisterInterface.writeReg(Regs::GyrConf::reg, Regs::GyrConf::value);
+		m_RegisterInterface.writeReg(Regs::GyrRange::reg, Regs::GyrRange::value);
 
-		i2c.writeReg(Regs::AccConf::reg, Regs::AccConf::value);
-		i2c.writeReg(Regs::AccRange::reg, Regs::AccRange::value);
+		m_RegisterInterface.writeReg(Regs::AccConf::reg, Regs::AccConf::value);
+		m_RegisterInterface.writeReg(Regs::AccRange::reg, Regs::AccRange::value);
 
 		if (gyroSensitivity.valid) {
-			i2c.writeReg(Regs::Offset6::reg, Regs::Offset6::value);
-			i2c.writeBytes(Regs::GyrUserGain, 3, &gyroSensitivity.x);
+			m_RegisterInterface.writeReg(Regs::Offset6::reg, Regs::Offset6::value);
+			m_RegisterInterface.writeBytes(Regs::GyrUserGain, 3, &gyroSensitivity.x);
 		}
 
-		i2c.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueGyrAccTempOn);
+		m_RegisterInterface.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueGyrAccTempOn);
 		delay(100);  // power up delay
-		i2c.writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
-		i2c.writeReg(Regs::FifoConfig1::reg, Regs::FifoConfig1::value);
+		m_RegisterInterface.writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
+		m_RegisterInterface.writeReg(Regs::FifoConfig1::reg, Regs::FifoConfig1::value);
 
 		delay(4);
-		i2c.writeReg(Regs::Cmd::reg, Regs::Cmd::valueFifoFlush);
+		m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueFifoFlush);
 		delay(2);
 	}
 
@@ -330,43 +330,43 @@ struct BMI270 {
 		// need to start from clean state according to spec
 		restartAndInit();
 		// only Accel ON
-		i2c.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueAccOn);
+		m_RegisterInterface.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueAccOn);
 		delay(100);
-		i2c.writeReg(Regs::GyrCrtConf::reg, Regs::GyrCrtConf::valueRunning);
-		i2c.writeReg(Regs::FeatPage, 1);
-		i2c.writeReg16(Regs::GTrig1::reg, Regs::GTrig1::valueTriggerCRT);
-		i2c.writeReg(Regs::Cmd::reg, Regs::Cmd::valueGTrigger);
+		m_RegisterInterface.writeReg(Regs::GyrCrtConf::reg, Regs::GyrCrtConf::valueRunning);
+		m_RegisterInterface.writeReg(Regs::FeatPage, 1);
+		m_RegisterInterface.writeReg16(Regs::GTrig1::reg, Regs::GTrig1::valueTriggerCRT);
+		m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueGTrigger);
 		delay(200);
 
-		while (i2c.readReg(Regs::GyrCrtConf::reg) == Regs::GyrCrtConf::valueRunning) {
-			logger.info("CRT running. Do not move tracker!");
+		while (m_RegisterInterface.readReg(Regs::GyrCrtConf::reg) == Regs::GyrCrtConf::valueRunning) {
+			m_Logger.info("CRT running. Do not move tracker!");
 			delay(200);
 		}
 
-		i2c.writeReg(Regs::FeatPage, 0);
+		m_RegisterInterface.writeReg(Regs::FeatPage, 0);
 
-		uint8_t status = i2c.readReg(Regs::GyrGainStatus::reg)
+		uint8_t status = m_RegisterInterface.readReg(Regs::GyrGainStatus::reg)
 					  >> Regs::GyrGainStatus::statusOffset;
 		// turn gyroscope back on
-		i2c.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueGyrAccTempOn);
+		m_RegisterInterface.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueGyrAccTempOn);
 		delay(100);
 
 		bool success;
 
 		if (status != 0) {
-			logger.error(
+			m_Logger.error(
 				"CRT failed with status 0x%x. Recalibrate again to enable CRT.",
 				status
 			);
 			if (status == 0x03) {
-				logger.error("Reason: tracker was moved during CRT!");
+				m_Logger.error("Reason: tracker was moved during CRT!");
 			}
 
 			success = false;
 		} else {
 			std::array<uint8_t, 3> crt_values;
-			i2c.readBytes(Regs::GyrUserGain, crt_values.size(), crt_values.data());
-			logger.debug(
+			m_RegisterInterface.readBytes(Regs::GyrUserGain, crt_values.size(), crt_values.data());
+			m_Logger.debug(
 				"CRT finished successfully, result 0x%x, 0x%x, 0x%x",
 				crt_values[0],
 				crt_values[1],
@@ -395,11 +395,11 @@ struct BMI270 {
 		// temperature per step from -41 + 1/2^9 degrees C (0x8001) to 87 - 1/2^9
 		// degrees C (0x7FFF)
 		constexpr float TempStep = 128. / 65535;
-		const auto value = static_cast<int16_t>(i2c.readReg16(Regs::TempData));
+		const auto value = static_cast<int16_t>(m_RegisterInterface.readReg16(Regs::TempData));
 		return static_cast<float>(value) * TempStep + 23.0f;
 	}
 
-	using FifoBuffer = std::array<uint8_t, I2CImpl::MaxTransactionLength>;
+	using FifoBuffer = std::array<uint8_t, RegisterInterface::MaxTransactionLength>;
 	FifoBuffer read_buffer;
 
 	template <typename T>
@@ -416,13 +416,13 @@ struct BMI270 {
 		GyroCall&& processGyroSample,
 		TempCall&& processTempSample
 	) {
-		const auto fifo_bytes = i2c.readReg16(Regs::FifoCount);
+		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		const auto bytes_to_read = std::min(
 			static_cast<size_t>(read_buffer.size()),
 			static_cast<size_t>(fifo_bytes)
 		);
-		i2c.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
+		m_RegisterInterface.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
 
 		for (uint32_t i = 0u; i < bytes_to_read;) {
 			const uint8_t header = getFromFifo<uint8_t>(i, read_buffer);
@@ -451,7 +451,7 @@ struct BMI270 {
 					gyro[0] = std::clamp(
 						static_cast<int32_t>(gyro[0])
 							- static_cast<int16_t>(
-								(static_cast<int32_t>(zxFactor) * gyro[2]) / 512
+								(static_cast<int32_t>(m_zxFactor) * gyro[2]) / 512
 							),
 						static_cast<int32_t>(ShortLimit::min()),
 						static_cast<int32_t>(ShortLimit::max())

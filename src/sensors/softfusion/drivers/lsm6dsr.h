@@ -35,8 +35,8 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 416Hz, accel ODR = 104Hz
 
-template <typename I2CImpl>
-struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
+template <typename RegisterInterface>
+struct LSM6DSR : LSM6DSOutputHandler<RegisterInterface> {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DSR";
 	static constexpr auto Type = SensorTypeID::LSM6DSR;
@@ -67,7 +67,7 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 		.restThAcc = 0.192f,
 	};
 
-	using LSM6DSOutputHandler<I2CImpl>::i2c;
+	using LSM6DSOutputHandler<RegisterInterface>::m_RegisterInterface;
 
 	struct Regs {
 		struct WhoAmI {
@@ -103,18 +103,18 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 		static constexpr uint8_t FifoData = 0x78;
 	};
 
-	LSM6DSR(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: LSM6DSOutputHandler<I2CImpl>(i2c, logger) {}
+	LSM6DSR(RegisterInterface registerInterface, SlimeVR::Logging::Logger& logger)
+		: LSM6DSOutputHandler<RegisterInterface>(registerInterface, logger) {}
 
 	bool initialize() {
 		// perform initialization step
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
 		delay(20);
-		i2c.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
-		i2c.writeReg(Regs::Ctrl2GY::reg, Regs::Ctrl2GY::value);
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
-		i2c.writeReg(Regs::FifoCtrl3BDR::reg, Regs::FifoCtrl3BDR::value);
-		i2c.writeReg(Regs::FifoCtrl4Mode::reg, Regs::FifoCtrl4Mode::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl2GY::reg, Regs::Ctrl2GY::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
+		m_RegisterInterface.writeReg(Regs::FifoCtrl3BDR::reg, Regs::FifoCtrl3BDR::value);
+		m_RegisterInterface.writeReg(Regs::FifoCtrl4Mode::reg, Regs::FifoCtrl4Mode::value);
 		return true;
 	}
 
@@ -124,7 +124,7 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 		GyroCall&& processGyroSample,
 		TempCall&& processTempSample
 	) {
-		LSM6DSOutputHandler<I2CImpl>::
+		LSM6DSOutputHandler<RegisterInterface>::
 			template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
 				processAccelSample,
 				processGyroSample,
