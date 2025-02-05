@@ -22,7 +22,7 @@
 */
 #pragma once
 
-#include <Arduino.h>
+#include <cstdint>
 
 class PinInterface
 {
