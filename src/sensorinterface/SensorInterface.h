@@ -33,9 +33,9 @@ public:
 
 class EmptySensorInterface : public SensorInterface {
 public:
-	EmptySensorInterface() {};
-	void init() override final {};
-	void swapIn() override final {};
+	EmptySensorInterface(){};
+	void init() override final{};
+	void swapIn() override final{};
 };
 }  // namespace SlimeVR
 
