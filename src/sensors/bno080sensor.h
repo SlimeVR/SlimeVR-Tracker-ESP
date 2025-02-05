@@ -32,7 +32,7 @@
 
 class BNO080Sensor : public Sensor {
 public:
-	static constexpr auto TypeID = ImuID::BNO080;
+	static constexpr auto TypeID = SensorTypeID::BNO080;
 	static constexpr uint8_t Address = 0x4a;
 
 	BNO080Sensor(
@@ -45,7 +45,7 @@ public:
 	)
 		: Sensor(
 			"BNO080Sensor",
-			ImuID::BNO080,
+			SensorTypeID::BNO080,
 			id,
 			i2cAddress,
 			rotation,
@@ -66,7 +66,7 @@ protected:
 	// forwarding constructor
 	BNO080Sensor(
 		const char* sensorName,
-		ImuID imuId,
+		SensorTypeID imuId,
 		uint8_t id,
 		uint8_t i2cAddress,
 		float rotation,
@@ -98,7 +98,7 @@ private:
 
 class BNO085Sensor : public BNO080Sensor {
 public:
-	static constexpr auto TypeID = ImuID::BNO085;
+	static constexpr auto TypeID = SensorTypeID::BNO085;
 	BNO085Sensor(
 		uint8_t id,
 		uint8_t i2cAddress,
@@ -109,7 +109,7 @@ public:
 	)
 		: BNO080Sensor(
 			"BNO085Sensor",
-			ImuID::BNO085,
+			SensorTypeID::BNO085,
 			id,
 			i2cAddress,
 			rotation,
@@ -121,7 +121,7 @@ public:
 
 class BNO086Sensor : public BNO080Sensor {
 public:
-	static constexpr auto TypeID = ImuID::BNO086;
+	static constexpr auto TypeID = SensorTypeID::BNO086;
 	BNO086Sensor(
 		uint8_t id,
 		uint8_t i2cAddress,
@@ -132,7 +132,7 @@ public:
 	)
 		: BNO080Sensor(
 			"BNO086Sensor",
-			ImuID::BNO086,
+			SensorTypeID::BNO086,
 			id,
 			i2cAddress,
 			rotation,

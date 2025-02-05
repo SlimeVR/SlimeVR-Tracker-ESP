@@ -31,7 +31,7 @@
 
 class MPU6050Sensor : public Sensor {
 public:
-	static constexpr auto TypeID = ImuID::MPU6050;
+	static constexpr auto TypeID = SensorTypeID::MPU6050;
 	static constexpr uint8_t Address = 0x68;
 
 	MPU6050Sensor(
@@ -44,7 +44,7 @@ public:
 	)
 		: Sensor(
 			"MPU6050Sensor",
-			ImuID::MPU6050,
+			SensorTypeID::MPU6050,
 			id,
 			i2cAddress,
 			rotation,

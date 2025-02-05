@@ -30,7 +30,7 @@
 
 class BNO055Sensor : public Sensor {
 public:
-	static constexpr auto TypeID = ImuID::BNO055;
+	static constexpr auto TypeID = SensorTypeID::BNO055;
 	static constexpr uint8_t Address = 0x28;
 
 	BNO055Sensor(
@@ -43,7 +43,7 @@ public:
 	)
 		: Sensor(
 			"BNO055Sensor",
-			ImuID::BNO055,
+			SensorTypeID::BNO055,
 			id,
 			i2cAddress,
 			rotation,

@@ -25,7 +25,7 @@
 
 // List of constants used in other places
 
-enum class ImuID {
+enum class SensorTypeID {
 	Unknown = 0,
 	MPU9250,
 	MPU6500,

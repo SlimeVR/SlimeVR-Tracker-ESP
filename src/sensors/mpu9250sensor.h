@@ -44,7 +44,7 @@ constexpr float MPU9250_ODR_TS
 
 class MPU9250Sensor : public Sensor {
 public:
-	static constexpr auto TypeID = ImuID::MPU9250;
+	static constexpr auto TypeID = SensorTypeID::MPU9250;
 	static constexpr uint8_t Address = 0x68;
 
 	MPU9250Sensor(
@@ -57,7 +57,7 @@ public:
 	)
 		: Sensor(
 			"MPU9250Sensor",
-			ImuID::MPU9250,
+			SensorTypeID::MPU9250,
 			id,
 			i2cAddress,
 			rotation,

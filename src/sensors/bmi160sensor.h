@@ -135,7 +135,7 @@ static_assert(
 class BMI160Sensor : public Sensor {
 public:
 	static constexpr uint8_t Address = 0x68;
-	static constexpr auto TypeID = ImuID::BMI160;
+	static constexpr auto TypeID = SensorTypeID::BMI160;
 
 	BMI160Sensor(
 		uint8_t id,
@@ -147,7 +147,7 @@ public:
 	)
 		: Sensor(
 			"BMI160Sensor",
-			ImuID::BMI160,
+			SensorTypeID::BMI160,
 			id,
 			i2cAddress,
 			rotation,

@@ -30,7 +30,7 @@
 
 class ICM20948Sensor : public Sensor {
 public:
-	static constexpr auto TypeID = ImuID::ICM20948;
+	static constexpr auto TypeID = SensorTypeID::ICM20948;
 	static constexpr uint8_t Address = 0x68;
 
 	ICM20948Sensor(
@@ -43,7 +43,7 @@ public:
 	)
 		: Sensor(
 			"ICM20948Sensor",
-			ImuID::ICM20948,
+			SensorTypeID::ICM20948,
 			id,
 			i2cAddress,
 			rotation,

@@ -20,18 +20,15 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-#ifndef _H_PIN_INTERFACE_
-#define _H_PIN_INTERFACE_
+#pragma once
 
 #include <Arduino.h>
 
 class PinInterface
 {
 public:
-    virtual int digitalRead();
-    virtual void pinMode(uint8_t mode);
-    virtual void digitalWrite(uint8_t val);
+    virtual int digitalRead() = 0;
+    virtual void pinMode(uint8_t mode) = 0;
+    virtual void digitalWrite(uint8_t val) = 0;
     
 };
-
-#endif // _H_PIN_INTERFACE_

@@ -262,7 +262,7 @@ uint16_t BNO080::parseCommandReport(void)
 			_magCalEnabled = shtpData[8 + 0];
 			_planarAccelCalEnabled = shtpData[9 + 0];
 			_onTableCalEnabled = shtpData[10 + 0];
-			_hasNewCliabrationStatus = true;
+			_hasNewCalibrationStatus = true;
 		}
 		return shtpData[0];
 	}
@@ -1388,7 +1388,7 @@ void BNO080::sendCalibrateCommand(uint8_t thingToCalibrate)
 
 	//Make the internal calStatus variable non-zero (operation failed) so that user can test while we wait
 	calibrationStatus = 1;
-	_hasNewCliabrationStatus  = false;
+	_hasNewCalibrationStatus  = false;
 
 	//Using this shtpData packet, send a command
 	sendCommand(COMMAND_ME_CALIBRATE);
@@ -1412,7 +1412,7 @@ void BNO080::requestCalibrationStatus()
 		shtpData[x] = 0;
 
 	shtpData[6] = 0x01; //P3 - 0x01 - Subcommand: Get ME Calibration
-	_hasNewCliabrationStatus  = false;
+	_hasNewCalibrationStatus  = false;
 	//Using this shtpData packet, send a command
 	sendCommand(COMMAND_ME_CALIBRATE);
 }
@@ -1458,14 +1458,14 @@ void BNO080::saveCalibrationPeriodically(bool save)
 	sendCommand(COMMAND_DCD_PERIOD_SAVE); //Save DCD command
 }
 
-bool BNO080::hasNewCliabrationStatus()
+bool BNO080::hasNewCalibrationStatus()
 {
-	return _hasNewCliabrationStatus;
+	return _hasNewCalibrationStatus;
 }
 
 void BNO080::getCalibrationStatus(uint8_t &calibrationResponseStatus, uint8_t &accelCalEnabled, uint8_t &gyroCalEnabled, uint8_t &magCalEnabled, uint8_t &planarAccelCalEnabled, uint8_t &onTableCalEnabled)
 {
-	_hasNewCliabrationStatus = false;
+	_hasNewCalibrationStatus = false;
 	calibrationResponseStatus = _calibrationResponseStatus;
 	accelCalEnabled = _accelCalEnabled;
 	gyroCalEnabled = _gyroCalEnabled;

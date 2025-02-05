@@ -136,7 +136,7 @@ void SensorManager::setup() {
 	SENSOR_DESC_LIST;
 
 #define SENSOR_INFO_ENTRY(ImuID, ...) \
-	{ m_Sensors[ImuID]->setSensorInfo(__VA_ARGS__); }
+	{ m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); }
 	SENSOR_INFO_LIST;
 
 #undef SENSOR_DESC_ENTRY
@@ -157,7 +157,8 @@ void SensorManager::setup() {
 void SensorManager::postSetup() {
 	for (auto& sensor : m_Sensors) {
 		if (sensor->isWorking()) {
-			sensor->m_hwInterface->swapIn();
+			if(sensor->m_hwInterface != nullptr)
+				sensor->m_hwInterface->swapIn();
 			sensor->postSetup();
 		}
 	}
@@ -168,7 +169,8 @@ void SensorManager::update() {
 	bool allIMUGood = true;
 	for (auto& sensor : m_Sensors) {
 		if (sensor->isWorking()) {
-			sensor->m_hwInterface->swapIn();
+			if(sensor->m_hwInterface != nullptr)
+				sensor->m_hwInterface->swapIn();
 			sensor->motionLoop();
 		}
 		if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR) {

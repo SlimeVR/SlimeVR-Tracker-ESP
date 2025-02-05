@@ -244,7 +244,7 @@ public:
 	void saveCalibration();
 	void requestCalibrationStatus(); //Sends command to get status
 	bool calibrationComplete();   //Checks ME Cal response for byte 5, R0 - Status
-	bool hasNewCliabrationStatus();
+	bool hasNewCalibrationStatus();
 	void getCalibrationStatus(uint8_t &calibrationResponseStatus, uint8_t &accelCalEnabled, uint8_t &gyroCalEnabled, uint8_t &magCalEnabled, uint8_t &planarAccelCalEnabled, uint8_t &onTableCalEnabled);
 
 	uint8_t getTapDetector();
@@ -350,6 +350,6 @@ private:
 	int16_t magnetometer_Q1 = 4;
 	int16_t angular_velocity_Q1 = 10;
 
-	bool _hasNewCliabrationStatus = false;
+	bool _hasNewCalibrationStatus = false;
 	uint8_t _calibrationResponseStatus, _accelCalEnabled, _gyroCalEnabled, _magCalEnabled, _planarAccelCalEnabled, _onTableCalEnabled;
 };

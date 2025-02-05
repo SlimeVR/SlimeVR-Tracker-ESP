@@ -27,16 +27,15 @@
 namespace SlimeVR {
 class SensorInterface {
 public:
-	virtual void init();
-	virtual void swapIn();
+	virtual void init() = 0;
+	virtual void swapIn() = 0;
 };
 
 class EmptySensorInterface : public SensorInterface {
 public:
-	EmptySensorInterface();
-	~EmptySensorInterface();
-	void init() override final;
-	void swapIn() override final;
+	EmptySensorInterface() {};
+	void init() override final {};
+	void swapIn() override final {};
 };
 }  // namespace SlimeVR
 

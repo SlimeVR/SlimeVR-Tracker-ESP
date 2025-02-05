@@ -36,8 +36,7 @@ void swapI2C(uint8_t sclPin, uint8_t sdaPin) {
 	if (sclPin != activeSCLPin || sdaPin != activeSDAPin || !isI2CActive) {
 		Wire.flush();
 #if ESP32
-		if (isI2CActive) {
-		} else {
+		if (!isI2CActive) {
 			// Reset HWI2C to avoid being affected by I2CBUS reset
 			Wire.end();
 		}

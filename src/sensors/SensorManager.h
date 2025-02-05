@@ -58,11 +58,11 @@ public:
 	void update();
 
 	std::vector<std::unique_ptr<Sensor>>& getSensors() { return m_Sensors; };
-	ImuID getSensorType(size_t id) {
+	SensorTypeID getSensorType(size_t id) {
 		if (id < m_Sensors.size()) {
 			return m_Sensors[id]->getSensorType();
 		}
-		return ImuID::Unknown;
+		return SensorTypeID::Unknown;
 	}
 
 private:

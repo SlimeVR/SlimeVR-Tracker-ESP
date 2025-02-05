@@ -57,7 +57,7 @@ class Sensor {
 public:
 	Sensor(
 		const char* sensorName,
-		ImuID type,
+		SensorTypeID type,
 		uint8_t id,
 		uint8_t address,
 		float rotation,
@@ -94,7 +94,7 @@ public:
 	bool isValid() { return m_hwInterface != nullptr; };
 	bool isMagEnabled() { return magStatus == MagnetometerStatus::MAG_ENABLED; };
 	uint8_t getSensorId() { return sensorId; };
-	ImuID getSensorType() { return sensorType; };
+	SensorTypeID getSensorType() { return sensorType; };
 	MagnetometerStatus getMagStatus() { return magStatus; };
 	const Vector3& getAcceleration() { return acceleration; };
 	const Quat& getFusedRotation() { return fusedRotation; };
@@ -109,12 +109,12 @@ public:
 
 	TPSCounter m_tpsCounter;
 	TPSCounter m_dataCounter;
-	std::shared_ptr<SlimeVR::SensorInterface> m_hwInterface;
+	SlimeVR::SensorInterface* m_hwInterface = nullptr;
 
 protected:
 	uint8_t addr = 0;
 	uint8_t sensorId = 0;
-	ImuID sensorType = ImuID::Unknown;
+	SensorTypeID sensorType = SensorTypeID::Unknown;
 	bool working = false;
 	bool hadData = false;
 	uint8_t calibrationAccuracy = 0;
@@ -140,6 +140,6 @@ private:
 	bool restCalibrationComplete;
 };
 
-const char* getIMUNameByType(ImuID imuType);
+const char* getIMUNameByType(SensorTypeID imuType);
 
 #endif  // SLIMEVR_SENSOR_H_

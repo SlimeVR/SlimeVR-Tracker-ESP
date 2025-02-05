@@ -76,14 +76,14 @@ void BNO080Sensor::motionSetup() {
 	}
 
 	if (!isMagEnabled()) {
-		if ((sensorType == ImuID::BNO085 || sensorType == ImuID::BNO086)
+		if ((sensorType == SensorTypeID::BNO085 || sensorType == SensorTypeID::BNO086)
 			&& BNO_USE_ARVR_STABILIZATION) {
 			imu.enableARVRStabilizedGameRotationVector(10);
 		} else {
 			imu.enableGameRotationVector(10);
 		}
 	} else {
-		if ((sensorType == ImuID::BNO085 || sensorType == ImuID::BNO086)
+		if ((sensorType == SensorTypeID::BNO085 || sensorType == SensorTypeID::BNO086)
 			&& BNO_USE_ARVR_STABILIZATION) {
 			imu.enableARVRStabilizedRotationVector(10);
 		} else {
@@ -103,7 +103,7 @@ void BNO080Sensor::motionSetup() {
 	// EXPERIMENTAL Disable accelerometer calibration after 1 minute to prevent
 	// "stomping" bug WARNING : Executing IMU commands outside of the update loop is not
 	// allowed since the address might have changed when the timer is executed!
-	if (sensorType == ImuID::BNO085) {
+	if (sensorType == SensorTypeID::BNO085) {
 		// For BNO085, disable accel calibration
 		globalTimer.in(
 			60000,
@@ -113,7 +113,7 @@ void BNO080Sensor::motionSetup() {
 			},
 			&imu
 		);
-	} else if (sensorType == ImuID::BNO086) {
+	} else if (sensorType == SensorTypeID::BNO086) {
 		// For BNO086, disable accel calibration
 		// TODO: Find default flags for BNO086
 		globalTimer.in(
@@ -237,7 +237,7 @@ void BNO080Sensor::motionLoop() {
 		if (imu.getTapDetected()) {
 			tap = imu.getTapDetector();
 		}
-		if (imu.hasNewCliabrationStatus()) {
+		if (imu.hasNewCalibrationStatus()) {
 			uint8_t calibrationResponseStatus;
 			uint8_t accelCalEnabled;
 			uint8_t gyroCalEnabled;

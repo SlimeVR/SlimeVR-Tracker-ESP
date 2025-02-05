@@ -20,15 +20,14 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef ADC_FLEX_SENSOR_H
-#define ADC_FLEX_SENSOR_H
+#pragma once
 
 #include "sensor.h"
 #include "sensorinterface/SensorInterface.h"
 
 class ADCResistanceSensor : Sensor {
 public:
-	static constexpr auto TypeID = ImuID::ADC_RESISTANCE;
+	static constexpr auto TypeID = SensorTypeID::ADC_RESISTANCE;
 
 	ADCResistanceSensor(
 		uint8_t id,
@@ -39,7 +38,7 @@ public:
 	)
 		: Sensor(
 			"ADCResistanceSensor",
-			ImuID::ADC_RESISTANCE,
+			SensorTypeID::ADC_RESISTANCE,
 			id,
 			pin,
 			0.0f,
@@ -66,5 +65,3 @@ private:
 
 	float m_Data = 0.0f;
 };
-
-#endif
