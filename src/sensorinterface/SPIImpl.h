@@ -34,85 +34,89 @@
 namespace SlimeVR::Sensors::SoftFusion {
 
 struct SPIImpl : public RegisterInterface {
-	SPIImpl(SPIClass* spiClass, SPISettings spiSettings, PinInterface* csPin)
+	SPIImpl(uint8_t address): m_spiClass(SPI),m_spiSettings(SPISettings()), m_csPin(nullptr) {
+		static_assert("SPI requires explicit declaration");
+	}
+
+	SPIImpl(SPIClass& spiClass, SPISettings spiSettings, PinInterface* csPin)
 		: m_spiClass(spiClass)
 		, m_spiSettings(spiSettings)
 		, m_csPin(csPin) {}
 
 	uint8_t readReg(uint8_t regAddr) const override {
-		m_spiClass->beginTransaction(m_spiSettings);
+		m_spiClass.beginTransaction(m_spiSettings);
 		m_csPin->digitalWrite(LOW);
 
-		m_spiClass->transfer(regAddr | ICM_READ_FLAG);
-		uint8_t buffer = m_spiClass->transfer(0);
+		m_spiClass.transfer(regAddr | ICM_READ_FLAG);
+		uint8_t buffer = m_spiClass.transfer(0);
 
 		m_csPin->digitalWrite(HIGH);
-		m_spiClass->endTransaction();
+		m_spiClass.endTransaction();
 
 		return buffer;
 	}
 
 	uint16_t readReg16(uint8_t regAddr) const override {
-		m_spiClass->beginTransaction(m_spiSettings);
+		m_spiClass.beginTransaction(m_spiSettings);
 		m_csPin->digitalWrite(LOW);
 
-		m_spiClass->transfer(regAddr | ICM_READ_FLAG);
-		uint8_t b1 = m_spiClass->transfer(0);
-		uint8_t b2 = m_spiClass->transfer(0);
+		m_spiClass.transfer(regAddr | ICM_READ_FLAG);
+		uint8_t b1 = m_spiClass.transfer(0);
+		uint8_t b2 = m_spiClass.transfer(0);
 
 		m_csPin->digitalWrite(HIGH);
-		m_spiClass->endTransaction();
+		m_spiClass.endTransaction();
 		return b2 << 8 | b1;
 	}
 
 	void writeReg(uint8_t regAddr, uint8_t value) const override {
-		m_spiClass->beginTransaction(m_spiSettings);
+		m_spiClass.beginTransaction(m_spiSettings);
 		m_csPin->digitalWrite(LOW);
 
-		m_spiClass->transfer(regAddr);
-		m_spiClass->transfer(value);
+		m_spiClass.transfer(regAddr);
+		m_spiClass.transfer(value);
 
 		m_csPin->digitalWrite(HIGH);
-		m_spiClass->endTransaction();
+		m_spiClass.endTransaction();
 	}
 
 	void writeReg16(uint8_t regAddr, uint16_t value) const override {
-		m_spiClass->beginTransaction(m_spiSettings);
+		m_spiClass.beginTransaction(m_spiSettings);
 		m_csPin->digitalWrite(LOW);
 
-		m_spiClass->transfer(regAddr);
-		m_spiClass->transfer(value & 0xFF);
-		m_spiClass->transfer(value >> 8);
+		m_spiClass.transfer(regAddr);
+		m_spiClass.transfer(value & 0xFF);
+		m_spiClass.transfer(value >> 8);
 
 		m_csPin->digitalWrite(HIGH);
-		m_spiClass->endTransaction();
+		m_spiClass.endTransaction();
 	}
 
 	void readBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const override {
-		m_spiClass->beginTransaction(m_spiSettings);
+		m_spiClass.beginTransaction(m_spiSettings);
 		m_csPin->digitalWrite(LOW);
 		;
 
-		m_spiClass->transfer(regAddr | ICM_READ_FLAG);
+		m_spiClass.transfer(regAddr | ICM_READ_FLAG);
 		for (uint8_t i = 0; i < size; ++i) {
-			buffer[i] = m_spiClass->transfer(0);
+			buffer[i] = m_spiClass.transfer(0);
 		}
 
 		m_csPin->digitalWrite(HIGH);
-		m_spiClass->endTransaction();
+		m_spiClass.endTransaction();
 	}
 
 	void writeBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const override {
-		m_spiClass->beginTransaction(m_spiSettings);
+		m_spiClass.beginTransaction(m_spiSettings);
 		m_csPin->digitalWrite(LOW);
 
-		m_spiClass->transfer(regAddr);
+		m_spiClass.transfer(regAddr);
 		for (uint8_t i = 0; i < size; ++i) {
-			m_spiClass->transfer(buffer[i]);
+			m_spiClass.transfer(buffer[i]);
 		}
 
 		m_csPin->digitalWrite(HIGH);
-		m_spiClass->endTransaction();
+		m_spiClass.endTransaction();
 	}
 
 	bool hasSensorOnBus() {
@@ -121,6 +125,7 @@ struct SPIImpl : public RegisterInterface {
 
 	uint8_t getAddress() const override {
 		static_assert("SPI doesn't have addresses, you're using incompatible sensors");
+		return 0;
 	}
 
 	operator uint8_t() const { return getAddress(); }
@@ -130,7 +135,7 @@ struct SPIImpl : public RegisterInterface {
 	}
 
 private:
-	SPIClass* m_spiClass;
+	SPIClass& m_spiClass;
 	SPISettings m_spiSettings;
 	PinInterface* m_csPin;
 };

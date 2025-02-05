@@ -36,7 +36,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 500Hz, accel ODR = 100Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
-template <typename RegisterInterface>
+template <typename RegInterface>
 struct ICM42688 {
 	static constexpr uint8_t Address = 0x68;
 	static constexpr auto Name = "ICM-42688";
@@ -66,9 +66,9 @@ struct ICM42688 {
 		.restThAcc = 0.196f,
 	};
 
-	RegisterInterface m_RegisterInterface;
+	RegInterface m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
-	ICM42688(RegisterInterface registerInterface, SlimeVR::Logging::Logger& logger)
+	ICM42688(RegInterface registerInterface, SlimeVR::Logging::Logger& logger)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger) {}
 

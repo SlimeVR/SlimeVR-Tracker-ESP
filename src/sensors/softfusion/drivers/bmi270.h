@@ -39,7 +39,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 400Hz, accel ODR = 100Hz
 // Timestamps reading are not used
 
-template <typename RegisterInterface>
+template <typename RegInterface>
 struct BMI270 {
 	static constexpr uint8_t Address = 0x68;
 	static constexpr auto Name = "BMI270";
@@ -68,10 +68,10 @@ struct BMI270 {
 		uint8_t x, y, z;
 	};
 
-	RegisterInterface m_RegisterInterface;
+	RegInterface m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
 	int8_t m_zxFactor;
-	BMI270(RegisterInterface registerInterface, SlimeVR::Logging::Logger& logger)
+	BMI270(RegInterface registerInterface, SlimeVR::Logging::Logger& logger)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger)
 		, m_zxFactor(0) {}

@@ -26,7 +26,7 @@
 // ================================================
 
 // Set parameters of IMU and board used
-#define IMU IMU_BNO085
+#define IMU IMU_ICM45686
 #define SECOND_IMU IMU
 #define BOARD BOARD_SLIMEVR
 #define IMU_ROTATION DEG_270
@@ -55,9 +55,9 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 
 #ifndef SENSOR_DESC_LIST
 #define SENSOR_DESC_LIST                       \
-	SENSOR_DESC_ENTRY(                         \
+	SENSOR_DESC_ENTRY_SPI(                     \
 		IMU,                                   \
-		PRIMARY_IMU_ADDRESS_ONE,               \
+		DIRECT_SPI(1'000'000, MSBFIRST, SPI_MODE3, DIRECT_PIN(15)),               \
 		IMU_ROTATION,                          \
 		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), \
 		PRIMARY_IMU_OPTIONAL,                  \

@@ -73,17 +73,17 @@ private:
 	std::vector<std::unique_ptr<::Sensor>> m_Sensors;
 	Adafruit_MCP23X17 m_MCP;
 
-	template <typename ImuType, typename RegisterInterface>
+	template <typename ImuType, typename RegInterface>
 	std::unique_ptr<::Sensor> buildSensor(
 		uint8_t sensorID,
-		std::optional<RegisterInterface> imuInterface,
+		std::optional<RegInterface> imuInterface,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
-		RegisterInterface interface = imuInterface.value_or(SlimeVR::Sensors::SoftFusion::I2CImpl(ImuType::Address + sensorID));
+		RegInterface interface = imuInterface.value_or(RegInterface(ImuType::Address + sensorID));
 		m_Logger.trace(
 			"Building IMU with: id=%d,\n\
 						address=0x%02X, rotation=%f,\n\
@@ -114,7 +114,7 @@ private:
 					sensorID + 1,
 					interface
 				);
-				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
+				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::SensorTypeID);
 			} else {
 				m_Logger.debug(
 					"Optional sensor %d not found at address 0x%s",

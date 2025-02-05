@@ -29,13 +29,13 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-template <typename RegisterInterface>
+template <typename RegInterface>
 struct LSM6DSOutputHandler {
-	LSM6DSOutputHandler(RegisterInterface registerInterface, SlimeVR::Logging::Logger& logger)
+	LSM6DSOutputHandler(RegInterface registerInterface, SlimeVR::Logging::Logger& logger)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger) {}
 
-	RegisterInterface m_RegisterInterface;
+	RegInterface m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
 
 #pragma pack(push, 1)

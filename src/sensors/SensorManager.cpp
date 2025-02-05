@@ -60,32 +60,33 @@
 
 namespace SlimeVR {
 namespace Sensors {
-using SoftFusionLSM6DS3TRC = SoftFusionSensor<
-	SoftFusion::Drivers::LSM6DS3TRC,
-	SoftFusion::RegisterInterface,
-	SFCALIBRATOR>;
-using SoftFusionICM42688 = SoftFusionSensor<
-	SoftFusion::Drivers::ICM42688,
-	SoftFusion::RegisterInterface,
-	SFCALIBRATOR>;
+template <typename RegInterface>
+using SoftFusionLSM6DS3TRC
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC, RegInterface, SFCALIBRATOR>;
+template <typename RegInterface>
+using SoftFusionICM42688
+	= SoftFusionSensor<SoftFusion::Drivers::ICM42688, RegInterface, SFCALIBRATOR>;
+template <typename RegInterface>
 using SoftFusionBMI270
-	= SoftFusionSensor<SoftFusion::Drivers::BMI270, SoftFusion::RegisterInterface, SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::BMI270, RegInterface, SFCALIBRATOR>;
+template <typename RegInterface>
 using SoftFusionLSM6DSV
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, SoftFusion::RegisterInterface, SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, RegInterface, SFCALIBRATOR>;
+template <typename RegInterface>
 using SoftFusionLSM6DSO
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::RegisterInterface, SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, RegInterface, SFCALIBRATOR>;
+template <typename RegInterface>
 using SoftFusionLSM6DSR
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::RegisterInterface, SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, RegInterface, SFCALIBRATOR>;
+template <typename RegInterface>
 using SoftFusionMPU6050
-	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::RegisterInterface, SFCALIBRATOR>;
-using SoftFusionICM45686 = SoftFusionSensor<
-	SoftFusion::Drivers::ICM45686,
-	SoftFusion::RegisterInterface,
-	SFCALIBRATOR>;
-using SoftFusionICM45605 = SoftFusionSensor<
-	SoftFusion::Drivers::ICM45605,
-	SoftFusion::RegisterInterface,
-	SFCALIBRATOR>;
+	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, RegInterface, SFCALIBRATOR>;
+template <typename RegInterface>
+using SoftFusionICM45686
+	= SoftFusionSensor<SoftFusion::Drivers::ICM45686, RegInterface, SFCALIBRATOR>;
+template <typename RegInterface>
+using SoftFusionICM45605
+	= SoftFusionSensor<SoftFusion::Drivers::ICM45605, RegInterface, SFCALIBRATOR>;
 
 void SensorManager::setup() {
 	std::map<int, DirectPinInterface*> directPinInterfaces;
@@ -137,16 +138,35 @@ void SensorManager::setup() {
 #define DIRECT_WIRE(scl, sda) directWire(scl, sda)
 #define MCP_PIN(pin) mcpPin(pin)
 #define PCA_WIRE(scl, sda, addr, ch) pcaWire(scl, sda, addr, ch)
+#define DIRECT_SPI(clockfreq, bitorder, datamode, CS_PIN) \
+	SoftFusion::SPIImpl(SPI, SPISettings(clockfreq, bitorder, datamode), CS_PIN)
 
-#define SENSOR_DESC_ENTRY(ImuType, ...)                            \
-	{                                                              \
-		auto sensor = buildSensor<ImuType, SlimeVR::Sensors::SoftFusion::I2CImpl>(sensorID, __VA_ARGS__); \
-		if (sensor->isWorking()) {                                 \
-			m_Logger.info("Sensor %d configured", sensorID + 1);   \
-			activeSensorCount++;                                   \
-		}                                                          \
-		m_Sensors.push_back(std::move(sensor));                    \
-		sensorID++;                                                \
+#define SENSOR_DESC_ENTRY(ImuType, ...)                                               \
+	{                                                                                 \
+		auto sensor = buildSensor<ImuType<SoftFusion::I2CImpl>, SoftFusion::I2CImpl>( \
+			sensorID,                                                                 \
+			__VA_ARGS__                                                               \
+		);                                                                            \
+		if (sensor->isWorking()) {                                                    \
+			m_Logger.info("Sensor %d configured", sensorID + 1);                      \
+			activeSensorCount++;                                                      \
+		}                                                                             \
+		m_Sensors.push_back(std::move(sensor));                                       \
+		sensorID++;                                                                   \
+	}
+
+#define SENSOR_DESC_ENTRY_SPI(ImuType, ...)                                           \
+	{                                                                                 \
+		auto sensor = buildSensor<ImuType<SoftFusion::SPIImpl>, SoftFusion::SPIImpl>( \
+			sensorID,                                                                 \
+			__VA_ARGS__                                                               \
+		);                                                                            \
+		if (sensor->isWorking()) {                                                    \
+			m_Logger.info("Sensor %d configured", sensorID + 1);                      \
+			activeSensorCount++;                                                      \
+		}                                                                             \
+		m_Sensors.push_back(std::move(sensor));                                       \
+		sensorID++;                                                                   \
 	}
 
 	// Apply descriptor list and expand to entries

@@ -37,13 +37,13 @@
 namespace SlimeVR::Sensors {
 
 template <
-	template <typename RegisterInterface>
+	template <typename RegInterface>
 	typename T,
-	typename RegisterInterface,
+	typename RegInterface,
 	template <typename IMU, typename RawSensorT, typename RawVectorT>
 	typename Calibrator>
 class SoftFusionSensor : public Sensor {
-	using SensorType = T<RegisterInterface>;
+	using SensorType = T<RegInterface>;
 
 	static constexpr sensor_real_t getDefaultTempTs() {
 		if constexpr (DirectTempReadOnly) {
@@ -76,7 +76,7 @@ class SoftFusionSensor : public Sensor {
 	uint32_t lastTempPollTime = micros();
 
 	bool detected() const {
-		const auto value = m_sensor.i2c.readReg(SensorType::Regs::WhoAmI::reg);
+		const auto value = m_sensor.m_RegisterInterface.readReg(SensorType::Regs::WhoAmI::reg);
 		if (SensorType::Regs::WhoAmI::value != value) {
 			m_Logger.error(
 				"Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
@@ -203,12 +203,14 @@ class SoftFusionSensor : public Sensor {
 
 public:
 	static constexpr auto SensorTypeID = SensorType::Type;
+	static constexpr uint8_t Address = SensorType::Address;
 
 	SoftFusionSensor(
 		uint8_t id,
-		RegisterInterface registerInterface,
+		RegInterface registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface = nullptr,
+		PinInterface* intPin = nullptr,
 		uint8_t = 0
 	)
 		: Sensor(SensorType::Name, SensorType::Type, id, registerInterface, rotation, sensorInterface)

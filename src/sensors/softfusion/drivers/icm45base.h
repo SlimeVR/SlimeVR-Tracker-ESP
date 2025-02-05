@@ -33,7 +33,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
-template <typename RegisterInterface>
+template <typename RegInterface>
 struct ICM45Base {
 	static constexpr uint8_t Address = 0x68;
 
@@ -56,9 +56,9 @@ struct ICM45Base {
 	static constexpr int fifoReadSize
 		= 8;  // Can't be more than 12 or it will overflow i2c read size, default 8
 
-	RegisterInterface m_RegisterInterface;
+	RegInterface m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
-	ICM45Base(RegisterInterface registerInterface, SlimeVR::Logging::Logger& logger)
+	ICM45Base(RegInterface registerInterface, SlimeVR::Logging::Logger& logger)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger) {}
 
