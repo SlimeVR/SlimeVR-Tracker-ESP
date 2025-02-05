@@ -37,7 +37,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 1000dps
 // Gyroscope ODR = accel ODR = 250Hz
 
-template <typename I2CImpl>
+template <typename RegInterface>
 struct MPU6050 {
 	struct FifoSample {
 		uint8_t accel_x_h, accel_x_l;
@@ -77,11 +77,11 @@ struct MPU6050 {
 		.restThAcc = 0.784f,
 	};
 
-	I2CImpl i2c;
-	SlimeVR::Logging::Logger& logger;
-	MPU6050(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: i2c(i2c)
-		, logger(logger) {}
+	RegInterface m_RegisterInterface;
+	SlimeVR::Logging::Logger& m_Logger;
+	MPU6050(RegInterface i2c, SlimeVR::Logging::Logger& logger)
+		: m_RegisterInterface(i2c)
+		, m_Logger(logger) {}
 
 	struct Regs {
 		struct WhoAmI {
@@ -120,49 +120,52 @@ struct MPU6050 {
 	}
 
 	void resetFIFO() {
-		i2c.writeReg(Regs::UserCtrl::reg, Regs::UserCtrl::fifoResetValue);
+		m_RegisterInterface.writeReg(
+			Regs::UserCtrl::reg,
+			Regs::UserCtrl::fifoResetValue
+		);
 	}
 
 	bool initialize() {
 		// Reset
-		i2c.writeReg(
+		m_RegisterInterface.writeReg(
 			MPU6050_RA_PWR_MGMT_1,
 			0x80
 		);  // PWR_MGMT_1: reset with 100ms delay (also disables sleep)
 		delay(100);
-		i2c.writeReg(
+		m_RegisterInterface.writeReg(
 			MPU6050_RA_SIGNAL_PATH_RESET,
 			0x07
 		);  // full SIGNAL_PATH_RESET: with another 100ms delay
 		delay(100);
 
 		// Configure
-		i2c.writeReg(
+		m_RegisterInterface.writeReg(
 			MPU6050_RA_PWR_MGMT_1,
 			0x01
 		);  // 0000 0001 PWR_MGMT_1:Clock Source Select PLL_X_gyro
-		i2c.writeReg(
+		m_RegisterInterface.writeReg(
 			MPU6050_RA_USER_CTRL,
 			0x00
 		);  // 0000 0000 USER_CTRL: Disable FIFO / I2C master / DMP
-		i2c.writeReg(
+		m_RegisterInterface.writeReg(
 			MPU6050_RA_INT_ENABLE,
 			0x10
 		);  // 0001 0000 INT_ENABLE: only FIFO overflow interrupt
-		i2c.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
-		i2c.writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
-		i2c.writeReg(
+		m_RegisterInterface.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
+		m_RegisterInterface.writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
+		m_RegisterInterface.writeReg(
 			MPU6050_RA_CONFIG,
 			0x02
 		);  // 0000 0010 CONFIG: No EXT_SYNC_SET, DLPF set to 98Hz(also lowers gyro
 			// output rate to 1KHz)
-		i2c.writeReg(
+		m_RegisterInterface.writeReg(
 			MPU6050_RA_SMPLRT_DIV,
 			0x03
 		);  // 0000 0011 SMPLRT_DIV: Divides the internal sample rate 250Hz (Sample Rate
 			// = Gyroscope Output Rate / (1 + SMPLRT_DIV))
 
-		i2c.writeReg(
+		m_RegisterInterface.writeReg(
 			MPU6050_RA_FIFO_EN,
 			0x78
 		);  // 0111 1000 FIFO_EN: All gyro axes + Accel
@@ -173,26 +176,26 @@ struct MPU6050 {
 	}
 
 	float getDirectTemp() const {
-		auto value = byteSwap(i2c.readReg16(Regs::OutTemp));
+		auto value = byteSwap(m_RegisterInterface.readReg16(Regs::OutTemp));
 		float result = (static_cast<int16_t>(value) / 340.0f) + 36.53f;
 		return result;
 	}
 
 	template <typename AccelCall, typename GyroCall>
 	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
-		const auto status = i2c.readReg(Regs::IntStatus);
+		const auto status = m_RegisterInterface.readReg(Regs::IntStatus);
 
 		if (status & (1 << MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) {
 			// Overflows make it so we lose track of which packet is which
 			// This necessitates a reset
-			logger.debug("Fifo overrun, resetting...");
+			m_Logger.debug("Fifo overrun, resetting...");
 			resetFIFO();
 			return;
 		}
 
 		std::array<uint8_t, 12 * 10>
 			readBuffer;  // max 10 packages of 12byte values (sample) of data form fifo
-		auto byteCount = byteSwap(i2c.readReg16(Regs::FifoCount));
+		auto byteCount = byteSwap(m_RegisterInterface.readReg16(Regs::FifoCount));
 
 		auto readBytes = min(static_cast<size_t>(byteCount), readBuffer.size())
 					   / sizeof(FifoSample) * sizeof(FifoSample);
@@ -200,7 +203,7 @@ struct MPU6050 {
 			return;
 		}
 
-		i2c.readBytes(Regs::FifoData, readBytes, readBuffer.data());
+		m_RegisterInterface.readBytes(Regs::FifoData, readBytes, readBuffer.data());
 		for (auto i = 0u; i < readBytes; i += sizeof(FifoSample)) {
 			const FifoSample* sample = reinterpret_cast<FifoSample*>(&readBuffer[i]);
 
