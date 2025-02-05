@@ -1,17 +1,14 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
-
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
 	in the Software without restriction, including without limitation the rights
 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 	copies of the Software, and to permit persons to whom the Software is
 	furnished to do so, subject to the following conditions:
-
 	The above copyright notice and this permission notice shall be included in
 	all copies or substantial portions of the Software.
-
 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,34 +18,38 @@
 	THE SOFTWARE.
 */
 
-#ifndef UTILS_H
-#define UTILS_H
+#include "TimeTaken.h"
 
-#define UNPACK_VECTOR(V) V.x, V.y, V.z
-#define UNPACK_VECTOR_ARRAY(V) V[0], V[1], V[2]
-#define UNPACK_QUATERNION(Q) Q.x, Q.y, Q.z, Q.w
+namespace SlimeVR::Debugging {
 
-#include <type_traits>
+TimeTakenMeasurer::TimeTakenMeasurer(const char* name)
+	: name{name} {}
 
-template <class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-constexpr T operator|(T lhs, T rhs) {
-	return static_cast<T>(
-		static_cast<std::underlying_type<T>::type>(lhs)
-		| static_cast<std::underlying_type<T>::type>(rhs)
+void TimeTakenMeasurer::before() { startMicros = micros(); }
+
+void TimeTakenMeasurer::after() {
+	uint64_t elapsedMicros = micros() - startMicros;
+	timeTakenMicros += elapsedMicros;
+
+	uint64_t sinceLastReportMillis = millis() - lastTimeTakenReportMillis;
+
+	if (sinceLastReportMillis < static_cast<uint64_t>(SecondsBetweenReports * 1e3)) {
+		return;
+	}
+
+	float usedPercentage = static_cast<float>(timeTakenMicros) / 1e3f
+						 / static_cast<float>(sinceLastReportMillis) * 100;
+
+	m_Logger.info(
+		"%s: %.2f%% of the last period taken (%.2f/%lld millis)",
+		name,
+		usedPercentage,
+		timeTakenMicros / 1e3f,
+		sinceLastReportMillis
 	);
+
+	timeTakenMicros = 0;
+	lastTimeTakenReportMillis = millis();
 }
 
-template <class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-constexpr T operator&(T lhs, T rhs) {
-	return static_cast<T>(
-		static_cast<std::underlying_type<T>::type>(lhs)
-		& static_cast<std::underlying_type<T>::type>(rhs)
-	);
-}
-
-template <class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-constexpr bool any(T t) {
-	return static_cast<std::underlying_type<T>::type>(t) != 0;
-}
-
-#endif
+}  // namespace SlimeVR::Debugging

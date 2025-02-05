@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,34 +21,26 @@
 	THE SOFTWARE.
 */
 
-#ifndef UTILS_H
-#define UTILS_H
+#pragma once
 
-#define UNPACK_VECTOR(V) V.x, V.y, V.z
-#define UNPACK_VECTOR_ARRAY(V) V[0], V[1], V[2]
-#define UNPACK_QUATERNION(Q) Q.x, Q.y, Q.z, Q.w
+#include "CalibrationStep.h"
 
-#include <type_traits>
+namespace SlimeVR::Sensors::NonBlockingCalibration {
 
-template <class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-constexpr T operator|(T lhs, T rhs) {
-	return static_cast<T>(
-		static_cast<std::underlying_type<T>::type>(lhs)
-		| static_cast<std::underlying_type<T>::type>(rhs)
-	);
-}
+template <typename SensorRawT>
+class NullCalibrationStep : public CalibrationStep<SensorRawT> {
+	using CalibrationStep<SensorRawT>::sensorConfig;
+	using typename CalibrationStep<SensorRawT>::TickResult;
 
-template <class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-constexpr T operator&(T lhs, T rhs) {
-	return static_cast<T>(
-		static_cast<std::underlying_type<T>::type>(lhs)
-		& static_cast<std::underlying_type<T>::type>(rhs)
-	);
-}
+public:
+	NullCalibrationStep(SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig)
+		: CalibrationStep<SensorRawT>{sensorConfig} {}
 
-template <class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-constexpr bool any(T t) {
-	return static_cast<std::underlying_type<T>::type>(t) != 0;
-}
+	void start() override final { CalibrationStep<SensorRawT>::start(); }
 
-#endif
+	TickResult tick() override final { return TickResult::CONTINUE; }
+
+	void cancel() override final {}
+};
+
+}  // namespace SlimeVR::Sensors::NonBlockingCalibration

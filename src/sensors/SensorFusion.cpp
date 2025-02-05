@@ -211,5 +211,12 @@ void SensorFusion::calcLinearAcc(
 	accout[1] = accin[1] - gravVec[1] * CONST_EARTH_GRAVITY;
 	accout[2] = accin[2] - gravVec[2] * CONST_EARTH_GRAVITY;
 }
+
+#if SENSOR_USE_VQF
+void SensorFusion::updateBiasForgettingTime(float biasForgettingTime) {
+	vqf.updateBiasForgettingTime(biasForgettingTime);
+}
+#endif
+
 }  // namespace Sensors
 }  // namespace SlimeVR

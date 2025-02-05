@@ -24,6 +24,7 @@
 #pragma once
 
 #include "icm45base.h"
+#include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -39,6 +40,14 @@ struct ICM45605 : public ICM45Base<I2CImpl> {
 	static constexpr auto Name = "ICM-45605";
 	static constexpr auto Type = SensorTypeID::ICM45605;
 
+	static constexpr VQFParams SensorVQFParams{
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 0.3f,
+		.biasClip = 0.6f,
+		.restThGyr = 0.3f,
+		.restThAcc = 0.0098f,
+	};
+
 	ICM45605(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
 		: ICM45Base<I2CImpl>{i2c, logger} {}
 
@@ -48,8 +57,6 @@ struct ICM45605 : public ICM45Base<I2CImpl> {
 			static constexpr uint8_t value = 0xe5;
 		};
 	};
-
-	float getDirectTemp() const { return ICM45Base<I2CImpl>::getDirectTemp(); }
 
 	bool initialize() {
 		ICM45Base<I2CImpl>::softResetIMU();

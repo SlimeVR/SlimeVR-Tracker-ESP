@@ -73,6 +73,32 @@ struct SoftFusionSensorConfig {
 	float G_Sens[3];
 
 	uint8_t MotionlessData[60];
+
+	// temperature sampling rate (placed at the end to not break existing configs)
+	float T_Ts;
+};
+
+struct NonBlockingSensorConfig {
+	ImuID ImuType;
+	uint16_t MotionlessDataLen;
+
+	bool sensorTimestepsCalibrated;
+	float A_Ts;
+	float G_Ts;
+	float M_Ts;
+	float T_Ts;
+
+	bool motionlessCalibrated;
+	uint8_t MotionlessData[60];
+
+	uint8_t gyroPointsCalibrated;
+	float gyroMeasurementTemperature1;
+	float G_off1[3];
+	float gyroMeasurementTemperature2;
+	float G_off2[3];
+
+	bool accelCalibrated[3];
+	float A_off[3];
 };
 
 struct MPU6050SensorConfig {
@@ -131,7 +157,8 @@ enum class SensorConfigType {
 	MPU9250,
 	ICM20948,
 	SFUSION,
-	BNO0XX
+	BNO0XX,
+	NONBLOCKING,
 };
 
 const char* calibrationConfigTypeToString(SensorConfigType type);
@@ -146,6 +173,7 @@ struct SensorConfig {
 		MPU9250SensorConfig mpu9250;
 		ICM20948SensorConfig icm20948;
 		BNO0XXSensorConfig bno0XX;
+		NonBlockingSensorConfig nonblocking;
 	} data;
 };
 
