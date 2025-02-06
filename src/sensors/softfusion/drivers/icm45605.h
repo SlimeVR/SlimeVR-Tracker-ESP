@@ -37,7 +37,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 template <typename I2CImpl>
 struct ICM45605 : public ICM45Base<I2CImpl> {
 	static constexpr auto Name = "ICM-45605";
-	static constexpr auto Type = ImuID::ICM45605;
+	static constexpr auto Type = SensorTypeID::ICM45605;
 
 	ICM45605(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
 		: ICM45Base<I2CImpl>{i2c, logger} {}

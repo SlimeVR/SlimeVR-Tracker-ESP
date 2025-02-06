@@ -37,7 +37,7 @@ template <typename I2CImpl>
 struct LSM6DS3TRC {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DS3TR-C";
-	static constexpr auto Type = ImuID::LSM6DS3TRC;
+	static constexpr auto Type = SensorTypeID::LSM6DS3TRC;
 
 	static constexpr float Freq = 416;
 

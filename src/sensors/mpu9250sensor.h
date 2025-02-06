@@ -44,25 +44,24 @@ constexpr float MPU9250_ODR_TS
 
 class MPU9250Sensor : public Sensor {
 public:
-	static constexpr auto TypeID = ImuID::MPU9250;
+	static constexpr auto TypeID = SensorTypeID::MPU9250;
 	static constexpr uint8_t Address = 0x68;
 
 	MPU9250Sensor(
 		uint8_t id,
 		uint8_t i2cAddress,
 		float rotation,
-		uint8_t sclPin,
-		uint8_t sdaPin,
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface*,
 		uint8_t
 	)
 		: Sensor(
 			"MPU9250Sensor",
-			ImuID::MPU9250,
+			SensorTypeID::MPU9250,
 			id,
 			i2cAddress,
 			rotation,
-			sclPin,
-			sdaPin
+			sensorInterface
 		)
 #if !MPU_USE_DMPMAG
 		, sfusion(MPU9250_ODR_TS)

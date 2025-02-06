@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,43 +20,22 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#include "ADCResistanceSensor.h"
 
-#ifndef SENSORS_BNO055SENSOR_H
-#define SENSORS_BNO055SENSOR_H
+#include "GlobalVars.h"
 
-#include <Adafruit_BNO055.h>
-
-#include "sensor.h"
-
-class BNO055Sensor : public Sensor {
-public:
-	static constexpr auto TypeID = SensorTypeID::BNO055;
-	static constexpr uint8_t Address = 0x28;
-
-	BNO055Sensor(
-		uint8_t id,
-		uint8_t i2cAddress,
-		float rotation,
-		SlimeVR::SensorInterface* sensorInterface,
-		PinInterface*,
-		uint8_t
-	)
-		: Sensor(
-			"BNO055Sensor",
-			SensorTypeID::BNO055,
-			id,
-			i2cAddress,
-			rotation,
-			sensorInterface
-		){};
-	~BNO055Sensor(){};
-	void motionSetup() override final;
-	void motionLoop() override final;
-	void startCalibration(int calibrationType) override final;
-
-private:
-	Adafruit_BNO055 imu;
-	SlimeVR::Configuration::BNO0XXSensorConfig m_Config = {};
-};
-
+void ADCResistanceSensor::motionLoop() {
+#if ESP8266
+	float voltage = ((float)analogRead(m_Pin)) * ADCVoltageMax / ADCResolution;
+	m_Data = m_ResistanceDivider
+		   * (ADCVoltageMax / voltage - 1.0f);  // Convert voltage to resistance
+#elif ESP32
+	float voltage = ((float)analogReadMilliVolts(m_Pin)) / 1000;
+	m_Data = m_ResistanceDivider
+		   * (m_VCC / voltage - 1.0f);  // Convert voltage to resistance
 #endif
+}
+
+void ADCResistanceSensor::sendData() {
+	networkConnection.sendFlexData(sensorId, m_Data);
+}

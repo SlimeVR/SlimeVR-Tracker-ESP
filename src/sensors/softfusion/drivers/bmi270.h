@@ -42,7 +42,7 @@ template <typename I2CImpl>
 struct BMI270 {
 	static constexpr uint8_t Address = 0x68;
 	static constexpr auto Name = "BMI270";
-	static constexpr auto Type = ImuID::BMI270;
+	static constexpr auto Type = SensorTypeID::BMI270;
 
 	static constexpr float GyrTs = 1.0 / 400.0;
 	static constexpr float AccTs = 1.0 / 100.0;

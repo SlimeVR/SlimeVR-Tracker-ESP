@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,42 +21,39 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORS_BNO055SENSOR_H
-#define SENSORS_BNO055SENSOR_H
+#ifndef SENSORINTERFACE_I2CWIRE_H
+#define SENSORINTERFACE_I2CWIRE_H
 
-#include <Adafruit_BNO055.h>
+#include <Arduino.h>
+#include <i2cscan.h>
 
-#include "sensor.h"
+#include "SensorInterface.h"
+#include "globals.h"
 
-class BNO055Sensor : public Sensor {
+namespace SlimeVR {
+void swapI2C(uint8_t sclPin, uint8_t sdaPin);
+void disconnectI2C();
+
+/**
+ * I2C Sensor interface using direct arduino Wire on provided pins
+ *
+ */
+class I2CWireSensorInterface : public SensorInterface {
 public:
-	static constexpr auto TypeID = SensorTypeID::BNO055;
-	static constexpr uint8_t Address = 0x28;
+	I2CWireSensorInterface(uint8_t sclpin, uint8_t sdapin)
+		: _sdaPin(sdapin)
+		, _sclPin(sclpin){};
+	~I2CWireSensorInterface(){};
 
-	BNO055Sensor(
-		uint8_t id,
-		uint8_t i2cAddress,
-		float rotation,
-		SlimeVR::SensorInterface* sensorInterface,
-		PinInterface*,
-		uint8_t
-	)
-		: Sensor(
-			"BNO055Sensor",
-			SensorTypeID::BNO055,
-			id,
-			i2cAddress,
-			rotation,
-			sensorInterface
-		){};
-	~BNO055Sensor(){};
-	void motionSetup() override final;
-	void motionLoop() override final;
-	void startCalibration(int calibrationType) override final;
+	void init() override final {}
+	void swapIn() override final { swapI2C(_sclPin, _sdaPin); }
+	void disconnect() { disconnectI2C(); }
 
-private:
-	Adafruit_BNO055 imu;
-	SlimeVR::Configuration::BNO0XXSensorConfig m_Config = {};
+protected:
+	uint8_t _sdaPin;
+	uint8_t _sclPin;
 };
 
-#endif
+}  // namespace SlimeVR
+
+#endif  // SENSORINTERFACE_I2CWIRE_H

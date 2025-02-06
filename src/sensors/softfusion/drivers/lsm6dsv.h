@@ -39,7 +39,7 @@ template <typename I2CImpl>
 struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DSV";
-	static constexpr auto Type = ImuID::LSM6DSV;
+	static constexpr auto Type = SensorTypeID::LSM6DSV;
 
 	static constexpr float GyrFreq = 480;
 	static constexpr float AccFreq = 120;

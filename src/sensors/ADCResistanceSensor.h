@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,43 +20,50 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-
-#ifndef SENSORS_BNO055SENSOR_H
-#define SENSORS_BNO055SENSOR_H
-
-#include <Adafruit_BNO055.h>
+#pragma once
 
 #include "sensor.h"
+#include "sensorinterface/SensorInterface.h"
 
-class BNO055Sensor : public Sensor {
+class ADCResistanceSensor : Sensor {
 public:
-	static constexpr auto TypeID = SensorTypeID::BNO055;
-	static constexpr uint8_t Address = 0x28;
+	static constexpr auto TypeID = SensorTypeID::ADC_RESISTANCE;
 
-	BNO055Sensor(
+	ADCResistanceSensor(
 		uint8_t id,
-		uint8_t i2cAddress,
-		float rotation,
-		SlimeVR::SensorInterface* sensorInterface,
-		PinInterface*,
-		uint8_t
+		uint8_t pin,
+		float VCC,
+		float resistanceDivider,
+		float smoothFactor = 0.1f
 	)
 		: Sensor(
-			"BNO055Sensor",
-			SensorTypeID::BNO055,
+			"ADCResistanceSensor",
+			SensorTypeID::ADC_RESISTANCE,
 			id,
-			i2cAddress,
-			rotation,
-			sensorInterface
-		){};
-	~BNO055Sensor(){};
-	void motionSetup() override final;
+			pin,
+			0.0f,
+			new SlimeVR::EmptySensorInterface
+		)
+		, m_Pin(pin)
+		, m_VCC(VCC)
+		, m_ResistanceDivider(resistanceDivider)
+		, m_SmoothFactor(smoothFactor){};
+	~ADCResistanceSensor();
+
 	void motionLoop() override final;
-	void startCalibration(int calibrationType) override final;
+	void sendData() override final;
+
+	SensorStatus getSensorState() override final { return SensorStatus::SENSOR_OK; }
+
+	SensorDataType getDataType() override final {
+		return SensorDataType::SENSOR_DATATYPE_FLEX_RESISTANCE;
+	};
 
 private:
-	Adafruit_BNO055 imu;
-	SlimeVR::Configuration::BNO0XXSensorConfig m_Config = {};
-};
+	uint8_t m_Pin;
+	float m_VCC;
+	float m_ResistanceDivider;
+	float m_SmoothFactor;
 
-#endif
+	float m_Data = 0.0f;
+};

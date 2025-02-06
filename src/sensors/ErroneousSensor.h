@@ -30,7 +30,7 @@ namespace SlimeVR {
 namespace Sensors {
 class ErroneousSensor : public Sensor {
 public:
-	ErroneousSensor(uint8_t id, ImuID type)
+	ErroneousSensor(uint8_t id, SensorTypeID type)
 		: Sensor("ErroneousSensor", type, id, 0, 0.0)
 		, m_ExpectedType(type){};
 	~ErroneousSensor(){};
@@ -42,7 +42,7 @@ public:
 	SensorStatus getSensorState() override final;
 
 private:
-	ImuID m_ExpectedType;
+	SensorTypeID m_ExpectedType;
 };
 }  // namespace Sensors
 }  // namespace SlimeVR
