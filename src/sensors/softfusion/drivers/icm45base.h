@@ -99,6 +99,11 @@ struct ICM45Base {
 														  // enable accel,
 														  // enable gyro,
 														  // enable hires mode
+			static constexpr uint8_t valueAux = (0b1 << 0) | (0b1 << 1) | (0b1 << 2)
+											  | (0b0 << 3);  // enable FIFO,
+															 // enable accel,
+															 // enable gyro,
+															 // enable hires mode
 		};
 
 		struct PwrMgmt0 {
@@ -111,7 +116,7 @@ struct ICM45Base {
 		static constexpr uint8_t IRegData = 0x7e;
 
 		struct IOCPadScenarioAuxOvrd {
-			static constexpr uint8_t reg = 0x2f;
+			static constexpr uint8_t reg = 0x30;
 			static constexpr uint8_t value
 				= 0b1 | (0b1 << 1) | (0b01 << 2) | (0b1 << 4);  // override aux
 																// enable and mode
@@ -154,7 +159,7 @@ struct ICM45Base {
 
 		struct I2CMDevStatus {
 			static constexpr uint8_t bank = 0xa2;
-			static constexpr uint8_t reg = 0x18;
+			static constexpr uint8_t reg = 0x1a;
 		};
 
 		struct RegMisc1 {
@@ -207,16 +212,13 @@ struct ICM45Base {
 
 	template <typename R>
 	void writeBankRegister() {
-		uint8_t data[] = {R::bank, R::reg, R::value};
-		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
-		delayMicroseconds(4);
+		uint8_t value = R::value;
+		writeBankRegister<R>(&value, sizeof(value));
 	}
 
 	template <typename R>
 	void writeBankRegister(uint8_t value) {
-		uint8_t data[] = {R::bank, R::reg, value};
-		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
-		delayMicroseconds(4);
+		writeBankRegister<R>(&value, sizeof(value));
 	}
 
 	template <typename R>
@@ -232,10 +234,9 @@ struct ICM45Base {
 
 	template <typename R>
 	uint8_t readBankRegister() {
-		uint8_t data[] = {R::bank, R::reg};
-		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
-		delayMicroseconds(4);
-		return i2c.readReg(BaseRegs::IRegData);
+		uint8_t out;
+		readBankRegister<R, uint8_t>(&out, sizeof(out));
+		return out;
 	}
 
 	template <typename R, typename T>
@@ -255,10 +256,12 @@ struct ICM45Base {
 		i2c.writeReg(BaseRegs::GyroConfig::reg, BaseRegs::GyroConfig::value);
 		i2c.writeReg(BaseRegs::AccelConfig::reg, BaseRegs::AccelConfig::value);
 		i2c.writeReg(BaseRegs::FifoConfig0::reg, BaseRegs::FifoConfig0::value);
-		i2c.writeReg(BaseRegs::FifoConfig3::reg, BaseRegs::FifoConfig3::value);
 		i2c.writeReg(BaseRegs::PwrMgmt0::reg, BaseRegs::PwrMgmt0::value);
 
-		if constexpr (!USE_6_AXIS) {
+		if constexpr (USE_6_AXIS) {
+			i2c.writeReg(BaseRegs::FifoConfig3::reg, BaseRegs::FifoConfig3::value);
+		} else {
+			i2c.writeReg(BaseRegs::FifoConfig3::reg, BaseRegs::FifoConfig3::valueAux);
 			i2c.writeReg(
 				BaseRegs::IOCPadScenarioAuxOvrd::reg,
 				BaseRegs::IOCPadScenarioAuxOvrd::value
@@ -330,12 +333,10 @@ struct ICM45Base {
 	}
 
 	void setAuxDeviceId(uint8_t id) {
-		printf("Aux ID: %x\n", id);
 		writeBankRegister<typename BaseRegs::I2CMDevProfile1>(id);
 	}
 
 	void writeAux(uint8_t address, uint8_t value) {
-		printf("Reg write: %x -> %x\n", address, value);
 		uint8_t data[] = {address, value};
 		writeBankRegister<typename BaseRegs::I2CMWRData>(data, sizeof(data));
 		writeBankRegister<typename BaseRegs::I2CMCommand>(
@@ -349,10 +350,9 @@ struct ICM45Base {
 	}
 
 	uint8_t readAux(uint8_t address) {
-		printf("Reg read: %x -> ", address);
 		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
 		writeBankRegister<typename BaseRegs::I2CMCommand>(
-			0b000 | (0b01 << 4) | (0b0 << 6) | (0b1 << 7)
+			0b0001 | (0b01 << 4) | (0b0 << 6) | (0b1 << 7)
 		);  // Read (with address) on channel 0, last transmission
 		writeBankRegister<typename BaseRegs::I2CMControl>(
 			0b1 | (0b0 << 3) | (0b0 << 6)
@@ -360,11 +360,9 @@ struct ICM45Base {
 		while ((readBankRegister<typename BaseRegs::I2CMControl>() & 0b1) != 0)
 			;  // Wait until operation finishes
 		auto value = readBankRegister<typename BaseRegs::I2CMRDData>();
-		printf("%x\n", value);
 
 		uint8_t error = readBankRegister<typename BaseRegs::I2CMStatus>();
 		uint8_t status = readBankRegister<typename BaseRegs::I2CMDevStatus>();
-		printf("Errors: %x, status: %x\n", error, status);
 
 		return value;
 	}

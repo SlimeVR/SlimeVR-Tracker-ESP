@@ -63,7 +63,7 @@ void MagDriver::init(
 		selectedMag = mag;
 		state = State::Ok;
 
-		m_Logger.info("Found mag of type %s, initializing!");
+		m_Logger.info("Found mag of type %s, initializing!", mag.name);
 		selectedMag.setup(writeI2C);
 
 		return;
