@@ -238,8 +238,8 @@ public:
 		);
 	}
 
-	void motionLoop() override final {
-		sendTempIfNeeded();
+	void motionLoop() final {
+		calibrator.tick();
 
 		calibrator.tick();
 

@@ -48,6 +48,14 @@ struct ICM45605 : public ICM45Base<I2CImpl> {
 		.restThAcc = 0.0098f,
 	};
 
+	static constexpr VQFParams SensorVQFParams{
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 0.3f,
+		.biasClip = 0.6f,
+		.restThGyr = 0.3f,
+		.restThAcc = 0.0098f,
+	};
+
 	ICM45605(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
 		: ICM45Base<I2CImpl>{i2c, logger} {}
 
