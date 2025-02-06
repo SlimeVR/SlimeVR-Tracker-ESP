@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,43 +20,45 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#ifndef _H_MCP23X17PinInterface_
+#define _H_MCP23X17PinInterface_
 
-#ifndef SENSORS_BNO055SENSOR_H
-#define SENSORS_BNO055SENSOR_H
+#include <Adafruit_MCP23X17.h>
+#include <PinInterface.h>
 
-#include <Adafruit_BNO055.h>
+#define MCP_GPA0 0
+#define MCP_GPA1 1
+#define MCP_GPA2 2
+#define MCP_GPA3 3
+#define MCP_GPA4 4
+#define MCP_GPA5 5
+#define MCP_GPA6 6
+#define MCP_GPA7 7
+#define MCP_GPB0 8
+#define MCP_GPB1 9
+#define MCP_GPB2 10
+#define MCP_GPB3 11
+#define MCP_GPB4 12
+#define MCP_GPB5 13
+#define MCP_GPB6 14
+#define MCP_GPB7 15
 
-#include "sensor.h"
-
-class BNO055Sensor : public Sensor {
+/**
+ * Pin interface to use MCP23008/17 I2C GPIO port extenders
+ */
+class MCP23X17PinInterface : public PinInterface {
 public:
-	static constexpr auto TypeID = SensorTypeID::BNO055;
-	static constexpr uint8_t Address = 0x28;
+	MCP23X17PinInterface(Adafruit_MCP23X17* mcp, uint8_t pin)
+		: _mcp23x17(mcp)
+		, _pinNum(pin){};
 
-	BNO055Sensor(
-		uint8_t id,
-		uint8_t i2cAddress,
-		float rotation,
-		SlimeVR::SensorInterface* sensorInterface,
-		PinInterface*,
-		uint8_t
-	)
-		: Sensor(
-			"BNO055Sensor",
-			SensorTypeID::BNO055,
-			id,
-			i2cAddress,
-			rotation,
-			sensorInterface
-		){};
-	~BNO055Sensor(){};
-	void motionSetup() override final;
-	void motionLoop() override final;
-	void startCalibration(int calibrationType) override final;
+	int digitalRead() override final;
+	void pinMode(uint8_t mode) override final;
+	void digitalWrite(uint8_t val) override final;
 
 private:
-	Adafruit_BNO055 imu;
-	SlimeVR::Configuration::BNO0XXSensorConfig m_Config = {};
+	Adafruit_MCP23X17* _mcp23x17;
+	uint8_t _pinNum;
 };
 
-#endif
+#endif  // _H_MCP23X17PinInterface_

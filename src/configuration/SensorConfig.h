@@ -47,7 +47,7 @@ struct BMI160SensorConfig {
 };
 
 struct SoftFusionSensorConfig {
-	ImuID ImuType;
+	SensorTypeID ImuType;
 	uint16_t MotionlessDataLen;
 
 	// accelerometer offsets and correction matrix

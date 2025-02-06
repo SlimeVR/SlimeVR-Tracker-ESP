@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,43 +20,10 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#include "DirectPinInterface.h"
 
-#ifndef SENSORS_BNO055SENSOR_H
-#define SENSORS_BNO055SENSOR_H
+int DirectPinInterface::digitalRead() { return ::digitalRead(_pinNum); }
 
-#include <Adafruit_BNO055.h>
+void DirectPinInterface::pinMode(uint8_t mode) { ::pinMode(_pinNum, mode); }
 
-#include "sensor.h"
-
-class BNO055Sensor : public Sensor {
-public:
-	static constexpr auto TypeID = SensorTypeID::BNO055;
-	static constexpr uint8_t Address = 0x28;
-
-	BNO055Sensor(
-		uint8_t id,
-		uint8_t i2cAddress,
-		float rotation,
-		SlimeVR::SensorInterface* sensorInterface,
-		PinInterface*,
-		uint8_t
-	)
-		: Sensor(
-			"BNO055Sensor",
-			SensorTypeID::BNO055,
-			id,
-			i2cAddress,
-			rotation,
-			sensorInterface
-		){};
-	~BNO055Sensor(){};
-	void motionSetup() override final;
-	void motionLoop() override final;
-	void startCalibration(int calibrationType) override final;
-
-private:
-	Adafruit_BNO055 imu;
-	SlimeVR::Configuration::BNO0XXSensorConfig m_Config = {};
-};
-
-#endif
+void DirectPinInterface::digitalWrite(uint8_t val) { ::digitalWrite(_pinNum, val); }

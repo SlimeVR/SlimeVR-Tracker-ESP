@@ -43,14 +43,14 @@
 
 //Attempt communication with the device
 //Return true if we got a 'Polo' back from Marco
-boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, uint8_t intPin)
+boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, PinInterface* intPin)
 {
 	_deviceAddress = deviceAddress; //If provided, store the I2C address from user
 	_i2cPort = &wirePort;			//Grab which port the user wants us to use
 	_int = intPin;					//Get the pin that the user wants to use for interrupts. By default, it's 255 and we'll not use it in dataAvailable() function.
-	if (_int != 255)
+	if (_int != nullptr)
 	{
-		pinMode(_int, INPUT_PULLUP);
+		_int->pinMode(INPUT_PULLUP);
 	}
 
 	//We expect caller to begin their I2C port, with the speed of their choice external to the library
@@ -99,7 +99,7 @@ boolean BNO080::begin(uint8_t deviceAddress, TwoWire &wirePort, uint8_t intPin)
 	return tBoardInfoReceived;
 }
 
-boolean BNO080::beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_INTPin, uint8_t user_RSTPin, uint32_t spiPortSpeed, SPIClass &spiPort)
+boolean BNO080::beginSPI(PinInterface* user_CSPin, PinInterface* user_WAKPin, PinInterface* user_INTPin, PinInterface* user_RSTPin, uint32_t spiPortSpeed, SPIClass &spiPort)
 {
 	_i2cPort = NULL; //This null tells the send/receive functions to use SPI
 
@@ -114,18 +114,18 @@ boolean BNO080::beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_I
 	_int = user_INTPin;
 	_rst = user_RSTPin;
 
-	pinMode(_cs, OUTPUT);
-	pinMode(_wake, OUTPUT);
-	pinMode(_int, INPUT_PULLUP);
-	pinMode(_rst, OUTPUT);
+	_cs->pinMode(OUTPUT);
+	_wake->pinMode(OUTPUT);
+	_int->pinMode(INPUT_PULLUP);
+	_rst->pinMode(OUTPUT);
 
-	digitalWrite(_cs, HIGH); //Deselect BNO080
+	_cs->digitalWrite(HIGH); //Deselect BNO080
 
 	//Configure the BNO080 for SPI communication
-	digitalWrite(_wake, HIGH); //Before boot up the PS0/WAK pin must be high to enter SPI mode
-	digitalWrite(_rst, LOW);   //Reset BNO080
+	_wake->digitalWrite(HIGH); //Before boot up the PS0/WAK pin must be high to enter SPI mode
+	_rst->digitalWrite(LOW);   //Reset BNO080
 	delay(2);				   //Min length not specified in datasheet?
-	digitalWrite(_rst, HIGH);  //Bring out of reset
+	_rst->digitalWrite(HIGH);  //Bring out of reset
 
 	//Wait for first assertion of INT before using WAK pin. Can take ~104ms
 	waitForSPI();
@@ -203,9 +203,9 @@ uint16_t BNO080::getReadings(void)
 	//If we have an interrupt pin connection available, check if data is available.
 	//If int pin is not set, then we'll rely on receivePacket() to timeout
 	//See issue 13: https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library/issues/13
-	if (_int != 255)
+	if (_int != nullptr)
 	{
-		if (digitalRead(_int) == HIGH)
+		if (_int->digitalRead() == HIGH)
 			return 0;
 	}
 
@@ -256,6 +256,13 @@ uint16_t BNO080::parseCommandReport(void)
 		if (command == COMMAND_ME_CALIBRATE)
 		{
 			calibrationStatus = shtpData[5 + 0]; //R0 - Status (0 = success, non-zero = fail)
+			_calibrationResponseStatus = shtpData[5 + 0];
+			_accelCalEnabled = shtpData[6 + 0];
+			_gyroCalEnabled = shtpData[7 + 0];
+			_magCalEnabled = shtpData[8 + 0];
+			_planarAccelCalEnabled = shtpData[9 + 0];
+			_onTableCalEnabled = shtpData[10 + 0];
+			_hasNewCalibrationStatus = true;
 		}
 		return shtpData[0];
 	}
@@ -1381,6 +1388,7 @@ void BNO080::sendCalibrateCommand(uint8_t thingToCalibrate)
 
 	//Make the internal calStatus variable non-zero (operation failed) so that user can test while we wait
 	calibrationStatus = 1;
+	_hasNewCalibrationStatus  = false;
 
 	//Using this shtpData packet, send a command
 	sendCommand(COMMAND_ME_CALIBRATE);
@@ -1404,7 +1412,7 @@ void BNO080::requestCalibrationStatus()
 		shtpData[x] = 0;
 
 	shtpData[6] = 0x01; //P3 - 0x01 - Subcommand: Get ME Calibration
-
+	_hasNewCalibrationStatus  = false;
 	//Using this shtpData packet, send a command
 	sendCommand(COMMAND_ME_CALIBRATE);
 }
@@ -1429,6 +1437,43 @@ void BNO080::saveCalibration()
 	//Using this shtpData packet, send a command
 	sendCommand(COMMAND_DCD); //Save DCD command
 }
+
+void BNO080::saveCalibrationPeriodically(bool save)
+{
+	/*shtpData[3] = 0; //P0 - Enable/Disable Periodic DCD Save
+	shtpData[4] = 0; //P1 - Reserved
+	shtpData[5] = 0; //P2 - Reserved
+	shtpData[6] = 0; //P3 - Reserved
+	shtpData[7] = 0; //P4 - Reserved
+	shtpData[8] = 0; //P5 - Reserved
+	shtpData[9] = 0; //P6 - Reserved
+	shtpData[10] = 0; //P7 - Reserved
+	shtpData[11] = 0; //P8 - Reserved*/
+
+	for (uint8_t x = 3; x < 12; x++) //Clear this section of the shtpData array
+		shtpData[x] = 0;
+	shtpData[3] = save ? 1 : 0;
+
+	//Using this shtpData packet, send a command
+	sendCommand(COMMAND_DCD_PERIOD_SAVE); //Save DCD command
+}
+
+bool BNO080::hasNewCalibrationStatus()
+{
+	return _hasNewCalibrationStatus;
+}
+
+void BNO080::getCalibrationStatus(uint8_t &calibrationResponseStatus, uint8_t &accelCalEnabled, uint8_t &gyroCalEnabled, uint8_t &magCalEnabled, uint8_t &planarAccelCalEnabled, uint8_t &onTableCalEnabled)
+{
+	_hasNewCalibrationStatus = false;
+	calibrationResponseStatus = _calibrationResponseStatus;
+	accelCalEnabled = _accelCalEnabled;
+	gyroCalEnabled = _gyroCalEnabled;
+	magCalEnabled = _magCalEnabled;
+	planarAccelCalEnabled = _planarAccelCalEnabled;
+	onTableCalEnabled = _onTableCalEnabled;
+}
+
 
 //Wait a certain time for incoming I2C bytes before giving up
 //Returns false if failed
@@ -1460,7 +1505,7 @@ boolean BNO080::waitForSPI()
 {
 	for (uint8_t counter = 0; counter < 125; counter++) //Don't got more than 255
 	{
-		if (digitalRead(_int) == LOW)
+		if (_int->digitalRead() == LOW)
 			return (true);
 		if (_printDebug == true)
 			_debugPort->println(F("SPI Wait"));
@@ -1478,7 +1523,7 @@ boolean BNO080::receivePacket(void)
 {
 	if (_i2cPort == NULL) //Do SPI
 	{
-		if (digitalRead(_int) == HIGH)
+		if (_int->digitalRead() == HIGH)
 			return (false); //Data is not available
 
 		//Old way: if (waitForSPI() == false) return (false); //Something went wrong
@@ -1486,7 +1531,7 @@ boolean BNO080::receivePacket(void)
 		//Get first four bytes to find out how much data we need to read
 
 		_spiPort->beginTransaction(SPISettings(_spiPortSpeed, MSBFIRST, SPI_MODE3));
-		digitalWrite(_cs, LOW);
+		_cs->digitalWrite(LOW);
 
 		//Get the first four bytes, aka the packet header
 		uint8_t packetLSB = _spiPort->transfer(0);
@@ -1521,7 +1566,7 @@ boolean BNO080::receivePacket(void)
 				shtpData[dataSpot] = incoming; //Store data into the shtpData array
 		}
 
-		digitalWrite(_cs, HIGH); //Release BNO080
+		_cs->digitalWrite(HIGH); //Release BNO080
 
 		_spiPort->endTransaction();
 		printPacket();
@@ -1627,7 +1672,7 @@ boolean BNO080::sendPacket(uint8_t channelNumber, uint8_t dataLength)
 		//BNO080 has max CLK of 3MHz, MSB first,
 		//The BNO080 uses CPOL = 1 and CPHA = 1. This is mode3
 		_spiPort->beginTransaction(SPISettings(_spiPortSpeed, MSBFIRST, SPI_MODE3));
-		digitalWrite(_cs, LOW);
+		_cs->digitalWrite(LOW);
 
 		//Send the 4 byte packet header
 		_spiPort->transfer(packetLength & 0xFF);			 //Packet length LSB
@@ -1641,7 +1686,7 @@ boolean BNO080::sendPacket(uint8_t channelNumber, uint8_t dataLength)
 			_spiPort->transfer(shtpData[i]);
 		}
 
-		digitalWrite(_cs, HIGH);
+		_cs->digitalWrite(HIGH);
 		_spiPort->endTransaction();
 	}
 	else //Do I2C
