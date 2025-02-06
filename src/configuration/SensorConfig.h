@@ -79,7 +79,7 @@ struct SoftFusionSensorConfig {
 };
 
 struct NonBlockingSensorConfig {
-	ImuID ImuType;
+	SensorTypeID ImuType;
 	uint16_t MotionlessDataLen;
 
 	bool sensorTimestepsCalibrated;
