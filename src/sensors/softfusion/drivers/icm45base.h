@@ -24,6 +24,7 @@
 #include <array>
 #include <cstdint>
 
+#include "../magdriver.h"
 #include "GlobalVars.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -100,10 +101,18 @@ struct ICM45Base {
 														  // enable gyro,
 														  // enable hires mode
 			static constexpr uint8_t valueAux = (0b1 << 0) | (0b1 << 1) | (0b1 << 2)
-											  | (0b0 << 3);  // enable FIFO,
+											  | (0b0 << 3)
+											  | (0b1 << 4);  // enable FIFO,
 															 // enable accel,
 															 // enable gyro,
-															 // enable hires mode
+															 // disable hires,
+															 // enable es0
+		};
+
+		struct FifoConfig4 {
+			static constexpr uint8_t reg = 0x22;
+			static constexpr uint8_t value6Byte = 0b0;
+			static constexpr uint8_t value9Byte = 0b0;
 		};
 
 		struct PwrMgmt0 {
@@ -152,20 +161,18 @@ struct ICM45Base {
 			static constexpr uint8_t reg = 0x16;
 		};
 
-		struct I2CMStatus {
-			static constexpr uint8_t bank = 0xa2;
-			static constexpr uint8_t reg = 0x18;
-		};
-
-		struct I2CMDevStatus {
-			static constexpr uint8_t bank = 0xa2;
-			static constexpr uint8_t reg = 0x1a;
-		};
-
 		struct RegMisc1 {
 			static constexpr uint8_t reg = 0x35;
 			static constexpr uint8_t value = 0b0010;  // internal relaxation
 													  // oscillator
+		};
+
+		struct DMPExtSenOdrCfg {
+			static constexpr uint8_t reg = 0x27;
+			static constexpr uint8_t value
+				= 0b000 | (0b010 << 3) | (0b1 << 6);  // apex odr irrelevant,
+													  // ext odr at 12.5Hz,
+													  // enable ext sensor odr
 		};
 
 		static constexpr uint8_t FifoCount = 0x12;
@@ -340,16 +347,23 @@ struct ICM45Base {
 		uint8_t data[] = {address, value};
 		writeBankRegister<typename BaseRegs::I2CMWRData>(data, sizeof(data));
 		writeBankRegister<typename BaseRegs::I2CMCommand>(
-			0b001 | (0b00 << 3) | (0b0 << 5) | (0b1 << 6)
-		);  // Write 1 byte on channel 0, last transmission
+			0b0010 | (0b00 << 4) | (0b0 << 6) | (0b1 << 7)
+		);  // Write 2 bytes on channel 0, last transmission
 		writeBankRegister<typename BaseRegs::I2CMControl>(
-			0b1 | (0b0 << 2) | (0b0 << 5)
+			0b1 | (0b0 << 3) | (0b0 << 6)
 		);  // Start i2cm, fast mode, no restarts
 		while ((readBankRegister<typename BaseRegs::I2CMControl>() & 0b1) != 0)
 			;  // Wait until operation finishes
 	}
 
 	uint8_t readAux(uint8_t address) {
+		uint8_t out;
+		readAux<uint8_t>(address, &out, 1);
+		return out;
+	}
+
+	template <typename T>
+	void readAux(uint8_t address, T* outData, size_t count) {
 		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
 		writeBankRegister<typename BaseRegs::I2CMCommand>(
 			0b0001 | (0b01 << 4) | (0b0 << 6) | (0b1 << 7)
@@ -359,30 +373,27 @@ struct ICM45Base {
 		);  // Start i2cm, fast mode, no restarts
 		while ((readBankRegister<typename BaseRegs::I2CMControl>() & 0b1) != 0)
 			;  // Wait until operation finishes
-		auto value = readBankRegister<typename BaseRegs::I2CMRDData>();
-
-		uint8_t error = readBankRegister<typename BaseRegs::I2CMStatus>();
-		uint8_t status = readBankRegister<typename BaseRegs::I2CMDevStatus>();
-
-		return value;
-	}
-
-	template <typename T>
-	void readAux(uint8_t address, T* outData, size_t count) {
-		static_assert(sizeof(T) * count <= 24, "Can only read 24 bytes at once!");
-		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
-		writeBankRegister<typename BaseRegs::I2CMCommand>(
-			0b000 | (0b01 << 3) | (0b0 << 5) | (0b1 << 6)
-		);  // Read (with address) on channel 0, last transmission
-		writeBankRegister<typename BaseRegs::I2CMControl>(
-			0b1 | (0b0 << 2) | (0b0 << 5)
-		);  // Start i2cm, fast mode, no restarts
-		while ((readBankRegister<typename BaseRegs::I2CMControl>() & 0b1) != 0)
-			;  // Wait until operation finishes
 
 		readBankRegister<typename BaseRegs::I2CMRDData, T>(outData, count);
 	}
+
+	void setAuxByteWidth(MagDefinition::DataWidth width) {
+		i2c.writeReg(
+			BaseRegs::FifoConfig4::reg,
+			width == MagDefinition::DataWidth::SixByte
+				? BaseRegs::FifoConfig4::value6Byte
+				: BaseRegs::FifoConfig4::value9Byte
+		);
+	}
+
+	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {
+		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
+		uint8_t lengthBits
+			= byteWidth == MagDefinition::DataWidth::SixByte ? 0b0110 : 0b1001;
+		writeBankRegister<typename BaseRegs::I2CMCommand>(
+			lengthBits | (0b01 << 3) | (0b0 << 5) | (0b1 << 6)
+		);  // Read (with address) on channel 0, last transmission
+	};
 };
 
 };  // namespace SlimeVR::Sensors::SoftFusion::Drivers
-

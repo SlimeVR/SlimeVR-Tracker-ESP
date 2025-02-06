@@ -32,8 +32,6 @@
 namespace SlimeVR::Sensors::SoftFusion {
 
 using I2CWriteFunc = std::function<void(uint8_t, uint8_t)>;
-using I2CReadFunc = std::function<uint8_t(uint8_t)>;
-using I2CSetIdFunc = std::function<void(uint8_t)>;
 
 struct MagDefinition {
 	enum class DataWidth {
@@ -56,13 +54,22 @@ struct MagDefinition {
 	float resolution;
 };
 
+using I2CReadFunc = std::function<uint8_t(uint8_t)>;
+using I2CSetIdFunc = std::function<void(uint8_t)>;
+using I2CSetByteWidthFunc = std::function<void(MagDefinition::DataWidth)>;
+using I2CSetupPollingFunc = std::function<void(uint8_t, MagDefinition::DataWidth)>;
+
+struct AuxInterface {
+	const I2CWriteFunc& writeI2C;
+	const I2CReadFunc& readI2C;
+	const I2CSetIdFunc& setId;
+	const I2CSetByteWidthFunc& setByteWidth;
+	const I2CSetupPollingFunc& setupPolling;
+};
+
 class MagDriver {
 public:
-	void init(
-		const I2CSetIdFunc& setId,
-		const I2CReadFunc& readI2C,
-		const I2CWriteFunc& writeI2C
-	);
+	void init(AuxInterface auxInterface);
 	void scaleMagSample(const uint8_t* rawData, float outData[3]);
 
 private:

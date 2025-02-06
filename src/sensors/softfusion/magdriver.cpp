@@ -48,15 +48,11 @@ std::vector<MagDefinition> MagDriver::mags = {MagDefinition{
 	.resolution = 0.3,
 }};
 
-void MagDriver::init(
-	const I2CSetIdFunc& setId,
-	const I2CReadFunc& readI2C,
-	const I2CWriteFunc& writeI2C
-) {
+void MagDriver::init(AuxInterface auxInterface) {
 	for (auto& mag : mags) {
-		setId(mag.deviceId);
+		auxInterface.setId(mag.deviceId);
 		m_Logger.info("Trying mag %s", mag.name);
-		if (readI2C(mag.whoAmIReg) != mag.expectedWhoAmI) {
+		if (auxInterface.readI2C(mag.whoAmIReg) != mag.expectedWhoAmI) {
 			continue;
 		}
 
@@ -64,7 +60,9 @@ void MagDriver::init(
 		state = State::Ok;
 
 		m_Logger.info("Found mag of type %s, initializing!", mag.name);
-		selectedMag.setup(writeI2C);
+		auxInterface.setByteWidth(mag.dataWidth);
+		selectedMag.setup(auxInterface.writeI2C);
+		auxInterface.setupPolling(mag.dataReg, mag.dataWidth);
 
 		return;
 	}

@@ -148,7 +148,11 @@ class SoftFusionSensor : public Sensor {
 		m_fusion.updateGyro(scaledData, m_calibration.G_Ts);
 	}
 
-	void processMagSample(const uint8_t* rawData, const sensor_real_t timeDelta) {}
+	void processMagSample(const uint8_t* rawData, const sensor_real_t timeDelta) {
+		float scaledData[3];
+		magDriver.scaleMagSample(rawData, scaledData);
+		printf("Mag: %f %f %f\n", scaledData[0], scaledData[1], scaledData[2]);
+	}
 
 	void eatSamplesForSeconds(const uint32_t seconds) {
 		const auto targetDelay = millis() + 1000 * seconds;
@@ -299,13 +303,16 @@ public:
 		}
 
 		if (!USE_6_AXIS) {
-			magDriver.init(
-				[&](uint8_t id) { m_sensor.setAuxDeviceId(id); },
-				[&](uint8_t address) { return m_sensor.readAux(address); },
-				[&](uint8_t address, uint8_t value) {
-					m_sensor.writeAux(address, value);
-				}
-			);
+			magDriver.init(SoftFusion::AuxInterface{
+				.writeI2C = [&](uint8_t address,
+								uint8_t value) { m_sensor.writeAux(address, value); },
+				.readI2C = [&](uint8_t address) { return m_sensor.readAux(address); },
+				.setId = [&](uint8_t id) { m_sensor.setAuxDeviceId(id); },
+				.setByteWidth = [&](SoftFusion::MagDefinition::DataWidth byteWidth
+								) { m_sensor.setAuxByteWidth(byteWidth); },
+				.setupPolling
+				= [&](uint8_t address, SoftFusion::MagDefinition::DataWidth byteWidth
+				  ) { m_sensor.setupAuxSensorPolling(address, byteWidth); }});
 		}
 
 		m_status = SensorStatus::SENSOR_OK;
