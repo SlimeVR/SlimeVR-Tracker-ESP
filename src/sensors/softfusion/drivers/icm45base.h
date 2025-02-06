@@ -270,6 +270,10 @@ struct ICM45Base {
 		} else {
 			i2c.writeReg(BaseRegs::FifoConfig3::reg, BaseRegs::FifoConfig3::valueAux);
 			i2c.writeReg(
+				BaseRegs::DMPExtSenOdrCfg::reg,
+				BaseRegs::DMPExtSenOdrCfg::value
+			);
+			i2c.writeReg(
 				BaseRegs::IOCPadScenarioAuxOvrd::reg,
 				BaseRegs::IOCPadScenarioAuxOvrd::value
 			);
