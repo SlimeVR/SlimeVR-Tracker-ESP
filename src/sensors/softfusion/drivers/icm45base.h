@@ -163,7 +163,7 @@ struct ICM45Base {
 
 		struct RegMisc1 {
 			static constexpr uint8_t reg = 0x35;
-			static constexpr uint8_t value = 0b0010;  // internal relaxation
+			static constexpr uint8_t value = 0b0100;  // internal relaxation
 													  // oscillator
 		};
 
@@ -277,6 +277,7 @@ struct ICM45Base {
 				BaseRegs::IOCPadScenarioAuxOvrd::reg,
 				BaseRegs::IOCPadScenarioAuxOvrd::value
 			);
+			i2c.writeReg(BaseRegs::RegMisc1::reg, BaseRegs::RegMisc1::value);
 		}
 
 		delay(1);
