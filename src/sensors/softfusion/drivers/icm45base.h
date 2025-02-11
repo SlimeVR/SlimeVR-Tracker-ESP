@@ -270,10 +270,6 @@ struct ICM45Base {
 		} else {
 			i2c.writeReg(BaseRegs::FifoConfig3::reg, BaseRegs::FifoConfig3::valueAux);
 			i2c.writeReg(
-				BaseRegs::DMPExtSenOdrCfg::reg,
-				BaseRegs::DMPExtSenOdrCfg::value
-			);
-			i2c.writeReg(
 				BaseRegs::IOCPadScenarioAuxOvrd::reg,
 				BaseRegs::IOCPadScenarioAuxOvrd::value
 			);
@@ -398,6 +394,10 @@ struct ICM45Base {
 		writeBankRegister<typename BaseRegs::I2CMCommand>(
 			lengthBits | (0b01 << 3) | (0b0 << 5) | (0b1 << 6)
 		);  // Read (with address) on channel 0, last transmission
+		i2c.writeReg(BaseRegs::DMPExtSenOdrCfg::reg, BaseRegs::DMPExtSenOdrCfg::value);
+		writeBankRegister<typename BaseRegs::I2CMControl>(
+			0b1 | (0b0 << 3) | (0b0 << 6)
+		);  // Start i2cm, fast mode, no restarts
 	};
 };
 
