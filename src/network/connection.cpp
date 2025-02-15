@@ -749,6 +749,11 @@ void Connection::update() {
 			for (int i = 0; i < (int)sensors.size(); i++) {
 				if (m_Packet[4] == sensors[i]->getSensorId()) {
 					m_AckedSensorState[i] = (SensorStatus)m_Packet[5];
+					if (len < 10) {
+						m_AckedSensorCalibration[i]
+							= sensors[i]->hasCompletedRestCalibration();
+						break;
+					}
 					m_AckedSensorCalibration[i] = (bool)m_Packet[9];
 					break;
 				}
