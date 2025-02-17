@@ -114,6 +114,8 @@ public:
 	TPSCounter m_tpsCounter;
 	TPSCounter m_dataCounter;
 	SlimeVR::SensorInterface* m_hwInterface = nullptr;
+	virtual void deinit() {}
+	virtual bool isAtRest() { return false; }
 
 protected:
 	uint8_t addr = 0;

@@ -139,6 +139,10 @@ void BNO080Sensor::motionSetup() {
 
 	imu.enableStabilityClassifier(500);
 
+#ifdef BUTTON_AUTO_SLEEP_TIME_SECONDS
+	imu.enableStabilityClassifier(500);
+#endif
+
 	lastReset = 0;
 	lastData = millis();
 	working = true;
@@ -376,3 +380,7 @@ void BNO080Sensor::startCalibration(int calibrationType) {
 	// it's always enabled except accelerometer
 	// that is disabled 30 seconds after startup
 }
+
+void BNO080Sensor::deinit() { imu.softReset(); }
+
+bool BNO080Sensor::isAtRest() { return imu.getStabilityClassifier() == 1; }
