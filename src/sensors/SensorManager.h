@@ -45,8 +45,6 @@
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/I2CWireSensorInterface.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
-#include "sensorinterface/SPIImpl.h"
-#include "sensorinterface/i2cimpl.h"
 
 namespace SlimeVR {
 namespace Sensors {
@@ -73,25 +71,23 @@ private:
 	std::vector<std::unique_ptr<::Sensor>> m_Sensors;
 	Adafruit_MCP23X17 m_MCP;
 
-	template <typename ImuType, typename RegInterface>
+	template <typename ImuType>
 	std::unique_ptr<::Sensor> buildSensor(
 		uint8_t sensorID,
-		std::optional<RegInterface> imuInterface,
+		std::optional<uint8_t> imuAddress,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
-		RegInterface interface = imuInterface.value_or(
-			RegInterface(ImuType::Address + sensorID)
-		);
+		uint8_t i2cAddress = imuAddress.value_or(ImuType::Address + sensorID);
 		m_Logger.trace(
 			"Building IMU with: id=%d,\n\
 						address=0x%02X, rotation=%f,\n\
 						interface=%s, int=%s, extraParam=%d, optional=%d",
 			sensorID,
-			interface,
+			i2cAddress,
 			rotation,
 			sensorInterface,
 			intPin,
@@ -106,19 +102,23 @@ private:
 		sensorInterface->init();
 		sensorInterface->swapIn();
 
-		if (interface.hasSensorOnBus()) {
-			m_Logger.trace("Sensor %d found at address 0x%s", sensorID + 1, interface);
+		if (I2CSCAN::hasDevOnBus(i2cAddress)) {
+			m_Logger
+				.trace("Sensor %d found at address 0x%02X", sensorID + 1, i2cAddress);
 		} else {
 			if (!optional) {
-				m_Logger
-					.error("Mandatory sensor %d not found at address 0x%s", sensorID + 1, interface);
-				sensor = std::make_unique<ErroneousSensor>(
-					sensorID,
-					ImuType::SensorTypeID
+				m_Logger.error(
+					"Mandatory sensor %d not found at address 0x%02X",
+					sensorID + 1,
+					i2cAddress
 				);
+				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
 			} else {
-				m_Logger
-					.debug("Optional sensor %d not found at address 0x%s", sensorID + 1, interface);
+				m_Logger.debug(
+					"Optional sensor %d not found at address 0x%02X",
+					sensorID + 1,
+					i2cAddress
+				);
 				sensor = std::make_unique<EmptySensor>(sensorID);
 			}
 			return sensor;
@@ -126,7 +126,7 @@ private:
 
 		sensor = std::make_unique<ImuType>(
 			sensorID,
-			interface,
+			i2cAddress,
 			rotation,
 			sensorInterface,
 			intPin,

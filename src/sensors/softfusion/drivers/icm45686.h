@@ -35,8 +35,8 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 409.6Hz, accel ODR = 204.8Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
-template <typename RegInterface>
-struct ICM45686 : public ICM45Base<RegInterface> {
+template <typename I2CImpl>
+struct ICM45686 : public ICM45Base<I2CImpl> {
 	static constexpr auto Name = "ICM-45686";
 	static constexpr auto Type = SensorTypeID::ICM45686;
 
@@ -48,8 +48,8 @@ struct ICM45686 : public ICM45Base<RegInterface> {
 		.restThAcc = 0.196f,
 	};
 
-	ICM45686(RegInterface registerInterface, SlimeVR::Logging::Logger& logger)
-		: ICM45Base<RegInterface>{registerInterface, logger} {}
+	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
+		: ICM45Base<I2CImpl>{i2c, logger} {}
 
 	struct Regs {
 		struct WhoAmI {
@@ -68,13 +68,13 @@ struct ICM45686 : public ICM45Base<RegInterface> {
 		};
 	};
 
-	using ICM45Base<RegInterface>::m_RegisterInterface;
+	using ICM45Base<I2CImpl>::i2c;
 
 	bool initialize() {
-		ICM45Base<RegInterface>::softResetIMU();
-		m_RegisterInterface.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
-		m_RegisterInterface.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
-		return ICM45Base<RegInterface>::initializeBase();
+		ICM45Base<I2CImpl>::softResetIMU();
+		i2c.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
+		i2c.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
+		return ICM45Base<I2CImpl>::initializeBase();
 	}
 };
 
