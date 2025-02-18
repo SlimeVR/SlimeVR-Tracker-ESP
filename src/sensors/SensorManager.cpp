@@ -29,7 +29,6 @@
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
-#include "debug.h"
 #include "icm20948sensor.h"
 #include "mpu6050sensor.h"
 #include "mpu9250sensor.h"
