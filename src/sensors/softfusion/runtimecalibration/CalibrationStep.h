@@ -23,24 +23,45 @@
 
 #pragma once
 
-#include "CalibrationStep.h"
-
-namespace SlimeVR::Sensors::NonBlockingCalibration {
+namespace SlimeVR::Sensors::RuntimeCalibration {
 
 template <typename SensorRawT>
-class NullCalibrationStep : public CalibrationStep<SensorRawT> {
-	using CalibrationStep<SensorRawT>::sensorConfig;
-	using typename CalibrationStep<SensorRawT>::TickResult;
-
+class CalibrationStep {
 public:
-	NullCalibrationStep(SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig)
-		: CalibrationStep<SensorRawT>{sensorConfig} {}
+	enum class TickResult {
+		CONTINUE,
+		SKIP,
+		DONE,
+	};
 
-	void start() override final { CalibrationStep<SensorRawT>::start(); }
+	CalibrationStep(SlimeVR::Configuration::RuntimeCalibrationSensorConfig& sensorConfig
+	)
+		: sensorConfig{sensorConfig} {}
 
-	TickResult tick() override final { return TickResult::CONTINUE; }
+	virtual ~CalibrationStep() = default;
 
-	void cancel() override final {}
+	virtual void start() { restDetectionDelayStartMillis = millis(); }
+
+	virtual TickResult tick() = 0;
+	virtual void cancel() = 0;
+
+	virtual bool requiresRest() { return true; }
+	virtual void processAccelSample(const SensorRawT accelSample[3]) {}
+	virtual void processGyroSample(const SensorRawT accelSample[3]) {}
+	virtual void processTempSample(float tempSample) {}
+
+	bool restDetectionDelayElapsed() {
+		return (millis() - restDetectionDelayStartMillis)
+			>= restDetectionDelaySeconds * 1e3;
+	}
+
+protected:
+	SlimeVR::Configuration::RuntimeCalibrationSensorConfig& sensorConfig;
+
+	float restDetectionDelaySeconds = 5.0f;
+
+private:
+	uint32_t restDetectionDelayStartMillis;
 };
 
-}  // namespace SlimeVR::Sensors::NonBlockingCalibration
+}  // namespace SlimeVR::Sensors::RuntimeCalibration

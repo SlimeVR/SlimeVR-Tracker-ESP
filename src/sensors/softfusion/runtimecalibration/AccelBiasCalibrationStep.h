@@ -29,7 +29,7 @@
 #include "../../../consts.h"
 #include "CalibrationStep.h"
 
-namespace SlimeVR::Sensors::NonBlockingCalibration {
+namespace SlimeVR::Sensors::RuntimeCalibration {
 
 template <typename SensorRawT>
 class AccelBiasCalibrationStep : public CalibrationStep<SensorRawT> {
@@ -38,7 +38,7 @@ class AccelBiasCalibrationStep : public CalibrationStep<SensorRawT> {
 
 public:
 	AccelBiasCalibrationStep(
-		SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig,
+		SlimeVR::Configuration::RuntimeCalibrationSensorConfig& sensorConfig,
 		float accelScale
 	)
 		: CalibrationStep<SensorRawT>{sensorConfig}
@@ -151,4 +151,4 @@ private:
 	float accelScale;
 };
 
-}  // namespace SlimeVR::Sensors::NonBlockingCalibration
+}  // namespace SlimeVR::Sensors::RuntimeCalibration

@@ -36,7 +36,7 @@
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
 #include "sensors/softfusion/SoftfusionCalibration.h"
-#include "sensors/softfusion/nonblockingcalibration/NonBlockingCalibration.h"
+#include "sensors/softfusion/runtimecalibration/RuntimeCalibration.h"
 #include "softfusion/drivers/bmi270.h"
 #include "softfusion/drivers/icm42688.h"
 #include "softfusion/drivers/icm45605.h"
@@ -53,8 +53,8 @@
 #include "driver/i2c.h"
 #endif
 
-#if USE_NONBLOCKING_CALIBRATION
-#define SFCALIBRATOR SlimeVR::Sensors::NonBlockingCalibration::NonBlockingCalibrator
+#if USE_RUNTIME_CALIBRATION
+#define SFCALIBRATOR SlimeVR::Sensors::RuntimeCalibration::RuntimeCalibrator
 #else
 #define SFCALIBRATOR SlimeVR::Sensor::SoftfusionCalibrator
 #endif

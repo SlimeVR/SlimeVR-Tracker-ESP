@@ -39,17 +39,16 @@
 #include "logging/Logger.h"
 #include "sensors/softfusion/CalibrationBase.h"
 
-namespace SlimeVR::Sensors::NonBlockingCalibration {
+namespace SlimeVR::Sensors::RuntimeCalibration {
 
 template <typename IMU, typename RawSensorT, typename RawVectorT>
-class NonBlockingCalibrator
-	: public Sensor::CalibrationBase<IMU, RawSensorT, RawVectorT> {
+class RuntimeCalibrator : public Sensor::CalibrationBase<IMU, RawSensorT, RawVectorT> {
 public:
 	static constexpr bool HasUpsideDownCalibration = false;
 
 	using Base = Sensor::CalibrationBase<IMU, RawSensorT, RawVectorT>;
 
-	NonBlockingCalibrator(
+	RuntimeCalibrator(
 		SensorFusionRestDetect& fusion,
 		IMU& imu,
 		uint8_t sensorId,
@@ -66,15 +65,15 @@ public:
 	bool calibrationMatches(const Configuration::SensorConfig& sensorCalibration
 	) final {
 		return sensorCalibration.type
-				== SlimeVR::Configuration::SensorConfigType::NONBLOCKING
+				== SlimeVR::Configuration::SensorConfigType::RUNTIME_CALIBRATION
 			&& (sensorCalibration.data.sfusion.ImuType == IMU::Type)
 			&& (sensorCalibration.data.sfusion.MotionlessDataLen
 				== Base::MotionlessCalibDataSize());
 	}
 
 	void assignCalibration(const Configuration::SensorConfig& sensorCalibration) final {
-		calibration = sensorCalibration.data.nonblocking;
-		activeCalibration = sensorCalibration.data.nonblocking;
+		calibration = sensorCalibration.data.runtimeCalibration;
+		activeCalibration = sensorCalibration.data.runtimeCalibration;
 		calculateZROChange();
 	}
 
@@ -285,8 +284,9 @@ private:
 
 	void saveCalibration() {
 		SlimeVR::Configuration::SensorConfig calibration{};
-		calibration.type = SlimeVR::Configuration::SensorConfigType::NONBLOCKING;
-		calibration.data.nonblocking = this->calibration;
+		calibration.type
+			= SlimeVR::Configuration::SensorConfigType::RUNTIME_CALIBRATION;
+		calibration.data.runtimeCalibration = this->calibration;
 		configuration.setSensor(sensorId, calibration);
 		configuration.save();
 
@@ -395,7 +395,7 @@ private:
 	bool skippedAStep = false;
 	bool lastTickRest = false;
 
-	SlimeVR::Configuration::NonBlockingSensorConfig calibration{
+	SlimeVR::Configuration::RuntimeCalibrationSensorConfig calibration{
 		// let's create here transparent calibration that doesn't affect input data
 		.ImuType = {IMU::Type},
 		.MotionlessDataLen = {Base::MotionlessCalibDataSize()},
@@ -421,7 +421,7 @@ private:
 
 	float activeZROChange = 0;
 
-	Configuration::NonBlockingSensorConfig activeCalibration = calibration;
+	Configuration::RuntimeCalibrationSensorConfig activeCalibration = calibration;
 
 	using Base::AScale;
 	using Base::fusion;
@@ -431,4 +431,4 @@ private:
 	using Base::sensorId;
 };
 
-}  // namespace SlimeVR::Sensors::NonBlockingCalibration
+}  // namespace SlimeVR::Sensors::RuntimeCalibration

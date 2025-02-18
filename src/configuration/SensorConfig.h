@@ -78,7 +78,7 @@ struct SoftFusionSensorConfig {
 	float T_Ts;
 };
 
-struct NonBlockingSensorConfig {
+struct RuntimeCalibrationSensorConfig {
 	SensorTypeID ImuType;
 	uint16_t MotionlessDataLen;
 
@@ -158,7 +158,7 @@ enum class SensorConfigType {
 	ICM20948,
 	SFUSION,
 	BNO0XX,
-	NONBLOCKING,
+	RUNTIME_CALIBRATION,
 };
 
 const char* calibrationConfigTypeToString(SensorConfigType type);
@@ -173,7 +173,7 @@ struct SensorConfig {
 		MPU9250SensorConfig mpu9250;
 		ICM20948SensorConfig icm20948;
 		BNO0XXSensorConfig bno0XX;
-		NonBlockingSensorConfig nonblocking;
+		RuntimeCalibrationSensorConfig runtimeCalibration;
 	} data;
 };
 

@@ -23,25 +23,22 @@
 
 #pragma once
 
-#include <cstring>
 #include <optional>
 
 #include "CalibrationStep.h"
 
-namespace SlimeVR::Sensors::NonBlockingCalibration {
+namespace SlimeVR::Sensors::RuntimeCalibration {
 
-template <typename IMU, typename SensorRawT>
-class MotionlessCalibrationStep : public CalibrationStep<SensorRawT> {
+template <typename SensorRawT>
+class SampleRateCalibrationStep : public CalibrationStep<SensorRawT> {
 	using CalibrationStep<SensorRawT>::sensorConfig;
 	using typename CalibrationStep<SensorRawT>::TickResult;
 
 public:
-	MotionlessCalibrationStep(
-		SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig,
-		IMU& imu
+	SampleRateCalibrationStep(
+		SlimeVR::Configuration::RuntimeCalibrationSensorConfig& sensorConfig
 	)
-		: CalibrationStep<SensorRawT>{sensorConfig}
-		, imu{imu} {}
+		: CalibrationStep<SensorRawT>{sensorConfig} {}
 
 	void start() override final {
 		CalibrationStep<SensorRawT>::start();
@@ -49,51 +46,50 @@ public:
 	}
 
 	TickResult tick() override final {
-		if constexpr (HasMotionlessCalib) {
-			if (millis() - calibrationData.value().startMillis
-				< motionlessCalibrationDelay * 1e3) {
-				return TickResult::CONTINUE;
-			}
+		float elapsedTime = (millis() - calibrationData.value().startMillis) / 1e3f;
 
-			typename IMU::MotionlessCalibrationData motionlessCalibrationData;
-			if (!imu.motionlessCalibration(motionlessCalibrationData)) {
-				return TickResult::CONTINUE;
-			}
-
-			std::memcpy(
-				sensorConfig.MotionlessData,
-				&motionlessCalibrationData,
-				sizeof(motionlessCalibrationData)
-			);
-			sensorConfig.motionlessCalibrated = true;
-
-			return TickResult::DONE;
-		} else {
-			return TickResult::DONE;
+		if (elapsedTime < samplingRateCalibrationSeconds) {
+			return TickResult::CONTINUE;
 		}
+
+		float accelTimestep = elapsedTime / calibrationData.value().accelSamples;
+		float gyroTimestep = elapsedTime / calibrationData.value().gyroSamples;
+		float tempTimestep = elapsedTime / calibrationData.value().tempSamples;
+
+		sensorConfig.A_Ts = accelTimestep;
+		sensorConfig.G_Ts = gyroTimestep;
+		sensorConfig.T_Ts = tempTimestep;
+		sensorConfig.sensorTimestepsCalibrated = true;
+
+		return TickResult::DONE;
 	}
 
 	void cancel() override final { calibrationData.reset(); }
+	bool requiresRest() override final { return false; }
+
+	void processAccelSample(const SensorRawT accelSample[3]) override final {
+		calibrationData.value().accelSamples++;
+	}
+
+	void processGyroSample(const SensorRawT GyroSample[3]) override final {
+		calibrationData.value().gyroSamples++;
+	}
+
+	void processTempSample(float tempSample) override final {
+		calibrationData.value().tempSamples++;
+	}
 
 private:
-	static constexpr float motionlessCalibrationDelay = 5;
-
-	static constexpr bool HasMotionlessCalib
-		= requires(IMU& i) { typename IMU::MotionlessCalibrationData; };
-	static constexpr size_t MotionlessCalibDataSize() {
-		if constexpr (HasMotionlessCalib) {
-			return sizeof(typename IMU::MotionlessCalibrationData);
-		} else {
-			return 0;
-		}
-	}
+	static constexpr float samplingRateCalibrationSeconds = 5;
 
 	struct CalibrationData {
 		uint64_t startMillis = 0;
+		uint64_t accelSamples = 0;
+		uint64_t gyroSamples = 0;
+		uint64_t tempSamples = 0;
 	};
 
 	std::optional<CalibrationData> calibrationData;
-	IMU& imu;
 };
 
-}  // namespace SlimeVR::Sensors::NonBlockingCalibration
+}  // namespace SlimeVR::Sensors::RuntimeCalibration

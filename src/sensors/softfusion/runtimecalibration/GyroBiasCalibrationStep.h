@@ -28,7 +28,7 @@
 
 #include "CalibrationStep.h"
 
-namespace SlimeVR::Sensors::NonBlockingCalibration {
+namespace SlimeVR::Sensors::RuntimeCalibration {
 
 template <typename SensorRawT>
 class GyroBiasCalibrationStep : public CalibrationStep<SensorRawT> {
@@ -37,7 +37,7 @@ class GyroBiasCalibrationStep : public CalibrationStep<SensorRawT> {
 
 public:
 	GyroBiasCalibrationStep(
-		SlimeVR::Configuration::NonBlockingSensorConfig& sensorConfig
+		SlimeVR::Configuration::RuntimeCalibrationSensorConfig& sensorConfig
 	)
 		: CalibrationStep<SensorRawT>{sensorConfig} {}
 
@@ -193,4 +193,4 @@ private:
 	std::optional<CalibrationData> calibrationData;
 };
 
-}  // namespace SlimeVR::Sensors::NonBlockingCalibration
+}  // namespace SlimeVR::Sensors::RuntimeCalibration
