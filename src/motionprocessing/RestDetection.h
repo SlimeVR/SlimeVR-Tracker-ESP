@@ -8,7 +8,9 @@
 #ifndef REST_DETECTION_H
 #define REST_DETECTION_H
 
-// #define REST_DETECTION_DISABLE_LPF
+#ifndef REST_DETECTION_DISABLE_LPF
+#define REST_DETECTION_DISABLE_LPF false
+#endif
 
 #include <Arduino.h>
 #include <basicvqf.h>
@@ -54,7 +56,7 @@ public:
 		setup();
 	}
 
-#ifndef REST_DETECTION_DISABLE_LPF
+#if !REST_DETECTION_DISABLE_LPF
 	void filterInitialState(
 		sensor_real_t x0,
 		const double b[3],
@@ -118,7 +120,7 @@ public:
 #endif
 
 	void updateGyr(const sensor_real_t gyr[3]) {
-#ifdef REST_DETECTION_DISABLE_LPF
+#if REST_DETECTION_DISABLE_LPF
 		gyrLastSquaredDeviation = square(gyr[0] - lastSample.gyr[0])
 								+ square(gyr[1] - lastSample.gyr[1])
 								+ square(gyr[2] - lastSample.gyr[2]);
@@ -168,7 +170,7 @@ public:
 			return;
 		}
 
-#ifdef REST_DETECTION_DISABLE_LPF
+#if REST_DETECTION_DISABLE_LPF
 		accLastSquaredDeviation = square(acc[0] - lastSample.acc[0])
 								+ square(acc[1] - lastSample.acc[1])
 								+ square(acc[2] - lastSample.acc[2]);
@@ -216,7 +218,7 @@ public:
 
 	bool getRestDetected() { return restDetected; }
 
-#ifndef REST_DETECTION_DISABLE_LPF
+#if !REST_DETECTION_DISABLE_LPF
 	void resetState() {
 		restDetected = false;
 
@@ -251,7 +253,7 @@ public:
 #endif
 
 	void setup() {
-#ifndef REST_DETECTION_DISABLE_LPF
+#if !REST_DETECTION_DISABLE_LPF
 		assert(gyrTs > 0);
 		assert(accTs > 0);
 
@@ -271,7 +273,7 @@ private:
 
 	sensor_real_t gyrTs;
 	sensor_real_t accTs;
-#ifndef REST_DETECTION_DISABLE_LPF
+#if !REST_DETECTION_DISABLE_LPF
 	sensor_real_t restLastGyrLp[3];
 	double restGyrLpState[3 * 2];
 	double restGyrLpB[3];
