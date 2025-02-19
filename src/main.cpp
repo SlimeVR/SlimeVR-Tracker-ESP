@@ -27,6 +27,7 @@
 #include "Wire.h"
 #include "batterymonitor.h"
 #include "credentials.h"
+#include "debugging/TimeTaken.h"
 #include "globals.h"
 #include "logging/Logger.h"
 #include "ota.h"
@@ -41,6 +42,10 @@ SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
 SlimeVR::Network::Manager networkManager;
 SlimeVR::Network::Connection networkConnection;
+
+#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
+SlimeVR::Debugging::TimeTakenMeasurer sensorMeasurer{"Sensors"};
+#endif
 
 int sensorToCalibrate = -1;
 bool blinking = false;
@@ -119,7 +124,15 @@ void loop() {
 	SerialCommands::update();
 	OTA::otaUpdate();
 	networkManager.update();
+
+#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
+	sensorMeasurer.before();
+#endif
 	sensorManager.update();
+#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
+	sensorMeasurer.after();
+#endif
+
 	battery.Loop();
 	ledManager.update();
 	I2CSCAN::update();

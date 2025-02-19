@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,54 +21,47 @@
 	THE SOFTWARE.
 */
 
-#ifndef SLIMEVR_CONFIGURATION_CONFIGURATION_H
-#define SLIMEVR_CONFIGURATION_CONFIGURATION_H
+#pragma once
 
-#include <vector>
+namespace SlimeVR::Sensors::RuntimeCalibration {
 
-#include "../motionprocessing/GyroTemperatureCalibrator.h"
-#include "DeviceConfig.h"
-#include "logging/Logger.h"
-
-namespace SlimeVR {
-namespace Configuration {
-class Configuration {
+template <typename SensorRawT>
+class CalibrationStep {
 public:
-	void setup();
+	enum class TickResult {
+		CONTINUE,
+		SKIP,
+		DONE,
+	};
 
-	void save();
-	void reset();
+	CalibrationStep(SlimeVR::Configuration::RuntimeCalibrationSensorConfig& sensorConfig
+	)
+		: sensorConfig{sensorConfig} {}
 
-	void print();
+	virtual ~CalibrationStep() = default;
 
-	int32_t getVersion() const;
+	virtual void start() { restDetectionDelayStartMillis = millis(); }
 
-	size_t getSensorCount() const;
-	SensorConfig getSensor(size_t sensorID) const;
-	void setSensor(size_t sensorID, const SensorConfig& config);
-	void eraseSensors();
+	virtual TickResult tick() = 0;
+	virtual void cancel() = 0;
 
-	bool loadTemperatureCalibration(
-		uint8_t sensorId,
-		GyroTemperatureCalibrationConfig& config
-	);
-	bool saveTemperatureCalibration(
-		uint8_t sensorId,
-		const GyroTemperatureCalibrationConfig& config
-	);
+	virtual bool requiresRest() { return true; }
+	virtual void processAccelSample(const SensorRawT accelSample[3]) {}
+	virtual void processGyroSample(const SensorRawT accelSample[3]) {}
+	virtual void processTempSample(float tempSample) {}
+
+	bool restDetectionDelayElapsed() {
+		return (millis() - restDetectionDelayStartMillis)
+			>= restDetectionDelaySeconds * 1e3;
+	}
+
+protected:
+	SlimeVR::Configuration::RuntimeCalibrationSensorConfig& sensorConfig;
+
+	float restDetectionDelaySeconds = 5.0f;
 
 private:
-	void loadSensors();
-	bool runMigrations(int32_t version);
-
-	bool m_Loaded = false;
-
-	DeviceConfig m_Config{};
-	std::vector<SensorConfig> m_Sensors;
-
-	Logging::Logger m_Logger = Logging::Logger("Configuration");
+	uint32_t restDetectionDelayStartMillis;
 };
-}  // namespace Configuration
-}  // namespace SlimeVR
 
-#endif
+}  // namespace SlimeVR::Sensors::RuntimeCalibration

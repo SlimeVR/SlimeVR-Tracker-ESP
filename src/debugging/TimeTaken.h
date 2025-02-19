@@ -1,17 +1,14 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
-
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
 	in the Software without restriction, including without limitation the rights
 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 	copies of the Software, and to permit persons to whom the Software is
 	furnished to do so, subject to the following conditions:
-
 	The above copyright notice and this permission notice shall be included in
 	all copies or substantial portions of the Software.
-
 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,34 +18,41 @@
 	THE SOFTWARE.
 */
 
-#ifndef UTILS_H
-#define UTILS_H
+#pragma once
 
-#define UNPACK_VECTOR(V) V.x, V.y, V.z
-#define UNPACK_VECTOR_ARRAY(V) V[0], V[1], V[2]
-#define UNPACK_QUATERNION(Q) Q.x, Q.y, Q.z, Q.w
+#include <cstdint>
 
-#include <type_traits>
+#include "logging/Logger.h"
 
-template <class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-constexpr T operator|(T lhs, T rhs) {
-	return static_cast<T>(
-		static_cast<std::underlying_type<T>::type>(lhs)
-		| static_cast<std::underlying_type<T>::type>(rhs)
-	);
-}
+namespace SlimeVR::Debugging {
 
-template <class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-constexpr T operator&(T lhs, T rhs) {
-	return static_cast<T>(
-		static_cast<std::underlying_type<T>::type>(lhs)
-		& static_cast<std::underlying_type<T>::type>(rhs)
-	);
-}
+/*
+ * Usage:
+ *
+ * TimeTakenMeasurer measurer{"Some event"};
+ *
+ * ...
+ *
+ * measurer.before();
+ * thing to measure
+ * measurer.after();
+ */
+class TimeTakenMeasurer {
+public:
+	explicit TimeTakenMeasurer(const char* name);
+	void before();
+	void after();
 
-template <class T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
-constexpr bool any(T t) {
-	return static_cast<std::underlying_type<T>::type>(t) != 0;
-}
+private:
+	static constexpr float SecondsBetweenReports = 1.0f;
 
-#endif
+	const char* name;
+	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("TimeTaken");
+
+	uint64_t lastTimeTakenReportMillis = 0;
+	uint64_t timeTakenMicros = 0;
+
+	uint64_t startMicros = 0;
+};
+
+}  // namespace SlimeVR::Debugging

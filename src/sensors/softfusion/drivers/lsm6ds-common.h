@@ -38,14 +38,6 @@ struct LSM6DSOutputHandler {
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
 
-	template <typename Regs>
-	float getDirectTemp() const {
-		const auto value = static_cast<int16_t>(i2c.readReg16(Regs::OutTemp));
-		float result = ((float)value / 256.0f) + 25.0f;
-
-		return result;
-	}
-
 #pragma pack(push, 1)
 	struct FifoEntryAligned {
 		union {
@@ -57,12 +49,14 @@ struct LSM6DSOutputHandler {
 
 	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
-	template <typename AccelCall, typename GyroCall, typename Regs>
+	template <typename AccelCall, typename GyroCall, typename TempCall, typename Regs>
 	void bulkRead(
 		AccelCall& processAccelSample,
 		GyroCall& processGyroSample,
+		TempCall& processTempSample,
 		float GyrTs,
-		float AccTs
+		float AccTs,
+		float TempTs
 	) {
 		constexpr auto FIFO_SAMPLES_MASK = 0x3ff;
 		constexpr auto FIFO_OVERRUN_LATCHED_MASK = 0x800;
@@ -98,6 +92,9 @@ struct LSM6DSOutputHandler {
 					break;
 				case 0x02:  // Accel NC
 					processAccelSample(entry.xyz, AccTs);
+					break;
+				case 0x03:  // Temperature
+					processTempSample(entry.xyz[0], TempTs);
 					break;
 			}
 		}
