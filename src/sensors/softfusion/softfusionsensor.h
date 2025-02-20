@@ -205,7 +205,7 @@ class SoftFusionSensor : public Sensor {
 	}
 
 public:
-	static constexpr auto SensorTypeID = SensorType::Type;
+	static constexpr auto TypeID = SensorType::Type;
 	static constexpr uint8_t Address = SensorType::Address;
 
 	SoftFusionSensor(

@@ -32,10 +32,9 @@
 #include "icm20948sensor.h"
 #include "mpu6050sensor.h"
 #include "mpu9250sensor.h"
-#include "sensorinterface/I2CPCAInterface.h"
-#include "sensorinterface/MCP23X17PinInterface.h"
-#include "sensors/softfusion/SoftfusionCalibration.h"
-#include "sensors/softfusion/runtimecalibration/RuntimeCalibration.h"
+#include "sensor.h"
+#include "sensorinterface/SPIImpl.h"
+#include "sensorinterface/i2cimpl.h"
 #include "softfusion/drivers/bmi270.h"
 #include "softfusion/drivers/icm42688.h"
 #include "softfusion/drivers/icm45605.h"
@@ -47,18 +46,29 @@
 #include "softfusion/drivers/mpu6050.h"
 #include "softfusion/softfusionsensor.h"
 
+#ifndef PRIMARY_IMU_ADDRESS_ONE
+#define PRIMARY_IMU_ADDRESS_ONE std::nullopt
+#endif
+
+#ifndef SECONDARY_IMU_ADDRESS_TWO
+#define SECONDARY_IMU_ADDRESS_TWO std::nullopt
+#endif
+
+#if USE_RUNTIME_CALIBRATION
+#include "sensors/softfusion/runtimecalibration/RuntimeCalibration.h"
+#define SFCALIBRATOR SlimeVR::Sensors::RuntimeCalibration::RuntimeCalibrator
+#else
+#include "sensors/softfusion/SoftfusionCalibration.h"
+#define SFCALIBRATOR SlimeVR::Sensor::SoftfusionCalibrator
+#endif
+
 #if ESP32
 #include "driver/i2c.h"
 #endif
 
-#if USE_RUNTIME_CALIBRATION
-#define SFCALIBRATOR SlimeVR::Sensors::RuntimeCalibration::RuntimeCalibrator
-#else
-#define SFCALIBRATOR SlimeVR::Sensor::SoftfusionCalibrator
-#endif
-
 namespace SlimeVR {
 namespace Sensors {
+
 template <typename RegInterface>
 using SoftFusionLSM6DS3TRC
 	= SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC, RegInterface, SFCALIBRATOR>;
@@ -86,6 +96,8 @@ using SoftFusionICM45686
 template <typename RegInterface>
 using SoftFusionICM45605
 	= SoftFusionSensor<SoftFusion::Drivers::ICM45605, RegInterface, SFCALIBRATOR>;
+template <typename RegInterface>
+class SensorAuto {};
 
 void SensorManager::setup() {
 	std::map<int, DirectPinInterface*> directPinInterfaces;
@@ -141,32 +153,76 @@ void SensorManager::setup() {
 #define DIRECT_SPI(clockfreq, bitorder, datamode, CS_PIN) \
 	SoftFusion::SPIImpl(SPI, SPISettings(clockfreq, bitorder, datamode), CS_PIN)
 
-#define SENSOR_DESC_ENTRY(ImuType, ...)                                               \
-	{                                                                                 \
-		auto sensor = buildSensor<ImuType<SoftFusion::I2CImpl>, SoftFusion::I2CImpl>( \
-			sensorID,                                                                 \
-			__VA_ARGS__                                                               \
-		);                                                                            \
-		if (sensor->isWorking()) {                                                    \
-			m_Logger.info("Sensor %d configured", sensorID + 1);                      \
-			activeSensorCount++;                                                      \
-		}                                                                             \
-		m_Sensors.push_back(std::move(sensor));                                       \
-		sensorID++;                                                                   \
+#define SENSOR_DESC_ENTRY(ImuType, ...)                                              \
+	{                                                                                \
+		std::unique_ptr<::Sensor> sensor;                                            \
+		if constexpr (std::is_same<                                                  \
+						  ImuType<SoftFusion::I2CImpl>,                              \
+						  SensorAuto<SoftFusion::I2CImpl>>::value) {                 \
+			auto sensorType                                                          \
+				= findSensorType<SoftFusion::I2CImpl>(sensorID, __VA_ARGS__);        \
+			if (sensorType == SensorTypeID::Unknown) {                               \
+				m_Logger.error("Can't find sensor type for sensor %d", sensorID);    \
+			} else {                                                                 \
+				m_Logger.info(                                                       \
+					"Sensor %d automatically detected with %s",                      \
+					sensorID,                                                        \
+					getIMUNameByType(sensorType)                                     \
+				);                                                                   \
+				sensor = buildSensorDynamically<SoftFusion::I2CImpl>(                \
+					sensorType,                                                      \
+					sensorID,                                                        \
+					__VA_ARGS__                                                      \
+				);                                                                   \
+			}                                                                        \
+		} else {                                                                     \
+			sensor = buildSensor<ImuType<SoftFusion::I2CImpl>, SoftFusion::I2CImpl>( \
+				sensorID,                                                            \
+				__VA_ARGS__                                                          \
+			);                                                                       \
+		}                                                                            \
+		if (sensor->isWorking()) {                                                   \
+			m_Logger.info("Sensor %d configured", sensorID + 1);                     \
+			activeSensorCount++;                                                     \
+		}                                                                            \
+		m_Sensors.push_back(std::move(sensor));                                      \
+		sensorID++;                                                                  \
 	}
 
-#define SENSOR_DESC_ENTRY_SPI(ImuType, ...)                                           \
-	{                                                                                 \
-		auto sensor = buildSensor<ImuType<SoftFusion::SPIImpl>, SoftFusion::SPIImpl>( \
-			sensorID,                                                                 \
-			__VA_ARGS__                                                               \
-		);                                                                            \
-		if (sensor->isWorking()) {                                                    \
-			m_Logger.info("Sensor %d configured", sensorID + 1);                      \
-			activeSensorCount++;                                                      \
-		}                                                                             \
-		m_Sensors.push_back(std::move(sensor));                                       \
-		sensorID++;                                                                   \
+#define SENSOR_DESC_ENTRY_SPI(ImuType, ...)                                          \
+	{                                                                                \
+		std::unique_ptr<::Sensor> sensor;                                            \
+		if constexpr (std::is_same<                                                  \
+						  ImuType<SoftFusion::SPIImpl>,                              \
+						  SensorAuto<SoftFusion::SPIImpl>>::value) {                 \
+			auto sensorType                                                          \
+				= findSensorType<SoftFusion::SPIImpl>(sensorID, __VA_ARGS__);        \
+			if (sensorType == SensorTypeID::Unknown) {                               \
+				m_Logger.error("Can't find sensor type for sensor %d", sensorID);    \
+			} else {                                                                 \
+				m_Logger.info(                                                       \
+					"Sensor %d automatically detected with %s",                      \
+					sensorID,                                                        \
+					getIMUNameByType(sensorType)                                     \
+				);                                                                   \
+				sensor = buildSensorDynamically<SoftFusion::SPIImpl>(                \
+					sensorType,                                                      \
+					sensorID,                                                        \
+					__VA_ARGS__                                                      \
+				);                                                                   \
+			}                                                                        \
+		} else {                                                                     \
+			sensor = buildSensor<ImuType<SoftFusion::SPIImpl>, SoftFusion::SPIImpl>( \
+				sensorID,                                                            \
+				__VA_ARGS__                                                          \
+			);                                                                       \
+		}                                                                            \
+		if (sensor->isWorking()) {                                                   \
+			m_Logger.info("Sensor %d configured", sensorID + 1);                     \
+			activeSensorCount++;                                                     \
+		}                                                                            \
+		m_Sensors.push_back(std::move(sensor));                                      \
+		sensorID++;                                                                  \
 	}
 
 	// Apply descriptor list and expand to entries
@@ -260,6 +316,162 @@ void SensorManager::update() {
 #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
 	networkConnection.endBundle();
 #endif
+}
+
+#define BUILD_SENSOR_ARGS \
+	sensorID, imuInterface, rotation, sensorInterface, optional, intPin, extraParam
+
+template <typename RegInterface>
+std::unique_ptr<::Sensor> SensorManager::buildSensorDynamically(
+	SensorTypeID type,
+	uint8_t sensorID,
+	std::optional<RegInterface> imuInterface,
+	float rotation,
+	SensorInterface* sensorInterface,
+	bool optional,
+	PinInterface* intPin,
+	int extraParam
+) {
+	switch (type) {
+		case SensorTypeID::MPU9250:
+			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		case SensorTypeID::BNO080:
+			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		case SensorTypeID::BNO085:
+			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		case SensorTypeID::BNO055:
+			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		case SensorTypeID::MPU6050:
+			return buildSensor<SoftFusionMPU6050<RegInterface>, RegInterface>(
+				BUILD_SENSOR_ARGS
+			);
+		case SensorTypeID::BNO086:
+			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		case SensorTypeID::BMI160:
+			return buildSensor<BMI160Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		case SensorTypeID::ICM20948:
+			return buildSensor<ICM20948Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		case SensorTypeID::ICM42688:
+			return buildSensor<SoftFusionICM42688<RegInterface>, RegInterface>(
+				BUILD_SENSOR_ARGS
+			);
+		case SensorTypeID::BMI270:
+			return buildSensor<SoftFusionBMI270<RegInterface>, RegInterface>(
+				BUILD_SENSOR_ARGS
+			);
+		case SensorTypeID::LSM6DS3TRC:
+			return buildSensor<SoftFusionLSM6DS3TRC<RegInterface>, RegInterface>(
+				BUILD_SENSOR_ARGS
+			);
+		case SensorTypeID::LSM6DSV:
+			return buildSensor<SoftFusionLSM6DSV<RegInterface>, RegInterface>(
+				BUILD_SENSOR_ARGS
+			);
+		case SensorTypeID::LSM6DSO:
+			return buildSensor<SoftFusionLSM6DSO<RegInterface>, RegInterface>(
+				BUILD_SENSOR_ARGS
+			);
+		case SensorTypeID::LSM6DSR:
+			return buildSensor<SoftFusionLSM6DSR<RegInterface>, RegInterface>(
+				BUILD_SENSOR_ARGS
+			);
+		case SensorTypeID::ICM45686:
+			return buildSensor<SoftFusionICM45686<RegInterface>, RegInterface>(
+				BUILD_SENSOR_ARGS
+			);
+		case SensorTypeID::ICM45605:
+			return buildSensor<SoftFusionICM45605<RegInterface>, RegInterface>(
+				BUILD_SENSOR_ARGS
+			);
+		default:
+			m_Logger.error(
+				"Unable to create sensor with type %s (%d)",
+				getIMUNameByType(type),
+				type
+			);
+	}
+	return std::make_unique<EmptySensor>(sensorID);
+}
+
+template <typename RegInterface>
+SensorTypeID SensorManager::findSensorType(
+	uint8_t sensorID,
+	std::optional<RegInterface> imuInterface,
+	float rotation,
+	SensorInterface* sensorInterface,
+	bool optional,
+	PinInterface* intPin,
+	int extraParam
+) {
+	{
+		if (checkSfusion<SoftFusion::Drivers::LSM6DS3TRC<RegInterface>, RegInterface>(
+				sensorID,
+				imuInterface
+			)) {
+			return SensorTypeID::LSM6DS3TRC;
+		}
+		if (checkSfusion<SoftFusion::Drivers::ICM42688<RegInterface>, RegInterface>(
+				sensorID,
+				imuInterface
+			)) {
+			return SensorTypeID::ICM42688;
+		}
+		if (checkSfusion<SoftFusion::Drivers::BMI270<RegInterface>, RegInterface>(
+				sensorID,
+				imuInterface
+			)) {
+			return SensorTypeID::BMI270;
+		}
+		if (checkSfusion<SoftFusion::Drivers::LSM6DSV<RegInterface>, RegInterface>(
+				sensorID,
+				imuInterface
+			)) {
+			return SensorTypeID::LSM6DSV;
+		}
+		if (checkSfusion<SoftFusion::Drivers::LSM6DSO<RegInterface>, RegInterface>(
+				sensorID,
+				imuInterface
+			)) {
+			return SensorTypeID::LSM6DSO;
+		}
+		if (checkSfusion<SoftFusion::Drivers::LSM6DSR<RegInterface>, RegInterface>(
+				sensorID,
+				imuInterface
+			)) {
+			return SensorTypeID::LSM6DSR;
+		}
+		if (checkSfusion<SoftFusion::Drivers::MPU6050<RegInterface>, RegInterface>(
+				sensorID,
+				imuInterface
+			)) {
+			return SensorTypeID::MPU6050;
+		}
+		if (checkSfusion<SoftFusion::Drivers::ICM45686<RegInterface>, RegInterface>(
+				sensorID,
+				imuInterface
+			)) {
+			return SensorTypeID::ICM45686;
+		}
+		if (checkSfusion<SoftFusion::Drivers::ICM45605<RegInterface>, RegInterface>(
+				sensorID,
+				imuInterface
+			)) {
+			return SensorTypeID::ICM45605;
+		}
+	}
+
+	return SensorTypeID::Unknown;
+}
+template <typename SensorType, typename RegInterface>
+bool checkSfusion(uint8_t sensorID, std::optional<RegInterface> imuInterface) {
+	RegInterface interface = imuInterface.value_or(
+		RegInterface(SensorType::Address + sensorID)
+	);
+	auto value = interface.readReg(SensorType::Regs::WhoAmI::reg);
+	if (SensorType::Regs::WhoAmI::value == value) {
+		return true;
+	}
+	return false;
 }
 }  // namespace Sensors
 }  // namespace SlimeVR

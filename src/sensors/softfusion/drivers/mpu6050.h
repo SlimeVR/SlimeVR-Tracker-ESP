@@ -181,8 +181,12 @@ struct MPU6050 {
 		return result;
 	}
 
-	template <typename AccelCall, typename GyroCall>
-	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
+	template <typename AccelCall, typename GyroCall, typename TempCall>
+	void bulkRead(
+		AccelCall&& processAccelSample,
+		GyroCall&& processGyroSample,
+		TempCall&& processTempSample
+	) {
 		const auto status = m_RegisterInterface.readReg(Regs::IntStatus);
 
 		if (status & (1 << MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) {

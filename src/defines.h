@@ -26,8 +26,8 @@
 // ================================================
 
 // Set parameters of IMU and board used
-#define IMU IMU_ICM45686
-#define SECOND_IMU IMU
+#define IMU IMU_AUTO
+#define SECOND_IMU IMU_AUTO
 #define BOARD BOARD_SLIMEVR
 #define IMU_ROTATION DEG_270
 #define SECOND_IMU_ROTATION DEG_270
