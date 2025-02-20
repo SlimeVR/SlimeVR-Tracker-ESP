@@ -20,16 +20,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMEVR_SENSORMANAGER
-#define SLIMEVR_SENSORMANAGER
-
-#ifndef PRIMARY_IMU_ADDRESS_ONE
-#define PRIMARY_IMU_ADDRESS_ONE std::nullopt
-#endif
-
-#ifndef SECONDARY_IMU_ADDRESS_TWO
-#define SECONDARY_IMU_ADDRESS_TWO std::nullopt
-#endif
+#pragma once
 
 #include <i2cscan.h>
 
@@ -40,16 +31,14 @@
 #include "ErroneousSensor.h"
 #include "globals.h"
 #include "logging/Logger.h"
-#include "sensor.h"
 #include "sensorinterface/DirectPinInterface.h"
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/I2CWireSensorInterface.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
-#include "sensorinterface/SPIImpl.h"
-#include "sensorinterface/i2cimpl.h"
 
 namespace SlimeVR {
 namespace Sensors {
+
 class SensorManager {
 public:
 	SensorManager()
@@ -58,6 +47,28 @@ public:
 	void postSetup();
 
 	void update();
+	template <typename RegInterface>
+	std::unique_ptr<::Sensor> buildSensorDynamically(
+		SensorTypeID type,
+		uint8_t sensorID,
+		std::optional<RegInterface> imuInterface,
+		float rotation,
+		SensorInterface* sensorInterface,
+		bool optional = false,
+		PinInterface* intPin = nullptr,
+		int extraParam = 0
+	);
+
+	template <typename RegInterface>
+	SensorTypeID findSensorType(
+		uint8_t sensorID,
+		std::optional<RegInterface> imuInterface,
+		float rotation,
+		SensorInterface* sensorInterface,
+		bool optional = false,
+		PinInterface* intPin = nullptr,
+		int extraParam = 0
+	);
 
 	std::vector<std::unique_ptr<::Sensor>>& getSensors() { return m_Sensors; };
 	SensorTypeID getSensorType(size_t id) {
@@ -112,10 +123,7 @@ private:
 			if (!optional) {
 				m_Logger
 					.error("Mandatory sensor %d not found at address 0x%s", sensorID + 1, interface);
-				sensor = std::make_unique<ErroneousSensor>(
-					sensorID,
-					ImuType::SensorTypeID
-				);
+				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
 			} else {
 				m_Logger
 					.debug("Optional sensor %d not found at address 0x%s", sensorID + 1, interface);
@@ -141,5 +149,3 @@ private:
 };
 }  // namespace Sensors
 }  // namespace SlimeVR
-
-#endif  // SLIMEVR_SENSORFACTORY_H_
