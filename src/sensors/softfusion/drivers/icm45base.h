@@ -53,9 +53,6 @@ struct ICM45Base {
 
 	static constexpr bool Uses32BitSensorData = true;
 
-	static constexpr int fifoReadSize
-		= 8;  // Can't be more than 12 or it will overflow i2c read size, default 8
-
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
 	ICM45Base(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
@@ -111,20 +108,15 @@ struct ICM45Base {
 
 #pragma pack(push, 1)
 	struct FifoEntryAligned {
-		uint8_t header;
 		int16_t accel[3];
 		int16_t gyro[3];
 		uint16_t temp;
 		uint16_t timestamp;
 		uint8_t lsb[3];
 	};
-	struct FifoBuffer {
-		FifoEntryAligned entry[fifoReadSize];
-	};
 #pragma pack(pop)
 
-	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned);
-	static constexpr size_t FullFifoBufferSize = sizeof(FifoBuffer);
+	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
 	void softResetIMU() {
 		i2c.writeReg(BaseRegs::DeviceConfig::reg, BaseRegs::DeviceConfig::valueSwReset);
@@ -152,16 +144,20 @@ struct ICM45Base {
 		const auto fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
 		const auto fifo_bytes = fifo_packets * sizeof(FullFifoEntrySize);
 
-		FifoBuffer read_buffer;
+		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
 		const auto bytes_to_read = std::min(
-									   static_cast<size_t>(FullFifoBufferSize),
+									   static_cast<size_t>(read_buffer.size()),
 									   static_cast<size_t>(fifo_bytes)
 								   )
 								 / FullFifoEntrySize * FullFifoEntrySize;
-		i2c.readBytes(BaseRegs::FifoData, bytes_to_read, (uint8_t*)&read_buffer);
-		uint8_t index = 0;
+		i2c.readBytes(BaseRegs::FifoData, bytes_to_read, read_buffer.data());
 		for (auto i = 0u; i < bytes_to_read; i += FullFifoEntrySize) {
-			FifoEntryAligned entry = read_buffer.entry[index++];
+			FifoEntryAligned entry;
+			memcpy(
+				&entry,
+				&read_buffer[i + 0x1],
+				sizeof(FifoEntryAligned)
+			);  // skip fifo header
 			const int32_t gyroData[3]{
 				static_cast<int32_t>(entry.gyro[0]) << 4 | (entry.lsb[0] & 0xf),
 				static_cast<int32_t>(entry.gyro[1]) << 4 | (entry.lsb[1] & 0xf),
