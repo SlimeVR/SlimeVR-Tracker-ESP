@@ -402,7 +402,8 @@ public:
 		m_Logger,
 		getDefaultTempTs(),
 		AScale,
-		GScale};
+		GScale
+	};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
