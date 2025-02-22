@@ -241,8 +241,6 @@ public:
 	void motionLoop() final {
 		calibrator.tick();
 
-		calibrator.tick();
-
 		// read fifo updating fusion
 		uint32_t now = micros();
 
