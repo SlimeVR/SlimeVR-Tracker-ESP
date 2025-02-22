@@ -241,8 +241,6 @@ public:
 	void motionLoop() final {
 		calibrator.tick();
 
-		calibrator.tick();
-
 		// read fifo updating fusion
 		uint32_t now = micros();
 
@@ -404,8 +402,7 @@ public:
 		m_Logger,
 		getDefaultTempTs(),
 		AScale,
-		GScale
-	};
+		GScale};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
