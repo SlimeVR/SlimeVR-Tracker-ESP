@@ -393,6 +393,18 @@ std::unique_ptr<::Sensor> SensorManager::buildSensorDynamically(
 	return std::make_unique<EmptySensor>(sensorID);
 }
 
+template <typename SensorType, typename RegInterface>
+bool checkSfusion(uint8_t sensorID, std::optional<RegInterface> imuInterface) {
+	RegInterface interface = imuInterface.value_or(
+		RegInterface(SensorType::Address + sensorID)
+	);
+	auto value = interface.readReg(SensorType::Regs::WhoAmI::reg);
+	if (SensorType::Regs::WhoAmI::value == value) {
+		return true;
+	}
+	return false;
+}
+
 template <typename RegInterface>
 SensorTypeID SensorManager::findSensorType(
 	uint8_t sensorID,
@@ -461,17 +473,6 @@ SensorTypeID SensorManager::findSensorType(
 	}
 
 	return SensorTypeID::Unknown;
-}
-template <typename SensorType, typename RegInterface>
-bool checkSfusion(uint8_t sensorID, std::optional<RegInterface> imuInterface) {
-	RegInterface interface = imuInterface.value_or(
-		RegInterface(SensorType::Address + sensorID)
-	);
-	auto value = interface.readReg(SensorType::Regs::WhoAmI::reg);
-	if (SensorType::Regs::WhoAmI::value == value) {
-		return true;
-	}
-	return false;
 }
 }  // namespace Sensors
 }  // namespace SlimeVR

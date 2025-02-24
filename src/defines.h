@@ -62,8 +62,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),                       \
 		PRIMARY_IMU_OPTIONAL,                                        \
 		DIRECT_PIN(PIN_IMU_INT),                                     \
-		0                                      \	
-	                                     \
+		0                                                            \
 	)                                                                \
 	SENSOR_DESC_ENTRY(                                               \
 		SECOND_IMU,                                                  \
