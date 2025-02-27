@@ -97,12 +97,55 @@ private:
 		RegInterface interface = imuInterface.value_or(
 			RegInterface(ImuType::Address + sensorID)
 		);
+		return buildSensorReal<ImuType, RegInterface>(
+			sensorID,
+			interface,
+			rotation,
+			sensorInterface,
+			optional,
+			intPin,
+			extraParam
+		);
+	}
+
+	template <typename ImuType, typename RegInterface>
+	std::unique_ptr<::Sensor> buildSensor(
+		uint8_t sensorID,
+		std::optional<uint8_t> imuAddress,
+		float rotation,
+		SensorInterface* sensorInterface,
+		bool optional = false,
+		PinInterface* intPin = nullptr,
+		int extraParam = 0
+	) {
+		uint8_t address = imuAddress.value_or(ImuType::Address + sensorID);
+		return buildSensorReal<ImuType, RegInterface>(
+			sensorID,
+			RegInterface(address),
+			rotation,
+			sensorInterface,
+			optional,
+			intPin,
+			extraParam
+		);
+	}
+
+	template <typename ImuType, typename RegInterface>
+	std::unique_ptr<::Sensor> buildSensorReal(
+		uint8_t sensorID,
+		RegInterface imuInterface,
+		float rotation,
+		SensorInterface* sensorInterface,
+		bool optional = false,
+		PinInterface* intPin = nullptr,
+		int extraParam = 0
+	) {
 		m_Logger.trace(
 			"Building IMU with: id=%d,\n\
 						address=0x%02X, rotation=%f,\n\
 						interface=%s, int=%s, extraParam=%d, optional=%d",
 			sensorID,
-			interface,
+			imuInterface,
 			rotation,
 			sensorInterface,
 			intPin,
@@ -117,16 +160,16 @@ private:
 		sensorInterface->init();
 		sensorInterface->swapIn();
 
-		if (interface.hasSensorOnBus()) {
-			m_Logger.trace("Sensor %d found at address 0x%s", sensorID + 1, interface);
+		if (imuInterface.hasSensorOnBus()) {
+			m_Logger.trace("Sensor %d found at address 0x%s", sensorID + 1, imuInterface);
 		} else {
 			if (!optional) {
 				m_Logger
-					.error("Mandatory sensor %d not found at address 0x%s", sensorID + 1, interface);
+					.error("Mandatory sensor %d not found at address 0x%s", sensorID + 1, imuInterface);
 				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
 			} else {
 				m_Logger
-					.debug("Optional sensor %d not found at address 0x%s", sensorID + 1, interface);
+					.debug("Optional sensor %d not found at address 0x%s", sensorID + 1, imuInterface);
 				sensor = std::make_unique<EmptySensor>(sensorID);
 			}
 			return sensor;
@@ -134,7 +177,7 @@ private:
 
 		sensor = std::make_unique<ImuType>(
 			sensorID,
-			interface,
+			imuInterface,
 			rotation,
 			sensorInterface,
 			intPin,

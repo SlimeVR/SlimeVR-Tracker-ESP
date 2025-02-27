@@ -110,12 +110,13 @@ private:
 	bool configured = false;
 };
 
+template <typename RegIntegerface>
 class BNO085Sensor : public BNO080Sensor {
 public:
 	static constexpr auto TypeID = SensorTypeID::BNO085;
 	BNO085Sensor(
 		uint8_t id,
-		uint8_t i2cAddress,
+		RegIntegerface regInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface* intPin,
@@ -125,7 +126,7 @@ public:
 			"BNO085Sensor",
 			SensorTypeID::BNO085,
 			id,
-			i2cAddress,
+			regInterface,
 			rotation,
 			sensorInterface,
 			intPin,
@@ -133,12 +134,13 @@ public:
 		){};
 };
 
+template <typename RegIntegerface>
 class BNO086Sensor : public BNO080Sensor {
 public:
 	static constexpr auto TypeID = SensorTypeID::BNO086;
 	BNO086Sensor(
 		uint8_t id,
-		uint8_t i2cAddress,
+		RegIntegerface regInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface* intPin,
@@ -148,7 +150,7 @@ public:
 			"BNO086Sensor",
 			SensorTypeID::BNO086,
 			id,
-			i2cAddress,
+			regInterface,
 			rotation,
 			sensorInterface,
 			intPin,

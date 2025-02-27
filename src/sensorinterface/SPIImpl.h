@@ -138,7 +138,6 @@ struct SPIImpl : public RegisterInterface {
 	}
 
 	uint8_t getAddress() const override {
-		static_assert("SPI doesn't have addresses, you're using incompatible sensors");
 		return 0;
 	}
 

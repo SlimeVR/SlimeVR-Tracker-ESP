@@ -338,7 +338,7 @@ std::unique_ptr<::Sensor> SensorManager::buildSensorDynamically(
 		// case SensorTypeID::BNO080:
 		//	return buildSensor<BNO080Sensor, RegInterface>(BUILD_SENSOR_ARGS);
 		case SensorTypeID::BNO085:
-			return buildSensor<BNO085Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+			return buildSensor<BNO085Sensor<RegInterface>, RegInterface>(BUILD_SENSOR_ARGS);
 		// case SensorTypeID::BNO055:
 		//	return buildSensor<BNO055Sensor, RegInterface>(BUILD_SENSOR_ARGS);
 		// case SensorTypeID::MPU6050:
