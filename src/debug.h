@@ -30,7 +30,7 @@
 #define BNO_USE_ARVR_STABILIZATION \
 	true  // Set to false to disable stabilization for BNO085+ IMUs
 #define USE_6_AXIS \
-	true  // uses 9 DoF (with mag) if false (only for ICM-20948 and BNO0xx currently)
+	false  // uses 9 DoF (with mag) if false (only for ICM-20948 and BNO0xx currently)
 #define LOAD_BIAS true  // Loads the bias values from NVS on start
 #define SAVE_BIAS true  // Periodically saves bias calibration data to NVS
 #define BIAS_DEBUG false  // Printing BIAS Variables to serial (ICM20948 only)
