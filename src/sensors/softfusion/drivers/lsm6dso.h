@@ -36,8 +36,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 416Hz, accel ODR = 104Hz
 
-template <typename RegInterface>
-struct LSM6DSO : LSM6DSOutputHandler<RegInterface> {
+struct LSM6DSO : LSM6DSOutputHandler {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DSO";
 	static constexpr auto Type = SensorTypeID::LSM6DSO;
@@ -67,8 +66,6 @@ struct LSM6DSO : LSM6DSOutputHandler<RegInterface> {
 		.restThGyr = 1.0f,
 		.restThAcc = 0.192f,
 	};
-
-	using LSM6DSOutputHandler<RegInterface>::m_RegisterInterface;
 
 	struct Regs {
 		struct WhoAmI {
@@ -104,8 +101,8 @@ struct LSM6DSO : LSM6DSOutputHandler<RegInterface> {
 		static constexpr uint8_t FifoData = 0x78;
 	};
 
-	LSM6DSO(RegInterface registerInterface, SlimeVR::Logging::Logger& logger)
-		: LSM6DSOutputHandler<RegInterface>(registerInterface, logger) {}
+	LSM6DSO(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+		: LSM6DSOutputHandler(registerInterface, logger) {}
 
 	bool initialize() {
 		// perform initialization step
@@ -131,7 +128,7 @@ struct LSM6DSO : LSM6DSOutputHandler<RegInterface> {
 		GyroCall&& processGyroSample,
 		TempCall&& processTempSample
 	) {
-		LSM6DSOutputHandler<RegInterface>::
+		LSM6DSOutputHandler::
 			template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
 				processAccelSample,
 				processGyroSample,

@@ -24,6 +24,8 @@
 #include <array>
 #include <cstdint>
 
+#include "../../../sensorinterface/RegisterInterface.h"
+
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 32g
@@ -33,7 +35,6 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
-template <typename RegInterface>
 struct ICM45Base {
 	static constexpr uint8_t Address = 0x68;
 
@@ -53,9 +54,9 @@ struct ICM45Base {
 
 	static constexpr bool Uses32BitSensorData = true;
 
-	RegInterface m_RegisterInterface;
+	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
-	ICM45Base(RegInterface registerInterface, SlimeVR::Logging::Logger& logger)
+	ICM45Base(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger) {}
 

@@ -27,6 +27,7 @@
 #include <array>
 #include <cstdint>
 
+#include "../../../sensorinterface/RegisterInterface.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -35,7 +36,6 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 416Hz, accel ODR = 416Hz
 
-template <typename RegInterface>
 struct LSM6DS3TRC {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DS3TR-C";
@@ -64,9 +64,9 @@ struct LSM6DS3TRC {
 		.restThAcc = 0.392f,
 	};
 
-	RegInterface m_RegisterInterface;
+	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger m_Logger;
-	LSM6DS3TRC(RegInterface registerInterface, SlimeVR::Logging::Logger& logger)
+	LSM6DS3TRC(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger) {}
 

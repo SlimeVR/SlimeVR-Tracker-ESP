@@ -23,12 +23,14 @@
 
 #pragma once
 
+#include <i2cscan.h>
+
 #include <cstdint>
 
 #include "I2Cdev.h"
 #include "RegisterInterface.h"
 
-namespace SlimeVR::Sensors::SoftFusion {
+namespace SlimeVR::Sensors {
 
 struct I2CImpl : public RegisterInterface {
 	I2CImpl(uint8_t devAddr)
@@ -76,12 +78,12 @@ struct I2CImpl : public RegisterInterface {
 
 	uint8_t getAddress() const override { return m_devAddr; }
 
-	operator uint8_t() const { return getAddress(); }
-
-	operator std::string() const { return std::string("I2C"); }
+	std::string toString() const {
+		return std::string("I2C(") + std::to_string(m_devAddr) + std::string(")");
+	}
 
 private:
 	uint8_t m_devAddr;
 };
 
-}  // namespace SlimeVR::Sensors::SoftFusion
+}  // namespace SlimeVR::Sensors

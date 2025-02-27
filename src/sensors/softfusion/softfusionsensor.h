@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <tuple>
 
+#include "../../sensorinterface/i2cimpl.h"
 #include "../RestCalibrationDetector.h"
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
@@ -37,13 +38,11 @@
 namespace SlimeVR::Sensors {
 
 template <
-	template <typename RegInterface>
 	typename T,
-	typename RegInterface,
 	template <typename IMU, typename RawSensorT, typename RawVectorT>
 	typename Calibrator>
 class SoftFusionSensor : public Sensor {
-	using SensorType = T<RegInterface>;
+	using SensorType = T;
 
 	static constexpr sensor_real_t getDefaultTempTs() {
 		if constexpr (DirectTempReadOnly) {
@@ -210,7 +209,7 @@ public:
 
 	SoftFusionSensor(
 		uint8_t id,
-		RegInterface registerInterface,
+		RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface = nullptr,
 		PinInterface* intPin = nullptr,
@@ -428,15 +427,23 @@ public:
 
 	RestCalibrationDetector calibrationDetector;
 
-	static bool
-	checkPresent(uint8_t sensorID, std::optional<RegInterface> imuInterface) {
-		RegInterface interface = imuInterface.value_or(RegInterface(Address + sensorID)
-		);
-		auto value = interface.readReg(SensorType::Regs::WhoAmI::reg);
+	static bool checkPresent(uint8_t sensorID, const RegisterInterface& imuInterface) {
+		I2Cdev::readTimeout = 100;
+		auto value = imuInterface.readReg(SensorType::Regs::WhoAmI::reg);
+		I2Cdev::readTimeout = I2CDEV_DEFAULT_READ_TIMEOUT;
 		if (SensorType::Regs::WhoAmI::value == value) {
 			return true;
 		}
 		return false;
+	}
+
+	static bool checkPresent(uint8_t sensorID, uint8_t imuAddress) {
+		uint8_t address = imuAddress > 0 ? imuAddress : Address + sensorID;
+		if (!I2CSCAN::hasDevOnBus(address)) {
+			return false;
+		}
+		const I2CImpl& i2c = I2CImpl(address);
+		return checkPresent(sensorID, i2c);
 	}
 };
 

@@ -38,7 +38,7 @@ public:
 
 	BNO080Sensor(
 		uint8_t id,
-		uint8_t i2cAddress,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface* intPin,
@@ -48,7 +48,7 @@ public:
 			"BNO080Sensor",
 			SensorTypeID::BNO080,
 			id,
-			i2cAddress,
+			registerInterface,
 			rotation,
 			sensorInterface
 		)
@@ -76,19 +76,30 @@ public:
 		return SensorTypeID::Unknown;
 	}
 
+	static SensorTypeID
+	checkIfPresent(uint8_t sensorID, uint8_t imuAddress, PinInterface* intPin) {
+		uint8_t address = imuAddress > 0 ? imuAddress : Address + sensorID;
+		// Lazy check for if BNO is present, we only check if I2C has an address here
+		if (I2CSCAN::hasDevOnBus(address)) {
+			return SensorTypeID::BNO085;  // Assume it's 085, more precise diff will
+										  // require talking to it
+		}
+		return SensorTypeID::Unknown;
+	}
+
 protected:
 	// forwarding constructor
 	BNO080Sensor(
 		const char* sensorName,
 		SensorTypeID imuId,
 		uint8_t id,
-		uint8_t i2cAddress,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface* intPin,
 		int
 	)
-		: Sensor(sensorName, imuId, id, i2cAddress, rotation, sensorInterface)
+		: Sensor(sensorName, imuId, id, registerInterface, rotation, sensorInterface)
 		, m_IntPin(intPin){};
 
 private:
@@ -110,13 +121,12 @@ private:
 	bool configured = false;
 };
 
-template <typename RegIntegerface>
 class BNO085Sensor : public BNO080Sensor {
 public:
 	static constexpr auto TypeID = SensorTypeID::BNO085;
 	BNO085Sensor(
 		uint8_t id,
-		RegIntegerface regInterface,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface* intPin,
@@ -126,7 +136,7 @@ public:
 			"BNO085Sensor",
 			SensorTypeID::BNO085,
 			id,
-			regInterface,
+			registerInterface,
 			rotation,
 			sensorInterface,
 			intPin,
@@ -134,13 +144,12 @@ public:
 		){};
 };
 
-template <typename RegIntegerface>
 class BNO086Sensor : public BNO080Sensor {
 public:
 	static constexpr auto TypeID = SensorTypeID::BNO086;
 	BNO086Sensor(
 		uint8_t id,
-		RegIntegerface regInterface,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface* intPin,
@@ -150,7 +159,7 @@ public:
 			"BNO086Sensor",
 			SensorTypeID::BNO086,
 			id,
-			regInterface,
+			registerInterface,
 			rotation,
 			sensorInterface,
 			intPin,

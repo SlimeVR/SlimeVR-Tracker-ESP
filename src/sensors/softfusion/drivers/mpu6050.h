@@ -29,6 +29,7 @@
 #include <array>
 #include <cstdint>
 
+#include "../../../sensorinterface/RegisterInterface.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -37,7 +38,6 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 1000dps
 // Gyroscope ODR = accel ODR = 250Hz
 
-template <typename RegInterface>
 struct MPU6050 {
 	struct FifoSample {
 		uint8_t accel_x_h, accel_x_l;
@@ -77,9 +77,9 @@ struct MPU6050 {
 		.restThAcc = 0.784f,
 	};
 
-	RegInterface m_RegisterInterface;
+	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
-	MPU6050(RegInterface i2c, SlimeVR::Logging::Logger& logger)
+	MPU6050(RegisterInterface& i2c, SlimeVR::Logging::Logger& logger)
 		: m_RegisterInterface(i2c)
 		, m_Logger(logger) {}
 

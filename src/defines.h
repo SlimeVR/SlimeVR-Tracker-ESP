@@ -55,7 +55,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 
 #ifndef SENSOR_DESC_LIST
 #define SENSOR_DESC_LIST                                             \
-	SENSOR_DESC_ENTRY_SPI(                                           \
+	SENSOR_DESC_ENTRY(                                           \
 		IMU,                                                         \
 		DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3, DIRECT_PIN(15)), \
 		IMU_ROTATION,                                                \

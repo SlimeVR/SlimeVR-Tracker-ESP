@@ -26,7 +26,7 @@
 
 #include "I2Cdev.h"
 
-namespace SlimeVR::Sensors::SoftFusion {
+namespace SlimeVR::Sensors {
 
 struct RegisterInterface {
 	static constexpr size_t MaxTransactionLength = I2C_BUFFER_LENGTH - 2;
@@ -39,6 +39,7 @@ struct RegisterInterface {
 	virtual void writeBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const = 0;
 	virtual uint8_t getAddress() const = 0;
 	virtual bool hasSensorOnBus() = 0;
+	virtual std::string toString() const = 0;
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion

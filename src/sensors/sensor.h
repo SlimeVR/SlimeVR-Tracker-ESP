@@ -34,7 +34,9 @@
 #include "configuration/Configuration.h"
 #include "globals.h"
 #include "logging/Logger.h"
+#include "sensorinterface/RegisterInterface.h"
 #include "sensorinterface/SensorInterface.h"
+#include "sensorinterface/i2cimpl.h"
 #include "status/TPSCounter.h"
 #include "utils.h"
 
@@ -59,12 +61,12 @@ public:
 		const char* sensorName,
 		SensorTypeID type,
 		uint8_t id,
-		uint8_t address,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface = nullptr
 	)
 		: m_hwInterface(sensorInterface)
-		, addr(address)
+		, m_RegisterInterface(registerInterface)
 		, sensorId(id)
 		, sensorType(type)
 		, sensorOffset({Quat(Vector3(0, 0, 1), rotation)})
@@ -72,6 +74,7 @@ public:
 		char buf[4];
 		sprintf(buf, "%u", id);
 		m_Logger.setTag(buf);
+		addr = registerInterface.getAddress();
 	}
 
 	virtual ~Sensor(){};
@@ -116,7 +119,8 @@ public:
 	SlimeVR::SensorInterface* m_hwInterface = nullptr;
 
 protected:
-	uint8_t addr = 0;
+	SlimeVR::Sensors::RegisterInterface& m_RegisterInterface;
+	uint8_t addr;
 	uint8_t sensorId = 0;
 	SensorTypeID sensorType = SensorTypeID::Unknown;
 	bool working = false;

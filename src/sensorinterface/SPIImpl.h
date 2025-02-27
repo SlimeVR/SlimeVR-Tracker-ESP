@@ -32,7 +32,7 @@
 
 #define ICM_READ_FLAG 0x80
 
-namespace SlimeVR::Sensors::SoftFusion {
+namespace SlimeVR::Sensors {
 
 struct SPIImpl : public RegisterInterface {
 	SPIImpl(uint8_t address)
@@ -137,13 +137,9 @@ struct SPIImpl : public RegisterInterface {
 		return true;  // TODO
 	}
 
-	uint8_t getAddress() const override {
-		return 0;
-	}
+	uint8_t getAddress() const override { return 0; }
 
-	operator uint8_t() const { return getAddress(); }
-
-	operator std::string() const { return std::string("SPI"); }
+	std::string toString() const { return std::string("SPI"); }
 
 private:
 	SPIClass& m_spiClass;
@@ -152,4 +148,4 @@ private:
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("SPI");
 };
 
-}  // namespace SlimeVR::Sensors::SoftFusion
+}  // namespace SlimeVR::Sensors

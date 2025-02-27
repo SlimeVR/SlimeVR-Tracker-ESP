@@ -31,7 +31,7 @@ namespace Sensors {
 class ErroneousSensor : public Sensor {
 public:
 	ErroneousSensor(uint8_t id, SensorTypeID type)
-		: Sensor("ErroneousSensor", type, id, 0, 0.0)
+		: Sensor("ErroneousSensor", type, id, *(new I2CImpl(0)), 0.0)
 		, m_ExpectedType(type){};
 	~ErroneousSensor(){};
 

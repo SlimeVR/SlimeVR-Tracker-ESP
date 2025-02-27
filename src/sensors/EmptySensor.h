@@ -31,7 +31,7 @@ namespace Sensors {
 class EmptySensor : public Sensor {
 public:
 	EmptySensor(uint8_t id)
-		: Sensor("EmptySensor", SensorTypeID::Empty, id, 0, 0.0){};
+		: Sensor("EmptySensor", SensorTypeID::Empty, id, *(new I2CImpl(0)), 0.0){};
 	~EmptySensor(){};
 
 	void motionSetup() override final{};

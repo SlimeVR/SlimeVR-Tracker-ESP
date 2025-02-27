@@ -27,18 +27,19 @@
 #include <array>
 #include <cstdint>
 
+#include "../../../sensorinterface/RegisterInterface.h"
+
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-template <typename RegInterface>
 struct LSM6DSOutputHandler {
 	LSM6DSOutputHandler(
-		RegInterface registerInterface,
+		RegisterInterface& registerInterface,
 		SlimeVR::Logging::Logger& logger
 	)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger) {}
 
-	RegInterface m_RegisterInterface;
+	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
 
 #pragma pack(push, 1)

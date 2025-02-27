@@ -25,6 +25,8 @@
 #include "sensor.h"
 #include "sensorinterface/SensorInterface.h"
 
+namespace SlimeVR {
+namespace Sensors {
 class ADCResistanceSensor : Sensor {
 public:
 	static constexpr auto TypeID = SensorTypeID::ADC_RESISTANCE;
@@ -40,7 +42,7 @@ public:
 			"ADCResistanceSensor",
 			SensorTypeID::ADC_RESISTANCE,
 			id,
-			pin,
+			*(new I2CImpl(0)),
 			0.0f,
 			new SlimeVR::EmptySensorInterface
 		)
@@ -67,3 +69,5 @@ private:
 
 	float m_Data = 0.0f;
 };
+}  // namespace Sensors
+}  // namespace SlimeVR

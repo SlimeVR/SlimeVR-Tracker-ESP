@@ -35,6 +35,8 @@
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/I2CWireSensorInterface.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
+#include "sensorinterface/RegisterInterface.h"
+#include "sensorinterface/i2cimpl.h"
 
 namespace SlimeVR {
 namespace Sensors {
@@ -47,11 +49,10 @@ public:
 	void postSetup();
 
 	void update();
-	template <typename RegInterface>
 	std::unique_ptr<::Sensor> buildSensorDynamically(
 		SensorTypeID type,
 		uint8_t sensorID,
-		std::optional<RegInterface> imuInterface,
+		RegisterInterface& imuInterface,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
@@ -59,15 +60,36 @@ public:
 		int extraParam = 0
 	);
 
-	template <typename RegInterface>
-	SensorTypeID findSensorType(
+	std::unique_ptr<::Sensor> buildSensorDynamically(
+		SensorTypeID type,
 		uint8_t sensorID,
-		std::optional<RegInterface> imuInterface,
+		uint8_t imuAddress,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
+	);
+
+
+	SensorTypeID findSensorType(
+		uint8_t sensorID,
+		RegisterInterface& imuInterface,
+		float rotation,
+		SensorInterface* sensorInterface,
+		bool optional = false,
+		PinInterface* intPin = nullptr,
+		int extraParam = 0
+	);
+
+	SensorTypeID findSensorType(
+		uint8_t sensorID,
+		uint8_t imuAddress,
+		float rotation,
+		SensorInterface* sensorInterface,
+		bool optional,
+		PinInterface* intPin,
+		int extraParam
 	);
 
 	std::vector<std::unique_ptr<::Sensor>>& getSensors() { return m_Sensors; };
@@ -84,22 +106,19 @@ private:
 	std::vector<std::unique_ptr<::Sensor>> m_Sensors;
 	Adafruit_MCP23X17 m_MCP;
 
-	template <typename ImuType, typename RegInterface>
+	template <typename ImuType>
 	std::unique_ptr<::Sensor> buildSensor(
 		uint8_t sensorID,
-		std::optional<RegInterface> imuInterface,
+		RegisterInterface& imuInterface,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
-		RegInterface interface = imuInterface.value_or(
-			RegInterface(ImuType::Address + sensorID)
-		);
-		return buildSensorReal<ImuType, RegInterface>(
+		return buildSensorReal<ImuType>(
 			sensorID,
-			interface,
+			imuInterface,
 			rotation,
 			sensorInterface,
 			optional,
@@ -108,20 +127,20 @@ private:
 		);
 	}
 
-	template <typename ImuType, typename RegInterface>
+	template <typename ImuType>
 	std::unique_ptr<::Sensor> buildSensor(
 		uint8_t sensorID,
-		std::optional<uint8_t> imuAddress,
+		uint8_t imuAddress,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
-		uint8_t address = imuAddress.value_or(ImuType::Address + sensorID);
-		return buildSensorReal<ImuType, RegInterface>(
+		uint8_t address = imuAddress > 0 ? imuAddress : ImuType::Address + sensorID;
+		return buildSensorReal<ImuType>(
 			sensorID,
-			RegInterface(address),
+			*(new I2CImpl(address)),
 			rotation,
 			sensorInterface,
 			optional,
@@ -130,10 +149,10 @@ private:
 		);
 	}
 
-	template <typename ImuType, typename RegInterface>
+	template <typename ImuType>
 	std::unique_ptr<::Sensor> buildSensorReal(
 		uint8_t sensorID,
-		RegInterface imuInterface,
+		RegisterInterface& imuInterface,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
@@ -142,10 +161,10 @@ private:
 	) {
 		m_Logger.trace(
 			"Building IMU with: id=%d,\n\
-						address=0x%02X, rotation=%f,\n\
+						address=%s, rotation=%f,\n\
 						interface=%s, int=%s, extraParam=%d, optional=%d",
 			sensorID,
-			imuInterface,
+			imuInterface.toString(),
 			rotation,
 			sensorInterface,
 			intPin,
@@ -161,15 +180,25 @@ private:
 		sensorInterface->swapIn();
 
 		if (imuInterface.hasSensorOnBus()) {
-			m_Logger.trace("Sensor %d found at address 0x%s", sensorID + 1, imuInterface);
+			m_Logger.trace(
+				"Sensor %d found at address %s",
+				sensorID + 1,
+				imuInterface.toString()
+			);
 		} else {
 			if (!optional) {
-				m_Logger
-					.error("Mandatory sensor %d not found at address 0x%s", sensorID + 1, imuInterface);
+				m_Logger.error(
+					"Mandatory sensor %d not found at address %s",
+					sensorID + 1,
+					imuInterface.toString()
+				);
 				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
 			} else {
-				m_Logger
-					.debug("Optional sensor %d not found at address 0x%s", sensorID + 1, imuInterface);
+				m_Logger.debug(
+					"Optional sensor %d not found at address %s",
+					sensorID + 1,
+					imuInterface.toString()
+				);
 				sensor = std::make_unique<EmptySensor>(sensorID);
 			}
 			return sensor;
