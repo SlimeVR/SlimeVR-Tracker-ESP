@@ -83,14 +83,14 @@ enum class SensorTypeID {
 #define BOARD_SLIMEVR 9
 #define BOARD_LOLIN_C3_MINI 10
 #define BOARD_BEETLE32C3 11
-#define BOARD_ES32C3DEVKITM1 12
+#define BOARD_ESP32C3DEVKITM1 12
 #define BOARD_OWOTRACK 13  // Only used by owoTrack mobile app
 #define BOARD_WRANGLER 14  // Only used by wrangler app
 #define BOARD_MOCOPI 15  // Used by mocopi/moslime
 #define BOARD_WEMOSWROOM02 16
 #define BOARD_XIAO_ESP32C3 17
 #define BOARD_HARITORA 18  // Used by Haritora/SlimeTora
-#define BOARD_ES32C6DEVKITC1 19
+#define BOARD_ESP32C6DEVKITC1 19
 #define BOARD_GLOVE_IMU_SLIMEVR_DEV 20  // IMU Glove
 #define BOARD_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
