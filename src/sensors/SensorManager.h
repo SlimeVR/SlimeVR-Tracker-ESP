@@ -49,48 +49,6 @@ public:
 	void postSetup();
 
 	void update();
-	std::unique_ptr<::Sensor> buildSensorDynamically(
-		SensorTypeID type,
-		uint8_t sensorID,
-		RegisterInterface& imuInterface,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional = false,
-		PinInterface* intPin = nullptr,
-		int extraParam = 0
-	);
-
-	std::unique_ptr<::Sensor> buildSensorDynamically(
-		SensorTypeID type,
-		uint8_t sensorID,
-		uint8_t imuAddress,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional = false,
-		PinInterface* intPin = nullptr,
-		int extraParam = 0
-	);
-
-
-	SensorTypeID findSensorType(
-		uint8_t sensorID,
-		RegisterInterface& imuInterface,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional = false,
-		PinInterface* intPin = nullptr,
-		int extraParam = 0
-	);
-
-	SensorTypeID findSensorType(
-		uint8_t sensorID,
-		uint8_t imuAddress,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional,
-		PinInterface* intPin,
-		int extraParam
-	);
 
 	std::vector<std::unique_ptr<::Sensor>>& getSensors() { return m_Sensors; };
 	SensorTypeID getSensorType(size_t id) {
@@ -106,118 +64,9 @@ private:
 	std::vector<std::unique_ptr<::Sensor>> m_Sensors;
 	Adafruit_MCP23X17 m_MCP;
 
-	template <typename ImuType>
-	std::unique_ptr<::Sensor> buildSensor(
-		uint8_t sensorID,
-		RegisterInterface& imuInterface,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional = false,
-		PinInterface* intPin = nullptr,
-		int extraParam = 0
-	) {
-		return buildSensorReal<ImuType>(
-			sensorID,
-			imuInterface,
-			rotation,
-			sensorInterface,
-			optional,
-			intPin,
-			extraParam
-		);
-	}
-
-	template <typename ImuType>
-	std::unique_ptr<::Sensor> buildSensor(
-		uint8_t sensorID,
-		uint8_t imuAddress,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional = false,
-		PinInterface* intPin = nullptr,
-		int extraParam = 0
-	) {
-		uint8_t address = imuAddress > 0 ? imuAddress : ImuType::Address + sensorID;
-		return buildSensorReal<ImuType>(
-			sensorID,
-			*(new I2CImpl(address)),
-			rotation,
-			sensorInterface,
-			optional,
-			intPin,
-			extraParam
-		);
-	}
-
-	template <typename ImuType>
-	std::unique_ptr<::Sensor> buildSensorReal(
-		uint8_t sensorID,
-		RegisterInterface& imuInterface,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional = false,
-		PinInterface* intPin = nullptr,
-		int extraParam = 0
-	) {
-		m_Logger.trace(
-			"Building IMU with: id=%d,\n\
-						address=%s, rotation=%f,\n\
-						interface=%s, int=%s, extraParam=%d, optional=%d",
-			sensorID,
-			imuInterface.toString(),
-			rotation,
-			sensorInterface,
-			intPin,
-			extraParam,
-			optional
-		);
-
-		// Now start detecting and building the IMU
-		std::unique_ptr<::Sensor> sensor;
-
-		// Init I2C bus for each sensor upon startup
-		sensorInterface->init();
-		sensorInterface->swapIn();
-
-		if (imuInterface.hasSensorOnBus()) {
-			m_Logger.trace(
-				"Sensor %d found at address %s",
-				sensorID + 1,
-				imuInterface.toString()
-			);
-		} else {
-			if (!optional) {
-				m_Logger.error(
-					"Mandatory sensor %d not found at address %s",
-					sensorID + 1,
-					imuInterface.toString()
-				);
-				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
-			} else {
-				m_Logger.debug(
-					"Optional sensor %d not found at address %s",
-					sensorID + 1,
-					imuInterface.toString()
-				);
-				sensor = std::make_unique<EmptySensor>(sensorID);
-			}
-			return sensor;
-		}
-
-		sensor = std::make_unique<ImuType>(
-			sensorID,
-			imuInterface,
-			rotation,
-			sensorInterface,
-			intPin,
-			extraParam
-		);
-
-		sensor->motionSetup();
-		return sensor;
-	}
-
 	uint32_t m_LastBundleSentAtMicros = micros();
+
+	friend class SensorBuilder;
 };
 }  // namespace Sensors
 }  // namespace SlimeVR
