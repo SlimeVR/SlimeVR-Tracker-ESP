@@ -27,10 +27,12 @@
 #include "Wire.h"
 #include "batterymonitor.h"
 #include "credentials.h"
+#include "debugging/TimeTaken.h"
 #include "globals.h"
 #include "logging/Logger.h"
 #include "ota.h"
 #include "serial/serialcommands.h"
+#include "status/TPSCounter.h"
 
 Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
@@ -41,6 +43,10 @@ SlimeVR::Configuration::Configuration configuration;
 SlimeVR::Network::Manager networkManager;
 SlimeVR::Network::Connection networkConnection;
 
+#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
+SlimeVR::Debugging::TimeTakenMeasurer sensorMeasurer{"Sensors"};
+#endif
+
 int sensorToCalibrate = -1;
 bool blinking = false;
 unsigned long blinkStart = 0;
@@ -48,6 +54,7 @@ unsigned long loopTime = 0;
 unsigned long lastStatePrint = 0;
 bool secondImuActive = false;
 BatteryMonitor battery;
+TPSCounter tpsCounter;
 
 void setup() {
 	Serial.begin(serialBaudRate);
@@ -65,14 +72,14 @@ void setup() {
 	configuration.setup();
 
 	SerialCommands::setUp();
-
-	I2CSCAN::clearBus(
-		PIN_IMU_SDA,
-		PIN_IMU_SCL
-	);  // Make sure the bus isn't stuck when resetting ESP without powering it down
+	// Make sure the bus isn't stuck when resetting ESP without powering it down
 	// Fixes I2C issues for certain IMUs. Previously this feature was enabled for
 	// selected IMUs, now it's enabled for all. If some IMU turned out to be broken by
 	// this, check needs to be re-added.
+	auto clearResult = I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL);
+	if (clearResult != 0) {
+		logger.error("Can't clear I2C bus, error %d", clearResult);
+	}
 
 	// join I2C bus
 
@@ -108,16 +115,27 @@ void setup() {
 	sensorManager.postSetup();
 
 	loopTime = micros();
+	tpsCounter.reset();
 }
 
 void loop() {
+	tpsCounter.update();
 	globalTimer.tick();
 	SerialCommands::update();
 	OTA::otaUpdate();
 	networkManager.update();
+
+#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
+	sensorMeasurer.before();
+#endif
 	sensorManager.update();
+#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
+	sensorMeasurer.after();
+#endif
+
 	battery.Loop();
 	ledManager.update();
+	I2CSCAN::update();
 #ifdef TARGET_LOOPTIME_MICROS
 	long elapsed = (micros() - loopTime);
 	if (elapsed < TARGET_LOOPTIME_MICROS) {

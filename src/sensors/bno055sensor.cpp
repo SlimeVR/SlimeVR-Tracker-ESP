@@ -22,6 +22,8 @@
 */
 #include "bno055sensor.h"
 
+#include <cstdint>
+
 #include "GlobalVars.h"
 #include "globals.h"
 
@@ -47,9 +49,12 @@ void BNO055Sensor::motionSetup() {
 	m_Logger.info("Connected to BNO055 at address 0x%02x", addr);
 
 	working = true;
+	m_tpsCounter.reset();
+	m_dataCounter.reset();
 }
 
 void BNO055Sensor::motionLoop() {
+	m_tpsCounter.update();
 #if ENABLE_INSPECTION
 	{
 		Vector3 gyro = imu.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
@@ -67,6 +72,12 @@ void BNO055Sensor::motionLoop() {
 		);
 	}
 #endif
+
+	uint8_t gyroCalibrationState;
+	imu.getCalibration(nullptr, &gyroCalibrationState, nullptr, nullptr);
+	if (gyroCalibrationState == 3) {
+		markRestCalibrationComplete();
+	}
 
 	// TODO Optimize a bit with setting rawQuat directly
 	setFusedRotation(imu.getQuat());

@@ -41,14 +41,6 @@ struct LSM6DSOutputHandler {
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
 
-	template <typename Regs>
-	float getDirectTemp() const {
-		const auto value = static_cast<int16_t>(i2c.readReg16(Regs::OutTemp));
-		float result = ((float)value / 256.0f) + 25.0f;
-
-		return result;
-	}
-
 #pragma pack(push, 1)
 	struct FifoEntryAligned {
 		union {
@@ -60,13 +52,20 @@ struct LSM6DSOutputHandler {
 
 	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
-	template <typename AccelCall, typename GyroCall, typename MagCall, typename Regs>
+	template <
+		typename AccelCall,
+		typename GyroCall,
+		typename TempCall,
+		typename MagCall,
+		typename Regs>
 	void bulkRead(
 		AccelCall& processAccelSample,
 		GyroCall& processGyroSample,
+		TempCall& processTempSample,
 		MagCall& processMagSample,
 		float GyrTs,
 		float AccTs,
+		float TempTs,
 		float MagTs
 	) {
 		constexpr auto FIFO_SAMPLES_MASK = 0x3ff;
@@ -103,6 +102,9 @@ struct LSM6DSOutputHandler {
 					break;
 				case 0x02:  // Accel NC
 					processAccelSample(entry.xyz, AccTs);
+					break;
+				case 0x03:  // Temperature
+					processTempSample(entry.xyz[0], TempTs);
 					break;
 				case 0x0e:  // Sensor Hub Slave 0
 					processMagSample(entry.raw, MagTs);
@@ -143,12 +145,6 @@ struct LSM6DSOutputHandler {
 	uint8_t readAux(uint8_t address) {
 		uint8_t result;
 		readAux<uint8_t, Regs>(address, &result, 1);
-		printf(
-			"Result from sensor at %x on reg address %x: %x\n",
-			currentAuxDeviceId,
-			address,
-			result
-		);
 		return result;
 	}
 
@@ -177,11 +173,6 @@ struct LSM6DSOutputHandler {
 	template <typename Regs>
 	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {
 		assert(byteWidth == MagDefinition::DataWidth::SixByte);
-		printf(
-			"Setting up polling for sensor at %x at address %x\n",
-			currentAuxDeviceId,
-			address
-		);
 		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOn);
 		i2c.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b1);
 		i2c.writeReg(Regs::SLV0Subadd, address);

@@ -40,18 +40,33 @@ template <typename I2CImpl>
 struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DSR";
-	static constexpr auto Type = ImuID::LSM6DSR;
+	static constexpr auto Type = SensorTypeID::LSM6DSR;
 
 	static constexpr float GyrFreq = 416;
 	static constexpr float AccFreq = 104;
 	static constexpr float MagFreq = 12.5;
+	static constexpr float TempFreq = 52;
 
 	static constexpr float GyrTs = 1.0 / GyrFreq;
 	static constexpr float AccTs = 1.0 / AccFreq;
 	static constexpr float MagTs = 1.0 / MagFreq;
+	static constexpr float TempTs = 1.0 / TempFreq;
 
 	static constexpr float GyroSensitivity = 1000 / 35.0f;
 	static constexpr float AccelSensitivity = 1000 / 0.244f;
+
+	static constexpr float TemperatureBias = 25.0f;
+	static constexpr float TemperatureSensitivity = 256.0f;
+
+	static constexpr float TemperatureZROChange = 20.0f;
+
+	static constexpr VQFParams SensorVQFParams{
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 1.0f,
+		.biasClip = 2.0f,
+		.restThGyr = 1.0f,
+		.restThAcc = 0.192f,
+	};
 
 	using LSM6DSOutputHandler<I2CImpl>::i2c;
 
@@ -60,7 +75,6 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 			static constexpr uint8_t reg = 0x0f;
 			static constexpr uint8_t value = 0x6b;
 		};
-		static constexpr uint8_t OutTemp = 0x20;
 		struct Ctrl1XL {
 			static constexpr uint8_t reg = 0x10;
 			static constexpr uint8_t value = (0b01001100);  // XL at 104 Hz, 8g FS
@@ -82,7 +96,8 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 		};
 		struct FifoCtrl4Mode {
 			static constexpr uint8_t reg = 0x0a;
-			static constexpr uint8_t value = (0b110);  // continuous mode
+			static constexpr uint8_t value = (0b110110);  // continuous mode,
+														  // temperature at 52Hz
 		};
 		static constexpr uint8_t StatusReg = 0x1e;
 		static constexpr uint8_t StatusMasterMainPage = 0x39;
@@ -138,23 +153,26 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 		return true;
 	}
 
-	float getDirectTemp() const {
-		return LSM6DSOutputHandler<I2CImpl>::template getDirectTemp<Regs>();
-	}
-
-	template <typename AccelCall, typename GyroCall, typename MagCall>
+	template <
+		typename AccelCall,
+		typename GyroCall,
+		typename TempCall,
+		typename MagCall>
 	void bulkRead(
 		AccelCall&& processAccelSample,
 		GyroCall&& processGyroSample,
+		TempCall&& processTempSample,
 		MagCall&& processMagSample
 	) {
 		LSM6DSOutputHandler<I2CImpl>::
-			template bulkRead<AccelCall, GyroCall, MagCall, Regs>(
+			template bulkRead<AccelCall, GyroCall, TempCall, MagCall, Regs>(
 				processAccelSample,
 				processGyroSample,
+				processTempSample,
 				processMagSample,
 				GyrTs,
 				AccTs,
+				TempTs,
 				MagTs
 			);
 	}

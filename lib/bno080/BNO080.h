@@ -49,6 +49,8 @@
 
 #include <Wire.h>
 #include <SPI.h>
+#include <memory>
+#include "PinInterface.h"
 
 //The default I2C address for the BNO080 on the SparkX breakout is 0x4B. 0x4A is also possible.
 #define BNO080_DEFAULT_ADDRESS 0x4B
@@ -150,8 +152,8 @@ struct BNO080Error {
 class BNO080
 {
 public:
-	boolean begin(uint8_t deviceAddress = BNO080_DEFAULT_ADDRESS, TwoWire &wirePort = Wire, uint8_t intPin = 255); //By default use the default I2C addres, and use Wire port, and don't declare an INT pin
-	boolean beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_INTPin, uint8_t user_RSTPin, uint32_t spiPortSpeed = 3000000, SPIClass &spiPort = SPI);
+	boolean begin(uint8_t deviceAddress = BNO080_DEFAULT_ADDRESS, TwoWire &wirePort = Wire, PinInterface* intPin = nullptr); //By default use the default I2C addres, and use Wire port, and don't declare an INT pin
+	boolean beginSPI(PinInterface* user_CSPin, PinInterface* user_WAKPin, PinInterface* user_INTPin, PinInterface* user_RSTPin, uint32_t spiPortSpeed = 3000000, SPIClass &spiPort = SPI);
 
 	void enableDebugging(Stream &debugPort = Serial); //Turn on debug printing. If user doesn't specify then Serial will be used.
 
@@ -237,11 +239,13 @@ public:
 	float getMagY();
 	float getMagZ();
 	uint8_t getMagAccuracy();
-	
+
 	void endCalibration();
 	void saveCalibration();
 	void requestCalibrationStatus(); //Sends command to get status
-	boolean calibrationComplete();   //Checks ME Cal response for byte 5, R0 - Status
+	bool calibrationComplete();   //Checks ME Cal response for byte 5, R0 - Status
+	bool hasNewCalibrationStatus();
+	void getCalibrationStatus(uint8_t &calibrationResponseStatus, uint8_t &accelCalEnabled, uint8_t &gyroCalEnabled, uint8_t &magCalEnabled, uint8_t &planarAccelCalEnabled, uint8_t &onTableCalEnabled);
 
 	uint8_t getTapDetector();
 	bool getTapDetected();
@@ -270,6 +274,7 @@ public:
 	void setFeatureCommand(uint8_t reportID, uint16_t timeBetweenReports, uint32_t specificConfig);
 	void sendCommand(uint8_t command);
 	void sendCalibrateCommand(uint8_t thingToCalibrate);
+	void saveCalibrationPeriodically(bool save);
 
 	//Metadata functions
 	int16_t getQ1(uint16_t recordID);
@@ -308,10 +313,10 @@ private:
 
 	SPIClass *_spiPort;			 //The generic connection to user's chosen SPI hardware
 	unsigned long _spiPortSpeed; //Optional user defined port speed
-	uint8_t _cs;				 //Pins needed for SPI
-	uint8_t _wake;
-	uint8_t _int;
-	uint8_t _rst;
+	PinInterface* _cs;				 //Pins needed for SPI
+	PinInterface* _wake;
+	PinInterface* _int;
+	PinInterface* _rst;
 
 	//These are the raw sensor values (without Q applied) pulled from the user requested Input Report
 	uint16_t rawAccelX, rawAccelY, rawAccelZ, accelAccuracy;
@@ -344,4 +349,7 @@ private:
 	int16_t gyro_Q1 = 9;
 	int16_t magnetometer_Q1 = 4;
 	int16_t angular_velocity_Q1 = 10;
+
+	bool _hasNewCalibrationStatus = false;
+	uint8_t _calibrationResponseStatus, _accelCalEnabled, _gyroCalEnabled, _magCalEnabled, _planarAccelCalEnabled, _onTableCalEnabled;
 };
