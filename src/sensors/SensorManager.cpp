@@ -333,56 +333,56 @@ std::unique_ptr<::Sensor> SensorManager::buildSensorDynamically(
 	int extraParam
 ) {
 	switch (type) {
-		case SensorTypeID::MPU9250:
-			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
-		case SensorTypeID::BNO080:
-			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		// case SensorTypeID::MPU9250:
+		//	return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		// case SensorTypeID::BNO080:
+		//	return buildSensor<BNO080Sensor, RegInterface>(BUILD_SENSOR_ARGS);
 		case SensorTypeID::BNO085:
-			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
-		case SensorTypeID::BNO055:
-			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
-		case SensorTypeID::MPU6050:
-			return buildSensor<SoftFusionMPU6050<RegInterface>, RegInterface>(
-				BUILD_SENSOR_ARGS
-			);
-		case SensorTypeID::BNO086:
-			return buildSensor<MPU9250Sensor, RegInterface>(BUILD_SENSOR_ARGS);
-		case SensorTypeID::BMI160:
-			return buildSensor<BMI160Sensor, RegInterface>(BUILD_SENSOR_ARGS);
-		case SensorTypeID::ICM20948:
-			return buildSensor<ICM20948Sensor, RegInterface>(BUILD_SENSOR_ARGS);
-		case SensorTypeID::ICM42688:
-			return buildSensor<SoftFusionICM42688<RegInterface>, RegInterface>(
-				BUILD_SENSOR_ARGS
-			);
+			return buildSensor<BNO085Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		// case SensorTypeID::BNO055:
+		//	return buildSensor<BNO055Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		// case SensorTypeID::MPU6050:
+		//	return buildSensor<SoftFusionMPU6050<RegInterface>, RegInterface>(
+		//		BUILD_SENSOR_ARGS
+		//	);
+		// case SensorTypeID::BNO086:
+		//	return buildSensor<BNO086Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		// case SensorTypeID::BMI160:
+		//	return buildSensor<BMI160Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		// case SensorTypeID::ICM20948:
+		//	return buildSensor<ICM20948Sensor, RegInterface>(BUILD_SENSOR_ARGS);
+		// case SensorTypeID::ICM42688:
+		//	return buildSensor<SoftFusionICM42688<RegInterface>, RegInterface>(
+		//		BUILD_SENSOR_ARGS
+		//	);
 		case SensorTypeID::BMI270:
 			return buildSensor<SoftFusionBMI270<RegInterface>, RegInterface>(
 				BUILD_SENSOR_ARGS
 			);
-		case SensorTypeID::LSM6DS3TRC:
-			return buildSensor<SoftFusionLSM6DS3TRC<RegInterface>, RegInterface>(
-				BUILD_SENSOR_ARGS
-			);
+		// case SensorTypeID::LSM6DS3TRC:
+		//	return buildSensor<SoftFusionLSM6DS3TRC<RegInterface>, RegInterface>(
+		//		BUILD_SENSOR_ARGS
+		//	);
 		case SensorTypeID::LSM6DSV:
 			return buildSensor<SoftFusionLSM6DSV<RegInterface>, RegInterface>(
 				BUILD_SENSOR_ARGS
 			);
-		case SensorTypeID::LSM6DSO:
-			return buildSensor<SoftFusionLSM6DSO<RegInterface>, RegInterface>(
-				BUILD_SENSOR_ARGS
-			);
-		case SensorTypeID::LSM6DSR:
-			return buildSensor<SoftFusionLSM6DSR<RegInterface>, RegInterface>(
-				BUILD_SENSOR_ARGS
-			);
+		// case SensorTypeID::LSM6DSO:
+		//	return buildSensor<SoftFusionLSM6DSO<RegInterface>, RegInterface>(
+		//		BUILD_SENSOR_ARGS
+		//	);
+		// case SensorTypeID::LSM6DSR:
+		//	return buildSensor<SoftFusionLSM6DSR<RegInterface>, RegInterface>(
+		//		BUILD_SENSOR_ARGS
+		//	);
 		case SensorTypeID::ICM45686:
 			return buildSensor<SoftFusionICM45686<RegInterface>, RegInterface>(
 				BUILD_SENSOR_ARGS
 			);
-		case SensorTypeID::ICM45605:
-			return buildSensor<SoftFusionICM45605<RegInterface>, RegInterface>(
-				BUILD_SENSOR_ARGS
-			);
+		// case SensorTypeID::ICM45605:
+		//	return buildSensor<SoftFusionICM45605<RegInterface>, RegInterface>(
+		//		BUILD_SENSOR_ARGS
+		//	);
 		default:
 			m_Logger.error(
 				"Unable to create sensor with type %s (%d)",
@@ -391,18 +391,6 @@ std::unique_ptr<::Sensor> SensorManager::buildSensorDynamically(
 			);
 	}
 	return std::make_unique<EmptySensor>(sensorID);
-}
-
-template <typename SensorType, typename RegInterface>
-bool checkSfusion(uint8_t sensorID, std::optional<RegInterface> imuInterface) {
-	RegInterface interface = imuInterface.value_or(
-		RegInterface(SensorType::Address + sensorID)
-	);
-	auto value = interface.readReg(SensorType::Regs::WhoAmI::reg);
-	if (SensorType::Regs::WhoAmI::value == value) {
-		return true;
-	}
-	return false;
 }
 
 template <typename RegInterface>
@@ -415,62 +403,36 @@ SensorTypeID SensorManager::findSensorType(
 	PinInterface* intPin,
 	int extraParam
 ) {
-	{
-		if (checkSfusion<SoftFusion::Drivers::LSM6DS3TRC<RegInterface>, RegInterface>(
-				sensorID,
-				imuInterface
-			)) {
-			return SensorTypeID::LSM6DS3TRC;
-		}
-		if (checkSfusion<SoftFusion::Drivers::ICM42688<RegInterface>, RegInterface>(
-				sensorID,
-				imuInterface
-			)) {
-			return SensorTypeID::ICM42688;
-		}
-		if (checkSfusion<SoftFusion::Drivers::BMI270<RegInterface>, RegInterface>(
-				sensorID,
-				imuInterface
-			)) {
-			return SensorTypeID::BMI270;
-		}
-		if (checkSfusion<SoftFusion::Drivers::LSM6DSV<RegInterface>, RegInterface>(
-				sensorID,
-				imuInterface
-			)) {
-			return SensorTypeID::LSM6DSV;
-		}
-		if (checkSfusion<SoftFusion::Drivers::LSM6DSO<RegInterface>, RegInterface>(
-				sensorID,
-				imuInterface
-			)) {
-			return SensorTypeID::LSM6DSO;
-		}
-		if (checkSfusion<SoftFusion::Drivers::LSM6DSR<RegInterface>, RegInterface>(
-				sensorID,
-				imuInterface
-			)) {
-			return SensorTypeID::LSM6DSR;
-		}
-		if (checkSfusion<SoftFusion::Drivers::MPU6050<RegInterface>, RegInterface>(
-				sensorID,
-				imuInterface
-			)) {
-			return SensorTypeID::MPU6050;
-		}
-		if (checkSfusion<SoftFusion::Drivers::ICM45686<RegInterface>, RegInterface>(
-				sensorID,
-				imuInterface
-			)) {
-			return SensorTypeID::ICM45686;
-		}
-		if (checkSfusion<SoftFusion::Drivers::ICM45605<RegInterface>, RegInterface>(
-				sensorID,
-				imuInterface
-			)) {
-			return SensorTypeID::ICM45605;
-		}
+	sensorInterface->init();
+	sensorInterface->swapIn();
+	// if (SoftFusionLSM6DS3TRC<RegInterface>::checkPresent(sensorID, imuInterface))
+	// { 	return SensorTypeID::LSM6DS3TRC;
+	// }
+	// if (SoftFusionICM42688<RegInterface>::checkPresent(sensorID, imuInterface)) {
+	//	return SensorTypeID::ICM42688;
+	//}
+	if (SoftFusionBMI270<RegInterface>::checkPresent(sensorID, imuInterface)) {
+		return SensorTypeID::BMI270;
 	}
+	if (SoftFusionLSM6DSV<RegInterface>::checkPresent(sensorID, imuInterface)) {
+		return SensorTypeID::LSM6DSV;
+	}
+	// if (SoftFusionLSM6DSO<RegInterface>::checkPresent(sensorID, imuInterface)) {
+	//	return SensorTypeID::LSM6DSO;
+	// }
+	// if (SoftFusionLSM6DSR<RegInterface>::checkPresent(sensorID, imuInterface)) {
+	//	return SensorTypeID::LSM6DSR;
+	// }
+	// if (SoftFusionMPU6050<RegInterface>::checkPresent(sensorID, imuInterface)) {
+	//	return SensorTypeID::MPU6050;
+	// }
+	if (SoftFusionICM45686<RegInterface>::checkPresent(sensorID, imuInterface)) {
+		return SensorTypeID::ICM45686;
+	}
+	return BNO080Sensor::checkIfPresent(sensorID, sensorInterface, intPin);
+	// if (SoftFusionICM45605<RegInterface>::checkPresent(sensorID, imuInterface)) {
+	//	return SensorTypeID::ICM45605;
+	// }
 
 	return SensorTypeID::Unknown;
 }

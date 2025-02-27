@@ -427,6 +427,17 @@ public:
 	uint32_t m_lastTemperaturePacketSent = 0;
 
 	RestCalibrationDetector calibrationDetector;
+
+	static bool
+	checkPresent(uint8_t sensorID, std::optional<RegInterface> imuInterface) {
+		RegInterface interface = imuInterface.value_or(RegInterface(Address + sensorID)
+		);
+		auto value = interface.readReg(SensorType::Regs::WhoAmI::reg);
+		if (SensorType::Regs::WhoAmI::value == value) {
+			return true;
+		}
+		return false;
+	}
 };
 
 }  // namespace SlimeVR::Sensors

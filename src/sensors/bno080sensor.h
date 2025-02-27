@@ -25,6 +25,7 @@
 #define SENSORS_BNO080SENSOR_H
 
 #include <BNO080.h>
+#include <i2cscan.h>
 
 #include "sensor.h"
 
@@ -61,6 +62,19 @@ public:
 	void startCalibration(int calibrationType) override final;
 	SensorStatus getSensorState() override final;
 	void setFlag(uint16_t flagId, bool state) override final;
+
+	static SensorTypeID checkIfPresent(
+		uint8_t sensorID,
+		SlimeVR::SensorInterface* sensorInterface,
+		PinInterface* intPin
+	) {
+		// Lazy check for if BNO is present, we only check if I2C has an address here
+		if (I2CSCAN::hasDevOnBus(Address + sensorID)) {
+			return SensorTypeID::BNO085;  // Assume it's 085, more precise diff will
+										  // require talking to it
+		}
+		return SensorTypeID::Unknown;
+	}
 
 protected:
 	// forwarding constructor
