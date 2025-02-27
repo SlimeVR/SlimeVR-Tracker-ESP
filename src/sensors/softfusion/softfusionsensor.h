@@ -149,9 +149,9 @@ class SoftFusionSensor : public Sensor {
 	}
 
 	void processMagSample(const uint8_t* rawData, const sensor_real_t timeDelta) {
-		float scaledData[3];
+		sensor_real_t scaledData[3];
 		magDriver.scaleMagSample(rawData, scaledData);
-		printf("Mag: %f %f %f\n", scaledData[0], scaledData[1], scaledData[2]);
+		m_fusion.updateMag(scaledData, timeDelta);
 	}
 
 	void eatSamplesForSeconds(const uint32_t seconds) {
@@ -169,7 +169,7 @@ class SoftFusionSensor : public Sensor {
 			m_sensor.bulkRead(
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const uint8_t* magData) {}
+				[](const uint8_t* magData, const sensor_real_t timeDelta) {}
 			);
 		}
 	}
@@ -191,7 +191,7 @@ class SoftFusionSensor : public Sensor {
 					gyro[1] = xyz[1];
 					gyro[2] = xyz[2];
 				},
-				[](const uint8_t* magData) {}
+				[](const uint8_t* magData, const sensor_real_t timeDelta) {}
 			);
 			yield();
 		}
@@ -231,7 +231,9 @@ public:
 				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					processGyroSample(xyz, timeDelta);
 				},
-				[](const uint8_t* magData) {}
+				[&](const uint8_t* magData, const sensor_real_t timeDelta) {
+					processMagSample(magData, timeDelta);
+				}
 			);
 			optimistic_yield(100);
 			if (!m_fusion.isUpdated()) {
@@ -431,7 +433,7 @@ public:
 					sumXYZ[2] += xyz[2];
 					++sampleCount;
 				},
-				[](const uint8_t* magData) {}
+				[](const uint8_t* magData, const sensor_real_t timeDelta) {}
 			);
 		}
 
@@ -546,7 +548,7 @@ public:
 					}
 				},
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const uint8_t* magData) {}
+				[](const uint8_t* magData, const sensor_real_t timeDelta) {}
 			);
 		}
 		ledManager.off();
@@ -598,7 +600,7 @@ public:
 				[&gyroSamples](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					gyroSamples++;
 				},
-				[](const uint8_t* magData) {}
+				[](const uint8_t* magData, const sensor_real_t timeDelta) {}
 			);
 			yield();
 		}

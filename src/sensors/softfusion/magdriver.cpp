@@ -84,7 +84,7 @@ void MagDriver::scaleMagSample(const uint8_t* rawData, float outData[3]) {
 		return;
 	}
 
-	uint32_t rawDataConcat[3];
+	int32_t rawDataConcat[3];
 
 	if (selectedMag.dataWidth == MagDefinition::DataWidth::SixByte) {
 		rawDataConcat[0] = reinterpret_cast<const int16_t*>(rawData)[0];
