@@ -79,6 +79,8 @@ public:
 	Quat cubic_slerp(const Quat& q, const Quat& prep, const Quat& postq, const float& t) const;
 	bool equalsWithEpsilon(const Quat& q2);
 
+	void sandwitch(Vector3& vector);
+
 	void set_axis_angle(const Vector3& axis, const float& angle);
 	inline void get_axis_angle(Vector3& r_axis, double& r_angle) const {
 		r_angle = 2 * std::acos(w);
