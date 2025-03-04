@@ -79,6 +79,8 @@ public:
 	Quat cubic_slerp(const Quat& q, const Quat& prep, const Quat& postq, const float& t) const;
 	bool equalsWithEpsilon(const Quat& q2);
 
+	void sandwitch(Vector3& vector);
+
 	void set_axis_angle(const Vector3& axis, const float& angle);
 	inline void get_axis_angle(Vector3& r_axis, double& r_angle) const {
 		r_angle = 2 * std::acos(w);
@@ -178,6 +180,17 @@ public:
 		}
 	}
 };
+
+
+
+void Quat::sandwitch(Vector3& v) {
+	float tempX, tempY;
+	tempX = w * w * v.x + 2 * y * w * v.z - 2 * z * w * v.y + x * x * v.x + 2 * y * x * v.y + 2 * z * x * v.z - z * z * v.x - y * y * v.x;
+	tempY = 2 * x * y * v.x + y * y * v.y + 2 * z * y * v.z + 2 * w * z * v.x - z * z * v.y + w * w * v.y - 2 * x * w * v.z - x * x * v.y;
+	v.z = 2 * x * z * v.x + 2 * y * z * v.y + z * z * v.z - 2 * w * y * v.x - y * y * v.z + 2 * w * x * v.y - x * x * v.z + w * w * v.z;
+	v.x = tempX;
+	v.y = tempY;
+}
 
 float Quat::dot(const Quat& q) const {
 	return x * q.x + y * q.y + z * q.z + w * q.w;
