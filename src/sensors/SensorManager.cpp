@@ -153,10 +153,8 @@ void SensorManager::setup() {
 	// Apply descriptor list and expand to entries
 	SENSOR_DESC_LIST;
 
-#define SENSOR_INFO_ENTRY(ImuID, ...)                        \
-	{                                                        \
-		m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); \
-	}
+#define SENSOR_INFO_ENTRY(ImuID, ...) \
+	{ m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); }
 	SENSOR_INFO_LIST;
 
 #undef SENSOR_DESC_ENTRY
