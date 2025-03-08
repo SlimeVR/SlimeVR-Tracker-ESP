@@ -25,7 +25,7 @@
 
 #include <map>
 #include <type_traits>
-
+#include "sensoraddresses.h"
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
