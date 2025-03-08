@@ -25,13 +25,14 @@
 
 #include <map>
 #include <type_traits>
-#include "sensoraddresses.h"
+
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
 #include "icm20948sensor.h"
 #include "mpu6050sensor.h"
 #include "mpu9250sensor.h"
+#include "sensoraddresses.h"
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
 #include "sensors/softfusion/SoftfusionCalibration.h"
@@ -152,8 +153,10 @@ void SensorManager::setup() {
 	// Apply descriptor list and expand to entries
 	SENSOR_DESC_LIST;
 
-#define SENSOR_INFO_ENTRY(ImuID, ...) \
-	{ m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); }
+#define SENSOR_INFO_ENTRY(ImuID, ...)                        \
+	{                                                        \
+		m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); \
+	}
 	SENSOR_INFO_LIST;
 
 #undef SENSOR_DESC_ENTRY
