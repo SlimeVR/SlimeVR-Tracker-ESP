@@ -168,11 +168,11 @@ struct ICM45Base {
 			if (entry.accel[0] != -32768) {
 				const int32_t accelData[3]{
 					static_cast<int32_t>(entry.accel[0]) << 4
-						| (static_cast<int32_t>(entry.lsb[0]) & 0xf0 >> 4),
+						| (static_cast<int32_t>((entry.lsb[0]) & 0xf0) >> 4),
 					static_cast<int32_t>(entry.accel[1]) << 4
-						| (static_cast<int32_t>(entry.lsb[1]) & 0xf0 >> 4),
+						| (static_cast<int32_t>((entry.lsb[1]) & 0xf0) >> 4),
 					static_cast<int32_t>(entry.accel[2]) << 4
-						| (static_cast<int32_t>(entry.lsb[2]) & 0xf0 >> 4),
+						| (static_cast<int32_t>((entry.lsb[2]) & 0xf0) >> 4),
 				};
 				processAccelSample(accelData, AccTs);
 			}
