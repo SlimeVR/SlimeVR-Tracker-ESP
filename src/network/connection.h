@@ -26,14 +26,24 @@
 #include <Arduino.h>
 #include <WiFiUdp.h>
 
+#include <optional>
+
 #include "featureflags.h"
 #include "globals.h"
+#include "packets.h"
 #include "quat.h"
 #include "sensors/sensor.h"
 #include "wifihandler.h"
 
-namespace SlimeVR {
-namespace Network {
+namespace SlimeVR::Network {
+
+#define MUST_TRANSFER_BOOL(b) \
+	if (!(b))                 \
+		return false;
+
+#define MUST(b) \
+	if (!(b))   \
+		return;
 
 class Connection {
 public:
@@ -136,7 +146,7 @@ private:
 	size_t write(const uint8_t* buffer, size_t size);
 	size_t write(uint8_t byte);
 
-	bool sendPacketType(uint8_t type);
+	bool sendPacketType(SendPacketType type);
 	bool sendPacketNumber();
 	bool sendFloat(float f);
 	bool sendByte(uint8_t c);
@@ -146,6 +156,50 @@ private:
 	bool sendBytes(const uint8_t* c, size_t length);
 	bool sendShortString(const char* str);
 	bool sendLongString(const char* str);
+
+	template <typename Packet>
+	bool sendPacket(
+		SendPacketType type,
+		Packet packet,
+		std::optional<uint64_t> packetNumberOverride = std::nullopt
+	) {
+		MUST_TRANSFER_BOOL(m_Connected);
+
+		MUST_TRANSFER_BOOL(beginPacket());
+		MUST_TRANSFER_BOOL(sendPacketType(type));
+		if (packetNumberOverride) {
+			MUST_TRANSFER_BOOL(sendLong(*packetNumberOverride));
+		} else {
+			MUST_TRANSFER_BOOL(sendPacketNumber());
+		}
+
+		MUST_TRANSFER_BOOL(
+			sendBytes(reinterpret_cast<uint8_t*>(&packet), sizeof(Packet))
+		);
+
+		return endPacket();
+	}
+
+	template <typename Callback>
+	bool sendPacketCallback(
+		SendPacketType type,
+		Callback bodyCallback,
+		std::optional<uint64_t> packetNumberOverride = std::nullopt
+	) {
+		MUST_TRANSFER_BOOL(m_Connected);
+
+		MUST_TRANSFER_BOOL(beginPacket());
+		MUST_TRANSFER_BOOL(sendPacketType(type));
+		if (packetNumberOverride) {
+			MUST_TRANSFER_BOOL(sendLong(*packetNumberOverride));
+		} else {
+			MUST_TRANSFER_BOOL(sendPacketNumber());
+		}
+
+		MUST_TRANSFER_BOOL(bodyCallback());
+
+		return endPacket();
+	}
 
 	int getWriteError();
 
@@ -189,7 +243,6 @@ private:
 	unsigned char m_Buf[8];
 };
 
-}  // namespace Network
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Network
 
 #endif  // SLIMEVR_NETWORK_CONNECTION_H_
