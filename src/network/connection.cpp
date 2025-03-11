@@ -210,14 +210,6 @@ int Connection::getWriteError() { return m_UDP.getWriteError(); }
 // PACKET_HEARTBEAT 0
 void Connection::sendHeartbeat() {
 	sendPacketCallback(SendPacketType::HeartBeat, []() { return true; });
-	MUST(m_Connected);
-
-	MUST(beginPacket());
-
-	MUST(sendPacketType(SendPacketType::HeartBeat));
-	MUST(sendPacketNumber());
-
-	MUST(endPacket());
 }
 
 // PACKET_ACCEL 4
