@@ -33,6 +33,7 @@ namespace I2CSCAN
     uint8_t currentAddress = 1;
     bool found = false;
     std::vector<uint8_t> validPorts;
+    bool isFound() { return found; }
 
     void scani2cports()
     {
@@ -96,12 +97,12 @@ namespace I2CSCAN
 
         Wire.beginTransmission(currentAddress);
         byte error = Wire.endTransmission();
-
         if (error == 0)
         {
             Serial.printf("[DBG] I2C (@ %s(%d) : %s(%d)): I2C device found at address 0x%02x  !\n",
                             portMap[currentSDA].c_str(), validPorts[currentSDA], portMap[currentSCL].c_str(), validPorts[currentSCL], currentAddress);
             found = true;
+            
         }
         else if (error == 4)
         {

@@ -53,6 +53,16 @@ enum class MagnetometerStatus : uint8_t {
 	MAG_ENABLED = 2,
 };
 
+// From the SH-2 interface that BNO08x use.
+enum class PacketErrorCode : uint8_t {
+	NOT_APPLICABLE = 0,
+	POWER_ON_RESET = 1,
+	INTERNAL_SYSTEM_RESET = 2,
+	WATCHDOG_TIMEOUT = 3,
+	EXTERNAL_RESET = 4,
+	OTHER = 5,
+};
+
 class Sensor {
 public:
 	Sensor(
@@ -81,6 +91,7 @@ public:
 	virtual void sendData();
 	virtual void setAcceleration(Vector3 a);
 	virtual void setFusedRotation(Quat r);
+	virtual void setPacketErrorCode(PacketErrorCode e);
 	virtual void startCalibration(int calibrationType){};
 	virtual SensorStatus getSensorState();
 	virtual void printTemperatureCalibrationState();
@@ -95,6 +106,7 @@ public:
 	bool isMagEnabled() { return magStatus == MagnetometerStatus::MAG_ENABLED; };
 	uint8_t getSensorId() { return sensorId; };
 	SensorTypeID getSensorType() { return sensorType; };
+	PacketErrorCode getPacketErrorCode() { return packeterrorCode; };
 	MagnetometerStatus getMagStatus() { return magStatus; };
 	const Vector3& getAcceleration() { return acceleration; };
 	const Quat& getFusedRotation() { return fusedRotation; };
@@ -119,6 +131,7 @@ protected:
 	uint8_t addr = 0;
 	uint8_t sensorId = 0;
 	SensorTypeID sensorType = SensorTypeID::Unknown;
+	PacketErrorCode packeterrorCode = PacketErrorCode::OTHER;
 	bool working = false;
 	bool hadData = false;
 	uint8_t calibrationAccuracy = 0;

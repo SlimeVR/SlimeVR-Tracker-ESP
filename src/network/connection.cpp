@@ -562,6 +562,8 @@ void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>>& sensors
 	for (int i = 0; i < (int)sensors.size(); i++) {
 		if (isSensorStateUpdated(i, sensors[i])) {
 			sendSensorInfo(*sensors[i]);
+			if(I2CSCAN::isFound())	sensors[i]->setPacketErrorCode(PacketErrorCode::NOT_APPLICABLE);
+			sendSensorError(static_cast<uint8_t>(sensors[i]->getSensorId()),static_cast<uint8_t>(sensors[i]->getPacketErrorCode()));
 		}
 	}
 }
