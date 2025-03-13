@@ -45,8 +45,16 @@ namespace Sensors {
 #define PRIMARY_IMU_ADDRESS_ONE true
 #endif
 
+#ifndef PRIMARY_IMU_ADDRESS_TWO
+#define PRIMARY_IMU_ADDRESS_TWO false
+#endif
+
 #ifndef SECONDARY_IMU_ADDRESS_TWO
 #define SECONDARY_IMU_ADDRESS_TWO false
+#endif
+
+#ifndef SECONDARY_IMU_ADDRESS_ONE
+#define SECONDARY_IMU_ADDRESS_ONE true
 #endif
 
 class SensorManager {
