@@ -20,16 +20,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMEVR_SENSORMANAGER
-#define SLIMEVR_SENSORMANAGER
-
-#ifndef PRIMARY_IMU_ADDRESS_ONE
-#define PRIMARY_IMU_ADDRESS_ONE std::nullopt
-#endif
-
-#ifndef SECONDARY_IMU_ADDRESS_TWO
-#define SECONDARY_IMU_ADDRESS_TWO std::nullopt
-#endif
+#pragma once
 
 #include <i2cscan.h>
 
@@ -41,6 +32,7 @@
 #include "globals.h"
 #include "logging/Logger.h"
 #include "sensor.h"
+#include "sensoraddress.h"
 #include "sensorinterface/DirectPinInterface.h"
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/I2CWireSensorInterface.h"
@@ -48,6 +40,23 @@
 
 namespace SlimeVR {
 namespace Sensors {
+
+#ifndef PRIMARY_IMU_ADDRESS_ONE
+#define PRIMARY_IMU_ADDRESS_ONE true
+#endif
+
+#ifndef PRIMARY_IMU_ADDRESS_TWO
+#define PRIMARY_IMU_ADDRESS_TWO false
+#endif
+
+#ifndef SECONDARY_IMU_ADDRESS_TWO
+#define SECONDARY_IMU_ADDRESS_TWO false
+#endif
+
+#ifndef SECONDARY_IMU_ADDRESS_ONE
+#define SECONDARY_IMU_ADDRESS_ONE true
+#endif
+
 class SensorManager {
 public:
 	SensorManager()
@@ -74,14 +83,14 @@ private:
 	template <typename ImuType>
 	std::unique_ptr<::Sensor> buildSensor(
 		uint8_t sensorID,
-		std::optional<uint8_t> imuAddress,
+		ImuAddress imuAddress,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
-		uint8_t i2cAddress = imuAddress.value_or(ImuType::Address + sensorID);
+		uint8_t i2cAddress = imuAddress.getAddress(ImuType::Address);
 		m_Logger.trace(
 			"Building IMU with: id=%d,\n\
 						address=0x%02X, rotation=%f,\n\
@@ -141,5 +150,3 @@ private:
 };
 }  // namespace Sensors
 }  // namespace SlimeVR
-
-#endif  // SLIMEVR_SENSORFACTORY_H_
