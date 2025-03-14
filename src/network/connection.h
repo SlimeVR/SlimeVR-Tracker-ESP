@@ -163,8 +163,6 @@ private:
 		Packet packet,
 		std::optional<uint64_t> packetNumberOverride = std::nullopt
 	) {
-		MUST_TRANSFER_BOOL(m_Connected);
-
 		MUST_TRANSFER_BOOL(beginPacket());
 		MUST_TRANSFER_BOOL(sendPacketType(type));
 		if (packetNumberOverride) {
@@ -186,8 +184,6 @@ private:
 		Callback bodyCallback,
 		std::optional<uint64_t> packetNumberOverride = std::nullopt
 	) {
-		MUST_TRANSFER_BOOL(m_Connected);
-
 		MUST_TRANSFER_BOOL(beginPacket());
 		MUST_TRANSFER_BOOL(sendPacketType(type));
 		if (packetNumberOverride) {

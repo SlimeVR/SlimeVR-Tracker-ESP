@@ -25,7 +25,8 @@
 
 // List of constants used in other places
 
-enum class SensorTypeID {
+#include <cstdint>
+enum class SensorTypeID : uint8_t {
 	Unknown = 0,
 	MPU9250,
 	MPU6500,

@@ -30,32 +30,15 @@
 #define TIMEOUT 3000UL
 
 template <typename T>
-unsigned char* convert_to_chars(T src, unsigned char* target) {
-	union uwunion {
-		unsigned char c[sizeof(T)];
-		T v;
-	} un;
-	un.v = src;
+uint8_t* convert_to_chars(T src, uint8_t* target) {
+	auto* rawBytes = reinterpret_cast<uint8_t*>(&src);
 	for (size_t i = 0; i < sizeof(T); i++) {
-		target[i] = un.c[sizeof(T) - i - 1];
+		target[i] = rawBytes[sizeof(T) - i - 1];
 	}
 	return target;
 }
 
-template <typename T>
-T convert_chars(unsigned char* const src) {
-	union uwunion {
-		unsigned char c[sizeof(T)];
-		T v;
-	} un;
-	for (size_t i = 0; i < sizeof(T); i++) {
-		un.c[i] = src[sizeof(T) - i - 1];
-	}
-	return un.v;
-}
-
-namespace SlimeVR {
-namespace Network {
+namespace SlimeVR::Network {
 
 bool Connection::beginPacket() {
 	if (m_IsBundle) {
@@ -209,11 +192,13 @@ int Connection::getWriteError() { return m_UDP.getWriteError(); }
 
 // PACKET_HEARTBEAT 0
 void Connection::sendHeartbeat() {
-	sendPacketCallback(SendPacketType::HeartBeat, []() { return true; });
+	MUST(m_Connected);
+	MUST(sendPacketCallback(SendPacketType::HeartBeat, []() { return true; }));
 }
 
 // PACKET_ACCEL 4
 void Connection::sendSensorAcceleration(uint8_t sensorId, Vector3 vector) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::Accel,
 		AccelPacket{
@@ -227,6 +212,7 @@ void Connection::sendSensorAcceleration(uint8_t sensorId, Vector3 vector) {
 
 // PACKET_BATTERY_LEVEL 12
 void Connection::sendBatteryLevel(float batteryVoltage, float batteryPercentage) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::BatteryLevel,
 		BatteryLevelPacket{
@@ -238,6 +224,7 @@ void Connection::sendBatteryLevel(float batteryVoltage, float batteryPercentage)
 
 // PACKET_TAP 13
 void Connection::sendSensorTap(uint8_t sensorId, uint8_t value) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::Tap,
 		TapPacket{
@@ -249,6 +236,7 @@ void Connection::sendSensorTap(uint8_t sensorId, uint8_t value) {
 
 // PACKET_ERROR 14
 void Connection::sendSensorError(uint8_t sensorId, uint8_t error) {
+	MUST(m_Connected);
 	sendPacket(
 		SendPacketType::Error,
 		ErrorPacket{
@@ -260,6 +248,7 @@ void Connection::sendSensorError(uint8_t sensorId, uint8_t error) {
 
 // PACKET_SENSOR_INFO 15
 void Connection::sendSensorInfo(Sensor& sensor) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::SensorInfo,
 		SensorInfoPacket{
@@ -284,6 +273,7 @@ void Connection::sendRotationData(
 	uint8_t dataType,
 	uint8_t accuracyInfo
 ) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::RotationData,
 		RotationDataPacket{
@@ -300,6 +290,7 @@ void Connection::sendRotationData(
 
 // PACKET_MAGNETOMETER_ACCURACY 18
 void Connection::sendMagnetometerAccuracy(uint8_t sensorId, float accuracyInfo) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::MagnetometerAccuracy,
 		MagnetometerAccuracyPacket{
@@ -311,6 +302,7 @@ void Connection::sendMagnetometerAccuracy(uint8_t sensorId, float accuracyInfo) 
 
 // PACKET_SIGNAL_STRENGTH 19
 void Connection::sendSignalStrength(uint8_t signalStrength) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::SignalStrength,
 		SignalStrengthPacket{
@@ -322,6 +314,7 @@ void Connection::sendSignalStrength(uint8_t signalStrength) {
 
 // PACKET_TEMPERATURE 20
 void Connection::sendTemperature(uint8_t sensorId, float temperature) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::Temperature,
 		TemperaturePacket{
@@ -333,6 +326,7 @@ void Connection::sendTemperature(uint8_t sensorId, float temperature) {
 
 // PACKET_FEATURE_FLAGS 22
 void Connection::sendFeatureFlags() {
+	MUST(m_Connected);
 	sendPacketCallback(SendPacketType::FeatureFlags, [&]() {
 		return write(FirmwareFeatures::flags.data(), FirmwareFeatures::flags.size());
 	});
@@ -341,6 +335,7 @@ void Connection::sendFeatureFlags() {
 // PACKET_ACKNOWLEDGE_CONFIG_CHANGE 24
 
 void Connection::sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configType) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::AcknowledgeConfigChange,
 		AcknowledgeConfigChangePacket{
@@ -351,6 +346,7 @@ void Connection::sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configTy
 }
 
 void Connection::sendTrackerDiscovery() {
+	MUST(!m_Connected);
 	MUST(sendPacketCallback(
 		SendPacketType::Handshake,
 		[&]() {
@@ -381,6 +377,7 @@ void Connection::sendTrackerDiscovery() {
 
 // PACKET_FLEX_DATA 24
 void Connection::sendFlexData(uint8_t sensorId, float flexLevel) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::FlexData,
 		FlexDataPacket{
@@ -406,6 +403,7 @@ void Connection::sendInspectionRawIMUData(
 	int16_t mZ,
 	uint8_t mA
 ) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::Inspection,
 		IntRawImuDataInspectionPacket{
@@ -413,19 +411,19 @@ void Connection::sendInspectionRawIMUData(
 			.sensorId = sensorId,
 			.inspectionDataType = InspectionDataType::Int,
 
-			.rX = static_cast<uint32_t>(rX),
-			.rY = static_cast<uint32_t>(rY),
-			.rZ = static_cast<uint32_t>(rZ),
+			.rX = swapEndiannes(static_cast<uint32_t>(rX)),
+			.rY = swapEndiannes(static_cast<uint32_t>(rY)),
+			.rZ = swapEndiannes(static_cast<uint32_t>(rZ)),
 			.rA = rA,
 
-			.aX = static_cast<uint32_t>(aX),
-			.aY = static_cast<uint32_t>(aY),
-			.aZ = static_cast<uint32_t>(aZ),
+			.aX = swapEndiannes(static_cast<uint32_t>(aX)),
+			.aY = swapEndiannes(static_cast<uint32_t>(aY)),
+			.aZ = swapEndiannes(static_cast<uint32_t>(aZ)),
 			.aA = aA,
 
-			.mX = static_cast<uint32_t>(mX),
-			.mY = static_cast<uint32_t>(mY),
-			.mZ = static_cast<uint32_t>(mZ),
+			.mX = swapEndiannes(static_cast<uint32_t>(mX)),
+			.mY = swapEndiannes(static_cast<uint32_t>(mY)),
+			.mZ = swapEndiannes(static_cast<uint32_t>(mZ)),
 			.mA = mA,
 		}
 	))
@@ -446,6 +444,7 @@ void Connection::sendInspectionRawIMUData(
 	float mZ,
 	uint8_t mA
 ) {
+	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::Inspection,
 		FloatRawImuDataInspectionPacket{
@@ -753,5 +752,4 @@ void Connection::update() {
 	}
 }
 
-}  // namespace Network
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Network

@@ -93,16 +93,32 @@ enum class PacketErrorCode : uint8_t {
 
 #pragma pack(push, 1)
 
+template <typename T>
+T swapEndianness(T value) {
+	auto* bytes = reinterpret_cast<uint8_t*>(&value);
+	std::reverse(bytes, bytes + sizeof(T));
+	return value;
+}
+
+template <typename T>
+struct BigEndian {
+	BigEndian() = default;
+	explicit(false) BigEndian(T val) { value = swapEndianness(val); }
+	explicit(false) operator T() const { return swapEndianness(value); }
+
+	T value{};
+};
+
 struct AccelPacket {
-	float x;
-	float y;
-	float z;
-	uint8_t sensorId;
+	BigEndian<float> x;
+	BigEndian<float> y;
+	BigEndian<float> z;
+	uint8_t sensorId{};
 };
 
 struct BatteryLevelPacket {
-	float batteryVoltage;
-	float batteryPercentage;
+	BigEndian<float> batteryVoltage;
+	BigEndian<float> batteryPercentage;
 };
 
 struct TapPacket {
@@ -116,34 +132,34 @@ struct ErrorPacket {
 };
 
 struct SensorInfoPacket {
-	uint8_t sensorId;
-	SensorStatus sensorState;
-	SensorTypeID sensorType;
-	uint16_t sensorConfigData;
-	bool hasCompletedRestCalibration;
-	SensorPosition sensorPosition;
-	SensorDataType sensorDataType;
+	uint8_t sensorId{};
+	SensorStatus sensorState{};
+	SensorTypeID sensorType{};
+	uint16_t sensorConfigData{};
+	bool hasCompletedRestCalibration{};
+	SensorPosition sensorPosition{};
+	SensorDataType sensorDataType{};
 	// ADD NEW FIELDS ABOVE THIS COMMENT ^^^^^^^^
 	// WARNING! Only for debug purposes and SHOULD ALWAYS BE LAST IN THE PACKET.
 	// It WILL BE REMOVED IN THE FUTURE
 	// Send TPS
-	float tpsCounterAveragedTps;
-	float dataCounterAveragedTps;
+	BigEndian<float> tpsCounterAveragedTps;
+	BigEndian<float> dataCounterAveragedTps;
 };
 
 struct RotationDataPacket {
-	uint8_t sensorId;
-	uint8_t dataType;
-	float x;
-	float y;
-	float z;
-	float w;
-	uint8_t accuracyInfo;
+	uint8_t sensorId{};
+	uint8_t dataType{};
+	BigEndian<float> x;
+	BigEndian<float> y;
+	BigEndian<float> z;
+	BigEndian<float> w;
+	uint8_t accuracyInfo{};
 };
 
 struct MagnetometerAccuracyPacket {
-	uint8_t sensorId;
-	float accuracyInfo;
+	uint8_t sensorId{};
+	BigEndian<float> accuracyInfo;
 };
 
 struct SignalStrengthPacket {
@@ -152,66 +168,66 @@ struct SignalStrengthPacket {
 };
 
 struct TemperaturePacket {
-	uint8_t sensorId;
-	float temperature;
+	uint8_t sensorId{};
+	BigEndian<float> temperature;
 };
 
 struct AcknowledgeConfigChangePacket {
-	uint8_t sensorId;
-	uint16_t configType;
+	uint8_t sensorId{};
+	BigEndian<uint16_t> configType;
 };
 
 struct FlexDataPacket {
-	uint8_t sensorId;
-	float flexLevel;
+	uint8_t sensorId{};
+	BigEndian<float> flexLevel;
 };
 
 struct IntRawImuDataInspectionPacket {
-	InspectionPacketType inspectionPacketType;
-	uint8_t sensorId;
-	InspectionDataType inspectionDataType;
+	InspectionPacketType inspectionPacketType{};
+	uint8_t sensorId{};
+	InspectionDataType inspectionDataType{};
 
-	uint32_t rX;
-	uint32_t rY;
-	uint32_t rZ;
-	uint8_t rA;
+	BigEndian<uint32_t> rX;
+	BigEndian<uint32_t> rY;
+	BigEndian<uint32_t> rZ;
+	uint8_t rA{};
 
-	uint32_t aX;
-	uint32_t aY;
-	uint32_t aZ;
-	uint8_t aA;
+	BigEndian<uint32_t> aX;
+	BigEndian<uint32_t> aY;
+	BigEndian<uint32_t> aZ;
+	uint8_t aA{};
 
-	uint32_t mX;
-	uint32_t mY;
-	uint32_t mZ;
-	uint8_t mA;
+	BigEndian<uint32_t> mX;
+	BigEndian<uint32_t> mY;
+	BigEndian<uint32_t> mZ;
+	uint8_t mA{};
 };
 
 struct FloatRawImuDataInspectionPacket {
-	InspectionPacketType inspectionPacketType;
-	uint8_t sensorId;
-	InspectionDataType inspectionDataType;
+	InspectionPacketType inspectionPacketType{};
+	uint8_t sensorId{};
+	InspectionDataType inspectionDataType{};
 
-	float rX;
-	float rY;
-	float rZ;
-	uint8_t rA;
+	BigEndian<float> rX;
+	BigEndian<float> rY;
+	BigEndian<float> rZ;
+	uint8_t rA{};
 
-	float aX;
-	float aY;
-	float aZ;
-	uint8_t aA;
+	BigEndian<float> aX;
+	BigEndian<float> aY;
+	BigEndian<float> aZ;
+	uint8_t aA{};
 
-	float mX;
-	float mY;
-	float mZ;
-	uint8_t mA;
+	BigEndian<float> mX;
+	BigEndian<float> mY;
+	BigEndian<float> mZ;
+	uint8_t mA{};
 };
 
 struct SetConfigFlagPacket {
-	uint8_t sensorId;
-	uint16_t flagId;
-	bool newState;
+	uint8_t sensorId{};
+	BigEndian<uint16_t> flagId;
+	bool newState{};
 };
 
 #pragma pack(pop)
