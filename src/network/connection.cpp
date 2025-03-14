@@ -32,7 +32,8 @@
 template <typename T>
 uint8_t* convert_to_chars(T src, uint8_t* target) {
 	auto* rawBytes = reinterpret_cast<uint8_t*>(&src);
-	std::reverse(rawBytes, rawBytes + sizeof(T));
+	std::memcpy(target, rawBytes, sizeof(T));
+	std::reverse(target, target + sizeof(T));
 	return target;
 }
 
