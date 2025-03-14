@@ -359,6 +359,7 @@ void Connection::sendTrackerDiscovery() {
 			MUST_TRANSFER_BOOL(sendInt(static_cast<int>(sensorManager.getSensorType(0)))
 			);
 			MUST_TRANSFER_BOOL(sendInt(HARDWARE_MCU));
+			// Backwards compatibility, unused IMU data
 			MUST_TRANSFER_BOOL(sendInt(0));
 			MUST_TRANSFER_BOOL(sendInt(0));
 			MUST_TRANSFER_BOOL(sendInt(0));
