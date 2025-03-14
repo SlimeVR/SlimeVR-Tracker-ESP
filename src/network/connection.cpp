@@ -367,8 +367,9 @@ void Connection::sendTrackerDiscovery() {
 			MUST_TRANSFER_BOOL(sendShortString(FIRMWARE_VERSION));
 			// MAC address string
 			MUST_TRANSFER_BOOL(sendBytes(mac, 6));
-			MUST_TRANSFER_BOOL(sendByte(static_cast<uint8_t>(TRACKER_TYPE))
-			);  // Tracker type to hint the server if it's a glove or
+			// Tracker type to hint the server if it's a glove or normal tracker or
+			// something else
+			MUST_TRANSFER_BOOL(sendByte(static_cast<uint8_t>(TRACKER_TYPE)));
 			return true;
 		},
 		0
