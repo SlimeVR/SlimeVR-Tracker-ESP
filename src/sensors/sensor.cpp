@@ -50,6 +50,11 @@ void Sensor::setFusedRotation(Quat r) {
 	}
 }
 
+void Sensor::setPacketErrorCode(PacketErrorCode e)
+{
+	packeterrorCode = e;
+}
+
 void Sensor::sendData() {
 	if (newFusedRotation) {
 		newFusedRotation = false;
