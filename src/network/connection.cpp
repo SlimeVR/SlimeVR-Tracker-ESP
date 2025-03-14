@@ -409,19 +409,19 @@ void Connection::sendInspectionRawIMUData(
 			.sensorId = sensorId,
 			.inspectionDataType = InspectionDataType::Int,
 
-			.rX = swapEndiannes(static_cast<uint32_t>(rX)),
-			.rY = swapEndiannes(static_cast<uint32_t>(rY)),
-			.rZ = swapEndiannes(static_cast<uint32_t>(rZ)),
+			.rX = static_cast<uint32_t>(rX),
+			.rY = static_cast<uint32_t>(rY),
+			.rZ = static_cast<uint32_t>(rZ),
 			.rA = rA,
 
-			.aX = swapEndiannes(static_cast<uint32_t>(aX)),
-			.aY = swapEndiannes(static_cast<uint32_t>(aY)),
-			.aZ = swapEndiannes(static_cast<uint32_t>(aZ)),
+			.aX = static_cast<uint32_t>(aX),
+			.aY = static_cast<uint32_t>(aY),
+			.aZ = static_cast<uint32_t>(aZ),
 			.aA = aA,
 
-			.mX = swapEndiannes(static_cast<uint32_t>(mX)),
-			.mY = swapEndiannes(static_cast<uint32_t>(mY)),
-			.mZ = swapEndiannes(static_cast<uint32_t>(mZ)),
+			.mX = static_cast<uint32_t>(mX),
+			.mY = static_cast<uint32_t>(mY),
+			.mZ = static_cast<uint32_t>(mZ),
 			.mA = mA,
 		}
 	))
