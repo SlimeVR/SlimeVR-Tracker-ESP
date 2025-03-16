@@ -33,6 +33,9 @@ namespace I2CSCAN
     uint8_t currentAddress = 1;
     bool found = false;
     std::vector<uint8_t> validPorts;
+    bool isFound() {
+        return found;
+    }
 
     void scani2cports()
     {
