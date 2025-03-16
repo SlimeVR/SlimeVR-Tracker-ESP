@@ -22,7 +22,7 @@
 */
 #pragma once
 
-enum class SensorPosition {
+enum class SensorPosition : uint8_t{
 	POSITION_NO = 0,
 	POSITION_HEAD = 1,
 	POSITION_NECK = 2,

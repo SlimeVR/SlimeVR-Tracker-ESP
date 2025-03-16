@@ -135,7 +135,7 @@ struct SensorInfoPacket {
 	uint8_t sensorId{};
 	SensorStatus sensorState{};
 	SensorTypeID sensorType{};
-	uint16_t sensorConfigData{};
+	BigEndian<uint16_t> sensorConfigData{};
 	bool hasCompletedRestCalibration{};
 	SensorPosition sensorPosition{};
 	SensorDataType sensorDataType{};

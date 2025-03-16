@@ -150,13 +150,13 @@ enum class SensorTypeID : uint8_t {
 #define MCU_HARITORA 8  // Used by Haritora/SlimeTora
 #define MCU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
-enum class SensorDataType {
+enum class SensorDataType : uint8_t {
 	SENSOR_DATATYPE_ROTATION = 0,
 	SENSOR_DATATYPE_FLEX_RESISTANCE,
 	SENSOR_DATATYPE_FLEX_ANGLE
 };
 
-enum class TrackerType {
+enum class TrackerType : uint8_t{
 	TRACKER_TYPE_SVR_ROTATION = 0,
 	TRACKER_TYPE_SVR_GLOVE_LEFT,
 	TRACKER_TYPE_SVR_GLOVE_RIGHT
