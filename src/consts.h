@@ -156,7 +156,7 @@ enum class SensorDataType : uint8_t {
 	SENSOR_DATATYPE_FLEX_ANGLE
 };
 
-enum class TrackerType : uint8_t{
+enum class TrackerType : uint8_t {
 	TRACKER_TYPE_SVR_ROTATION = 0,
 	TRACKER_TYPE_SVR_GLOVE_LEFT,
 	TRACKER_TYPE_SVR_GLOVE_RIGHT
