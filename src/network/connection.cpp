@@ -591,11 +591,7 @@ void Connection::reset() {
 		m_AckedSensorCalibration + MAX_SENSORS_COUNT,
 		false
 	);
-	std::fill(
-		m_AckedSensorConfigData,
-		m_AckedSensorConfigData + MAX_SENSORS_COUNT,
-		0
-	);
+	std::fill(m_AckedSensorConfigData, m_AckedSensorConfigData + MAX_SENSORS_COUNT, 0);
 
 	m_UDP.begin(m_ServerPort);
 
