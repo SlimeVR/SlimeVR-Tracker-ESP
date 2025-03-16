@@ -512,7 +512,8 @@ void Connection::maybeRequestFeatureFlags() {
 
 bool Connection::isSensorStateUpdated(int i, std::unique_ptr<Sensor>& sensor) {
 	return m_AckedSensorState[i] != sensor->getSensorState()
-		|| m_AckedSensorCalibration[i] != sensor->hasCompletedRestCalibration();
+		|| m_AckedSensorCalibration[i] != sensor->hasCompletedRestCalibration()
+		|| m_AckedSensorConfigData[i] != sensor->getSensorConfigData();
 }
 
 void Connection::searchForServer() {
@@ -589,6 +590,11 @@ void Connection::reset() {
 		m_AckedSensorCalibration,
 		m_AckedSensorCalibration + MAX_SENSORS_COUNT,
 		false
+	);
+	std::fill(
+		m_AckedSensorConfigData,
+		m_AckedSensorConfigData + MAX_SENSORS_COUNT,
+		0
 	);
 
 	m_UDP.begin(m_ServerPort);
@@ -684,6 +690,7 @@ void Connection::update() {
 					if (len < 12) {
 						m_AckedSensorCalibration[i]
 							= sensors[i]->hasCompletedRestCalibration();
+						m_AckedSensorConfigData[i] = sensors[i]->getSensorConfigData();
 						break;
 					}
 					m_AckedSensorCalibration[i]
