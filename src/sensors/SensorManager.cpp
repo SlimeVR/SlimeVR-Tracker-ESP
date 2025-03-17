@@ -94,6 +94,9 @@ void SensorManager::setup() {
 	std::map<std::tuple<int, int, int, int>, I2CPCASensorInterface*> pcaWireInterfaces;
 
 	auto directPin = [&](int pin) {
+		if (pin == 255 || pin == -1) {
+			return static_cast<DirectPinInterface*>(nullptr);
+		}
 		if (!directPinInterfaces.contains(pin)) {
 			auto ptr = new DirectPinInterface(pin);
 			directPinInterfaces[pin] = ptr;
