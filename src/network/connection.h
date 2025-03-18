@@ -225,6 +225,7 @@ private:
 	unsigned long m_LastPacketTimestamp;
 
 	SensorStatus m_AckedSensorState[MAX_SENSORS_COUNT] = {SensorStatus::SENSOR_OFFLINE};
+	uint16_t m_AckedSensorConfigData[MAX_SENSORS_COUNT] = {0};
 	bool m_AckedSensorCalibration[MAX_SENSORS_COUNT] = {false};
 	unsigned long m_LastSensorInfoPacketTimestamp = 0;
 
