@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,49 +20,58 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+
 #pragma once
 
 #include <PinInterface.h>
 
-#include "../sensorinterface/SensorInterface.h"
-#include "sensor.h"
+#include <cstdint>
 
-class ADCResistanceSensor : Sensor {
+#include "DirectPinInterface.h"
+#include "I2CWireSensorInterface.h"
+#include "SensorInterface.h"
+
+namespace SlimeVR {
+
+class ADS111xInterface : public PinInterface {
 public:
-	static constexpr auto TypeID = SensorTypeID::ADC_RESISTANCE;
-
-	ADCResistanceSensor(
-		uint8_t id,
-		float resistanceDivider,
-		PinInterface* pinInterface = nullptr,
-		float smoothFactor = 0.1f
-	)
-		: Sensor(
-			"ADCResistanceSensor",
-			SensorTypeID::ADC_RESISTANCE,
-			id,
-			0,
-			0.0f,
-			new SlimeVR::EmptySensorInterface()
-		)
-		, m_ResistanceDivider(resistanceDivider)
-		, m_SmoothFactor(smoothFactor)
-		, m_PinInterface(pinInterface){};
-	~ADCResistanceSensor();
-
-	void motionLoop() override final;
-	void sendData() override final;
-
-	SensorStatus getSensorState() override final { return SensorStatus::SENSOR_OK; }
-
-	SensorDataType getDataType() override final {
-		return SensorDataType::SENSOR_DATATYPE_FLEX_RESISTANCE;
-	};
+	explicit ADS111xInterface(
+		uint8_t sclPin,
+		uint8_t sdaPin,
+		uint8_t drdyPin,
+		uint8_t address,
+		uint8_t channel
+	);
+	bool init();
+	int digitalRead() override final;
+	void pinMode(uint8_t mode) override final;
+	void digitalWrite(uint8_t val);
+	float analogRead();
 
 private:
-	PinInterface* m_PinInterface;
-	float m_ResistanceDivider;
-	float m_SmoothFactor;
+	static constexpr uint32_t maxValue = 0x7fff;
 
-	float m_Data = 0.0f;
+	struct Registers {
+		static constexpr uint8_t ConversionAddr = 0b00;
+		struct Config {
+			static constexpr uint8_t Addr = 0b01;
+			uint8_t os : 1;
+			uint8_t mux : 3;
+			uint8_t pga : 3;
+			uint8_t mode : 1;
+			uint8_t dr : 3;
+			uint8_t compMode : 1;
+			uint8_t compPol : 1;
+			uint8_t compLat : 1;
+			uint8_t compQue : 2;
+		};
+	};
+	static_assert(sizeof(Registers::Config) == 2);
+
+	I2CWireSensorInterface wire;
+	uint8_t address;
+	uint8_t channel;
+	DirectPinInterface drdy;
 };
+
+}  // namespace SlimeVR

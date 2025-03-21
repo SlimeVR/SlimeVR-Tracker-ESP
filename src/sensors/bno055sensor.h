@@ -25,6 +25,7 @@
 #define SENSORS_BNO055SENSOR_H
 
 #include <Adafruit_BNO055.h>
+#include <PinInterface.h>
 
 #include "sensor.h"
 

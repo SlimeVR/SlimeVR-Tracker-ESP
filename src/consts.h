@@ -172,6 +172,21 @@ enum class TrackerType : uint8_t {
 
 #define CURRENT_CONFIGURATION_VERSION 1
 
+#if ESP8266
+#define ADCResolution 1023.0  // ESP8266 has 10bit ADC
+#define ADCVoltageMax 1.0  // ESP8266 input is 1.0 V = 1023.0
+#elif ESP32
+#define ADCResolution 4095.0  // ESP32 has 12bit ADC
+#define ADCVoltageMax 2.5  // ESP32 input is 2.5 V = 4095.0 by default
+#endif
+
+#ifndef ADCResolution
+#define ADCResolution 1023.0
+#endif
+#ifndef ADCVoltageMax
+#define ADCVoltageMax 1.0
+#endif
+
 #include "sensors/sensorposition.h"
 
 #endif  // SLIMEVR_CONSTS_H_

@@ -26,6 +26,7 @@
 #include <map>
 #include <type_traits>
 
+#include "../sensorinterface/ADS111xInterface.h"
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
@@ -92,8 +93,9 @@ void SensorManager::setup() {
 	std::map<int, MCP23X17PinInterface*> mcpPinInterfaces;
 	std::map<std::tuple<int, int>, I2CWireSensorInterface*> i2cWireInterfaces;
 	std::map<std::tuple<int, int, int, int>, I2CPCASensorInterface*> pcaWireInterfaces;
+	std::map<std::tuple<int, int, int, int, int>, ADS111xInterface*> adsPinInterfaces;
 
-	auto directPin = [&](int pin) {
+	[[maybe_unused]] auto directPin = [&](int pin) {
 		if (pin == 255 || pin == -1) {
 			return static_cast<DirectPinInterface*>(nullptr);
 		}
@@ -104,7 +106,7 @@ void SensorManager::setup() {
 		return directPinInterfaces[pin];
 	};
 
-	auto mcpPin = [&](int pin) {
+	[[maybe_unused]] auto mcpPin = [&](int pin) {
 		if (!mcpPinInterfaces.contains(pin)) {
 			auto ptr = new MCP23X17PinInterface(&m_MCP, pin);
 			mcpPinInterfaces[pin] = ptr;
@@ -112,7 +114,7 @@ void SensorManager::setup() {
 		return mcpPinInterfaces[pin];
 	};
 
-	auto directWire = [&](int scl, int sda) {
+	[[maybe_unused]] auto directWire = [&](int scl, int sda) {
 		auto pair = std::make_tuple(scl, sda);
 		if (!i2cWireInterfaces.contains(pair)) {
 			auto ptr = new I2CWireSensorInterface(scl, sda);
@@ -121,13 +123,23 @@ void SensorManager::setup() {
 		return i2cWireInterfaces[pair];
 	};
 
-	auto pcaWire = [&](int scl, int sda, int addr, int ch) {
+	[[maybe_unused]] auto pcaWire = [&](int scl, int sda, int addr, int ch) {
 		auto pair = std::make_tuple(scl, sda, addr, ch);
 		if (!pcaWireInterfaces.contains(pair)) {
 			auto ptr = new I2CPCASensorInterface(scl, sda, addr, ch);
 			pcaWireInterfaces[pair] = ptr;
 		}
 		return pcaWireInterfaces[pair];
+	};
+
+	[[maybe_unused]] auto adsPin = [&](int scl, int sda, int drdy, int addr, int ch) {
+		auto pair = std::make_tuple(scl, sda, drdy, addr, ch);
+		if (!adsPinInterfaces.contains(pair)) {
+			auto ptr = new ADS111xInterface(scl, sda, drdy, addr, ch);
+			adsPinInterfaces[pair] = ptr;
+			ptr->init();
+		}
+		return adsPinInterfaces[pair];
 	};
 	uint8_t sensorID = 0;
 	uint8_t activeSensorCount = 0;
@@ -140,6 +152,7 @@ void SensorManager::setup() {
 #define DIRECT_WIRE(scl, sda) directWire(scl, sda)
 #define MCP_PIN(pin) mcpPin(pin)
 #define PCA_WIRE(scl, sda, addr, ch) pcaWire(scl, sda, addr, ch)
+#define ADS_PIN(scl, sda, drdy, addr, ch) adsPin(scl, sda, drdy, addr, ch)
 
 #define SENSOR_DESC_ENTRY(ImuType, ...)                            \
 	{                                                              \
@@ -163,6 +176,10 @@ void SensorManager::setup() {
 #undef NO_PIN
 #undef DIRECT_PIN
 #undef DIRECT_WIRE
+#undef MCP_PIN
+#undef PCA_WIRE
+#undef ADS_PIN
+
 	m_Logger.info("%d sensor(s) configured", activeSensorCount);
 	// Check and scan i2c if no sensors active
 	if (activeSensorCount == 0) {

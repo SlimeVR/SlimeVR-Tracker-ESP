@@ -22,8 +22,18 @@
 */
 #include "DirectPinInterface.h"
 
+#include "../consts.h"
+
 int DirectPinInterface::digitalRead() { return ::digitalRead(_pinNum); }
 
 void DirectPinInterface::pinMode(uint8_t mode) { ::pinMode(_pinNum, mode); }
 
 void DirectPinInterface::digitalWrite(uint8_t val) { ::digitalWrite(_pinNum, val); }
+
+float DirectPinInterface::analogRead() {
+#if ESP8266
+	return static_cast<float>(::analogRead(_pinNum)) / ADCResolution;
+#elif ESP32
+	return static_cast<float>(::analogReadMilliVolts(_pinNum)) / 1000 / ADCVoltageMax;
+#endif
+}
