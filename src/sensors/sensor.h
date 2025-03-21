@@ -30,7 +30,6 @@
 
 #include <memory>
 
-#include "PinInterface.h"
 #include "configuration/Configuration.h"
 #include "globals.h"
 #include "logging/Logger.h"

@@ -29,3 +29,5 @@ void MCP23X17PinInterface::pinMode(uint8_t mode) { _mcp23x17->pinMode(_pinNum, m
 void MCP23X17PinInterface::digitalWrite(uint8_t val) {
 	_mcp23x17->digitalWrite(_pinNum, val);
 }
+
+float MCP23X17PinInterface::analogRead() { return digitalRead() ? 1.0f : 0.0f; }

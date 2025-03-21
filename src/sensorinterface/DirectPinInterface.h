@@ -24,7 +24,8 @@
 #define _H_DIRECT_PIN_INTERFACE_
 
 #include <Arduino.h>
-#include <PinInterface.h>
+
+#include "PinInterface.h"
 
 /**
  * Pin interface using direct pins
@@ -38,6 +39,7 @@ public:
 	int digitalRead() override final;
 	void pinMode(uint8_t mode) override final;
 	void digitalWrite(uint8_t val) override final;
+	float analogRead() override final;
 
 private:
 	uint8_t _pinNum;

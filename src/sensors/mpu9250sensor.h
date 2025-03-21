@@ -25,6 +25,7 @@
 #define SENSORS_MPU9250SENSOR_H
 
 #include <MPU9250_6Axis_MotionApps_V6_12.h>
+#include <PinInterface.h>
 
 #include "logging/Logger.h"
 #include "sensor.h"
