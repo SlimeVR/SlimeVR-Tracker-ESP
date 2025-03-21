@@ -36,9 +36,8 @@ namespace SlimeVR {
 class ADS111xInterface : public PinInterface {
 public:
 	explicit ADS111xInterface(
-		uint8_t sclPin,
-		uint8_t sdaPin,
-		uint8_t drdyPin,
+		SensorInterface* interface,
+		PinInterface* drdy,
 		uint8_t address,
 		uint8_t channel
 	);
@@ -68,10 +67,10 @@ private:
 	};
 	static_assert(sizeof(Registers::Config) == 2);
 
-	I2CWireSensorInterface wire;
+	SensorInterface* interface;
 	uint8_t address;
 	uint8_t channel;
-	DirectPinInterface drdy;
+	PinInterface* drdy;
 };
 
 }  // namespace SlimeVR

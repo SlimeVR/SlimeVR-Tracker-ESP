@@ -3,19 +3,18 @@
 namespace SlimeVR {
 
 ADS111xInterface::ADS111xInterface(
-	uint8_t sclPin,
-	uint8_t sdaPin,
-	uint8_t drdyPin,
+	SensorInterface* interface,
+	PinInterface* drdy,
 	uint8_t address,
 	uint8_t channel
 )
-	: wire(sclPin, sdaPin)
+	: interface(interface)
 	, address(address)
 	, channel(channel)
-	, drdy(drdyPin) {}
+	, drdy(drdy) {}
 
 bool ADS111xInterface::init() {
-	wire.swapIn();
+	interface->swapIn();
 	Wire.beginTransmission(address);
 	Wire.write(Registers::Config::Addr);
 	Registers::Config config{
@@ -33,7 +32,7 @@ bool ADS111xInterface::init() {
 	Wire.write(bytes[1]);
 	Wire.write(bytes[0]);
 	Wire.endTransmission();
-	drdy.pinMode(INPUT_PULLUP);
+	drdy->pinMode(INPUT_PULLUP);
 	return true;
 }
 
@@ -44,7 +43,7 @@ void ADS111xInterface::pinMode(uint8_t mode) {}
 void ADS111xInterface::digitalWrite(uint8_t val) {}
 
 float ADS111xInterface::analogRead() {
-	wire.swapIn();
+	interface->swapIn();
 	Wire.beginTransmission(address);
 	Wire.write(Registers::Config::Addr);
 	Registers::Config config{
@@ -58,13 +57,13 @@ float ADS111xInterface::analogRead() {
 		.compLat = 0b0,  // Non-latching drdy
 		.compQue = 0b11,  // Comparator disabled
 	};
-	uint8_t* bytes = reinterpret_cast<uint8_t*>(&config);
+	auto* bytes = reinterpret_cast<uint8_t*>(&config);
 	Wire.write(bytes[1]);
 	Wire.write(bytes[0]);
 	Wire.endTransmission();
 
 	// Wait for drdy signal
-	while (drdy.digitalRead())
+	while (drdy->digitalRead())
 		;
 
 	Wire.beginTransmission(address);

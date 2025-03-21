@@ -93,7 +93,8 @@ void SensorManager::setup() {
 	std::map<int, MCP23X17PinInterface*> mcpPinInterfaces;
 	std::map<std::tuple<int, int>, I2CWireSensorInterface*> i2cWireInterfaces;
 	std::map<std::tuple<int, int, int, int>, I2CPCASensorInterface*> pcaWireInterfaces;
-	std::map<std::tuple<int, int, int, int, int>, ADS111xInterface*> adsPinInterfaces;
+	std::map<std::tuple<SensorInterface*, PinInterface*, int, int>, ADS111xInterface*>
+		adsPinInterfaces;
 
 	[[maybe_unused]] auto directPin = [&](int pin) {
 		if (pin == 255 || pin == -1) {
@@ -132,15 +133,16 @@ void SensorManager::setup() {
 		return pcaWireInterfaces[pair];
 	};
 
-	[[maybe_unused]] auto adsPin = [&](int scl, int sda, int drdy, int addr, int ch) {
-		auto pair = std::make_tuple(scl, sda, drdy, addr, ch);
-		if (!adsPinInterfaces.contains(pair)) {
-			auto ptr = new ADS111xInterface(scl, sda, drdy, addr, ch);
-			adsPinInterfaces[pair] = ptr;
-			ptr->init();
-		}
-		return adsPinInterfaces[pair];
-	};
+	[[maybe_unused]] auto adsPin
+		= [&](SensorInterface* interface, PinInterface* drdy, int addr, int ch) {
+			  auto pair = std::make_tuple(interface, drdy, addr, ch);
+			  if (!adsPinInterfaces.contains(pair)) {
+				  auto ptr = new ADS111xInterface(interface, drdy, addr, ch);
+				  adsPinInterfaces[pair] = ptr;
+				  ptr->init();
+			  }
+			  return adsPinInterfaces[pair];
+		  };
 	uint8_t sensorID = 0;
 	uint8_t activeSensorCount = 0;
 	if (m_MCP.begin_I2C()) {
