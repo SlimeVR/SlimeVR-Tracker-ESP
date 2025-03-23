@@ -175,7 +175,7 @@ void BNO080Sensor::motionLoop() {
 		lastReset = 0;
 		lastData = millis();
 
-		if (toggles.getToggle(SensorToggles::MagEnabled)) {
+		if (!toggles.getToggle(SensorToggles::MagEnabled)) {
 			if (imu.hasNewGameQuat())  // New quaternion if context
 			{
 				Quat nRotation;

@@ -401,6 +401,11 @@ public:
 		);
 	}
 
+	bool isFlagSupported(SensorToggles toggle) const final {
+		return toggle == SensorToggles::CalibrationEnabled
+			|| toggle == SensorToggles::TempGradientCalibrationEnabled;
+	}
+
 	SensorStatus getSensorState() final { return m_status; }
 
 	SensorFusionRestDetect m_fusion;
