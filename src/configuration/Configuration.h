@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "../motionprocessing/GyroTemperatureCalibrator.h"
+#include "../sensors/SensorToggles.h"
 #include "DeviceConfig.h"
 #include "logging/Logger.h"
 
@@ -46,6 +47,8 @@ public:
 	size_t getSensorCount() const;
 	SensorConfig getSensor(size_t sensorID) const;
 	void setSensor(size_t sensorID, const SensorConfig& config);
+	SensorToggleState getSensorToggles(size_t sensorId) const;
+	void setSensorToggles(size_t sensorId, SensorToggleState state);
 	void eraseSensors();
 
 	bool loadTemperatureCalibration(
@@ -65,6 +68,7 @@ private:
 
 	DeviceConfig m_Config{};
 	std::vector<SensorConfig> m_Sensors;
+	std::vector<SensorToggleState> m_SensorToggles;
 
 	Logging::Logger m_Logger = Logging::Logger("Configuration");
 };

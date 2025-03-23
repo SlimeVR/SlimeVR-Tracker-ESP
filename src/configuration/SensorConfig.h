@@ -177,7 +177,19 @@ struct SensorConfig {
 	} data;
 };
 
-uint16_t configDataToNumber(SensorConfig* sensorConfig, bool magSupported);
+struct SensorConfigBits {
+	bool magEnabled : 1 = false;
+	bool magSupported : 1 = false;
+
+	// Remove if the above fields exceed a byte, necessary to make the struct 16
+	// bit
+	uint8_t padding;
+
+	bool operator==(const SensorConfigBits& rhs) const;
+	bool operator!=(const SensorConfigBits& rhs) const;
+};
+
+static_assert(sizeof(SensorConfigBits) == 2);
 }  // namespace Configuration
 }  // namespace SlimeVR
 

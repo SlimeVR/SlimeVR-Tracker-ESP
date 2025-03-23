@@ -58,24 +58,7 @@ void BNO080Sensor::motionSetup() {
 
 	this->imu.enableLinearAccelerometer(10);
 
-	SlimeVR::Configuration::SensorConfig sensorConfig
-		= configuration.getSensor(sensorId);
-	// If no compatible calibration data is found, the calibration data will just be
-	// zero-ed out
-	switch (sensorConfig.type) {
-		case SlimeVR::Configuration::SensorConfigType::BNO0XX:
-			m_Config = sensorConfig.data.bno0XX;
-			magStatus = m_Config.magEnabled ? MagnetometerStatus::MAG_ENABLED
-											: MagnetometerStatus::MAG_DISABLED;
-			break;
-		default:
-			// Ignore lack of config for BNO, by default use from FW build
-			magStatus = USE_6_AXIS ? MagnetometerStatus::MAG_DISABLED
-								   : MagnetometerStatus::MAG_ENABLED;
-			break;
-	}
-
-	if (!isMagEnabled()) {
+	if (toggles.getToggle(SensorToggles::MagEnabled)) {
 		if ((sensorType == SensorTypeID::BNO085 || sensorType == SensorTypeID::BNO086)
 			&& BNO_USE_ARVR_STABILIZATION) {
 			imu.enableARVRStabilizedGameRotationVector(10);
@@ -190,7 +173,7 @@ void BNO080Sensor::motionLoop() {
 		lastReset = 0;
 		lastData = millis();
 
-		if (!isMagEnabled()) {
+		if (toggles.getToggle(SensorToggles::MagEnabled)) {
 			if (imu.hasNewGameQuat())  // New quaternion if context
 			{
 				Quat nRotation;
@@ -355,24 +338,12 @@ void BNO080Sensor::sendData() {
 	}
 }
 
-void BNO080Sensor::setFlag(uint16_t flagId, bool state) {
-	if (flagId == FLAG_SENSOR_BNO0XX_MAG_ENABLED) {
-		m_Config.magEnabled = state;
-		magStatus = state ? MagnetometerStatus::MAG_ENABLED
-						  : MagnetometerStatus::MAG_DISABLED;
-
-		SlimeVR::Configuration::SensorConfig config;
-		config.type = SlimeVR::Configuration::SensorConfigType::BNO0XX;
-		config.data.bno0XX = m_Config;
-		configuration.setSensor(sensorId, config);
-
-		// Reinitialize the sensor
-		motionSetup();
-	}
-}
-
 void BNO080Sensor::startCalibration(int calibrationType) {
 	// BNO does automatic calibration,
 	// it's always enabled except accelerometer
 	// that is disabled 30 seconds after startup
+}
+
+bool BNO080Sensor::isFlagSupported(SensorToggles toggle) const {
+	return toggle == SensorToggles::MagEnabled;
 }
