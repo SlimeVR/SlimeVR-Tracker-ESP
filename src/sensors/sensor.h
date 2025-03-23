@@ -48,12 +48,6 @@ enum class SensorStatus : uint8_t {
 	SENSOR_ERROR = 2
 };
 
-enum class MagnetometerStatus : uint8_t {
-	MAG_NOT_SUPPORTED = 0,
-	MAG_DISABLED = 1,
-	MAG_ENABLED = 2,
-};
-
 class Sensor {
 public:
 	Sensor(

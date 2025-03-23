@@ -105,6 +105,22 @@ public:
 
 	void assignCalibration(const Configuration::SensorConfig& sensorCalibration) final {
 		calibration = sensorCalibration.data.sfusion;
+
+		if (!toggles.getToggle(SensorToggles::CalibrationEnabled)) {
+			for (size_t i = 0; i < 3; i++) {
+				calibration.A_B[i] = 0;
+				calibration.A_Ainv[i][0] = 0;
+				calibration.A_Ainv[i][1] = 0;
+				calibration.A_Ainv[i][2] = 0;
+				calibration.M_B[i] = 0;
+				calibration.M_Ainv[i][0] = 0;
+				calibration.M_Ainv[i][1] = 0;
+				calibration.M_Ainv[i][2] = 0;
+				calibration.G_off[i] = 0;
+				calibration.G_Sens[i] = 0;
+			}
+		}
+
 		Base::recalcFusion();
 	}
 
