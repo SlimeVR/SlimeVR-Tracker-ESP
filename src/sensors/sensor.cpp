@@ -96,6 +96,12 @@ SlimeVR::Configuration::SensorConfigBits Sensor::getSensorConfigData() {
 	return SlimeVR::Configuration::SensorConfigBits{
 		.magEnabled = toggles.getToggle(SensorToggles::MagEnabled),
 		.magSupported = isFlagSupported(SensorToggles::MagEnabled),
+		.calibrationEnabled = toggles.getToggle(SensorToggles::CalibrationEnabled),
+		.calibrationSupported = isFlagSupported(SensorToggles::CalibrationEnabled),
+		.tempGradientCalibrationEnabled
+		= toggles.getToggle(SensorToggles::TempGradientCalibrationEnabled),
+		.tempGradientCalibrationSupported
+		= isFlagSupported(SensorToggles::TempGradientCalibrationEnabled),
 	};
 }
 

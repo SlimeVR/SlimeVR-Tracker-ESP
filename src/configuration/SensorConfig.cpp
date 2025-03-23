@@ -49,7 +49,11 @@ const char* calibrationConfigTypeToString(SensorConfigType type) {
 }
 
 bool SensorConfigBits::operator==(const SensorConfigBits& rhs) const {
-	return magEnabled == rhs.magEnabled && magSupported == rhs.magSupported;
+	return magEnabled == rhs.magEnabled && magSupported == rhs.magSupported
+		&& calibrationEnabled == rhs.calibrationEnabled
+		&& calibrationSupported == rhs.calibrationSupported
+		&& tempGradientCalibrationEnabled == rhs.tempGradientCalibrationEnabled
+		&& tempGradientCalibrationSupported == rhs.tempGradientCalibrationSupported;
 }
 
 bool SensorConfigBits::operator!=(const SensorConfigBits& rhs) const {
