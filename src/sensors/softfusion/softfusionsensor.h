@@ -321,6 +321,8 @@ public:
 		SlimeVR::Configuration::SensorConfig sensorCalibration
 			= configuration.getSensor(sensorId);
 
+		toggles = configuration.getSensorToggles(sensorId);
+
 		// If no compatible calibration data is found, the calibration data will just be
 		// zero-ed out
 		if (calibrator.calibrationMatches(sensorCalibration)) {

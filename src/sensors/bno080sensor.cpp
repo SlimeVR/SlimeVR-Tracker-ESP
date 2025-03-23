@@ -58,6 +58,8 @@ void BNO080Sensor::motionSetup() {
 
 	this->imu.enableLinearAccelerometer(10);
 
+	toggles = configuration.getSensorToggles(sensorId);
+
 	if (toggles.getToggle(SensorToggles::MagEnabled)) {
 		if ((sensorType == SensorTypeID::BNO085 || sensorType == SensorTypeID::BNO086)
 			&& BNO_USE_ARVR_STABILIZATION) {
