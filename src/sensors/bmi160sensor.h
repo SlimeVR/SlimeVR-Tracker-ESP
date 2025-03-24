@@ -25,6 +25,7 @@
 #define SENSORS_BMI160SENSOR_H
 
 #include <BMI160.h>
+#include <PinInterface.h>
 
 #include "../motionprocessing/GyroTemperatureCalibrator.h"
 #include "../motionprocessing/RestDetection.h"

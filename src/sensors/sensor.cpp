@@ -135,6 +135,8 @@ const char* getIMUNameByType(SensorTypeID imuType) {
 			return "ICM45686";
 		case SensorTypeID::ICM45605:
 			return "ICM45605";
+		case SensorTypeID::ADC_RESISTANCE:
+			return "Flex Sensor";
 		case SensorTypeID::Unknown:
 		case SensorTypeID::Empty:
 			return "UNKNOWN";
