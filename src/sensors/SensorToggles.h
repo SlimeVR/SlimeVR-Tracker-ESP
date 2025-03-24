@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -23,26 +23,23 @@
 
 #pragma once
 
-#include "CalibrationStep.h"
+#include <cstdint>
 
-namespace SlimeVR::Sensors::RuntimeCalibration {
+#include "../debug.h"
 
-template <typename SensorRawT>
-class NullCalibrationStep : public CalibrationStep<SensorRawT> {
-	using CalibrationStep<SensorRawT>::sensorConfig;
-	using typename CalibrationStep<SensorRawT>::TickResult;
-
-public:
-	explicit NullCalibrationStep(
-		SlimeVR::Configuration::RuntimeCalibrationSensorConfig& sensorConfig
-	)
-		: CalibrationStep<SensorRawT>{sensorConfig} {}
-
-	void start() override final { CalibrationStep<SensorRawT>::start(); }
-
-	TickResult tick() override final { return TickResult::CONTINUE; }
-
-	void cancel() override final {}
+enum class SensorToggles : uint16_t {
+	MagEnabled = 1,
+	CalibrationEnabled = 2,
+	TempGradientCalibrationEnabled = 3,
 };
 
-}  // namespace SlimeVR::Sensors::RuntimeCalibration
+class SensorToggleState {
+public:
+	void setToggle(SensorToggles toggle, bool state);
+	[[nodiscard]] bool getToggle(SensorToggles toggle) const;
+
+private:
+	bool magEnabled = !USE_6_AXIS;
+	bool calibrationEnabled = true;
+	bool tempGradientCalibrationEnabled = true;
+};

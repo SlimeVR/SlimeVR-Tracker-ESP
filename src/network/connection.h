@@ -28,6 +28,7 @@
 
 #include <optional>
 
+#include "../configuration/SensorConfig.h"
 #include "featureflags.h"
 #include "globals.h"
 #include "packets.h"
@@ -210,7 +211,7 @@ private:
 	// PACKET_SENSOR_INFO 15
 	void sendSensorInfo(Sensor& sensor);
 
-	void sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configType);
+	void sendAcknowledgeConfigChange(uint8_t sensorId, SensorToggles configType);
 
 	bool m_Connected = false;
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("UDPConnection");
@@ -225,7 +226,8 @@ private:
 	unsigned long m_LastPacketTimestamp;
 
 	SensorStatus m_AckedSensorState[MAX_SENSORS_COUNT] = {SensorStatus::SENSOR_OFFLINE};
-	uint16_t m_AckedSensorConfigData[MAX_SENSORS_COUNT] = {0};
+	SlimeVR::Configuration::SensorConfigBits m_AckedSensorConfigData[MAX_SENSORS_COUNT]
+		= {};
 	bool m_AckedSensorCalibration[MAX_SENSORS_COUNT] = {false};
 	unsigned long m_LastSensorInfoPacketTimestamp = 0;
 

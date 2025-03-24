@@ -135,7 +135,7 @@ struct SensorInfoPacket {
 	uint8_t sensorId{};
 	SensorStatus sensorState{};
 	SensorTypeID sensorType{};
-	BigEndian<uint16_t> sensorConfigData{};
+	BigEndian<SlimeVR::Configuration::SensorConfigBits> sensorConfigData{};
 	bool hasCompletedRestCalibration{};
 	SensorPosition sensorPosition{};
 	SensorDataType sensorDataType{};
@@ -174,7 +174,7 @@ struct TemperaturePacket {
 
 struct AcknowledgeConfigChangePacket {
 	uint8_t sensorId{};
-	BigEndian<uint16_t> configType;
+	BigEndian<SensorToggles> configType;
 };
 
 struct FlexDataPacket {
@@ -226,7 +226,7 @@ struct FloatRawImuDataInspectionPacket {
 
 struct SetConfigFlagPacket {
 	uint8_t sensorId{};
-	BigEndian<uint16_t> flagId;
+	BigEndian<SensorToggles> flag;
 	bool newState{};
 };
 

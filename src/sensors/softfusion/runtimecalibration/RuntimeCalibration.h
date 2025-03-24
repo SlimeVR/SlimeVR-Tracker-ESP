@@ -47,6 +47,7 @@ public:
 	static constexpr bool HasUpsideDownCalibration = false;
 
 	using Base = Sensor::CalibrationBase<IMU, RawSensorT, RawVectorT>;
+	using Self = RuntimeCalibrator<IMU, RawSensorT, RawVectorT>;
 
 	RuntimeCalibrator(
 		SensorFusionRestDetect& fusion,
@@ -55,9 +56,10 @@ public:
 		Logging::Logger& logger,
 		float TempTs,
 		float AScale,
-		float GScale
+		float GScale,
+		SensorToggleState& toggles
 	)
-		: Base(fusion, imu, sensorId, logger, TempTs, AScale, GScale) {
+		: Base{fusion, imu, sensorId, logger, TempTs, AScale, GScale, toggles} {
 		calibration.T_Ts = TempTs;
 		activeCalibration.T_Ts = TempTs;
 	}
@@ -74,7 +76,22 @@ public:
 	void assignCalibration(const Configuration::SensorConfig& sensorCalibration) final {
 		calibration = sensorCalibration.data.runtimeCalibration;
 		activeCalibration = sensorCalibration.data.runtimeCalibration;
-		calculateZROChange();
+		if (!toggles.getToggle(SensorToggles::CalibrationEnabled)) {
+			activeCalibration.gyroPointsCalibrated = 0;
+			for (size_t i = 0; i < 3; i++) {
+				activeCalibration.G_off1[i] = 0;
+				activeCalibration.G_off2[i] = 0;
+			}
+
+			for (size_t i = 0; i < 3; i++) {
+				activeCalibration.accelCalibrated[i] = false;
+				activeCalibration.A_off[i] = 0;
+			}
+		} else {
+			calculateZROChange();
+		}
+
+		currentStep = &nullCalibrationStep;
 	}
 
 	void begin() final {
@@ -429,6 +446,7 @@ private:
 	using Base::logger;
 	using Base::sensor;
 	using Base::sensorId;
+	using Base::toggles;
 };
 
 }  // namespace SlimeVR::Sensors::RuntimeCalibration
