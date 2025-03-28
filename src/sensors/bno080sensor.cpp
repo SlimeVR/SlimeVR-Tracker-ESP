@@ -100,6 +100,8 @@ void BNO080Sensor::motionSetup() {
 	// EXPERIMENTAL Enable periodic calibration save to permanent memory
 	imu.saveCalibrationPeriodically(true);
 	imu.requestCalibrationStatus();
+
+#if EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION
 	// EXPERIMENTAL Disable accelerometer calibration after 1 minute to prevent
 	// "stomping" bug WARNING : Executing IMU commands outside of the update loop is not
 	// allowed since the address might have changed when the timer is executed!
@@ -134,10 +136,13 @@ void BNO080Sensor::motionSetup() {
 			&imu
 		);
 	}
+#endif
 	// imu.sendCalibrateCommand(SH2_CAL_ACCEL | SH2_CAL_GYRO_IN_HAND | SH2_CAL_MAG |
 	// SH2_CAL_ON_TABLE | SH2_CAL_PLANAR);
 
 	imu.enableStabilityClassifier(500);
+	// enableRawGyro only for reading the Temperature every 1 second (0.5°C steps)
+	imu.enableRawGyro(1000);
 
 	lastReset = 0;
 	lastData = millis();
@@ -152,43 +157,46 @@ void BNO080Sensor::motionLoop() {
 	// Look for reports from the IMU
 	while (imu.dataAvailable()) {
 		hadData = true;
+		lastReset = 0;
+		lastData = millis();
+
 #if ENABLE_INSPECTION
 		{
-			int16_t rX = imu.getRawGyroX();
-			int16_t rY = imu.getRawGyroY();
-			int16_t rZ = imu.getRawGyroZ();
-			uint8_t rA = imu.getGyroAccuracy();
+			if (imu.hasNewRawAccel() && imu.hasNewRawGyro() && imu.hasNewRawMag()) {
+				int16_t aX, aY, aZ, rX, rY, rZ, mX, mY, mZ;
+				uint32_t aTs, gTs, mTs;
+				// Accuracy estimates are not send by RAW Values
+				uint8_t rA = 0, aA = 0, mA = 0;
 
-			int16_t aX = imu.getRawAccelX();
-			int16_t aY = imu.getRawAccelY();
-			int16_t aZ = imu.getRawAccelZ();
-			uint8_t aA = imu.getAccelAccuracy();
+				imu.getRawAccel(aX, aY, aZ, aTs);
+				imu.getRawGyro(rX, rY, rZ, gTs);
+				imu.getRawMag(mX, mY, mZ, mTs);
 
-			int16_t mX = imu.getRawMagX();
-			int16_t mY = imu.getRawMagY();
-			int16_t mZ = imu.getRawMagZ();
-			uint8_t mA = imu.getMagAccuracy();
+				// only send Data when we have a set of new data
 
-			networkConnection.sendInspectionRawIMUData(
-				sensorId,
-				rX,
-				rY,
-				rZ,
-				rA,
-				aX,
-				aY,
-				aZ,
-				aA,
-				mX,
-				mY,
-				mZ,
-				mA
-			);
+				networkConnection.sendInspectionRawIMUData(
+					sensorId,
+					rX,
+					rY,
+					rZ,
+					rA,
+					aX,
+					aY,
+					aZ,
+					aA,
+					mX,
+					mY,
+					mZ,
+					mA
+				);
+			}
 		}
 #endif
 
-		lastReset = 0;
-		lastData = millis();
+		if (imu.hasNewRawGyro()) {
+			lastReadTemperature = imu.getGyroTemp();
+			imu.resetNewRawGyro();
+		}
 
 		if (!isMagEnabled()) {
 			if (imu.hasNewGameQuat())  // New quaternion if context
@@ -203,6 +211,7 @@ void BNO080Sensor::motionLoop() {
 				);
 
 				setFusedRotation(nRotation);
+				continue;
 				// Leave new quaternion if context open, it's closed later
 			}
 		} else {
@@ -219,7 +228,7 @@ void BNO080Sensor::motionLoop() {
 				);
 
 				setFusedRotation(nRotation);
-
+				continue;
 				// Leave new quaternion if context open, it's closed later
 			}  // Closing new quaternion if context
 		}
@@ -229,14 +238,19 @@ void BNO080Sensor::motionLoop() {
 		{
 			uint8_t acc;
 			Vector3 nAccel;
-			imu.getLinAccel(nAccel.x, nAccel.y, nAccel.z, acc);
-			setAcceleration(nAccel);
+			// only send Accel if we have new data
+			if (imu.getNewLinAccel(nAccel.x, nAccel.y, nAccel.z, acc)) {
+				setAcceleration(nAccel);
+				continue;
+			}
 		}
 #endif  // SEND_ACCELERATION
 
 		if (imu.getTapDetected()) {
 			tap = imu.getTapDetector();
+			continue;
 		}
+
 		if (imu.hasNewCalibrationStatus()) {
 			uint8_t calibrationResponseStatus;
 			uint8_t accelCalEnabled;
@@ -265,7 +279,9 @@ void BNO080Sensor::motionLoop() {
 			// Default calibration flags for BNO085:
 			// Accel: 1, Gyro: 0, Mag: 1, Planar: 0, OnTable: 0 (OnTable can't be
 			// disabled)
+			continue;
 		}
+
 		if (m_IntPin == nullptr || imu.I2CTimedOut()) {
 			break;
 		}
@@ -349,9 +365,22 @@ void BNO080Sensor::sendData() {
 #endif
 	}
 
+	sendTempIfNeeded();
+
 	if (tap != 0) {
 		networkConnection.sendSensorTap(sensorId, tap);
 		tap = 0;
+	}
+}
+
+void BNO080Sensor::sendTempIfNeeded() {
+	uint32_t now = micros();
+	constexpr float maxSendRateHz = 2.0f;
+	constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6;
+	uint32_t elapsed = now - m_lastTemperaturePacketSent;
+	if (elapsed >= sendInterval) {
+		m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
+		networkConnection.sendTemperature(sensorId, lastReadTemperature);
 	}
 }
 
