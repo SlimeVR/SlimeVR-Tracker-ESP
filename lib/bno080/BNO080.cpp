@@ -977,6 +977,7 @@ int16_t BNO080::getRawGyroZ()
 	return (memsRawGyroZ);
 }
 
+// From https://github.com/ceva-dsp/sh2/issues/15
 // Raw gyro temperature for BNO085 uses BMI055 gyro
 // memsRawGyroTemp is in 23°C + 0.5°C/LSB
 float BNO080::getGyroTemp()
