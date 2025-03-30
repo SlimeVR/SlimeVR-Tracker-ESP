@@ -92,6 +92,7 @@ enum class SensorTypeID : uint8_t {
 #define BOARD_HARITORA 18  // Used by Haritora/SlimeTora
 #define BOARD_ES32C6DEVKITC1 19
 #define BOARD_GLOVE_IMU_SLIMEVR_DEV 20  // IMU Glove
+#define BOARD_GESTURES 21  // Used by Gestures
 #define BOARD_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 #define BAT_EXTERNAL 1
