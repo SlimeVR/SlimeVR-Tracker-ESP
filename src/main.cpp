@@ -78,7 +78,7 @@ void setup() {
 	// this, check needs to be re-added.
 	auto clearResult = I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL);
 	if (clearResult != 0) {
-		logger.error("Can't clear I2C bus, error %d", clearResult);
+		logger.warn("Can't clear I2C bus, error %d", clearResult);
 	}
 
 	// join I2C bus
