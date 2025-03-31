@@ -42,8 +42,8 @@ public:
 		uint8_t sensorId,
 		SlimeVR::Logging::Logger& logger,
 		float TempTs,
-		float AScale,
-		float GScale
+		double AScale,
+		double GScale
 	)
 		: fusion{fusion}
 		, sensor{sensor}
@@ -115,8 +115,8 @@ protected:
 	uint8_t sensorId;
 	SlimeVR::Logging::Logger& logger;
 	float TempTs;
-	float AScale;
-	float GScale;
+	double AScale;
+	double GScale;
 };
 
 }  // namespace SlimeVR::Sensor

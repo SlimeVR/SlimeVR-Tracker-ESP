@@ -49,8 +49,8 @@ public:
 		uint8_t sensorId,
 		SlimeVR::Logging::Logger& logger,
 		float TempTs,
-		float AScale,
-		float GScale
+		double AScale,
+		double GScale
 	)
 		: Base{fusion, sensor, sensorId, logger, TempTs, AScale, GScale} {
 		calibration.T_Ts = TempTs;
