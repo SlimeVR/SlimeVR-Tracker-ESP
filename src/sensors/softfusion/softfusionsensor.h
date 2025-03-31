@@ -122,7 +122,7 @@ class SoftFusionSensor : public Sensor {
 
 		m_fusion.updateAcc(accelData, calibrator.getAccelTimestep());
 
-		calibrator.provideAccelSample(xyz);
+		// calibrator.provideAccelSample(xyz);
 	}
 
 	void processGyroSample(const RawSensorT xyz[3], const sensor_real_t timeDelta) {
@@ -133,7 +133,7 @@ class SoftFusionSensor : public Sensor {
 		calibrator.scaleGyroSample(gyroData);
 		m_fusion.updateGyro(gyroData, calibrator.getGyroTimestep());
 
-		calibrator.provideGyroSample(xyz);
+		// calibrator.provideGyroSample(xyz);
 	}
 
 	void
@@ -149,7 +149,7 @@ class SoftFusionSensor : public Sensor {
 				calibrator.getTempTimestep()
 			);
 
-			calibrator.provideTempSample(lastReadTemperature);
+			// calibrator.provideTempSample(lastReadTemperature);
 		}
 	}
 
@@ -239,7 +239,7 @@ public:
 	}
 
 	void motionLoop() final {
-		calibrator.tick();
+		// calibrator.tick();
 
 		// read fifo updating fusion
 		uint32_t now = micros();
@@ -251,7 +251,7 @@ public:
 					= now
 					- (tempElapsed - static_cast<uint32_t>(DirectTempReadTs * 1e6));
 				lastReadTemperature = m_sensor.getDirectTemp();
-				calibrator.provideTempSample(lastReadTemperature);
+				// calibrator.provideTempSample(lastReadTemperature);
 				tempGradientCalculator.feedSample(
 					lastReadTemperature,
 					DirectTempReadTs
@@ -306,21 +306,21 @@ public:
 
 	void motionSetup() final {
 		if (!detected()) {
-			m_status = SensorStatus::SENSOR_ERROR;
+			m_status = SensorStatus::SENSOR_OFFLINE;
 			return;
 		}
 
 		SlimeVR::Configuration::SensorConfig sensorCalibration
 			= configuration.getSensor(sensorId);
 
+		/*
 		// If no compatible calibration data is found, the calibration data will just be
 		// zero-ed out
 		if (calibrator.calibrationMatches(sensorCalibration)) {
 			calibrator.assignCalibration(sensorCalibration);
-		} else if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::NONE) {
-			m_Logger.warn(
-				"No calibration data found for sensor %d, ignoring...",
-				sensorId
+		} else if (sensorCalibration.type ==
+		SlimeVR::Configuration::SensorConfigType::NONE) { m_Logger.warn( "No calibration
+		data found for sensor %d, ignoring...", sensorId
 			);
 			m_Logger.info("Calibration is advised");
 		} else {
@@ -330,6 +330,7 @@ public:
 			);
 			m_Logger.info("Please recalibrate");
 		}
+		*/
 
 		calibrator.begin();
 
@@ -384,11 +385,11 @@ public:
 	}
 
 	void startCalibration(int calibrationType) final {
-		calibrator.startCalibration(
-			calibrationType,
-			[&](const uint32_t seconds) { eatSamplesForSeconds(seconds); },
-			[&](const uint32_t millis) { return eatSamplesReturnLast(millis); }
-		);
+		// calibrator.startCalibration(
+		// 	calibrationType,
+		// 	[&](const uint32_t seconds) { eatSamplesForSeconds(seconds); },
+		// 	[&](const uint32_t millis) { return eatSamplesReturnLast(millis); }
+		// );
 	}
 
 	SensorStatus getSensorState() final { return m_status; }
@@ -402,8 +403,7 @@ public:
 		m_Logger,
 		getDefaultTempTs(),
 		AScale,
-		GScale
-	};
+		GScale};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();

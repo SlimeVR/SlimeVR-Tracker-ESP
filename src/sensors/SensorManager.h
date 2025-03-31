@@ -111,7 +111,10 @@ private:
 		sensorInterface->init();
 		sensorInterface->swapIn();
 
-		if (I2CSCAN::hasDevOnBus(i2cAddress)) {
+		bool foundSensor
+			= I2CSCAN::hasDevOnBus(i2cAddress) || I2CSCAN::hasDevOnBus(i2cAddress);
+
+		if (foundSensor) {
 			m_Logger
 				.trace("Sensor %d found at address 0x%02X", sensorID + 1, i2cAddress);
 		} else {
@@ -121,16 +124,18 @@ private:
 					sensorID + 1,
 					i2cAddress
 				);
-				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
+				// sensor = std::make_unique<ErroneousSensor>(sensorID,
+				// ImuType::TypeID);
 			} else {
 				m_Logger.debug(
 					"Optional sensor %d not found at address 0x%02X",
 					sensorID + 1,
 					i2cAddress
 				);
-				sensor = std::make_unique<EmptySensor>(sensorID);
+				// sensor = std::make_unique<EmptySensor>(sensorID);
 			}
-			return sensor;
+			m_Logger.debug("Trying to initialize the sensor anyways");
+			// return sensor;
 		}
 
 		sensor = std::make_unique<ImuType>(

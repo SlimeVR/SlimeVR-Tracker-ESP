@@ -41,11 +41,16 @@ struct ICM45686 : public ICM45Base<I2CImpl> {
 	static constexpr auto Type = SensorTypeID::ICM45686;
 
 	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 0.5f,
-		.biasClip = 1.0f,
-		.restThGyr = 0.5f,
-		.restThAcc = 0.196f,
+		.tauAcc = 7.171490,
+		.biasSigmaInit = 0.337976,
+		.biasForgettingTime = 352.235500,
+		.biasSigmaMotion = 0.985346,
+		.biasVerticalForgettingFactor = 0.007959,
+		.biasSigmaRest = 0.028897,
+		.restMinT = 4.648680,
+		.restFilterTau = 1.900166,
+		.restThGyr = 2.620598,
+		.restThAcc = 2.142593,
 	};
 
 	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
