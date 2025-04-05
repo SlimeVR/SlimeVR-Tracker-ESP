@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,41 +20,27 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "ADCResistanceSensor.h"
 
-#include "GlobalVars.h"
+#include <PinInterface.h>
 
-ADCResistanceSensor::ADCResistanceSensor(
-	uint8_t id,
-	float resistanceDivider,
-	PinInterface* pinInterface,
-	float smoothFactor
-)
-	: Sensor("ADCResistanceSensor", SensorTypeID::ADC_RESISTANCE, id, 0, 0.0f, nullptr)
-	, m_ResistanceDivider(resistanceDivider)
-	, m_SmoothFactor(smoothFactor)
-	, m_PinInterface(pinInterface) {
-	working = true;
-	hadData = true;
-	lastSampleMicros = micros();
+#include "ADS111xInterface.h"
+
+#pragma once
+
+namespace SlimeVR {
+
+class ADS111xPin : public PinInterface {
+public:
+	ADS111xPin(ADS111xInterface* interface, uint8_t channel);
+
+	int digitalRead() override final;
+	void pinMode(uint8_t mode) override final;
+	void digitalWrite(uint8_t val);
+	float analogRead();
+
+private:
+	ADS111xInterface* ads111x;
+	uint8_t channel;
 };
 
-void ADCResistanceSensor::motionLoop() {
-	if (micros() - lastSampleMicros < samplingStepMicros) {
-		return;
-	}
-	float value = m_PinInterface->analogRead();
-	m_Data = m_ResistanceDivider * value;
-	lastSampleMicros += samplingStepMicros;
-	hasNewSample = true;
-}
-
-void ADCResistanceSensor::sendData() {
-	if (!hasNewSample) {
-		return;
-	}
-	networkConnection.sendFlexData(sensorId, m_Data);
-	hasNewSample = false;
-}
-
-bool ADCResistanceSensor::hasNewDataToSend() { return hasNewSample; }
+};  // namespace SlimeVR

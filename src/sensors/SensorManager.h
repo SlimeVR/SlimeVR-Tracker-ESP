@@ -146,6 +146,35 @@ private:
 		return sensor;
 	}
 
+	// ADC Sensors
+	template <typename SensorType>
+	std::unique_ptr<::Sensor> buildSensor(
+		uint8_t sensorId,
+		float voltageDivider,
+		PinInterface* pinInterface,
+		float smoothingFactor
+	) {
+		m_Logger.trace(
+			"Building Sensor with: id=%d,\n\
+						voltage divider=%f, smoothing factor=%f\n\
+						interface=%s",
+			sensorId,
+			voltageDivider,
+			smoothingFactor,
+			pinInterface
+		);
+
+		std::unique_ptr<::Sensor> sensor = std::make_unique<SensorType>(
+			sensorId,
+			voltageDivider,
+			pinInterface,
+			smoothingFactor
+		);
+
+		sensor->motionSetup();
+		return sensor;
+	}
+
 	uint32_t m_LastBundleSentAtMicros = micros();
 };
 }  // namespace Sensors

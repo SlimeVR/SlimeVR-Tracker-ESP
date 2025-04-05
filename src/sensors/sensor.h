@@ -97,7 +97,7 @@ public:
 	MagnetometerStatus getMagStatus() { return magStatus; };
 	const Vector3& getAcceleration() { return acceleration; };
 	const Quat& getFusedRotation() { return fusedRotation; };
-	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
+	virtual bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
 	inline bool hasCompletedRestCalibration() { return restCalibrationComplete; }
 
 	virtual SensorDataType getDataType() {

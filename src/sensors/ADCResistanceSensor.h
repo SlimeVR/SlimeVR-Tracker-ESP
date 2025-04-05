@@ -27,7 +27,7 @@
 #include "../sensorinterface/SensorInterface.h"
 #include "sensor.h"
 
-class ADCResistanceSensor : Sensor {
+class ADCResistanceSensor : public Sensor {
 public:
 	static constexpr auto TypeID = SensorTypeID::ADC_RESISTANCE;
 
@@ -36,22 +36,12 @@ public:
 		float resistanceDivider,
 		PinInterface* pinInterface = nullptr,
 		float smoothFactor = 0.1f
-	)
-		: Sensor(
-			"ADCResistanceSensor",
-			SensorTypeID::ADC_RESISTANCE,
-			id,
-			0,
-			0.0f,
-			new SlimeVR::EmptySensorInterface()
-		)
-		, m_ResistanceDivider(resistanceDivider)
-		, m_SmoothFactor(smoothFactor)
-		, m_PinInterface(pinInterface){};
-	~ADCResistanceSensor();
+	);
+	~ADCResistanceSensor() = default;
 
-	void motionLoop() override final;
-	void sendData() override final;
+	void motionLoop() final;
+	void sendData() final;
+	bool hasNewDataToSend() final;
 
 	SensorStatus getSensorState() override final { return SensorStatus::SENSOR_OK; }
 
@@ -60,9 +50,14 @@ public:
 	};
 
 private:
+	static constexpr uint32_t samplingRateHz = 60;
+	static constexpr uint64_t samplingStepMicros = 1000'000 / samplingRateHz;
+
 	PinInterface* m_PinInterface;
 	float m_ResistanceDivider;
 	float m_SmoothFactor;
+	uint64_t lastSampleMicros = 0;
+	bool hasNewSample = false;
 
 	float m_Data = 0.0f;
 };

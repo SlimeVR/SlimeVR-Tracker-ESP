@@ -27,50 +27,47 @@
 
 #include <cstdint>
 
+#include "../logging/Logger.h"
 #include "DirectPinInterface.h"
 #include "I2CWireSensorInterface.h"
 #include "SensorInterface.h"
 
 namespace SlimeVR {
 
-class ADS111xInterface : public PinInterface {
+class ADS111xInterface {
 public:
-	explicit ADS111xInterface(
-		SensorInterface* interface,
-		PinInterface* drdy,
-		uint8_t address,
-		uint8_t channel
-	);
+	ADS111xInterface(SensorInterface* interface, uint8_t address);
 	bool init();
-	int digitalRead() override final;
-	void pinMode(uint8_t mode) override final;
-	void digitalWrite(uint8_t val);
-	float analogRead();
+
+	float read(uint8_t channel);
 
 private:
 	static constexpr uint32_t maxValue = 0x7fff;
 
 	struct Registers {
-		static constexpr uint8_t ConversionAddr = 0b00;
+		enum class Addresses : uint8_t {
+			Conversion = 0x00,
+			Config = 0x01,
+		};
 		struct Config {
-			static constexpr uint8_t Addr = 0b01;
-			uint8_t os : 1;
-			uint8_t mux : 3;
-			uint8_t pga : 3;
 			uint8_t mode : 1;
-			uint8_t dr : 3;
-			uint8_t compMode : 1;
-			uint8_t compPol : 1;
-			uint8_t compLat : 1;
+			uint8_t pga : 3;
+			uint8_t mux : 3;
+			uint8_t os : 1;
 			uint8_t compQue : 2;
+			uint8_t compLat : 1;
+			uint8_t compPol : 1;
+			uint8_t compMode : 1;
+			uint8_t dr : 3;
 		};
 	};
 	static_assert(sizeof(Registers::Config) == 2);
 
 	SensorInterface* interface;
 	uint8_t address;
-	uint8_t channel;
-	PinInterface* drdy;
+	uint8_t counter = 0;
+
+	Logging::Logger logger = Logging::Logger("ADS111x");
 };
 
 }  // namespace SlimeVR
