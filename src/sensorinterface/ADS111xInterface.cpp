@@ -31,10 +31,9 @@ ADS111xInterface::ADS111xInterface(
 	PinInterface* drdy,
 	uint8_t address
 )
-	: interface {
-	interface
-}, drdy{drdy}, address{address} {
-}
+	: interface{interface}
+	, drdy{drdy}
+	, address{address} {}
 
 bool ADS111xInterface::init() {
 	Registers::Config config{
