@@ -95,7 +95,8 @@ void SensorManager::setup() {
 	std::map<int, MCP23X17PinInterface*> mcpPinInterfaces;
 	std::map<std::tuple<int, int>, I2CWireSensorInterface*> i2cWireInterfaces;
 	std::map<std::tuple<int, int, int, int>, I2CPCASensorInterface*> pcaWireInterfaces;
-	std::map<std::tuple<SensorInterface*, int>, ADS111xInterface*> adsInterfaces;
+	std::map<std::tuple<SensorInterface*, PinInterface*, int>, ADS111xInterface*>
+		adsInterfaces;
 	std::map<std::tuple<ADS111xInterface*, int>, ADS111xPin*> adsPins;
 
 	[[maybe_unused]] auto directPin = [&](int pin) {
@@ -135,30 +136,32 @@ void SensorManager::setup() {
 		return pcaWireInterfaces[pair];
 	};
 
-	[[maybe_unused]] auto adsInterface = [&](SensorInterface* interface, int addr) {
-		auto key = std::make_tuple(interface, addr);
-		if (!adsInterfaces.contains(key)) {
-			auto ptr = new ADS111xInterface(interface, addr);
-			if (!ptr->init()) {
-				return static_cast<ADS111xInterface*>(nullptr);
-			}
-			adsInterfaces[key] = ptr;
-		}
-		return adsInterfaces[key];
-	};
+	[[maybe_unused]] auto adsInterface
+		= [&](SensorInterface* interface, PinInterface* drdy, int addr) {
+			  auto key = std::make_tuple(interface, drdy, addr);
+			  if (!adsInterfaces.contains(key)) {
+				  auto ptr = new ADS111xInterface(interface, drdy, addr);
+				  if (!ptr->init()) {
+					  return static_cast<ADS111xInterface*>(nullptr);
+				  }
+				  adsInterfaces[key] = ptr;
+			  }
+			  return adsInterfaces[key];
+		  };
 
-	[[maybe_unused]] auto adsPin = [&](SensorInterface* interface, int addr, int ch) {
-		auto ads = adsInterface(interface, addr);
-		if (ads == nullptr) {
-			return static_cast<ADS111xPin*>(nullptr);
-		}
-		auto key = std::make_tuple(ads, ch);
-		if (!adsPins.contains(key)) {
-			auto ptr = new ADS111xPin(ads, ch);
-			adsPins[key] = ptr;
-		}
-		return adsPins[key];
-	};
+	[[maybe_unused]] auto adsPin
+		= [&](SensorInterface* interface, PinInterface* drdy, int addr, int ch) {
+			  auto ads = adsInterface(interface, drdy, addr);
+			  if (ads == nullptr) {
+				  return static_cast<ADS111xPin*>(nullptr);
+			  }
+			  auto key = std::make_tuple(ads, ch);
+			  if (!adsPins.contains(key)) {
+				  auto ptr = new ADS111xPin(ads, ch);
+				  adsPins[key] = ptr;
+			  }
+			  return adsPins[key];
+		  };
 	uint8_t sensorID = 0;
 	uint8_t activeSensorCount = 0;
 	if (m_MCP.begin_I2C()) {
@@ -170,7 +173,7 @@ void SensorManager::setup() {
 #define DIRECT_WIRE(scl, sda) directWire(scl, sda)
 #define MCP_PIN(pin) mcpPin(pin)
 #define PCA_WIRE(scl, sda, addr, ch) pcaWire(scl, sda, addr, ch)
-#define ADS_PIN(interface, addr, ch) adsPin(interface, addr, ch)
+#define ADS_PIN(interface, drdy, addr, ch) adsPin(interface, drdy, addr, ch)
 
 #define SENSOR_DESC_ENTRY(ImuType, ...)                            \
 	{                                                              \
