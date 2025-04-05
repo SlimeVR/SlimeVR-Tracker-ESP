@@ -5,10 +5,8 @@
 namespace SlimeVR {
 
 ADS111xInterface::ADS111xInterface(SensorInterface* interface, uint8_t address)
-	: interface {
-	interface
-}, address{address} {
-}
+	: interface{interface}
+	, address{address} {}
 
 bool ADS111xInterface::init() {
 	interface->swapIn();
