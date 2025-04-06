@@ -45,7 +45,7 @@ public:
 		, _sclPin(sclpin){};
 	~I2CWireSensorInterface(){};
 
-	void init() override final {}
+	bool init() override final { return true; }
 	void swapIn() override final { swapI2C(_sclPin, _sdaPin); }
 	void disconnect() { disconnectI2C(); }
 
