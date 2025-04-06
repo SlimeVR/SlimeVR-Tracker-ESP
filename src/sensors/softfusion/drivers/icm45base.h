@@ -142,7 +142,7 @@ struct ICM45Base {
 		TempCall&& processTemperatureSample
 	) {
 		const auto fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
-		const auto fifo_bytes = fifo_packets * FullFifoEntrySize - 1;
+		const auto fifo_bytes = (fifo_packets - 1) * FullFifoEntrySize;
 
 		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
 		const auto bytes_to_read = std::min(
