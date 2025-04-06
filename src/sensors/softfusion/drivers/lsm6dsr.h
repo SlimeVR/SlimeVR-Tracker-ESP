@@ -27,6 +27,7 @@
 #include <array>
 #include <cstdint>
 
+#include "../magdriver.h"
 #include "lsm6ds-common.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -42,7 +43,7 @@ struct LSM6DSR : LSM6DSOutputHandler {
 
 	static constexpr float GyrFreq = 416;
 	static constexpr float AccFreq = 104;
-	static constexpr float MagFreq = 120;
+	static constexpr float MagFreq = 12.5;
 	static constexpr float TempFreq = 52;
 
 	static constexpr float GyrTs = 1.0 / GyrFreq;
@@ -95,6 +96,40 @@ struct LSM6DSR : LSM6DSOutputHandler {
 			static constexpr uint8_t value = (0b110110);  // continuous mode,
 														  // temperature at 52Hz
 		};
+		static constexpr uint8_t StatusReg = 0x1e;
+		static constexpr uint8_t StatusMasterMainPage = 0x39;
+
+		struct FuncCFGAccess {
+			static constexpr uint8_t reg = 0x01;
+			static constexpr uint8_t sensorHubAccessOn = 0b0100'0000;
+			static constexpr uint8_t sensorHubAccessOff = 0b0000'0000;
+		};
+		struct MasterConfig {
+			static constexpr uint8_t reg = 0x14;
+			static constexpr uint8_t value = 0b0100'0101;  // start master interface
+														   // odr triggered reads
+														   // disable passthrough
+														   // disable internal pull-up
+														   // 1 aux sensor
+			static constexpr uint8_t valueOneShot
+				= 0b0100'0101;  // start master interface
+								// single writes
+								// disable passthrough
+								// disable internal pull-up
+								// 1 aux sensor
+			static constexpr uint8_t valueDisable = 0b000'1000;
+		};
+		static constexpr uint8_t StatusMaster = 0x22;
+		static constexpr uint8_t SLV0Add = 0x15;
+		static constexpr uint8_t SLV0Subadd = 0x16;
+		struct SLV0Config {
+			static constexpr uint8_t reg = 0x17;
+			static constexpr uint8_t value = 0b0000'1110;  // odr of 12.5Hz
+														   // batch result in
+														   // FIFO read 6 bytes
+		};
+		static constexpr uint8_t DatawriteSLV0 = 0x21;
+		static constexpr uint8_t SensorHub1 = 0x02;
 
 		static constexpr uint8_t FifoStatus = 0x3a;
 		static constexpr uint8_t FifoData = 0x78;
@@ -121,19 +156,59 @@ struct LSM6DSR : LSM6DSOutputHandler {
 		return true;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
+	template <
+		typename AccelCall,
+		typename GyroCall,
+		typename TempCall,
+		typename MagCall>
 	void bulkRead(
 		AccelCall&& processAccelSample,
 		GyroCall&& processGyroSample,
-		TempCall&& processTempSample
+		TempCall&& processTempSample,
+		MagCall&& processMagSample
 	) {
-		LSM6DSOutputHandler::template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
-			processAccelSample,
-			processGyroSample,
-			processTempSample,
-			GyrTs,
-			AccTs,
-			TempTs
+		LSM6DSOutputHandler<I2CImpl>::
+			template bulkRead<AccelCall, GyroCall, TempCall, MagCall, Regs>(
+				processAccelSample,
+				processGyroSample,
+				processTempSample,
+				processMagSample,
+				GyrTs,
+				AccTs,
+				TempTs,
+				MagTs
+			);
+	}
+
+	void setAuxDeviceId(uint8_t id) {
+		LSM6DSOutputHandler<I2CImpl>::setAuxDeviceId(id);
+	}
+
+	void writeAux(uint8_t address, uint8_t value) {
+		LSM6DSOutputHandler<I2CImpl>::template writeAux<Regs>(address, value);
+	}
+
+	uint8_t readAux(uint8_t address) {
+		return LSM6DSOutputHandler<I2CImpl>::template readAux<Regs>(address);
+	}
+
+	template <typename T>
+	void readAux(uint8_t address, T* outData, size_t count) {
+		return LSM6DSOutputHandler<I2CImpl>::template readAux<T, Regs>(
+			address,
+			outData,
+			count
+		);
+	}
+
+	void setAuxByteWidth(MagDefinition::DataWidth width) {
+		LSM6DSOutputHandler<I2CImpl>::template setAuxByteWidth<Regs>(width);
+	}
+
+	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {
+		LSM6DSOutputHandler<I2CImpl>::template setupAuxSensorPolling<Regs>(
+			address,
+			byteWidth
 		);
 	}
 };

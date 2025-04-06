@@ -64,8 +64,10 @@ public:
 	}
 
 	using EatSamplesFn = std::function<void(const uint32_t)>;
-	using ReturnLastFn
-		= std::function<std::tuple<RawVectorT, RawVectorT, int16_t>(const uint32_t)>;
+	using ReturnLastFn = std::function<
+		std::tuple<RawVectorT, RawVectorT, int16_t, std::array<uint8_t, 9>>(
+			const uint32_t
+		)>;
 
 	virtual void startCalibration(
 		int calibrationType,

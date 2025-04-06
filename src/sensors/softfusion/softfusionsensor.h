@@ -32,6 +32,7 @@
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
+#include "magdriver.h"
 #include "motionprocessing/types.h"
 #include "sensors/softfusion/TempGradientCalculator.h"
 
@@ -155,6 +156,12 @@ class SoftFusionSensor : public Sensor {
 		}
 	}
 
+	void processMagSample(const uint8_t* rawData, const sensor_real_t timeDelta) {
+		float scaledData[3];
+		magDriver.scaleMagSample(rawData, scaledData);
+		m_fusion.updateMag(scaledData, timeDelta);
+	}
+
 	void eatSamplesForSeconds(const uint32_t seconds) {
 		const auto targetDelay = millis() + 1000 * seconds;
 		auto lastSecondsRemaining = seconds;
@@ -170,16 +177,17 @@ class SoftFusionSensor : public Sensor {
 			m_sensor.bulkRead(
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const int16_t xyz, const sensor_real_t timeDelta) {}
+				[](const int16_t xyz, const sensor_real_t timeDelta) {},
+				[](const uint8_t* raw, const sensor_real_t timeDelta) {}
 			);
 		}
 	}
 
-	std::tuple<RawVectorT, RawVectorT, int16_t> eatSamplesReturnLast(
-		const uint32_t milliseconds
-	) {
+	std::tuple<RawVectorT, RawVectorT, int16_t, std::array<uint8_t, 9>>
+	eatSamplesReturnLast(const uint32_t milliseconds) {
 		RawVectorT accel = {0};
 		RawVectorT gyro = {0};
+		std::array<uint8_t, 9> mag = {0};
 		int16_t temp = 0;
 		const auto targetDelay = millis() + milliseconds;
 		while (millis() < targetDelay) {
@@ -196,11 +204,14 @@ class SoftFusionSensor : public Sensor {
 				},
 				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
 					temp = rawTemp;
+				},
+				[&](const uint8_t* raw, const sensor_real_t timeDelta) {
+					memcpy(mag.data(), raw, sizeof(mag));
 				}
 			);
 			yield();
 		}
-		return std::make_tuple(accel, gyro, temp);
+		return std::make_tuple(accel, gyro, temp, mag);
 	}
 
 public:
@@ -296,6 +307,9 @@ public:
 				},
 				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
 					processTempSample(rawTemp, timeDelta);
+				},
+				[&](const uint8_t* raw, const sensor_real_t timeDelta) {
+					processMagSample(raw, timeDelta);
 				}
 			);
 			if (!m_fusion.isUpdated()) {
@@ -367,6 +381,19 @@ public:
 			return;
 		}
 
+		if (!USE_6_AXIS) {
+			magDriver.init(SoftFusion::AuxInterface{
+				.writeI2C = [&](uint8_t address,
+								uint8_t value) { m_sensor.writeAux(address, value); },
+				.readI2C = [&](uint8_t address) { return m_sensor.readAux(address); },
+				.setId = [&](uint8_t id) { m_sensor.setAuxDeviceId(id); },
+				.setByteWidth = [&](SoftFusion::MagDefinition::DataWidth byteWidth
+								) { m_sensor.setAuxByteWidth(byteWidth); },
+				.setupPolling
+				= [&](uint8_t address, SoftFusion::MagDefinition::DataWidth byteWidth
+				  ) { m_sensor.setupAuxSensorPolling(address, byteWidth); }});
+		}
+
 		m_status = SensorStatus::SENSOR_OK;
 		working = true;
 		[[maybe_unused]] auto lastRawSample = eatSamplesReturnLast(1000);
@@ -416,8 +443,7 @@ public:
 		m_Logger,
 		getDefaultTempTs(),
 		AScale,
-		GScale
-	};
+		GScale};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
@@ -445,6 +471,8 @@ public:
 		const I2CImpl& i2c = I2CImpl(address);
 		return checkPresent(sensorID, i2c);
 	}
+
+	[[maybe_unused]] SoftFusion::MagDriver magDriver;
 };
 
 }  // namespace SlimeVR::Sensors

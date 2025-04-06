@@ -25,9 +25,11 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstdint>
 
 #include "../../../sensorinterface/RegisterInterface.h"
+#include "../magdriver.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -53,14 +55,21 @@ struct LSM6DSOutputHandler {
 
 	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
-	template <typename AccelCall, typename GyroCall, typename TempCall, typename Regs>
+	template <
+		typename AccelCall,
+		typename GyroCall,
+		typename TempCall,
+		typename MagCall,
+		typename Regs>
 	void bulkRead(
 		AccelCall& processAccelSample,
 		GyroCall& processGyroSample,
 		TempCall& processTempSample,
+		MagCall& processMagSample,
 		float GyrTs,
 		float AccTs,
-		float TempTs
+		float TempTs,
+		float MagTs
 	) {
 		constexpr auto FIFO_SAMPLES_MASK = 0x3ff;
 		constexpr auto FIFO_OVERRUN_LATCHED_MASK = 0x800;
@@ -102,8 +111,79 @@ struct LSM6DSOutputHandler {
 				case 0x03:  // Temperature
 					processTempSample(entry.xyz[0], TempTs);
 					break;
+				case 0x0e:  // Sensor Hub Slave 0
+					processMagSample(entry.raw, MagTs);
+					break;
 			}
 		}
+	}
+
+	uint8_t currentAuxDeviceId = 0;
+	void setAuxDeviceId(uint8_t id) { currentAuxDeviceId = id; }
+
+	template <typename Regs>
+	void pollUntilSet(uint8_t address, uint8_t bits) {
+		uint8_t value;
+		while (true) {
+			value = i2c.readReg(address);
+			if ((value & bits) == bits) {
+				return;
+			}
+		}
+	}
+
+	template <typename Regs>
+	void writeAux(uint8_t address, uint8_t value) {
+		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOn);
+		i2c.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b0);
+		i2c.writeReg(Regs::SLV0Subadd, address);
+		i2c.writeReg(Regs::SLV0Config::reg, 0x00);
+		i2c.writeReg(Regs::DatawriteSLV0, value);
+		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::valueOneShot);
+		pollUntilSet<Regs>(Regs::StatusMaster, 0x80);
+		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::valueDisable);
+		delayMicroseconds(300);
+		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOff);
+	}
+
+	template <typename Regs>
+	uint8_t readAux(uint8_t address) {
+		uint8_t result;
+		readAux<uint8_t, Regs>(address, &result, 1);
+		return result;
+	}
+
+	template <typename T, typename Regs>
+	void readAux(uint8_t address, T* outData, size_t count) {
+		assert(sizeof(T) * count <= 6);
+
+		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOn);
+		i2c.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b1);
+		i2c.writeReg(Regs::SLV0Subadd, address);
+		i2c.writeReg(Regs::SLV0Config::reg, sizeof(T) * count);
+		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::valueOneShot);
+		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOff);
+		pollUntilSet<Regs>(Regs::StatusReg, 0x01);
+		pollUntilSet<Regs>(Regs::StatusMasterMainPage, 0x01);
+		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOn);
+		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::valueDisable);
+		delayMicroseconds(300);
+		i2c.readBytes(Regs::SensorHub1, sizeof(T) * count, outData);
+		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOff);
+	}
+
+	template <typename Regs>
+	void setAuxByteWidth(MagDefinition::DataWidth width) {}
+
+	template <typename Regs>
+	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {
+		assert(byteWidth == MagDefinition::DataWidth::SixByte);
+		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOn);
+		i2c.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b1);
+		i2c.writeReg(Regs::SLV0Subadd, address);
+		i2c.writeReg(Regs::SLV0Config::reg, Regs::SLV0Config::value);
+		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::value);
+		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOff);
 	}
 };
 

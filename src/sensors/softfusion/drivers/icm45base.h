@@ -25,6 +25,7 @@
 #include <cstdint>
 
 #include "../../../sensorinterface/RegisterInterface.h"
+#include "../magdriver.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -127,6 +128,47 @@ struct ICM45Base {
 		delay(35);
 	}
 
+	template <typename R>
+	void writeBankRegister() {
+		uint8_t value = R::value;
+		writeBankRegister<R>(&value, sizeof(value));
+	}
+
+	template <typename R>
+	void writeBankRegister(uint8_t value) {
+		writeBankRegister<R>(&value, sizeof(value));
+	}
+
+	template <typename R>
+	void writeBankRegister(uint8_t* value, size_t size) {
+		uint8_t data[] = {R::bank, R::reg, value[0]};
+		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
+		delayMicroseconds(4);
+		for (size_t i = 1; i < size; i++) {
+			i2c.writeReg(BaseRegs::IRegData, value[i]);
+			delayMicroseconds(4);
+		}
+	}
+
+	template <typename R>
+	uint8_t readBankRegister() {
+		uint8_t out;
+		readBankRegister<R, uint8_t>(&out, sizeof(out));
+		return out;
+	}
+
+	template <typename R, typename T>
+	void readBankRegister(T* outData, size_t count) {
+		uint8_t data[] = {R::bank, R::reg};
+		i2c.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
+		delayMicroseconds(4);
+		auto* buffer = reinterpret_cast<uint8_t*>(outData);
+		for (size_t i = 0; i < count * sizeof(T); i++) {
+			buffer[i] = i2c.readReg(BaseRegs::IRegData);
+			delayMicroseconds(4);
+		}
+	}
+
 	bool initializeBase() {
 		// perform initialization step
 		m_RegisterInterface.writeReg(
@@ -202,6 +244,28 @@ struct ICM45Base {
 			}
 		}
 	}
+
+	void setAuxByteWidth(MagDefinition::DataWidth width) {
+		i2c.writeReg(
+			BaseRegs::FifoConfig4::reg,
+			width == MagDefinition::DataWidth::SixByte
+				? BaseRegs::FifoConfig4::value6Byte
+				: BaseRegs::FifoConfig4::value9Byte
+		);
+	}
+
+	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {
+		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
+		uint8_t lengthBits
+			= byteWidth == MagDefinition::DataWidth::SixByte ? 0b0110 : 0b1001;
+		writeBankRegister<typename BaseRegs::I2CMCommand>(
+			lengthBits | (0b01 << 3) | (0b0 << 5) | (0b1 << 6)
+		);  // Read (with address) on channel 0, last transmission
+		i2c.writeReg(BaseRegs::DMPExtSenOdrCfg::reg, BaseRegs::DMPExtSenOdrCfg::value);
+		writeBankRegister<typename BaseRegs::I2CMControl>(
+			0b1 | (0b0 << 3) | (0b0 << 6)
+		);  // Start i2cm, fast mode, no restarts
+	};
 };
 
 };  // namespace SlimeVR::Sensors::SoftFusion::Drivers
