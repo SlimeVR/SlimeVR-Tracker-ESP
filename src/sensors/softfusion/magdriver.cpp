@@ -25,51 +25,73 @@
 
 namespace SlimeVR::Sensors::SoftFusion {
 
-std::vector<MagDefinition> MagDriver::mags
-	= {MagDefinition{
-		   .name = "IST8306",
+std::vector<MagDefinition> MagDriver::mags = {
+	MagDefinition{
+		.name = "IST8306",
 
-		   .deviceId = 0x19,
+		.deviceId = 0x19,
 
-		   .whoAmIReg = 0x00,
-		   .expectedWhoAmI = 0x06,
+		.whoAmIReg = 0x00,
+		.expectedWhoAmI = 0x06,
 
-		   .setup =
-			   [](const I2CWriteFunc& writeI2C) {
-				   writeI2C(0x32, 0x01);  // Soft reset
-				   delay(50);
-				   writeI2C(0x30, 0x20);  // Noise suppression: low
-				   writeI2C(0x41, 0x2d);  // Oversampling: 32X
-				   writeI2C(0x31, 0x02);  // Continuous measurement @ 10Hz
-			   },
+		.setup =
+			[](const I2CWriteFunc& writeI2C) {
+				writeI2C(0x32, 0x01);  // Soft reset
+				delay(50);
+				writeI2C(0x30, 0x20);  // Noise suppression: low
+				writeI2C(0x41, 0x2d);  // Oversampling: 32X
+				writeI2C(0x31, 0x02);  // Continuous measurement @ 10Hz
+			},
 
-		   .dataReg = 0x11,
-		   .dataWidth = MagDefinition::DataWidth::SixByte,
+		.dataReg = 0x11,
+		.dataWidth = MagDefinition::DataWidth::SixByte,
 
-		   .resolution = 0.3,
-	   },
-	   MagDefinition{
-		   .name = "QMC6309",
+		.resolution = 0.3,
+	},
+	MagDefinition{
+		.name = "QMC6309",
 
-		   .deviceId = 0x7c,
+		.deviceId = 0x7c,
 
-		   .whoAmIReg = 0x00,
-		   .expectedWhoAmI = 0x90,
+		.whoAmIReg = 0x00,
+		.expectedWhoAmI = 0x90,
 
-		   .setup =
-			   [](const I2CWriteFunc& writeI2C) {
-				   writeI2C(0x0b, 0x80);
-				   writeI2C(0x0b, 0x00);  // Soft reset
-				   delay(10);
-				   writeI2C(0x0b, 0x48);  // Set/reset on, 8g full range, 200Hz
-				   writeI2C(0x0a, 0x21);  // LP filter 2, 8x Oversampling, normal mode
-			   },
+		.setup =
+			[](const I2CWriteFunc& writeI2C) {
+				writeI2C(0x0b, 0x80);
+				writeI2C(0x0b, 0x00);  // Soft reset
+				delay(10);
+				writeI2C(0x0b, 0x48);  // Set/reset on, 8g full range, 200Hz
+				writeI2C(0x0a, 0x21);  // LP filter 2, 8x Oversampling, normal mode
+			},
 
-		   .dataReg = 0x01,
-		   .dataWidth = MagDefinition::DataWidth::SixByte,
+		.dataReg = 0x01,
+		.dataWidth = MagDefinition::DataWidth::SixByte,
 
-		   .resolution = 1 / 4000.0f  // @ 8G field range
-	   }};
+		.resolution = 1 / 4000.0f  // @ 8G field range
+	},
+	MagDefinition{
+		.name = "LIS2MDL",
+
+		.deviceId = 0x1e,
+
+		.whoAmIReg = 0x4f,
+		.expectedWhoAmI = 0x40,
+
+		.setup =
+			[](const I2CWriteFunc& writeI2C) {
+				writeI2C(0x60, 0x20);  // Soft reset
+				delay(10);
+				writeI2C(0x60, 0x8c);  // Temp compensation enabled, 100Hz, continuous
+				writeI2C(0x62, 0x01);  // Enable mag, drdy on pin
+			},
+
+		.dataReg = 0x68,
+		.dataWidth = MagDefinition::DataWidth::SixByte,
+
+		.resolution = 1.5f / 1000,
+	},
+};
 
 void MagDriver::init(AuxInterface auxInterface) {
 	for (auto& mag : mags) {
