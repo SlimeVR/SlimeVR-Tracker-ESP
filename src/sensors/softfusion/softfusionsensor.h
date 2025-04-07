@@ -76,6 +76,9 @@ class SoftFusionSensor : public Sensor {
 	float lastReadTemperature = 0;
 	uint32_t lastTempPollTime = micros();
 
+	static constexpr bool SupportAux
+		= requires(SensorType& i, uint8_t reg, uint8_t val) { i.writeAux(reg, val); };
+
 	bool detected() const {
 		const auto value
 			= m_sensor.m_RegisterInterface.readReg(SensorType::Regs::WhoAmI::reg);
@@ -381,7 +384,7 @@ public:
 			return;
 		}
 
-		if (!USE_6_AXIS) {
+		if constexpr (!USE_6_AXIS && SupportAux) {
 			magDriver.init(SoftFusion::AuxInterface{
 				.writeI2C = [&](uint8_t address,
 								uint8_t value) { m_sensor.writeAux(address, value); },

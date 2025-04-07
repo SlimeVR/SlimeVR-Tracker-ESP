@@ -125,7 +125,7 @@ struct LSM6DSOutputHandler {
 	void pollUntilSet(uint8_t address, uint8_t bits) {
 		uint8_t value;
 		while (true) {
-			value = i2c.readReg(address);
+			value = m_RegisterInterface.readReg(address);
 			if ((value & bits) == bits) {
 				return;
 			}
@@ -134,16 +134,28 @@ struct LSM6DSOutputHandler {
 
 	template <typename Regs>
 	void writeAux(uint8_t address, uint8_t value) {
-		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOn);
-		i2c.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b0);
-		i2c.writeReg(Regs::SLV0Subadd, address);
-		i2c.writeReg(Regs::SLV0Config::reg, 0x00);
-		i2c.writeReg(Regs::DatawriteSLV0, value);
-		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::valueOneShot);
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOn
+		);
+		m_RegisterInterface.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b0);
+		m_RegisterInterface.writeReg(Regs::SLV0Subadd, address);
+		m_RegisterInterface.writeReg(Regs::SLV0Config::reg, 0x00);
+		m_RegisterInterface.writeReg(Regs::DatawriteSLV0, value);
+		m_RegisterInterface.writeReg(
+			Regs::MasterConfig::reg,
+			Regs::MasterConfig::valueOneShot
+		);
 		pollUntilSet<Regs>(Regs::StatusMaster, 0x80);
-		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::valueDisable);
+		m_RegisterInterface.writeReg(
+			Regs::MasterConfig::reg,
+			Regs::MasterConfig::valueDisable
+		);
 		delayMicroseconds(300);
-		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOff);
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOff
+		);
 	}
 
 	template <typename Regs>
@@ -157,19 +169,37 @@ struct LSM6DSOutputHandler {
 	void readAux(uint8_t address, T* outData, size_t count) {
 		assert(sizeof(T) * count <= 6);
 
-		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOn);
-		i2c.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b1);
-		i2c.writeReg(Regs::SLV0Subadd, address);
-		i2c.writeReg(Regs::SLV0Config::reg, sizeof(T) * count);
-		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::valueOneShot);
-		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOff);
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOn
+		);
+		m_RegisterInterface.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b1);
+		m_RegisterInterface.writeReg(Regs::SLV0Subadd, address);
+		m_RegisterInterface.writeReg(Regs::SLV0Config::reg, sizeof(T) * count);
+		m_RegisterInterface.writeReg(
+			Regs::MasterConfig::reg,
+			Regs::MasterConfig::valueOneShot
+		);
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOff
+		);
 		pollUntilSet<Regs>(Regs::StatusReg, 0x01);
 		pollUntilSet<Regs>(Regs::StatusMasterMainPage, 0x01);
-		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOn);
-		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::valueDisable);
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOn
+		);
+		m_RegisterInterface.writeReg(
+			Regs::MasterConfig::reg,
+			Regs::MasterConfig::valueDisable
+		);
 		delayMicroseconds(300);
-		i2c.readBytes(Regs::SensorHub1, sizeof(T) * count, outData);
-		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOff);
+		m_RegisterInterface.readBytes(Regs::SensorHub1, sizeof(T) * count, outData);
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOff
+		);
 	}
 
 	template <typename Regs>
@@ -178,12 +208,21 @@ struct LSM6DSOutputHandler {
 	template <typename Regs>
 	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {
 		assert(byteWidth == MagDefinition::DataWidth::SixByte);
-		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOn);
-		i2c.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b1);
-		i2c.writeReg(Regs::SLV0Subadd, address);
-		i2c.writeReg(Regs::SLV0Config::reg, Regs::SLV0Config::value);
-		i2c.writeReg(Regs::MasterConfig::reg, Regs::MasterConfig::value);
-		i2c.writeReg(Regs::FuncCFGAccess::reg, Regs::FuncCFGAccess::sensorHubAccessOff);
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOn
+		);
+		m_RegisterInterface.writeReg(Regs::SLV0Add, currentAuxDeviceId << 1 | 0b1);
+		m_RegisterInterface.writeReg(Regs::SLV0Subadd, address);
+		m_RegisterInterface.writeReg(Regs::SLV0Config::reg, Regs::SLV0Config::value);
+		m_RegisterInterface.writeReg(
+			Regs::MasterConfig::reg,
+			Regs::MasterConfig::value
+		);
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOff
+		);
 	}
 };
 

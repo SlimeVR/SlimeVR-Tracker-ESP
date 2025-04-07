@@ -167,7 +167,7 @@ struct LSM6DSR : LSM6DSOutputHandler {
 		TempCall&& processTempSample,
 		MagCall&& processMagSample
 	) {
-		LSM6DSOutputHandler<I2CImpl>::
+		LSM6DSOutputHandler::
 			template bulkRead<AccelCall, GyroCall, TempCall, MagCall, Regs>(
 				processAccelSample,
 				processGyroSample,
@@ -180,36 +180,27 @@ struct LSM6DSR : LSM6DSOutputHandler {
 			);
 	}
 
-	void setAuxDeviceId(uint8_t id) {
-		LSM6DSOutputHandler<I2CImpl>::setAuxDeviceId(id);
-	}
+	void setAuxDeviceId(uint8_t id) { LSM6DSOutputHandler::setAuxDeviceId(id); }
 
 	void writeAux(uint8_t address, uint8_t value) {
-		LSM6DSOutputHandler<I2CImpl>::template writeAux<Regs>(address, value);
+		LSM6DSOutputHandler::template writeAux<Regs>(address, value);
 	}
 
 	uint8_t readAux(uint8_t address) {
-		return LSM6DSOutputHandler<I2CImpl>::template readAux<Regs>(address);
+		return LSM6DSOutputHandler::template readAux<Regs>(address);
 	}
 
 	template <typename T>
 	void readAux(uint8_t address, T* outData, size_t count) {
-		return LSM6DSOutputHandler<I2CImpl>::template readAux<T, Regs>(
-			address,
-			outData,
-			count
-		);
+		return LSM6DSOutputHandler::template readAux<T, Regs>(address, outData, count);
 	}
 
 	void setAuxByteWidth(MagDefinition::DataWidth width) {
-		LSM6DSOutputHandler<I2CImpl>::template setAuxByteWidth<Regs>(width);
+		LSM6DSOutputHandler::template setAuxByteWidth<Regs>(width);
 	}
 
 	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {
-		LSM6DSOutputHandler<I2CImpl>::template setupAuxSensorPolling<Regs>(
-			address,
-			byteWidth
-		);
+		LSM6DSOutputHandler::template setupAuxSensorPolling<Regs>(address, byteWidth);
 	}
 };
 

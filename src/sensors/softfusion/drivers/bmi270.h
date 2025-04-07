@@ -434,12 +434,13 @@ struct BMI270 {
 		return to_ret;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTempSample
-	) {
+	template <
+		typename AccelCall,
+		typename GyroCall,
+		typename TempCall,
+		typename MagCall>
+	void
+	bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample, TempCall&& processTempSample, MagCall&&) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		const auto bytes_to_read = std::min(

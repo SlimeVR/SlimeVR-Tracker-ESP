@@ -40,6 +40,7 @@ template <typename IMU, typename RawSensorT, typename RawVectorT>
 class SoftfusionCalibrator : public CalibrationBase<IMU, RawSensorT, RawVectorT> {
 public:
 	static constexpr bool HasUpsideDownCalibration = true;
+	static constexpr bool DirectTempReadOnly = requires(IMU& i) { i.getDirectTemp(); };
 
 	using Base = CalibrationBase<IMU, RawSensorT, RawVectorT>;
 
@@ -61,6 +62,7 @@ public:
 		const Base::EatSamplesFn& eatSamplesForSeconds,
 		const Base::ReturnLastFn& eatSamplesReturnLast
 	) final {
+		return;
 		if (calibrationType == 0) {
 			// ALL
 			calibrateSampleRate(eatSamplesForSeconds);
@@ -179,8 +181,13 @@ private:
 		auto lastSamples = eatSamplesReturnLast(GyroCalibDelaySeconds);
 		ledManager.off();
 
-		calibration.temperature = std::get<2>(lastSamples) / IMU::TemperatureSensitivity
-								+ IMU::TemperatureBias;
+		if constexpr (!DirectTempReadOnly) {
+			calibration.temperature
+				= std::get<2>(lastSamples) / IMU::TemperatureSensitivity
+				+ IMU::TemperatureBias;
+		} else {
+			calibration.temperature = sensor.getDirectTemp();
+		}
 		logger.trace("Calibration temperature: %f", calibration.temperature);
 
 		ledManager.pattern(100, 100, 3);
@@ -204,7 +211,8 @@ private:
 					sumXYZ[2] += xyz[2];
 					++sampleCount;
 				},
-				[](const int16_t rawTemp, const sensor_real_t timeDelta) {}
+				[](const int16_t rawTemp, const sensor_real_t timeDelta) {},
+				[](const uint8_t* raw, const sensor_real_t timeDelta) {}
 			);
 		}
 
@@ -322,7 +330,8 @@ private:
 					}
 				},
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const int16_t rawTemp, const sensor_real_t timeDelta) {}
+				[](const int16_t rawTemp, const sensor_real_t timeDelta) {},
+				[](const uint8_t* raw, const sensor_real_t timeDelta) {}
 			);
 		}
 		ledManager.off();
@@ -376,7 +385,8 @@ private:
 				},
 				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
 					tempSamples++;
-				}
+				},
+				[](const uint8_t* raw, const sensor_real_t timeDelta) {}
 			);
 			yield();
 		}

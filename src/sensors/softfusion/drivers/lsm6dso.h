@@ -122,20 +122,27 @@ struct LSM6DSO : LSM6DSOutputHandler {
 		return true;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
+	template <
+		typename AccelCall,
+		typename GyroCall,
+		typename TempCall,
+		typename MagCall>
 	void bulkRead(
 		AccelCall&& processAccelSample,
 		GyroCall&& processGyroSample,
-		TempCall&& processTempSample
+		TempCall&& processTempSample,
+		MagCall&& processMagSample
 	) {
 		LSM6DSOutputHandler::
-			template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
+			template bulkRead<AccelCall, GyroCall, TempCall, MagCall, Regs>(
 				processAccelSample,
 				processGyroSample,
 				processTempSample,
+				processMagSample,
 				GyrTs,
 				AccTs,
-				TempTs
+				TempTs,
+				MagTs
 			);
 	}
 };
