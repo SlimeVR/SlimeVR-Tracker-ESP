@@ -22,7 +22,10 @@
 */
 #include "I2CPCAInterface.h"
 
-void SlimeVR::I2CPCASensorInterface::init() { m_Wire.init(); }
+bool SlimeVR::I2CPCASensorInterface::init() {
+	m_Wire.init();
+	return true;
+}
 
 void SlimeVR::I2CPCASensorInterface::swapIn() {
 	m_Wire.swapIn();

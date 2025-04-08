@@ -90,13 +90,19 @@ void Sensor::resetTemperatureCalibrationState() {
 	printTemperatureCalibrationUnsupported();
 };
 
-uint16_t Sensor::getSensorConfigData() {
+SlimeVR::Configuration::SensorConfigBits Sensor::getSensorConfigData() {
 	SlimeVR::Configuration::SensorConfig sensorConfig
 		= configuration.getSensor(sensorId);
-	return SlimeVR::Configuration::configDataToNumber(
-		&sensorConfig,
-		magStatus != MagnetometerStatus::MAG_NOT_SUPPORTED
-	);
+	return SlimeVR::Configuration::SensorConfigBits{
+		.magEnabled = toggles.getToggle(SensorToggles::MagEnabled),
+		.magSupported = isFlagSupported(SensorToggles::MagEnabled),
+		.calibrationEnabled = toggles.getToggle(SensorToggles::CalibrationEnabled),
+		.calibrationSupported = isFlagSupported(SensorToggles::CalibrationEnabled),
+		.tempGradientCalibrationEnabled
+		= toggles.getToggle(SensorToggles::TempGradientCalibrationEnabled),
+		.tempGradientCalibrationSupported
+		= isFlagSupported(SensorToggles::TempGradientCalibrationEnabled),
+	};
 }
 
 const char* getIMUNameByType(SensorTypeID imuType) {
@@ -147,4 +153,15 @@ void Sensor::markRestCalibrationComplete(bool completed) {
 		m_Logger.info("Rest calibration completed");
 	}
 	restCalibrationComplete = completed;
+}
+
+void Sensor::setFlag(SensorToggles toggle, bool state) {
+	assert(isFlagSupported(toggle));
+
+	toggles.setToggle(toggle, state);
+
+	configuration.setSensorToggles(sensorId, toggles);
+	configuration.save();
+
+	motionSetup();
 }
