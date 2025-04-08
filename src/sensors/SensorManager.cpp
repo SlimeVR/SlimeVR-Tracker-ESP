@@ -23,15 +23,21 @@
 
 #include "SensorManager.h"
 
+#include <initializer_list>
 #include <map>
 #include <type_traits>
 
+#include "../sensorinterface/ADS111xInterface.h"
+#include "../sensorinterface/ADS111xPin.h"
+#include "ADCResistanceSensor.h"
+#include "PinInterface.h"
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
 #include "icm20948sensor.h"
 #include "mpu6050sensor.h"
 #include "mpu9250sensor.h"
+#include "sensorinterface/SensorInterface.h"
 #include "sensorinterface/SensorInterfaceManager.h"
 #include "sensors/softfusion/SoftfusionCalibration.h"
 #include "sensors/softfusion/runtimecalibration/RuntimeCalibration.h"
@@ -95,12 +101,47 @@ void SensorManager::setup() {
 		m_Logger.info("MCP initialized");
 	}
 
-#define NO_PIN nullptr
-#define DIRECT_PIN(pin) interfaceManager.directPinInterface().get(pin)
-#define DIRECT_WIRE(scl, sda) interfaceManager.i2cWireInterface().get(scl, sda)
-#define MCP_PIN(pin) interfaceManager.mcpPinInterface().get(pin)
-#define PCA_WIRE(scl, sda, addr, ch) \
-	interfaceManager.pcaWireInterface().get(scl, sda, addr, ch);
+	[[maybe_unused]] static constexpr auto* NO_PIN
+		= static_cast<PinInterface*>(nullptr);
+	[[maybe_unused]] static auto DIRECT_PIN = [&](uint8_t pin) constexpr {
+		return interfaceManager.directPinInterface().get(pin);
+	};
+	[[maybe_unused]] static auto DIRECT_WIRE = [&](uint8_t scl, uint8_t sda) constexpr {
+		return interfaceManager.i2cWireInterface().get(scl, sda);
+	};
+	[[maybe_unused]] static auto MCP_PIN = [&](uint8_t pin) constexpr {
+		return interfaceManager.mcpPinInterface().get(&m_MCP, pin);
+	};
+	[[maybe_unused]] static auto PCA_WIRE
+		= [&](uint8_t scl, uint8_t sda, uint8_t addr, uint8_t ch) constexpr {
+			  return interfaceManager.pcaWireInterface().get(scl, sda, addr, ch);
+		  };
+	[[maybe_unused]] static auto ADS_PIN
+		= [&](SensorInterface* interface, PinInterface* drdy, uint8_t addr, uint8_t ch
+		  ) constexpr {
+			  return interfaceManager.adsPinInterface().get(
+				  interfaceManager.adsInterface().get(interface, drdy, addr),
+				  ch
+			  );
+		  };
+	[[maybe_unused]] static auto MUX_PIN
+		= [&](PinInterface* data,
+			  std::vector<PinInterface*>&& addressPins,
+			  uint8_t channel,
+			  PinInterface* enablePin = nullptr,
+			  bool enableActiveLevel = false,
+			  bool addressActiveLevel = true) constexpr {
+			  return interfaceManager.parallelMuxPinInterface().get(
+				  interfaceManager.parallelMuxInterface().get(
+					  data,
+					  addressPins,
+					  enablePin,
+					  enableActiveLevel,
+					  addressActiveLevel
+				  ),
+				  channel
+			  );
+		  };
 
 #define SENSOR_DESC_ENTRY(ImuType, ...)                            \
 	{                                                              \
@@ -116,7 +157,7 @@ void SensorManager::setup() {
 	// Apply descriptor list and expand to entries
 	SENSOR_DESC_LIST;
 
-#define SENSOR_INFO_ENTRY(ImuID, ...) \
+#define SENSOR_INFO_ENTRY(SensorTypeID, ...) \
 	{ m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); }
 	SENSOR_INFO_LIST;
 
@@ -124,6 +165,10 @@ void SensorManager::setup() {
 #undef NO_PIN
 #undef DIRECT_PIN
 #undef DIRECT_WIRE
+#undef MCP_PIN
+#undef PCA_WIRE
+#undef ADS_PIN
+
 	m_Logger.info("%d sensor(s) configured", activeSensorCount);
 	// Check and scan i2c if no sensors active
 	if (activeSensorCount == 0) {

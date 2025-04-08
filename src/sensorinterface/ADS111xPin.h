@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,20 +20,27 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "DirectPinInterface.h"
 
-#include "../consts.h"
+#include <PinInterface.h>
 
-int DirectPinInterface::digitalRead() { return ::digitalRead(_pinNum); }
+#include "ADS111xInterface.h"
 
-void DirectPinInterface::pinMode(uint8_t mode) { ::pinMode(_pinNum, mode); }
+#pragma once
 
-void DirectPinInterface::digitalWrite(uint8_t val) { ::digitalWrite(_pinNum, val); }
+namespace SlimeVR {
 
-float DirectPinInterface::analogRead() {
-#if ESP8266
-	return static_cast<float>(::analogRead(_pinNum)) / ADCResolution;
-#elif ESP32
-	return static_cast<float>(::analogReadMilliVolts(_pinNum)) / 1000 / ADCVoltageMax;
-#endif
-}
+class ADS111xPin : public PinInterface {
+public:
+	ADS111xPin(ADS111xInterface* interface, uint8_t channel);
+
+	int digitalRead() override final;
+	void pinMode(uint8_t mode) override final;
+	void digitalWrite(uint8_t val);
+	float analogRead();
+
+private:
+	ADS111xInterface* ads111x;
+	uint8_t channel;
+};
+
+};  // namespace SlimeVR

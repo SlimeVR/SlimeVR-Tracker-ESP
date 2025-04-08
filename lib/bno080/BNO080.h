@@ -50,7 +50,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <memory>
-#include "PinInterface.h"
+#include <PinInterface.h>
 
 //The default I2C address for the BNO080 on the SparkX breakout is 0x4B. 0x4A is also possible.
 #define BNO080_DEFAULT_ADDRESS 0x4B

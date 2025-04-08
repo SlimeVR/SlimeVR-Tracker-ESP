@@ -1,17 +1,14 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
-
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
 	in the Software without restriction, including without limitation the rights
 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 	copies of the Software, and to permit persons to whom the Software is
 	furnished to do so, subject to the following conditions:
-
 	The above copyright notice and this permission notice shall be included in
 	all copies or substantial portions of the Software.
-
 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,20 +17,25 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "DirectPinInterface.h"
 
-#include "../consts.h"
+#pragma once
 
-int DirectPinInterface::digitalRead() { return ::digitalRead(_pinNum); }
+#include "PinInterface.h"
+#include "sensorinterface/ParallelMuxInterface.h"
+namespace SlimeVR {
 
-void DirectPinInterface::pinMode(uint8_t mode) { ::pinMode(_pinNum, mode); }
+class ParallelMuxPin : public PinInterface {
+public:
+	ParallelMuxPin(ParallelMuxInterface* mux, uint8_t address);
 
-void DirectPinInterface::digitalWrite(uint8_t val) { ::digitalWrite(_pinNum, val); }
+	void pinMode(uint8_t mode) final;
+	void digitalWrite(uint8_t value) final;
+	int digitalRead() final;
+	float analogRead() final;
 
-float DirectPinInterface::analogRead() {
-#if ESP8266
-	return static_cast<float>(::analogRead(_pinNum)) / ADCResolution;
-#elif ESP32
-	return static_cast<float>(::analogReadMilliVolts(_pinNum)) / 1000 / ADCVoltageMax;
-#endif
-}
+private:
+	ParallelMuxInterface* const mux;
+	uint8_t address;
+};
+
+}  // namespace SlimeVR

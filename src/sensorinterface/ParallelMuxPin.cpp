@@ -1,17 +1,14 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
-
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
 	in the Software without restriction, including without limitation the rights
 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 	copies of the Software, and to permit persons to whom the Software is
 	furnished to do so, subject to the following conditions:
-
 	The above copyright notice and this permission notice shall be included in
 	all copies or substantial portions of the Software.
-
 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,20 +17,18 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "DirectPinInterface.h"
 
-#include "../consts.h"
+#include "ParallelMuxPin.h"
 
-int DirectPinInterface::digitalRead() { return ::digitalRead(_pinNum); }
+namespace SlimeVR {
 
-void DirectPinInterface::pinMode(uint8_t mode) { ::pinMode(_pinNum, mode); }
+ParallelMuxPin::ParallelMuxPin(ParallelMuxInterface* mux, uint8_t address)
+	: mux{mux}
+	, address{address} {}
 
-void DirectPinInterface::digitalWrite(uint8_t val) { ::digitalWrite(_pinNum, val); }
+void ParallelMuxPin::pinMode(uint8_t mode) { mux->pinMode(mode); }
+void ParallelMuxPin::digitalWrite(uint8_t value) { mux->digitalWrite(address, value); }
+int ParallelMuxPin::digitalRead() { return mux->digitalRead(address); }
+float ParallelMuxPin::analogRead() { return mux->analogRead(address); }
 
-float DirectPinInterface::analogRead() {
-#if ESP8266
-	return static_cast<float>(::analogRead(_pinNum)) / ADCResolution;
-#elif ESP32
-	return static_cast<float>(::analogReadMilliVolts(_pinNum)) / 1000 / ADCVoltageMax;
-#endif
-}
+}  // namespace SlimeVR
