@@ -201,8 +201,11 @@ public:
 	bool hasNewGameQuat();
 	bool hasNewMagQuat();
 	void getQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy);
+	bool getNewQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy);
 	void getGameQuat(float &i, float &j, float &k, float &real, uint8_t &accuracy);
+	bool getNewGameQuat(float &i, float &j, float &k, float &real, uint8_t &accuracy);
 	void getMagQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy);
+	bool getNewMagQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy);
 	float getQuatI();
 	float getQuatJ();
 	float getQuatK();
@@ -218,27 +221,32 @@ public:
 	bool hasNewAccel();
 
 	void getLinAccel(float &x, float &y, float &z, uint8_t &accuracy);
+	bool getNewLinAccel(float &x, float &y, float &z, uint8_t &accuracy);
 	float getLinAccelX();
 	float getLinAccelY();
 	float getLinAccelZ();
 	uint8_t getLinAccelAccuracy();
+	bool hasNewLinAccel();
 
 	void getGyro(float &x, float &y, float &z, uint8_t &accuracy);
 	float getGyroX();
 	float getGyroY();
 	float getGyroZ();
 	uint8_t getGyroAccuracy();
+	bool hasNewGyro();
 
 	void getFastGyro(float &x, float &y, float &z);
 	float getFastGyroX();
 	float getFastGyroY();
 	float getFastGyroZ();
+	bool hasNewFastGyro();
 
 	void getMag(float &x, float &y, float &z, uint8_t &accuracy);
 	float getMagX();
 	float getMagY();
 	float getMagZ();
 	uint8_t getMagAccuracy();
+	bool hasNewMag();
 
 	void endCalibration();
 	void saveCalibration();
@@ -257,14 +265,25 @@ public:
 	int16_t getRawAccelX();
 	int16_t getRawAccelY();
 	int16_t getRawAccelZ();
+	void getRawAccel(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp);
+	bool getNewRawAccel(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp);
+	bool hasNewRawAccel();
 
 	int16_t getRawGyroX();
 	int16_t getRawGyroY();
 	int16_t getRawGyroZ();
+	float getGyroTemp();
+	void getRawGyro(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp);
+	bool getNewRawGyro(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp);
+	bool hasNewRawGyro();
+	void resetNewRawGyro();
 
 	int16_t getRawMagX();
 	int16_t getRawMagY();
 	int16_t getRawMagZ();
+	void getRawMag(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp);
+	bool getNewRawMag(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp);
+	bool hasNewRawMag();
 
 	float getRoll();
 	float getPitch();
@@ -326,7 +345,8 @@ private:
 	uint16_t rawQuatI, rawQuatJ, rawQuatK, rawQuatReal, rawQuatRadianAccuracy, quatAccuracy;
 	uint16_t rawGameQuatI, rawGameQuatJ, rawGameQuatK, rawGameQuatReal, quatGameAccuracy;
 	uint16_t rawMagQuatI, rawMagQuatJ, rawMagQuatK, rawMagQuatReal, rawMagQuatRadianAccuracy, quatMagAccuracy;
-	bool hasNewQuaternion, hasNewGameQuaternion, hasNewMagQuaternion, hasNewAccel_;
+	bool hasNewQuaternion, hasNewGameQuaternion, hasNewMagQuaternion, hasNewAccel_, hasNewLinAccel_, hasNewFastGyro_;
+	bool hasNewMag_, hasNewGyro_;
 	uint16_t rawFastGyroX, rawFastGyroY, rawFastGyroZ;
 	uint8_t tapDetector;
 	bool hasNewTap;
@@ -337,8 +357,12 @@ private:
 	uint8_t *_activityConfidences;						  //Array that store the confidences of the 9 possible activities
 	uint8_t calibrationStatus;							  //Byte R0 of ME Calibration Response
 	uint16_t memsRawAccelX, memsRawAccelY, memsRawAccelZ; //Raw readings from MEMS sensor
-	uint16_t memsRawGyroX, memsRawGyroY, memsRawGyroZ;	//Raw readings from MEMS sensor
+	uint16_t memsRawGyroX, memsRawGyroY, memsRawGyroZ, memsRawGyroTemp;	//Raw readings from MEMS sensor
 	uint16_t memsRawMagX, memsRawMagY, memsRawMagZ;		  //Raw readings from MEMS sensor
+	uint32_t memsAccelTimeStamp, memsGyroTimeStamp, memsMagTimeStamp;  //Timestamp of MEMS sensor reading
+	bool hasNewRawAccel_ = false;
+	bool hasNewRawGyro_= false;
+	bool hasNewRawMag_ = false;
 
 	//These Q values are defined in the datasheet but can also be obtained by querying the meta data records
 	//See the read metadata example for more info

@@ -80,4 +80,9 @@
 #define SENSOR_INFO_LIST
 #endif
 
+// Experimental features
+#ifndef EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION
+#define EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION true
+#endif
+
 #endif  // SLIMEVR_GLOBALS_H_

@@ -285,12 +285,13 @@ uint16_t BNO080::parseCommandReport(void)
 //shtpData[5 + 0]: Then a feature report ID (0x01 for Accel, 0x05 for Rotation Vector)
 //shtpData[5 + 1]: Sequence number (See 6.5.18.2)
 //shtpData[5 + 2]: Status
-//shtpData[3]: Delay
-//shtpData[4:5]: i/accel x/gyro x/etc
-//shtpData[6:7]: j/accel y/gyro y/etc
-//shtpData[8:9]: k/accel z/gyro z/etc
-//shtpData[10:11]: real/gyro temp/etc
-//shtpData[12:13]: Accuracy estimate
+//shtpData[5 + 3]: Delay
+//shtpData[5 + 4:5]: i/accel x/gyro x/etc
+//shtpData[5 + 6:7]: j/accel y/gyro y/etc
+//shtpData[5 + 8:9]: k/accel z/gyro z/etc
+//shtpData[5 + 10:11]: real/gyro temp/etc
+//shtpData[5 + 12:13]: Accuracy estimate: Raw Accel/Gyro/Mag Timestap part1
+//shtpData[5 + 14:15]: Raw Accel/Gyro/Mag Timestap part2
 uint16_t BNO080::parseInputReport(void)
 {
 	//Calculate the number of data bytes in this packet
@@ -311,7 +312,7 @@ uint16_t BNO080::parseInputReport(void)
 		rawFastGyroX = (uint16_t)shtpData[9] << 8 | shtpData[8];
 		rawFastGyroY = (uint16_t)shtpData[11] << 8 | shtpData[10];
 		rawFastGyroZ = (uint16_t)shtpData[13] << 8 | shtpData[12];
-
+		hasNewFastGyro_ = true;
 		return SENSOR_REPORTID_GYRO_INTEGRATED_ROTATION_VECTOR;
 	}
 
@@ -321,6 +322,7 @@ uint16_t BNO080::parseInputReport(void)
 	uint16_t data3 = (uint16_t)shtpData[5 + 9] << 8 | shtpData[5 + 8];
 	uint16_t data4 = 0;
 	uint16_t data5 = 0; //We would need to change this to uin32_t to capture time stamp value on Raw Accel/Gyro/Mag reports
+	uint32_t memstimeStamp = 0; //Timestamp of MEMS sensor reading
 
 	if (dataLength - 5 > 9)
 	{
@@ -329,6 +331,11 @@ uint16_t BNO080::parseInputReport(void)
 	if (dataLength - 5 > 11)
 	{
 		data5 = (uint16_t)shtpData[5 + 13] << 8 | shtpData[5 + 12];
+	}
+	//only for Raw Reports 0x14, 0x15, 0x16
+	if (dataLength - 5 >= 15)
+	{
+		memstimeStamp = ((uint32_t)shtpData[5 + 15] << (8 * 3)) | ((uint32_t)shtpData[5 + 14] << (8 * 2)) | ((uint32_t)shtpData[5 + 13] << (8 * 1)) | ((uint32_t)shtpData[5 + 12] << (8 * 0));
 	}
 
 	//Store these generic values to their proper global variable
@@ -342,6 +349,7 @@ uint16_t BNO080::parseInputReport(void)
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_LINEAR_ACCELERATION)
 	{
+		hasNewLinAccel_ = true;
 		accelLinAccuracy = status;
 		rawLinAccelX = data1;
 		rawLinAccelY = data2;
@@ -349,6 +357,7 @@ uint16_t BNO080::parseInputReport(void)
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_GYROSCOPE)
 	{
+		hasNewGyro_ = true;
 		gyroAccuracy = status;
 		rawGyroX = data1;
 		rawGyroY = data2;
@@ -356,6 +365,7 @@ uint16_t BNO080::parseInputReport(void)
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_MAGNETIC_FIELD)
 	{
+		hasNewMag_ = true;
 		magAccuracy = status;
 		rawMagX = data1;
 		rawMagY = data2;
@@ -418,21 +428,28 @@ uint16_t BNO080::parseInputReport(void)
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_RAW_ACCELEROMETER)
 	{
+		hasNewRawAccel_ = true;
 		memsRawAccelX = data1;
 		memsRawAccelY = data2;
 		memsRawAccelZ = data3;
+		memsAccelTimeStamp = memstimeStamp;
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_RAW_GYROSCOPE)
 	{
+		hasNewRawGyro_ = true;
 		memsRawGyroX = data1;
 		memsRawGyroY = data2;
 		memsRawGyroZ = data3;
+		memsRawGyroTemp = data4;
+		memsGyroTimeStamp = memstimeStamp;
 	}
 	else if (shtpData[5] == SENSOR_REPORTID_RAW_MAGNETOMETER)
 	{
+		hasNewRawMag_ = true;
 		memsRawMagX = data1;
 		memsRawMagY = data2;
 		memsRawMagZ = data3;
+		memsMagTimeStamp = memstimeStamp;
 	}
 	else if (shtpData[5] == SHTP_REPORT_COMMAND_RESPONSE)
 	{
@@ -552,6 +569,16 @@ void BNO080::getQuat(float &i, float &j, float &k, float &real, float &radAccura
 	hasNewQuaternion = false;
 }
 
+bool BNO080::getNewQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy)
+{
+	if (hasNewQuaternion)
+	{
+		getQuat(i, j, k, real, radAccuracy, accuracy);
+		return true;
+	}
+	return false;
+}
+
 void BNO080::getGameQuat(float &i, float &j, float &k, float &real, uint8_t &accuracy)
 {
 	i = qToFloat(rawGameQuatI, rotationVector_Q1);
@@ -560,6 +587,16 @@ void BNO080::getGameQuat(float &i, float &j, float &k, float &real, uint8_t &acc
 	real = qToFloat(rawGameQuatReal, rotationVector_Q1);
 	accuracy = quatGameAccuracy;
 	hasNewGameQuaternion = false;
+}
+
+bool BNO080::getNewGameQuat(float &i, float &j, float &k, float &real, uint8_t &accuracy)
+{
+	if (hasNewGameQuaternion)
+	{
+		getGameQuat(i, j, k, real, accuracy);
+		return true;
+	}
+	return false;
 }
 
 void BNO080::getMagQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy)
@@ -571,6 +608,16 @@ void BNO080::getMagQuat(float &i, float &j, float &k, float &real, float &radAcc
 	radAccuracy = qToFloat(rawMagQuatRadianAccuracy, rotationVector_Q1);
 	accuracy = quatMagAccuracy;
 	hasNewMagQuaternion = false;
+}
+
+bool BNO080::getNewMagQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy)
+{
+	if (hasNewMagQuaternion)
+	{
+		getMagQuat(i, j, k, real, radAccuracy, accuracy);
+		return true;
+	}
+	return false;
 }
 
 bool BNO080::hasNewQuat() {
@@ -678,6 +725,21 @@ void BNO080::getLinAccel(float &x, float &y, float &z, uint8_t &accuracy)
 	y = qToFloat(rawLinAccelY, linear_accelerometer_Q1);
 	z = qToFloat(rawLinAccelZ, linear_accelerometer_Q1);
 	accuracy = accelLinAccuracy;
+	hasNewLinAccel_ = false;
+}
+
+bool BNO080::getNewLinAccel(float &x, float &y, float &z, uint8_t &accuracy)
+{
+	if (hasNewLinAccel_)
+	{
+		getLinAccel(x, y, z, accuracy);
+		return true;
+	}
+	return false;
+}
+
+bool BNO080::hasNewLinAccel() {
+	return hasNewLinAccel_;
 }
 
 //Return the acceleration component
@@ -715,6 +777,7 @@ void BNO080::getGyro(float &x, float &y, float &z, uint8_t &accuracy)
 	y = qToFloat(rawGyroY, gyro_Q1);
 	z = qToFloat(rawGyroZ, gyro_Q1);
 	accuracy = gyroAccuracy;
+	hasNewGyro_ = false;
 }
 
 //Return the gyro component
@@ -744,6 +807,10 @@ uint8_t BNO080::getGyroAccuracy()
 	return (gyroAccuracy);
 }
 
+bool BNO080::hasNewGyro() {
+	return hasNewGyro_;
+}
+
 //Gets the full mag vector
 //x,y,z output floats
 void BNO080::getMag(float &x, float &y, float &z, uint8_t &accuracy)
@@ -752,6 +819,7 @@ void BNO080::getMag(float &x, float &y, float &z, uint8_t &accuracy)
 	y = qToFloat(rawMagY, magnetometer_Q1);
 	z = qToFloat(rawMagZ, magnetometer_Q1);
 	accuracy = magAccuracy;
+	hasNewMag_=false;
 }
 
 //Return the magnetometer component
@@ -779,6 +847,10 @@ float BNO080::getMagZ()
 uint8_t BNO080::getMagAccuracy()
 {
 	return (magAccuracy);
+}
+
+bool BNO080::hasNewMag() {
+	return hasNewMag_;
 }
 
 //Gets the full high rate gyro vector
@@ -809,6 +881,10 @@ float BNO080::getFastGyroZ()
 {
 	float gyro = qToFloat(rawFastGyroZ, angular_velocity_Q1);
 	return (gyro);
+}
+
+bool BNO080::hasNewFastGyro() {
+	return hasNewFastGyro_;
 }
 
 //Return the tap detector
@@ -864,6 +940,29 @@ int16_t BNO080::getRawAccelZ()
 	return (memsRawAccelZ);
 }
 
+void BNO080::getRawAccel(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp)
+{
+	x = memsRawAccelX;
+	y = memsRawAccelY;
+	z = memsRawAccelZ;
+	timeStamp = memsAccelTimeStamp;
+	hasNewRawAccel_ = false;
+}
+
+bool BNO080::getNewRawAccel(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp)
+{
+	if (hasNewRawAccel_)
+	{
+		getRawAccel(x, y, z, timeStamp);
+		return true;
+	}
+	return false;
+}
+
+bool BNO080::hasNewRawAccel() {
+	return hasNewRawAccel_;
+}
+
 //Return raw mems value for the gyro
 int16_t BNO080::getRawGyroX()
 {
@@ -878,6 +977,42 @@ int16_t BNO080::getRawGyroZ()
 	return (memsRawGyroZ);
 }
 
+// From https://github.com/ceva-dsp/sh2/issues/15
+// Raw gyro temperature for BNO085 uses BMI055 gyro
+// memsRawGyroTemp is in 23°C + 0.5°C/LSB
+float BNO080::getGyroTemp()
+{
+	return (23.0 + (0.5f * memsRawGyroTemp));
+}
+
+void BNO080::resetNewRawGyro()
+{
+	hasNewRawGyro_ = false;
+}
+
+void BNO080::getRawGyro(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp)
+{
+	x = memsRawGyroX;
+	y = memsRawGyroY;
+	z = memsRawGyroZ;
+	timeStamp = memsGyroTimeStamp;
+	hasNewRawGyro_ = false;
+}
+
+bool BNO080::getNewRawGyro(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp)
+{
+	if (hasNewRawGyro_)
+	{
+		getRawGyro(x, y, z, timeStamp);
+		return true;
+	}
+	return false;
+}
+
+bool BNO080::hasNewRawGyro() {
+	return hasNewRawGyro_;
+}
+
 //Return raw mems value for the mag
 int16_t BNO080::getRawMagX()
 {
@@ -890,6 +1025,29 @@ int16_t BNO080::getRawMagY()
 int16_t BNO080::getRawMagZ()
 {
 	return (memsRawMagZ);
+}
+
+void BNO080::getRawMag(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp)
+{
+	x = memsRawMagX;
+	y = memsRawMagY;
+	z = memsRawMagZ;
+	timeStamp = memsMagTimeStamp;
+	hasNewRawMag_ = false;
+}
+
+bool BNO080::getNewRawMag(int16_t &x, int16_t &y, int16_t &z, uint32_t &timeStamp)
+{
+	if (hasNewRawMag_)
+	{
+		getRawMag(x, y, z, timeStamp);
+		return true;
+	}
+	return false;
+}
+
+bool BNO080::hasNewRawMag() {
+	return hasNewRawMag_;
 }
 
 //Given a record ID, read the Q1 value from the metaData record in the FRS (ya, it's complicated)
