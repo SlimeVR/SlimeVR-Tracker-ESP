@@ -26,6 +26,7 @@
 
 class PinInterface {
 public:
+	virtual bool init() { return true; };
 	virtual int digitalRead() = 0;
 	virtual void pinMode(uint8_t mode) = 0;
 	virtual void digitalWrite(uint8_t val) = 0;

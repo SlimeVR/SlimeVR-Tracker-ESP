@@ -31,9 +31,9 @@ ADCResistanceSensor::ADCResistanceSensor(
 	float smoothFactor
 )
 	: Sensor("ADCResistanceSensor", SensorTypeID::ADC_RESISTANCE, id, 0, 0.0f, nullptr)
+	, m_PinInterface(pinInterface)
 	, m_ResistanceDivider(resistanceDivider)
-	, m_SmoothFactor(smoothFactor)
-	, m_PinInterface(pinInterface) {
+	, m_SmoothFactor(smoothFactor) {
 	working = true;
 	hadData = true;
 	lastSampleMicros = micros();
