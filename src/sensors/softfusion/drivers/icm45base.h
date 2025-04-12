@@ -39,7 +39,7 @@ struct ICM45Base {
 
 	static constexpr float GyrTs = 1.0 / 409.6;
 	static constexpr float AccTs = 1.0 / 102.4;
-	static constexpr float TempTs = 1.0 / 409.6;
+	static constexpr float TempTs = 1.0 / 204.8; // was 409.6, reduced for lowering CPU pressure.
 
 	static constexpr float MagTs = 1.0 / 100;
 
