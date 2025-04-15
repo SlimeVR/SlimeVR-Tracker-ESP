@@ -82,9 +82,8 @@ struct ICM45Base {
 		struct FifoConfig0 {
 			static constexpr uint8_t reg = 0x1d;
 			static constexpr uint8_t value
-				= (0b01 << 6) | (0b011111);  // stream to FIFO mode, FIFO depth
-											 // 8k bytes <-- this disables all APEX
-											 // features, but we don't need them
+				= (0b10 << 6) | (0b011111);  // Stop-on-full FIFO mode -- See AN-000364 section 2.16 for why this is required
+											 // FIFO depth = 8k bytes, this disables all APEX features, but we don't need them
 		};
 
 		struct FifoConfig3 {
@@ -142,7 +141,7 @@ struct ICM45Base {
 		TempCall&& processTemperatureSample
 	) {
 		const auto fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
-		const auto fifo_bytes = (fifo_packets - 1) * FullFifoEntrySize;
+		const auto fifo_bytes = fifo_packets * FullFifoEntrySize;
 
 		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
 		const auto bytes_to_read = std::min(
