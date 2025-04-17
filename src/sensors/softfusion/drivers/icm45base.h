@@ -143,7 +143,7 @@ struct ICM45Base {
 		const auto fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
 		const auto fifo_bytes = fifo_packets * FullFifoEntrySize;
 
-		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
+		std::array<uint8_t, FullFifoEntrySize * 6> read_buffer;  // max 6 readings
 		const auto bytes_to_read = std::min(
 									   static_cast<size_t>(read_buffer.size()),
 									   static_cast<size_t>(fifo_bytes)
