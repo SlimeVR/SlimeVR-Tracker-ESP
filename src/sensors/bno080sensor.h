@@ -61,6 +61,7 @@ public:
 	void startCalibration(int calibrationType) override final;
 	SensorStatus getSensorState() override final;
 	bool isFlagSupported(SensorToggles toggle) const final;
+	void sendTempIfNeeded();
 
 protected:
 	// forwarding constructor
@@ -94,6 +95,11 @@ private:
 	float magneticAccuracyEstimate = 999;
 	bool newMagData = false;
 	bool configured = false;
+
+	// Temperature reading
+	float lastReadTemperature = 0;
+	uint32_t lastTempPollTime = micros();
+	uint32_t m_lastTemperaturePacketSent = 0;
 };
 
 class BNO085Sensor : public BNO080Sensor {
