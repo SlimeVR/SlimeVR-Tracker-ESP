@@ -514,9 +514,11 @@ void Connection::maybeRequestFeatureFlags() {
 }
 
 bool Connection::isSensorStateUpdated(int i, std::unique_ptr<Sensor>& sensor) {
-	return m_AckedSensorState[i] != sensor->getSensorState()
-		|| m_AckedSensorCalibration[i] != sensor->hasCompletedRestCalibration()
-		|| m_AckedSensorConfigData[i] != sensor->getSensorConfigData();
+	return (m_AckedSensorState[i] != sensor->getSensorState()
+			|| m_AckedSensorCalibration[i] != sensor->hasCompletedRestCalibration()
+			|| m_AckedSensorConfigData[i] != sensor->getSensorConfigData())
+		&& sensor->getSensorType() != SensorTypeID::Unknown
+		&& sensor->getSensorType() != SensorTypeID::Empty;
 }
 
 void Connection::searchForServer() {
