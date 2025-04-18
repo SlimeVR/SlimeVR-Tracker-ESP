@@ -141,31 +141,41 @@ struct ICM45Base {
 		GyroCall&& processGyroSample,
 		TempCall&& processTemperatureSample
 	) {
-		const auto fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
-		const auto fifo_bytes = (fifo_packets - 1) * FullFifoEntrySize;
+		// Allocate statically so that it does not take up stack space, which
+		// can result in stack overflow and panic
+		constexpr size_t MaxReadings = 8;
+		static std::array<uint8_t, FullFifoEntrySize * MaxReadings> read_buffer;
 
-		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
-		const auto bytes_to_read = std::min(
-									   static_cast<size_t>(read_buffer.size()),
-									   static_cast<size_t>(fifo_bytes)
-								   )
-								 / FullFifoEntrySize * FullFifoEntrySize;
+		constexpr int16_t InvalidReading = -32768;
+
+		size_t fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
+		fifo_packets = std::min(fifo_packets, MaxReadings);
+
+		size_t bytes_to_read = fifo_packets * FullFifoEntrySize;
 		i2c.readBytes(BaseRegs::FifoData, bytes_to_read, read_buffer.data());
+
 		for (auto i = 0u; i < bytes_to_read; i += FullFifoEntrySize) {
+			uint8_t header = read_buffer[i];
+			bool has_gyro = header & (1 << 5);
+			bool has_accel = header & (1 << 6);
+
 			FifoEntryAligned entry;
 			memcpy(
 				&entry,
 				&read_buffer[i + 0x1],
 				sizeof(FifoEntryAligned)
 			);  // skip fifo header
-			const int32_t gyroData[3]{
-				static_cast<int32_t>(entry.gyro[0]) << 4 | (entry.lsb[0] & 0xf),
-				static_cast<int32_t>(entry.gyro[1]) << 4 | (entry.lsb[1] & 0xf),
-				static_cast<int32_t>(entry.gyro[2]) << 4 | (entry.lsb[2] & 0xf),
-			};
-			processGyroSample(gyroData, GyrTs);
 
-			if (entry.accel[0] != -32768) {
+			if (has_gyro && entry.gyro[0] != InvalidReading) {
+				const int32_t gyroData[3]{
+					static_cast<int32_t>(entry.gyro[0]) << 4 | (entry.lsb[0] & 0xf),
+					static_cast<int32_t>(entry.gyro[1]) << 4 | (entry.lsb[1] & 0xf),
+					static_cast<int32_t>(entry.gyro[2]) << 4 | (entry.lsb[2] & 0xf),
+				};
+				processGyroSample(gyroData, GyrTs);
+			}
+
+			if (has_accel && entry.accel[0] != InvalidReading) {
 				const int32_t accelData[3]{
 					static_cast<int32_t>(entry.accel[0]) << 4
 						| (static_cast<int32_t>((entry.lsb[0]) & 0xf0) >> 4),
