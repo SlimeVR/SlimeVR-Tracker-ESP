@@ -408,6 +408,12 @@ public:
 
 	SensorStatus getSensorState() final { return m_status; }
 
+	void deinitialize() override final {
+		if constexpr(requires { m_sensor.deinitialize(); }) {
+			m_sensor.deinitialize();
+		}
+	}
+
 	SensorFusionRestDetect m_fusion;
 	imu m_sensor;
 	Calib calibrator{
