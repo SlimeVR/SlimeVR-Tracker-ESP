@@ -27,19 +27,9 @@
 #include <I2Cdev.h>
 #include <i2cscan.h>
 
+#include "consts.h"
 #include "globals.h"
 #include "logging/Logger.h"
-
-#if ESP8266
-#define ADCResolution 1023.0  // ESP8266 has 10bit ADC
-#define ADCVoltageMax 1.0  // ESP8266 input is 1.0 V = 1023.0
-#endif
-#ifndef ADCResolution
-#define ADCResolution 1023.0
-#endif
-#ifndef ADCVoltageMax
-#define ADCVoltageMax 1.0
-#endif
 
 #ifndef BATTERY_SHIELD_RESISTANCE
 #define BATTERY_SHIELD_RESISTANCE 180.0

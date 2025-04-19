@@ -24,7 +24,8 @@
 #define _H_MCP23X17PinInterface_
 
 #include <Adafruit_MCP23X17.h>
-#include <PinInterface.h>
+
+#include "PinInterface.h"
 
 #define MCP_GPA0 0
 #define MCP_GPA1 1
@@ -55,6 +56,7 @@ public:
 	int digitalRead() override final;
 	void pinMode(uint8_t mode) override final;
 	void digitalWrite(uint8_t val) override final;
+	float analogRead() override final;
 
 private:
 	Adafruit_MCP23X17* _mcp23x17;

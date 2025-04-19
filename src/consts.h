@@ -68,6 +68,7 @@ enum class SensorTypeID : uint8_t {
 #define IMU_MPU6050_SF SoftFusionMPU6050
 #define IMU_ICM45686 SoftFusionICM45686
 #define IMU_ICM45605 SoftFusionICM45605
+#define SENSOR_ADC ADCResistanceSensor
 
 #define IMU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
@@ -172,6 +173,21 @@ enum class TrackerType : uint8_t {
 #endif
 
 #define CURRENT_CONFIGURATION_VERSION 1
+
+#if ESP8266
+#define ADCResolution 1023.0  // ESP8266 has 10bit ADC
+#define ADCVoltageMax 1.0  // ESP8266 input is 1.0 V = 1023.0
+#elif ESP32
+#define ADCResolution 4095.0  // ESP32 has 12bit ADC
+#define ADCVoltageMax 2.5  // ESP32 input is 2.5 V = 4095.0 by default
+#endif
+
+#ifndef ADCResolution
+#define ADCResolution 1023.0
+#endif
+#ifndef ADCVoltageMax
+#define ADCVoltageMax 1.0
+#endif
 
 #include "sensors/sensorposition.h"
 

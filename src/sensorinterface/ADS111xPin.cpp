@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,20 +20,24 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "DirectPinInterface.h"
+#include "ADS111xPin.h"
 
-#include "../consts.h"
+#include <cassert>
 
-int DirectPinInterface::digitalRead() { return ::digitalRead(_pinNum); }
+namespace SlimeVR {
 
-void DirectPinInterface::pinMode(uint8_t mode) { ::pinMode(_pinNum, mode); }
+ADS111xPin::ADS111xPin(ADS111xInterface* interface, uint8_t channel)
+	: ads111x{interface}
+	, channel{channel} {
+	assert(channel < 4);
 
-void DirectPinInterface::digitalWrite(uint8_t val) { ::digitalWrite(_pinNum, val); }
-
-float DirectPinInterface::analogRead() {
-#if ESP8266
-	return static_cast<float>(::analogRead(_pinNum)) / ADCResolution;
-#elif ESP32
-	return static_cast<float>(::analogReadMilliVolts(_pinNum)) / 1000 / ADCVoltageMax;
-#endif
+	interface->registerChannel(channel);
 }
+
+int ADS111xPin::digitalRead() { return analogRead() >= 0.5f; }
+void ADS111xPin::pinMode(uint8_t mode) {}
+void ADS111xPin::digitalWrite(uint8_t val) {}
+
+float ADS111xPin::analogRead() { return ads111x->read(channel); }
+
+};  // namespace SlimeVR
