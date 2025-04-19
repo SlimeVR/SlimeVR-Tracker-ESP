@@ -42,8 +42,9 @@ public:
 		uint8_t sensorId,
 		SlimeVR::Logging::Logger& logger,
 		float TempTs,
-		double AScale,
-		double GScale
+		float AScale,
+		float GScale,
+		SensorToggleState& toggles
 	)
 		: fusion{fusion}
 		, sensor{sensor}
@@ -51,7 +52,8 @@ public:
 		, logger{logger}
 		, TempTs{TempTs}
 		, AScale{AScale}
-		, GScale{GScale} {}
+		, GScale{GScale}
+		, toggles{toggles} {}
 
 	static constexpr bool HasMotionlessCalib
 		= requires(IMU& i) { typename IMU::MotionlessCalibrationData; };
@@ -115,8 +117,9 @@ protected:
 	uint8_t sensorId;
 	SlimeVR::Logging::Logger& logger;
 	float TempTs;
-	double AScale;
-	double GScale;
+	float AScale;
+	float GScale;
+	SensorToggleState& toggles;
 };
 
 }  // namespace SlimeVR::Sensor

@@ -333,7 +333,10 @@ void Connection::sendFeatureFlags() {
 
 // PACKET_ACKNOWLEDGE_CONFIG_CHANGE 24
 
-void Connection::sendAcknowledgeConfigChange(uint8_t sensorId, uint16_t configType) {
+void Connection::sendAcknowledgeConfigChange(
+	uint8_t sensorId,
+	SensorToggles configType
+) {
 	MUST(m_Connected);
 	MUST(sendPacket(
 		SendPacketType::AcknowledgeConfigChange,
@@ -511,9 +514,11 @@ void Connection::maybeRequestFeatureFlags() {
 }
 
 bool Connection::isSensorStateUpdated(int i, std::unique_ptr<Sensor>& sensor) {
-	return m_AckedSensorState[i] != sensor->getSensorState()
-		|| m_AckedSensorCalibration[i] != sensor->hasCompletedRestCalibration()
-		|| m_AckedSensorConfigData[i] != sensor->getSensorConfigData();
+	return (m_AckedSensorState[i] != sensor->getSensorState()
+			|| m_AckedSensorCalibration[i] != sensor->hasCompletedRestCalibration()
+			|| m_AckedSensorConfigData[i] != sensor->getSensorConfigData())
+		&& sensor->getSensorType() != SensorTypeID::Unknown
+		&& sensor->getSensorType() != SensorTypeID::Empty;
 }
 
 void Connection::searchForServer() {
@@ -591,7 +596,11 @@ void Connection::reset() {
 		m_AckedSensorCalibration + MAX_SENSORS_COUNT,
 		false
 	);
-	std::fill(m_AckedSensorConfigData, m_AckedSensorConfigData + MAX_SENSORS_COUNT, 0);
+	std::fill(
+		m_AckedSensorConfigData,
+		m_AckedSensorConfigData + MAX_SENSORS_COUNT,
+		SlimeVR::Configuration::SensorConfigBits{}
+	);
 
 	m_UDP.begin(m_ServerPort);
 
@@ -732,24 +741,25 @@ void Connection::update() {
 			memcpy(&setConfigFlagPacket, m_Packet + 12, sizeof(SetConfigFlagPacket));
 
 			uint8_t sensorId = setConfigFlagPacket.sensorId;
-			uint16_t flagId = setConfigFlagPacket.flagId;
+			SensorToggles flag = setConfigFlagPacket.flag;
 			bool newState = setConfigFlagPacket.newState;
 			if (sensorId == UINT8_MAX) {
 				for (auto& sensor : sensors) {
-					sensor->setFlag(flagId, newState);
+					sensor->setFlag(flag, newState);
 				}
 			} else {
 				auto& sensors = sensorManager.getSensors();
-				if (sensorId < sensors.size()) {
-					auto& sensor = sensors[sensorId];
-					sensor->setFlag(flagId, newState);
-				} else {
+
+				if (sensorId >= sensors.size()) {
 					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id"
 					);
 					break;
 				}
+
+				auto& sensor = sensors[sensorId];
+				sensor->setFlag(flag, newState);
 			}
-			sendAcknowledgeConfigChange(sensorId, flagId);
+			sendAcknowledgeConfigChange(sensorId, flag);
 			configuration.save();
 			break;
 		}

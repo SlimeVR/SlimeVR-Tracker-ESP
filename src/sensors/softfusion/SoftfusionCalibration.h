@@ -49,10 +49,11 @@ public:
 		uint8_t sensorId,
 		SlimeVR::Logging::Logger& logger,
 		float TempTs,
-		double AScale,
-		double GScale
+		float AScale,
+		float GScale,
+		SensorToggleState& toggles
 	)
-		: Base{fusion, sensor, sensorId, logger, TempTs, AScale, GScale} {
+		: Base{fusion, sensor, sensorId, logger, TempTs, AScale, GScale, toggles} {
 		calibration.T_Ts = TempTs;
 	}
 
@@ -104,6 +105,22 @@ public:
 
 	void assignCalibration(const Configuration::SensorConfig& sensorCalibration) final {
 		calibration = sensorCalibration.data.sfusion;
+
+		if (!toggles.getToggle(SensorToggles::CalibrationEnabled)) {
+			for (size_t i = 0; i < 3; i++) {
+				calibration.A_B[i] = 0;
+				calibration.A_Ainv[i][0] = 0;
+				calibration.A_Ainv[i][1] = 0;
+				calibration.A_Ainv[i][2] = 0;
+				calibration.M_B[i] = 0;
+				calibration.M_Ainv[i][0] = 0;
+				calibration.M_Ainv[i][1] = 0;
+				calibration.M_Ainv[i][2] = 0;
+				calibration.G_off[i] = 0;
+				calibration.G_Sens[i] = 0;
+			}
+		}
+
 		Base::recalcFusion();
 	}
 
@@ -169,6 +186,10 @@ private:
 	}
 
 	void calibrateGyroOffset(const Base::ReturnLastFn& eatSamplesReturnLast) {
+		if (!toggles.getToggle(SensorToggles::CalibrationEnabled)) {
+			return;
+		}
+
 		// Wait for sensor to calm down before calibration
 		logger.info(
 			"Put down the device and wait for baseline gyro reading calibration (%d "
@@ -224,6 +245,10 @@ private:
 	}
 
 	void calibrateAccel(const Base::EatSamplesFn& eatSamplesForSeconds) {
+		if (!toggles.getToggle(SensorToggles::CalibrationEnabled)) {
+			return;
+		}
+
 		auto magneto = std::make_unique<MagnetoCalibration>();
 		logger.info(
 			"Put the device into 6 unique orientations (all sides), leave it still and "
@@ -433,6 +458,7 @@ private:
 	using Base::logger;
 	using Base::sensor;
 	using Base::sensorId;
+	using Base::toggles;
 };
 
 }  // namespace SlimeVR::Sensor

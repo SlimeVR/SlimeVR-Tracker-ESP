@@ -144,10 +144,12 @@ class SoftFusionSensor : public Sensor {
 												* (1.0 / imu::TemperatureSensitivity);
 
 			lastReadTemperature = scaledTemperature;
-			tempGradientCalculator.feedSample(
-				lastReadTemperature,
-				calibrator.getTempTimestep()
-			);
+			if (toggles.getToggle(SensorToggles::TempGradientCalibrationEnabled)) {
+				tempGradientCalculator.feedSample(
+					lastReadTemperature,
+					calibrator.getTempTimestep()
+				);
+			}
 
 			// calibrator.provideTempSample(lastReadTemperature);
 		}
@@ -251,15 +253,21 @@ public:
 					= now
 					- (tempElapsed - static_cast<uint32_t>(DirectTempReadTs * 1e6));
 				lastReadTemperature = m_sensor.getDirectTemp();
+
 				// calibrator.provideTempSample(lastReadTemperature);
-				tempGradientCalculator.feedSample(
-					lastReadTemperature,
-					DirectTempReadTs
-				);
+
+				if (toggles.getToggle(SensorToggles::TempGradientCalibrationEnabled)) {
+					tempGradientCalculator.feedSample(
+						lastReadTemperature,
+						DirectTempReadTs
+					);
+				}
 			}
 		}
 
-		tempGradientCalculator.tick();
+		if (toggles.getToggle(SensorToggles::TempGradientCalibrationEnabled)) {
+			tempGradientCalculator.tick();
+		}
 
 		constexpr uint32_t targetPollIntervalMicros = 6000;
 		uint32_t elapsed = now - m_lastPollTime;
@@ -312,6 +320,8 @@ public:
 
 		SlimeVR::Configuration::SensorConfig sensorCalibration
 			= configuration.getSensor(sensorId);
+
+		toggles = configuration.getSensorToggles(sensorId);
 
 		/*
 		// If no compatible calibration data is found, the calibration data will just be
@@ -392,6 +402,11 @@ public:
 		// );
 	}
 
+	bool isFlagSupported(SensorToggles toggle) const final {
+		return toggle == SensorToggles::CalibrationEnabled
+			|| toggle == SensorToggles::TempGradientCalibrationEnabled;
+	}
+
 	SensorStatus getSensorState() final { return m_status; }
 
 	SensorFusionRestDetect m_fusion;
@@ -403,7 +418,9 @@ public:
 		m_Logger,
 		getDefaultTempTs(),
 		AScale,
-		GScale};
+		GScale,
+		toggles
+	};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();

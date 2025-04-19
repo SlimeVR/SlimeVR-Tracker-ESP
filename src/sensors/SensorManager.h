@@ -117,6 +117,14 @@ private:
 		if (foundSensor) {
 			m_Logger
 				.trace("Sensor %d found at address 0x%02X", sensorID + 1, i2cAddress);
+		} else if (I2CSCAN::hasDevOnBus(i2cAddress
+				   )) {  // scan again because ICM45* may not respond on first I2C
+						 // transaction
+			m_Logger.trace(
+				"Sensor %d found at address 0x%02X on second scan",
+				sensorID + 1,
+				i2cAddress
+			);
 		} else {
 			if (!optional) {
 				m_Logger.error(
