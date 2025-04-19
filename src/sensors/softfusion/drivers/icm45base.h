@@ -149,6 +149,32 @@ struct ICM45Base {
 		constexpr int16_t InvalidReading = -32768;
 
 		size_t fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
+
+		if (fifo_packets >= 1) {
+			//
+			// AN-000364
+			// 2.16 FIFO EMPTY EVENT IN STREAMING MODE CAN CORRUPT FIFO DATA
+			//
+			// Description: When in FIFO streaming mode, a FIFO empty event
+			// (caused by host reading the last byte of the last FIFO frame) can
+			// cause FIFO data corruption in the first FIFO frame that arrives
+			// after the FIFO empty condition. Once the issue is triggered, the
+			// FIFO state is compromised and cannot recover. FIFO must be set in
+			// bypass mode to flush out the wrong state
+			//
+			// When operating in FIFO streaming mode, if FIFO threshold
+			// interrupt is triggered with M number of FIFO frames accumulated
+			// in the FIFO buffer, the host should only read the first M-1
+			// number of FIFO frames. This prevents the FIFO empty event, that
+			// can cause FIFO data corruption, from happening.
+			//
+			--fifo_packets;
+		}
+
+		if (fifo_packets == 0) {
+			return;
+		}
+
 		fifo_packets = std::min(fifo_packets, MaxReadings);
 
 		size_t bytes_to_read = fifo_packets * FullFifoEntrySize;
