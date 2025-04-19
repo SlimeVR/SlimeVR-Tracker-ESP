@@ -407,7 +407,18 @@ public:
 			|| toggle == SensorToggles::TempGradientCalibrationEnabled;
 	}
 
+	bool isFlagSupported(SensorToggles toggle) const final {
+		return toggle == SensorToggles::CalibrationEnabled
+			|| toggle == SensorToggles::TempGradientCalibrationEnabled;
+	}
+
 	SensorStatus getSensorState() final { return m_status; }
+
+	void deinitialize() override final {
+		if constexpr(requires { m_sensor.deinitialize(); }) {
+			m_sensor.deinitialize();
+		}
+	}
 
 	SensorFusionRestDetect m_fusion;
 	imu m_sensor;
