@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,45 +20,27 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#pragma once
 
 #include <PinInterface.h>
 
-#include "../sensorinterface/SensorInterface.h"
-#include "sensor.h"
+#include "ADS111xInterface.h"
 
-class ADCResistanceSensor : public Sensor {
+#pragma once
+
+namespace SlimeVR {
+
+class ADS111xPin : public PinInterface {
 public:
-	static constexpr auto TypeID = SensorTypeID::ADC_RESISTANCE;
+	ADS111xPin(ADS111xInterface* interface, uint8_t channel);
 
-	ADCResistanceSensor(
-		uint8_t id,
-		float resistanceDivider,
-		PinInterface* pinInterface = nullptr,
-		float smoothFactor = 0.1f
-	);
-	~ADCResistanceSensor() = default;
-
-	void motionSetup() final;
-	void motionLoop() final;
-	void sendData() final;
-	bool hasNewDataToSend() final;
-
-	SensorStatus getSensorState() override final { return SensorStatus::SENSOR_OK; }
-
-	SensorDataType getDataType() override final {
-		return SensorDataType::SENSOR_DATATYPE_FLEX_RESISTANCE;
-	};
+	int digitalRead() override final;
+	void pinMode(uint8_t mode) override final;
+	void digitalWrite(uint8_t val);
+	float analogRead();
 
 private:
-	static constexpr uint32_t samplingRateHz = 120;
-	static constexpr uint64_t samplingStepMicros = 1000'000 / samplingRateHz;
-
-	PinInterface* m_PinInterface;
-	float m_ResistanceDivider;
-	float m_SmoothFactor;
-	uint64_t lastSampleMicros = 0;
-	bool hasNewSample = false;
-
-	float m_Data = 0.0f;
+	ADS111xInterface* ads111x;
+	uint8_t channel;
 };
+
+};  // namespace SlimeVR

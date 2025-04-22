@@ -23,22 +23,44 @@
 
 #pragma once
 
+#include <PinInterface.h>
+
 #include <functional>
 #include <map>
 #include <optional>
 
+#include "ADS111xInterface.h"
+#include "ADS111xPin.h"
+#include "Adafruit_MCP23X17.h"
 #include "DirectPinInterface.h"
 #include "I2CPCAInterface.h"
 #include "I2CWireSensorInterface.h"
 #include "MCP23X17PinInterface.h"
+#include "ParallelMuxInterface.h"
+#include "SensorInterface.h"
+#include "sensorinterface/ParallelMuxPin.h"
 
 namespace SlimeVR {
+
+template <typename T>
+static bool operator<(std::initializer_list<T*>& lhs, std::initializer_list<T*>& rhs) {
+	size_t minLength = std::min(lhs.size(), rhs.size());
+	for (size_t i = 0; i < minLength; i++) {
+		if (lhs[i] < rhs[i]) {
+			return true;
+		}
+		if (lhs[i] > rhs[i]) {
+			return false;
+		}
+	}
+	return lhs.size() < rhs.size();
+}
 
 class SensorInterfaceManager {
 private:
 	template <typename InterfaceClass, typename... Args>
-	struct SensorInterface {
-		explicit SensorInterface(
+	struct InterfaceCache {
+		explicit InterfaceCache(
 			std::function<bool(Args...)> validate = [](Args...) { return true; }
 		)
 			: validate{validate} {}
@@ -72,14 +94,31 @@ public:
 	inline auto& mcpPinInterface() { return mcpPinInterfaces; }
 	inline auto& i2cWireInterface() { return i2cWireInterfaces; }
 	inline auto& pcaWireInterface() { return pcaWireInterfaces; }
+	inline auto& adsInterface() { return adsInterfaces; }
+	inline auto& adsPinInterface() { return adsPinInterfaces; }
+	inline auto& parallelMuxInterface() { return parallelMuxInterfaces; }
+	inline auto& parallelMuxPinInterface() { return parallelMuxPinInterfaces; }
 
 private:
-	SensorInterface<DirectPinInterface, int> directPinInterfaces{[](int pin) {
+	InterfaceCache<DirectPinInterface, int> directPinInterfaces{[](int pin) {
 		return pin != 255 && pin != -1;
 	}};
-	SensorInterface<MCP23X17PinInterface, int> mcpPinInterfaces;
-	SensorInterface<I2CWireSensorInterface, int, int> i2cWireInterfaces;
-	SensorInterface<I2CPCASensorInterface, int, int, int, int> pcaWireInterfaces;
+	InterfaceCache<MCP23X17PinInterface, Adafruit_MCP23X17*, int> mcpPinInterfaces;
+	InterfaceCache<I2CWireSensorInterface, int, int> i2cWireInterfaces;
+	InterfaceCache<I2CPCASensorInterface, int, int, int, int> pcaWireInterfaces;
+	InterfaceCache<ADS111xInterface, SensorInterface*, PinInterface*, int>
+		adsInterfaces;
+	InterfaceCache<ADS111xPin, ADS111xInterface*, int> adsPinInterfaces;
+	InterfaceCache<
+		ParallelMuxInterface,
+		PinInterface*,
+		std::vector<PinInterface*>,
+		PinInterface*,
+		bool,
+		bool>
+		parallelMuxInterfaces;
+	InterfaceCache<ParallelMuxPin, ParallelMuxInterface*, uint8_t>
+		parallelMuxPinInterfaces;
 };
 
 }  // namespace SlimeVR

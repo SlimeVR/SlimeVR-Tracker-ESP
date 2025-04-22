@@ -89,7 +89,7 @@ public:
 	SensorTypeID getSensorType() { return sensorType; };
 	const Vector3& getAcceleration() { return acceleration; };
 	const Quat& getFusedRotation() { return fusedRotation; };
-	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
+	virtual bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
 	inline bool hasCompletedRestCalibration() { return restCalibrationComplete; }
 	void setFlag(SensorToggles toggle, bool state);
 	[[nodiscard]] virtual bool isFlagSupported(SensorToggles toggle) const {

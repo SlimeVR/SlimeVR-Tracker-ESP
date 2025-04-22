@@ -24,18 +24,39 @@
 
 #include "GlobalVars.h"
 
+ADCResistanceSensor::ADCResistanceSensor(
+	uint8_t id,
+	float resistanceDivider,
+	PinInterface* pinInterface,
+	float smoothFactor
+)
+	: Sensor("ADCResistanceSensor", SensorTypeID::ADC_RESISTANCE, id, 0, 0.0f, nullptr)
+	, m_PinInterface(pinInterface)
+	, m_ResistanceDivider(resistanceDivider)
+	, m_SmoothFactor(smoothFactor) {
+	working = true;
+	hadData = true;
+	lastSampleMicros = micros();
+};
+
+void ADCResistanceSensor::motionSetup() { m_PinInterface->pinMode(INPUT); }
+
 void ADCResistanceSensor::motionLoop() {
-#if ESP8266
-	float voltage = ((float)analogRead(m_Pin)) * ADCVoltageMax / ADCResolution;
-	m_Data = m_ResistanceDivider
-		   * (ADCVoltageMax / voltage - 1.0f);  // Convert voltage to resistance
-#elif ESP32
-	float voltage = ((float)analogReadMilliVolts(m_Pin)) / 1000;
-	m_Data = m_ResistanceDivider
-		   * (m_VCC / voltage - 1.0f);  // Convert voltage to resistance
-#endif
+	if (micros() - lastSampleMicros < samplingStepMicros) {
+		return;
+	}
+	float value = m_PinInterface->analogRead();
+	m_Data = m_ResistanceDivider * value;
+	lastSampleMicros += samplingStepMicros;
+	hasNewSample = true;
 }
 
 void ADCResistanceSensor::sendData() {
+	if (!hasNewSample) {
+		return;
+	}
 	networkConnection.sendFlexData(sensorId, m_Data);
+	hasNewSample = false;
 }
+
+bool ADCResistanceSensor::hasNewDataToSend() { return hasNewSample; }

@@ -24,6 +24,7 @@
 #define SLIMEVR_ICM20948SENSOR_H_
 
 #include <ICM_20948.h>
+#include <PinInterface.h>
 
 #include "SensorFusionDMP.h"
 #include "sensor.h"
