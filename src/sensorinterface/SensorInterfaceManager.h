@@ -100,8 +100,9 @@ public:
 	inline auto& parallelMuxPinInterface() { return parallelMuxPinInterfaces; }
 
 private:
-	InterfaceCache<DirectPinInterface, int> directPinInterfaces{
-		[](int pin) { return pin != 255 && pin != -1; }};
+	InterfaceCache<DirectPinInterface, int> directPinInterfaces{[](int pin) {
+		return pin != 255 && pin != -1;
+	}};
 	InterfaceCache<MCP23X17PinInterface, Adafruit_MCP23X17*, int> mcpPinInterfaces;
 	InterfaceCache<I2CWireSensorInterface, int, int> i2cWireInterfaces;
 	InterfaceCache<I2CPCASensorInterface, int, int, int, int> pcaWireInterfaces;
