@@ -110,4 +110,8 @@
 #define DEBUG_MEASURE_SENSOR_TIME_TAKEN false
 #endif
 
+#ifndef USE_OTA_TIMEOUT
+#define USE_OTA_TIMEOUT false
+#endif
+
 #endif  // SLIMEVR_DEBUG_H_
