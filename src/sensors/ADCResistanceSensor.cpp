@@ -39,6 +39,8 @@ ADCResistanceSensor::ADCResistanceSensor(
 	lastSampleMicros = micros();
 };
 
+void ADCResistanceSensor::motionSetup() { m_PinInterface->pinMode(INPUT); }
+
 void ADCResistanceSensor::motionLoop() {
 	if (micros() - lastSampleMicros < samplingStepMicros) {
 		return;

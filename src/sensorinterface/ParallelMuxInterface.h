@@ -22,6 +22,7 @@
 
 #include <PinInterface.h>
 
+#include <cstdint>
 #include <vector>
 
 namespace SlimeVR {

@@ -95,6 +95,7 @@ void ParallelMuxInterface::switchTo(uint8_t address) {
 	}
 
 	currentAddress = address;
+	delay(1);
 }
 
 }  // namespace SlimeVR

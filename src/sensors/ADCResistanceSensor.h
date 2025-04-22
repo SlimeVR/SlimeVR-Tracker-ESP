@@ -39,6 +39,7 @@ public:
 	);
 	~ADCResistanceSensor() = default;
 
+	void motionSetup() final;
 	void motionLoop() final;
 	void sendData() final;
 	bool hasNewDataToSend() final;
@@ -50,7 +51,7 @@ public:
 	};
 
 private:
-	static constexpr uint32_t samplingRateHz = 60;
+	static constexpr uint32_t samplingRateHz = 120;
 	static constexpr uint64_t samplingStepMicros = 1000'000 / samplingRateHz;
 
 	PinInterface* m_PinInterface;

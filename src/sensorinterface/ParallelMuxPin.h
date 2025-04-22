@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "PinInterface.h"
 #include "sensorinterface/ParallelMuxInterface.h"
 namespace SlimeVR {
