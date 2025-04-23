@@ -44,6 +44,7 @@ struct ICM45686 : public ICM45Base<I2CImpl> {
 		.tauAcc = 7.171490,
 		.biasSigmaInit = 0.337976,
 		.biasForgettingTime = 352.235500,
+		.biasClip = 5.0,
 		.biasSigmaMotion = 0.985346,
 		.biasVerticalForgettingFactor = 0.007959,
 		.biasSigmaRest = 0.028897,
