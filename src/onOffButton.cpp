@@ -1,6 +1,6 @@
 #include "onOffButton.h"
 
-#include "globalVars.h"
+#include "GlobalVars.h"
 
 void SlimeVR::OnOffButton::setup() {
 #ifdef ON_OFF_BUTTON

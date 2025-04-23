@@ -338,7 +338,7 @@ struct BMI270 {
 	}
 
 	void deinitialize() {
-		i2c.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueOff);
+		m_RegisterInterface.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueOff);
 	}
 
 	bool motionlessCalibration(MotionlessCalibrationData& gyroSensitivity) {

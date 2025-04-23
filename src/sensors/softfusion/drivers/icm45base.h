@@ -157,7 +157,7 @@ struct ICM45Base {
 	}
 
 	void deinitialize() {
-		i2c.writeReg(BaseRegs::PwrMgmt0::reg, BaseRegs::PwrMgmt0::off);
+		m_RegisterInterface.writeReg(BaseRegs::PwrMgmt0::reg, BaseRegs::PwrMgmt0::off);
 	}
 
 	template <typename AccelCall, typename GyroCall, typename TempCall>
