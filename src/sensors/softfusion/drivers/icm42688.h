@@ -52,8 +52,6 @@ struct ICM42688 {
 	static constexpr float GyroSensitivity = 32.8f;
 	static constexpr float AccelSensitivity = 4096.0f;
 
-	static constexpr bool Uses32BitSensorData = true;
-
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 2.07f;
 

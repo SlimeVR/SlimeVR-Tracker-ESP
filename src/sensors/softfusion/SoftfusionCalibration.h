@@ -55,7 +55,7 @@ public:
 		SensorToggleState& toggles
 	)
 		: Base{fusion, sensor, sensorId, logger, toggles} {
-		calibration.T_Ts = IMU::TempTs;
+		calibration.T_Ts = Consts::getDefaultTempTs();
 	}
 
 	void eatSamplesForSeconds(const uint32_t seconds) {

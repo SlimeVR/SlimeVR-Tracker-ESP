@@ -28,11 +28,14 @@
 #include <type_traits>
 
 #include "../../motionprocessing/types.h"
+#include "drivers/callbacks.h"
 
 template <typename IMU>
 struct IMUConsts {
 	static constexpr bool Uses32BitSensorData
-		= requires(IMU& i) { i.Uses32BitSensorData; };
+		= requires(IMU& i, DriverCallbacks<int32_t> callbacks) {
+			  i.bulkRead(std::move(callbacks));
+		  };
 
 	static constexpr bool DirectTempReadOnly = requires(IMU& i) { i.getDirectTemp(); };
 

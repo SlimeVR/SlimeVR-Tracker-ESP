@@ -60,8 +60,8 @@ public:
 		SensorToggleState& toggles
 	)
 		: Base{fusion, imu, sensorId, logger, toggles} {
-		calibration.T_Ts = Consts::TempTs;
-		activeCalibration.T_Ts = Consts::TempTs;
+		calibration.T_Ts = Consts::getDefaultTempTs();
+		activeCalibration.T_Ts = Consts::getDefaultTempTs();
 	}
 
 	bool calibrationMatches(const Configuration::SensorConfig& sensorCalibration

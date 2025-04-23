@@ -53,8 +53,6 @@ struct ICM45Base {
 
 	static constexpr float TemperatureZROChange = 20.0f;
 
-	static constexpr bool Uses32BitSensorData = true;
-
 	I2CImpl i2c;
 	SlimeVR::Logging::Logger& logger;
 	ICM45Base(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
