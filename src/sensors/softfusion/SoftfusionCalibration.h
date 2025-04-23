@@ -265,8 +265,7 @@ private:
 		// Wait for sensor to calm down before calibration
 		logger.info(
 			"Put down the device and wait for baseline gyro reading calibration "
-			"(%d "
-			"seconds)",
+			"(%d seconds)",
 			GyroCalibDelaySeconds
 		);
 		ledManager.on();
@@ -325,8 +324,7 @@ private:
 		auto magneto = std::make_unique<MagnetoCalibration>();
 		logger.info(
 			"Put the device into 6 unique orientations (all sides), leave it still "
-			"and "
-			"do not hold/touch for %d seconds each",
+			"and do not hold/touch for %d seconds each",
 			AccelCalibRestSeconds
 		);
 		ledManager.on();
