@@ -30,6 +30,7 @@
 #include "debugging/TimeTaken.h"
 #include "globals.h"
 #include "logging/Logger.h"
+#include "onOffButton.h"
 #include "ota.h"
 #include "serial/serialcommands.h"
 #include "status/TPSCounter.h"
@@ -45,6 +46,10 @@ SlimeVR::Network::Connection networkConnection;
 
 #if DEBUG_MEASURE_SENSOR_TIME_TAKEN
 SlimeVR::Debugging::TimeTakenMeasurer sensorMeasurer{"Sensors"};
+#endif
+
+#ifdef ON_OFF_BUTTON
+SlimeVR::OnOffButton onOffButton;
 #endif
 
 int sensorToCalibrate = -1;
@@ -101,6 +106,10 @@ void setup() {
 #endif
 	Wire.setClock(I2C_SPEED);
 
+#ifdef ON_OFF_BUTTON
+	onOffButton.setup();
+#endif
+
 	// Wait for IMU to boot
 	delay(500);
 
@@ -136,6 +145,11 @@ void loop() {
 	battery.Loop();
 	ledManager.update();
 	I2CSCAN::update();
+
+#ifdef ON_OFF_BUTTON
+	onOffButton.update();
+#endif
+
 #ifdef TARGET_LOOPTIME_MICROS
 	long elapsed = (micros() - loopTime);
 	if (elapsed < TARGET_LOOPTIME_MICROS) {

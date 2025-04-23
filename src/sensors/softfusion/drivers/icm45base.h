@@ -83,9 +83,10 @@ struct ICM45Base {
 		struct FifoConfig0 {
 			static constexpr uint8_t reg = 0x1d;
 			static constexpr uint8_t value
-				= (0b01 << 6) | (0b011111);  // stream to FIFO mode, FIFO depth
-											 // 8k bytes <-- this disables all APEX
-											 // features, but we don't need them
+				= (0b10 << 6)
+				| (0b011111);  // Stop-on-full FIFO mode -- See AN-000364 section 2.16
+							   // for why this is required FIFO depth = 8k bytes, this
+							   // disables all APEX features, but we don't need them
 		};
 
 		struct FifoConfig3 {
@@ -101,6 +102,7 @@ struct ICM45Base {
 			static constexpr uint8_t reg = 0x10;
 			static constexpr uint8_t value
 				= 0b11 | (0b11 << 2);  // accel in low noise mode, gyro in low noise
+			static constexpr uint8_t off = 0x00;
 		};
 
 		static constexpr uint8_t FifoCount = 0x12;
@@ -152,6 +154,10 @@ struct ICM45Base {
 		delay(1);
 
 		return true;
+	}
+
+	void deinitialize() {
+		i2c.writeReg(BaseRegs::PwrMgmt0::reg, BaseRegs::PwrMgmt0::off);
 	}
 
 	template <typename AccelCall, typename GyroCall, typename TempCall>

@@ -337,6 +337,10 @@ struct BMI270 {
 		return true;
 	}
 
+	void deinitialize() {
+		i2c.writeReg(Regs::PwrCtrl::reg, Regs::PwrCtrl::valueOff);
+	}
+
 	bool motionlessCalibration(MotionlessCalibrationData& gyroSensitivity) {
 		// perfrom gyroscope motionless sensitivity calibration (CRT)
 		// need to start from clean state according to spec

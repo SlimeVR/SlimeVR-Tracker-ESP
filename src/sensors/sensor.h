@@ -110,6 +110,11 @@ public:
 		m_SensorPosition = sensorPosition;
 	};
 
+	virtual void deinitialize() {
+		// Sensors must implement deinitialize if ON_OFF_BUTTON so that the
+		// sensor can go to sleep
+	}
+
 	TPSCounter m_tpsCounter;
 	TPSCounter m_dataCounter;
 	SlimeVR::SensorInterface* m_hwInterface = nullptr;
