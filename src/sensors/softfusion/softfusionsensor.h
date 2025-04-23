@@ -151,7 +151,7 @@ public:
 		uint8_t i2cAddress,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
-		PinInterface* intPin = nullptr,
+		PinInterface* = nullptr,
 		uint8_t = 0
 	)
 		: Sensor(IMU::Name, IMU::Type, id, i2cAddress, rotation, sensorInterface)
