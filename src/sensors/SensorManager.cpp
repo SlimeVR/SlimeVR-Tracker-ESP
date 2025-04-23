@@ -52,13 +52,12 @@
 #endif
 
 #if USE_RUNTIME_CALIBRATION
-#define SFCALIBRATOR SlimeVR::Sensors::RuntimeCalibration::RuntimeCalibrator
+#define SFCALIBRATOR RuntimeCalibration::RuntimeCalibrator
 #else
-#define SFCALIBRATOR SlimeVR::Sensor::SoftfusionCalibrator
+#define SFCALIBRATOR SoftfusionCalibrator
 #endif
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 using SoftFusionLSM6DS3TRC = SoftFusionSensor<
 	SoftFusion::Drivers::LSM6DS3TRC,
 	SoftFusion::I2CImpl,
@@ -209,5 +208,4 @@ void SensorManager::update() {
 	networkConnection.endBundle();
 #endif
 }
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors

@@ -27,6 +27,7 @@
 #include <array>
 #include <cstdint>
 
+#include "callbacks.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -122,12 +123,7 @@ struct LSM6DS3TRC {
 		return true;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTemperatureSample
-	) {
+	void bulkRead(DriverCallbacks<uint16_t>&& callbacks) {
 		const auto read_result = i2c.readReg16(Regs::FifoStatus);
 		if (read_result & 0x4000) {  // overrun!
 			// disable and re-enable fifo to clear it
@@ -157,12 +153,15 @@ struct LSM6DS3TRC {
 		);
 		for (uint16_t i = 0; i < bytes_to_read / sizeof(uint16_t);
 			 i += single_measurement_words) {
-			processGyroSample(reinterpret_cast<const int16_t*>(&read_buffer[i]), GyrTs);
-			processAccelSample(
+			callbacks.processGyroSample(
+				reinterpret_cast<const int16_t*>(&read_buffer[i]),
+				GyrTs
+			);
+			callbacks.processAccelSample(
 				reinterpret_cast<const int16_t*>(&read_buffer[i + 3]),
 				AccTs
 			);
-			processTemperatureSample(read_buffer[i + 9], TempTs);
+			callbacks.processTempSample(read_buffer[i + 9], TempTs);
 		}
 	}
 };

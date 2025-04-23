@@ -29,6 +29,7 @@
 #include <array>
 #include <cstdint>
 
+#include "callbacks.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -178,8 +179,7 @@ struct MPU6050 {
 		return result;
 	}
 
-	template <typename AccelCall, typename GyroCall>
-	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
+	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
 		const auto status = i2c.readReg(Regs::IntStatus);
 
 		if (status & (1 << MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) {
@@ -209,12 +209,12 @@ struct MPU6050 {
 			xyz[0] = MPU6050_FIFO_VALUE(sample, accel_x);
 			xyz[1] = MPU6050_FIFO_VALUE(sample, accel_y);
 			xyz[2] = MPU6050_FIFO_VALUE(sample, accel_z);
-			processAccelSample(xyz, AccTs);
+			callbacks.processAccelSample(xyz, AccTs);
 
 			xyz[0] = MPU6050_FIFO_VALUE(sample, gyro_x);
 			xyz[1] = MPU6050_FIFO_VALUE(sample, gyro_y);
 			xyz[2] = MPU6050_FIFO_VALUE(sample, gyro_z);
-			processGyroSample(xyz, GyrTs);
+			callbacks.processGyroSample(xyz, GyrTs);
 		}
 	}
 };

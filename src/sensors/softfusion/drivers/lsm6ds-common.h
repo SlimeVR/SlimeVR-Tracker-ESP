@@ -27,7 +27,7 @@
 #include <array>
 #include <cstdint>
 
-namespace SlimeVR::Sensors::SoftFusion::Drivers {
+#include "callbacks.h"
 
 template <typename I2CImpl>
 struct LSM6DSOutputHandler {
@@ -49,11 +49,9 @@ struct LSM6DSOutputHandler {
 
 	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
-	template <typename AccelCall, typename GyroCall, typename TempCall, typename Regs>
+	template <typename Regs>
 	void bulkRead(
-		AccelCall& processAccelSample,
-		GyroCall& processGyroSample,
-		TempCall& processTempSample,
+		DriverCallbacks<int16_t>&& callbacks,
 		float GyrTs,
 		float AccTs,
 		float TempTs
@@ -88,17 +86,15 @@ struct LSM6DSOutputHandler {
 
 			switch (tag) {
 				case 0x01:  // Gyro NC
-					processGyroSample(entry.xyz, GyrTs);
+					callbacks.processGyroSample(entry.xyz, GyrTs);
 					break;
 				case 0x02:  // Accel NC
-					processAccelSample(entry.xyz, AccTs);
+					callbacks.processAccelSample(entry.xyz, AccTs);
 					break;
 				case 0x03:  // Temperature
-					processTempSample(entry.xyz[0], TempTs);
+					callbacks.processTempSample(entry.xyz[0], TempTs);
 					break;
 			}
 		}
 	}
 };
-
-}  // namespace SlimeVR::Sensors::SoftFusion::Drivers

@@ -134,21 +134,13 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 		return true;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTempSample
-	) {
-		LSM6DSOutputHandler<I2CImpl>::
-			template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
-				processAccelSample,
-				processGyroSample,
-				processTempSample,
-				GyrTs,
-				AccTs,
-				TempTs
-			);
+	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+		LSM6DSOutputHandler<I2CImpl>::template bulkRead<Regs>(
+			std::move(callbacks),
+			GyrTs,
+			AccTs,
+			TempTs
+		);
 	}
 };
 

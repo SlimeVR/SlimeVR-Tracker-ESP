@@ -23,16 +23,23 @@
 
 #pragma once
 
+#include <PinInterface.h>
+
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
+#include <functional>
 #include <tuple>
 
+#include "../../GlobalVars.h"
+#include "../../sensorinterface/SensorInterface.h"
 #include "../RestCalibrationDetector.h"
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
-#include "GlobalVars.h"
+#include "TempGradientCalculator.h"
+#include "drivers/callbacks.h"
+#include "imuconsts.h"
 #include "motionprocessing/types.h"
-#include "sensors/softfusion/TempGradientCalculator.h"
 
 namespace SlimeVR::Sensors {
 
@@ -40,57 +47,37 @@ template <
 	template <typename I2CImpl>
 	typename T,
 	typename I2CImpl,
-	template <typename IMU, typename RawSensorT, typename RawVectorT>
+	template <typename IMU>
 	typename Calibrator>
 class SoftFusionSensor : public Sensor {
-	using imu = T<I2CImpl>;
+	using IMU = T<I2CImpl>;
+	using Self = SoftFusionSensor<T, I2CImpl, Calibrator>;
 
-	static constexpr sensor_real_t getDefaultTempTs() {
-		if constexpr (DirectTempReadOnly) {
-			return DirectTempReadTs;
-		} else {
-			return imu::TempTs;
-		}
-	}
+	using Consts = IMUConsts<IMU>;
+	using RawSensorT = typename Consts::RawSensorT;
 
-	static constexpr bool Uses32BitSensorData
-		= requires(imu& i) { i.Uses32BitSensorData; };
-
-	static constexpr bool DirectTempReadOnly = requires(imu& i) { i.getDirectTemp(); };
-
-	using RawSensorT =
-		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
-	using RawVectorT = std::array<RawSensorT, 3>;
-
-	static constexpr float GScale
-		= ((32768. / imu::GyroSensitivity) / 32768.) * (PI / 180.0);
-	static constexpr float AScale = CONST_EARTH_GRAVITY / imu::AccelSensitivity;
-
-	using Calib = Calibrator<imu, RawSensorT, RawVectorT>;
-
+	using Calib = Calibrator<IMU>;
 	static constexpr auto UpsideDownCalibrationInit = Calib::HasUpsideDownCalibration;
 
-	static constexpr float DirectTempReadFreq = 15;
-	static constexpr float DirectTempReadTs = 1.0f / DirectTempReadFreq;
 	float lastReadTemperature = 0;
 	uint32_t lastTempPollTime = micros();
 
 	bool detected() const {
-		const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
-		if (imu::Regs::WhoAmI::value != value) {
-			m_Logger.error(
-				"Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
-				imu::Regs::WhoAmI::reg,
-				imu::Regs::WhoAmI::value,
-				value
-			);
-			return false;
+		const auto value = m_sensor.i2c.readReg(IMU::Regs::WhoAmI::reg);
+		if (IMU::Regs::WhoAmI::value == value) {
+			return true;
 		}
 
-		return true;
+		m_Logger.error(
+			"Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
+			IMU::Regs::WhoAmI::reg,
+			IMU::Regs::WhoAmI::value,
+			value
+		);
+		return false;
 	}
 
-	void sendData() {
+	void sendData() final {
 		Sensor::sendData();
 		sendTempIfNeeded();
 	}
@@ -138,10 +125,10 @@ class SoftFusionSensor : public Sensor {
 
 	void
 	processTempSample(const int16_t rawTemperature, const sensor_real_t timeDelta) {
-		if constexpr (!DirectTempReadOnly) {
-			const float scaledTemperature = imu::TemperatureBias
+		if constexpr (!Consts::DirectTempReadOnly) {
+			const float scaledTemperature = IMU::TemperatureBias
 										  + static_cast<float>(rawTemperature)
-												* (1.0 / imu::TemperatureSensitivity);
+												* (1.0 / IMU::TemperatureSensitivity);
 
 			lastReadTemperature = scaledTemperature;
 			if (toggles.getToggle(SensorToggles::TempGradientCalibrationEnabled)) {
@@ -155,57 +142,9 @@ class SoftFusionSensor : public Sensor {
 		}
 	}
 
-	void eatSamplesForSeconds(const uint32_t seconds) {
-		const auto targetDelay = millis() + 1000 * seconds;
-		auto lastSecondsRemaining = seconds;
-		while (millis() < targetDelay) {
-#ifdef ESP8266
-			ESP.wdtFeed();
-#endif
-			auto currentSecondsRemaining = (targetDelay - millis()) / 1000;
-			if (currentSecondsRemaining != lastSecondsRemaining) {
-				m_Logger.info("%d...", currentSecondsRemaining + 1);
-				lastSecondsRemaining = currentSecondsRemaining;
-			}
-			m_sensor.bulkRead(
-				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const int16_t xyz, const sensor_real_t timeDelta) {}
-			);
-		}
-	}
-
-	std::tuple<RawVectorT, RawVectorT, int16_t> eatSamplesReturnLast(
-		const uint32_t milliseconds
-	) {
-		RawVectorT accel = {0};
-		RawVectorT gyro = {0};
-		int16_t temp = 0;
-		const auto targetDelay = millis() + milliseconds;
-		while (millis() < targetDelay) {
-			m_sensor.bulkRead(
-				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
-					accel[0] = xyz[0];
-					accel[1] = xyz[1];
-					accel[2] = xyz[2];
-				},
-				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
-					gyro[0] = xyz[0];
-					gyro[1] = xyz[1];
-					gyro[2] = xyz[2];
-				},
-				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
-					temp = rawTemp;
-				}
-			);
-			yield();
-		}
-		return std::make_tuple(accel, gyro, temp);
-	}
-
 public:
-	static constexpr auto TypeID = imu::Type;
-	static constexpr uint8_t Address = imu::Address;
+	static constexpr auto TypeID = IMU::Type;
+	static constexpr uint8_t Address = IMU::Address;
 
 	SoftFusionSensor(
 		uint8_t id,
@@ -215,8 +154,8 @@ public:
 		PinInterface* intPin = nullptr,
 		uint8_t = 0
 	)
-		: Sensor(imu::Name, imu::Type, id, i2cAddress, rotation, sensorInterface)
-		, m_fusion(imu::SensorVQFParams, imu::GyrTs, imu::AccTs, imu::MagTs)
+		: Sensor(IMU::Name, IMU::Type, id, i2cAddress, rotation, sensorInterface)
+		, m_fusion(IMU::SensorVQFParams, IMU::GyrTs, IMU::AccTs, IMU::MagTs)
 		, m_sensor(I2CImpl(i2cAddress), m_Logger) {}
 	~SoftFusionSensor() override = default;
 
@@ -246,12 +185,13 @@ public:
 		// read fifo updating fusion
 		uint32_t now = micros();
 
-		if constexpr (DirectTempReadOnly) {
+		if constexpr (Consts::DirectTempReadOnly) {
 			uint32_t tempElapsed = now - lastTempPollTime;
-			if (tempElapsed >= DirectTempReadTs * 1e6) {
+			if (tempElapsed >= Consts::DirectTempReadTs * 1e6) {
 				lastTempPollTime
 					= now
-					- (tempElapsed - static_cast<uint32_t>(DirectTempReadTs * 1e6));
+					- (tempElapsed
+					   - static_cast<uint32_t>(Consts::DirectTempReadTs * 1e6));
 				lastReadTemperature = m_sensor.getDirectTemp();
 
 				calibrator.provideTempSample(lastReadTemperature);
@@ -259,7 +199,7 @@ public:
 				if (toggles.getToggle(SensorToggles::TempGradientCalibrationEnabled)) {
 					tempGradientCalculator.feedSample(
 						lastReadTemperature,
-						DirectTempReadTs
+						Consts::DirectTempReadTs
 					);
 				}
 			}
@@ -278,20 +218,20 @@ public:
 		// send new fusion values when time is up
 		now = micros();
 		constexpr float maxSendRateHz = 100.0f;
-		constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6;
+		constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6f;
 		elapsed = now - m_lastRotationPacketSent;
 		if (elapsed >= sendInterval) {
-			m_sensor.bulkRead(
-				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
-					processAccelSample(xyz, timeDelta);
+			m_sensor.bulkRead({
+				[&](const auto sample[3], float AccTs) {
+					processAccelSample(sample, AccTs);
 				},
-				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
-					processGyroSample(xyz, timeDelta);
+				[&](const auto sample[3], float GyrTs) {
+					processGyroSample(sample, GyrTs);
 				},
-				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
-					processTempSample(rawTemp, timeDelta);
-				}
-			);
+				[&](int16_t sample, float TempTs) {
+					processTempSample(sample, TempTs);
+				},
+			});
 			if (!m_fusion.isUpdated()) {
 				checkSensorTimeout();
 				return;
@@ -346,7 +286,7 @@ public:
 		bool initResult = false;
 
 		if constexpr (Calib::HasMotionlessCalib) {
-			typename imu::MotionlessCalibrationData calibData;
+			typename IMU::MotionlessCalibrationData calibData;
 			std::memcpy(
 				&calibData,
 				calibrator.getMotionlessCalibrationData(),
@@ -365,43 +305,15 @@ public:
 
 		m_status = SensorStatus::SENSOR_OK;
 		working = true;
-		[[maybe_unused]] auto lastRawSample = eatSamplesReturnLast(1000);
-		if constexpr (UpsideDownCalibrationInit) {
-			auto gravity = static_cast<sensor_real_t>(
-				AScale * static_cast<sensor_real_t>(std::get<0>(lastRawSample)[2])
-			);
-			m_Logger.info(
-				"Gravity read: %.1f (need < -7.5 to start calibration)",
-				gravity
-			);
-			if (gravity < -7.5f) {
-				ledManager.on();
-				m_Logger.info("Flip front in 5 seconds to start calibration");
-				lastRawSample = eatSamplesReturnLast(5000);
-				gravity = static_cast<sensor_real_t>(
-					AScale * static_cast<sensor_real_t>(std::get<0>(lastRawSample)[2])
-				);
-				if (gravity > 7.5f) {
-					m_Logger.debug("Starting calibration...");
-					startCalibration(0);
-				} else {
-					m_Logger.info("Flip not detected. Skipping calibration.");
-				}
 
-				ledManager.off();
-			}
-		}
+		calibrator.checkStartupCalibration();
 	}
 
 	void startCalibration(int calibrationType) final {
-		calibrator.startCalibration(
-			calibrationType,
-			[&](const uint32_t seconds) { eatSamplesForSeconds(seconds); },
-			[&](const uint32_t millis) { return eatSamplesReturnLast(millis); }
-		);
+		calibrator.startCalibration(calibrationType);
 	}
 
-	bool isFlagSupported(SensorToggles toggle) const final {
+	[[nodiscard]] bool isFlagSupported(SensorToggles toggle) const final {
 		return toggle == SensorToggles::CalibrationEnabled
 			|| toggle == SensorToggles::TempGradientCalibrationEnabled;
 	}
@@ -409,17 +321,8 @@ public:
 	SensorStatus getSensorState() final { return m_status; }
 
 	SensorFusionRestDetect m_fusion;
-	imu m_sensor;
-	Calib calibrator{
-		m_fusion,
-		m_sensor,
-		sensorId,
-		m_Logger,
-		getDefaultTempTs(),
-		AScale,
-		GScale,
-		toggles
-	};
+	IMU m_sensor;
+	Calib calibrator{m_fusion, m_sensor, sensorId, m_Logger, toggles};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();

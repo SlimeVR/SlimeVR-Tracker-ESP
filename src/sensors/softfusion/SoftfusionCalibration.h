@@ -23,48 +23,120 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstring>
 #include <vector>
 
+#include "../SensorFusionRestDetect.h"
+#include "CalibrationBase.h"
 #include "GlobalVars.h"
 #include "configuration/SensorConfig.h"
 #include "logging/Logger.h"
 #include "motionprocessing/RestDetection.h"
 #include "motionprocessing/types.h"
-#include "sensors/SensorFusionRestDetect.h"
-#include "sensors/softfusion/CalibrationBase.h"
 
-namespace SlimeVR::Sensor {
+namespace SlimeVR::Sensors {
 
-template <typename IMU, typename RawSensorT, typename RawVectorT>
-class SoftfusionCalibrator : public CalibrationBase<IMU, RawSensorT, RawVectorT> {
+template <typename IMU>
+class SoftfusionCalibrator : public CalibrationBase<IMU> {
 public:
 	static constexpr bool HasUpsideDownCalibration = true;
 
-	using Base = CalibrationBase<IMU, RawSensorT, RawVectorT>;
+	using Base = CalibrationBase<IMU>;
+	using Consts = typename Base::Consts;
+	using RawSensorT = typename Consts::RawSensorT;
+	using RawVectorT = typename Consts::RawVectorT;
 
 	SoftfusionCalibrator(
 		Sensors::SensorFusionRestDetect& fusion,
 		IMU& sensor,
 		uint8_t sensorId,
 		SlimeVR::Logging::Logger& logger,
-		float TempTs,
-		float AScale,
-		float GScale,
 		SensorToggleState& toggles
 	)
-		: Base{fusion, sensor, sensorId, logger, TempTs, AScale, GScale, toggles} {
-		calibration.T_Ts = TempTs;
+		: Base{fusion, sensor, sensorId, logger, toggles} {
+		calibration.T_Ts = IMU::TempTs;
 	}
 
-	void startCalibration(
-		int calibrationType,
-		const Base::EatSamplesFn& eatSamplesForSeconds,
-		const Base::ReturnLastFn& eatSamplesReturnLast
-	) final {
+	void eatSamplesForSeconds(const uint32_t seconds) {
+		const auto targetDelay = millis() + 1000 * seconds;
+		auto lastSecondsRemaining = seconds;
+		while (millis() < targetDelay) {
+#ifdef ESP8266
+			ESP.wdtFeed();
+#endif
+			auto currentSecondsRemaining = (targetDelay - millis()) / 1000;
+			if (currentSecondsRemaining != lastSecondsRemaining) {
+				logger.info("%d...", currentSecondsRemaining + 1);
+				lastSecondsRemaining = currentSecondsRemaining;
+			}
+
+			sensor.bulkRead({
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+				[](const int16_t xyz, const sensor_real_t timeDelta) {},
+			});
+		}
+	}
+
+	std::tuple<RawVectorT, RawVectorT, int16_t> eatSamplesReturnLast(
+		const uint32_t milliseconds
+	) {
+		RawVectorT accel = {0};
+		RawVectorT gyro = {0};
+		int16_t temp = 0;
+		const auto targetDelay = millis() + milliseconds;
+		while (millis() < targetDelay) {
+			sensor.bulkRead({
+				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
+					accel[0] = xyz[0];
+					accel[1] = xyz[1];
+					accel[2] = xyz[2];
+				},
+				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
+					gyro[0] = xyz[0];
+					gyro[1] = xyz[1];
+					gyro[2] = xyz[2];
+				},
+				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
+					temp = rawTemp;
+				},
+			});
+			yield();
+		}
+		return std::make_tuple(accel, gyro, temp);
+	}
+
+	void checkStartupCalibration() final {
+		auto lastRawSample = eatSamplesReturnLast(1000);
+		auto gravity = static_cast<sensor_real_t>(
+			Consts::AScale * static_cast<sensor_real_t>(std::get<0>(lastRawSample)[2])
+		);
+		logger.info("Gravity read: %.1f (need < -7.5 to start calibration)", gravity);
+		if (gravity > -7.5f) {
+			return;
+		}
+
+		ledManager.on();
+		logger.info("Flip front in 5 seconds to start calibration");
+		lastRawSample = eatSamplesReturnLast(5000);
+		gravity = static_cast<sensor_real_t>(
+			Consts::AScale * static_cast<sensor_real_t>(std::get<0>(lastRawSample)[2])
+		);
+		if (gravity > 7.5f) {
+			logger.debug("Starting calibration...");
+			startCalibration(0);
+		} else {
+			logger.info("Flip not detected. Skipping calibration.");
+		}
+
+		ledManager.off();
+	}
+
+	void startCalibration(int calibrationType) final {
 		if (calibrationType == 0) {
 			// ALL
-			calibrateSampleRate(eatSamplesForSeconds);
+			calibrateSampleRate();
 			if constexpr (Base::HasMotionlessCalib) {
 				typename IMU::MotionlessCalibrationData calibData;
 				sensor.motionlessCalibration(calibData);
@@ -73,14 +145,14 @@ public:
 			// Gryoscope offset calibration can only happen after any motionless
 			// gyroscope calibration, otherwise we are calculating the offset based
 			// on an incorrect starting point
-			calibrateGyroOffset(eatSamplesReturnLast);
-			calibrateAccel(eatSamplesForSeconds);
+			calibrateGyroOffset();
+			calibrateAccel();
 		} else if (calibrationType == 1) {
-			calibrateSampleRate(eatSamplesForSeconds);
+			calibrateSampleRate();
 		} else if (calibrationType == 2) {
-			calibrateGyroOffset(eatSamplesReturnLast);
+			calibrateGyroOffset();
 		} else if (calibrationType == 3) {
-			calibrateAccel(eatSamplesForSeconds);
+			calibrateAccel();
 		} else if (calibrationType == 4) {
 			if constexpr (Base::HasMotionlessCalib) {
 				typename IMU::MotionlessCalibrationData calibData;
@@ -133,28 +205,28 @@ public:
 		accelSample[0]
 			= (calibration.A_Ainv[0][0] * tmp[0] + calibration.A_Ainv[0][1] * tmp[1]
 			   + calibration.A_Ainv[0][2] * tmp[2])
-			* AScale;
+			* Consts::AScale;
 		accelSample[1]
 			= (calibration.A_Ainv[1][0] * tmp[0] + calibration.A_Ainv[1][1] * tmp[1]
 			   + calibration.A_Ainv[1][2] * tmp[2])
-			* AScale;
+			* Consts::AScale;
 		accelSample[2]
 			= (calibration.A_Ainv[2][0] * tmp[0] + calibration.A_Ainv[2][1] * tmp[1]
 			   + calibration.A_Ainv[2][2] * tmp[2])
-			* AScale;
+			* Consts::AScale;
 	}
 
 	float getAccelTimestep() final { return calibration.A_Ts; }
 
 	void scaleGyroSample(sensor_real_t gyroSample[3]) final {
 		gyroSample[0] = static_cast<sensor_real_t>(
-			GScale * (gyroSample[0] - calibration.G_off[0])
+			Consts::GScale * (gyroSample[0] - calibration.G_off[0])
 		);
 		gyroSample[1] = static_cast<sensor_real_t>(
-			GScale * (gyroSample[1] - calibration.G_off[1])
+			Consts::GScale * (gyroSample[1] - calibration.G_off[1])
 		);
 		gyroSample[2] = static_cast<sensor_real_t>(
-			GScale * (gyroSample[2] - calibration.G_off[2])
+			Consts::GScale * (gyroSample[2] - calibration.G_off[2])
 		);
 	}
 
@@ -185,14 +257,15 @@ private:
 		configuration.save();
 	}
 
-	void calibrateGyroOffset(const Base::ReturnLastFn& eatSamplesReturnLast) {
+	void calibrateGyroOffset() {
 		if (!toggles.getToggle(SensorToggles::CalibrationEnabled)) {
 			return;
 		}
 
 		// Wait for sensor to calm down before calibration
 		logger.info(
-			"Put down the device and wait for baseline gyro reading calibration (%d "
+			"Put down the device and wait for baseline gyro reading calibration "
+			"(%d "
 			"seconds)",
 			GyroCalibDelaySeconds
 		);
@@ -216,7 +289,7 @@ private:
 #ifdef ESP8266
 			ESP.wdtFeed();
 #endif
-			sensor.bulkRead(
+			sensor.bulkRead({
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
 				[&sumXYZ,
 				 &sampleCount](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
@@ -225,8 +298,8 @@ private:
 					sumXYZ[2] += xyz[2];
 					++sampleCount;
 				},
-				[](const int16_t rawTemp, const sensor_real_t timeDelta) {}
-			);
+				[](const int16_t rawTemp, const sensor_real_t timeDelta) {},
+			});
 		}
 
 		ledManager.off();
@@ -244,14 +317,15 @@ private:
 		);
 	}
 
-	void calibrateAccel(const Base::EatSamplesFn& eatSamplesForSeconds) {
+	void calibrateAccel() {
 		if (!toggles.getToggle(SensorToggles::CalibrationEnabled)) {
 			return;
 		}
 
 		auto magneto = std::make_unique<MagnetoCalibration>();
 		logger.info(
-			"Put the device into 6 unique orientations (all sides), leave it still and "
+			"Put the device into 6 unique orientations (all sides), leave it still "
+			"and "
 			"do not hold/touch for %d seconds each",
 			AccelCalibRestSeconds
 		);
@@ -290,17 +364,17 @@ private:
 #ifdef ESP8266
 			ESP.wdtFeed();
 #endif
-			sensor.bulkRead(
+			sensor.bulkRead({
 				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					const sensor_real_t scaledData[]
 						= {static_cast<sensor_real_t>(
-							   AScale * static_cast<sensor_real_t>(xyz[0])
+							   Consts::AScale * static_cast<sensor_real_t>(xyz[0])
 						   ),
 						   static_cast<sensor_real_t>(
-							   AScale * static_cast<sensor_real_t>(xyz[1])
+							   Consts::AScale * static_cast<sensor_real_t>(xyz[1])
 						   ),
 						   static_cast<sensor_real_t>(
-							   AScale * static_cast<sensor_real_t>(xyz[2])
+							   Consts::AScale * static_cast<sensor_real_t>(xyz[2])
 						   )};
 
 					calibrationRestDetection.updateAcc(IMU::AccTs, scaledData);
@@ -347,8 +421,8 @@ private:
 					}
 				},
 				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const int16_t rawTemp, const sensor_real_t timeDelta) {}
-			);
+				[](const int16_t rawTemp, const sensor_real_t timeDelta) {},
+			});
 		}
 		ledManager.off();
 		logger.debug("Calculating accelerometer calibration data...");
@@ -376,7 +450,7 @@ private:
 		logger.debug("}");
 	}
 
-	void calibrateSampleRate(const Base::EatSamplesFn& eatSamplesForSeconds) {
+	void calibrateSampleRate() {
 		logger.debug(
 			"Calibrating IMU sample rate in %d second(s)...",
 			SampleRateCalibDelaySeconds
@@ -392,7 +466,7 @@ private:
 		logger.debug("Counting samples now...");
 		uint32_t currentTime;
 		while ((currentTime = millis()) < calibTarget) {
-			sensor.bulkRead(
+			sensor.bulkRead({
 				[&](const RawSensorT xyz[3], const sensor_real_t timeDelta) {
 					accelSamples++;
 				},
@@ -401,8 +475,8 @@ private:
 				},
 				[&](const int16_t rawTemp, const sensor_real_t timeDelta) {
 					tempSamples++;
-				}
-			);
+				},
+			});
 			yield();
 		}
 
@@ -423,7 +497,8 @@ private:
 			= millisFromStart / (static_cast<float>(tempSamples) * 1000.0f);
 
 		logger.debug(
-			"Gyro frequency %fHz, accel frequency: %fHz, temperature frequency: %fHz",
+			"Gyro frequency %fHz, accel frequency: %fHz, temperature frequency: "
+			"%fHz",
 			1.0 / calibration.G_Ts,
 			1.0 / calibration.A_Ts,
 			1.0 / calibration.T_Ts
@@ -453,12 +528,10 @@ private:
 	};
 
 private:
-	using Base::AScale;
-	using Base::GScale;
 	using Base::logger;
 	using Base::sensor;
 	using Base::sensorId;
 	using Base::toggles;
 };
 
-}  // namespace SlimeVR::Sensor
+}  // namespace SlimeVR::Sensors
