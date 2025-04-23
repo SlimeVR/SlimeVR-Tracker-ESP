@@ -101,7 +101,7 @@
 #endif
 
 #ifndef USE_RUNTIME_CALIBRATION
-#define USE_RUNTIME_CALIBRATION false
+#define USE_RUNTIME_CALIBRATION true
 #endif
 
 #define DEBUG_MEASURE_SENSOR_TIME_TAKEN false
