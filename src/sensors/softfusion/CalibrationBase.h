@@ -52,7 +52,6 @@ public:
 
 	using Consts = IMUConsts<IMU>;
 	using RawSensorT = typename Consts::RawSensorT;
-	using RawVectorT = typename Consts::RawVectorT;
 
 	static constexpr bool HasMotionlessCalib
 		= requires(IMU& i) { typename IMU::MotionlessCalibrationData; };
@@ -64,12 +63,7 @@ public:
 		}
 	}
 
-	using EatSamplesFn = std::function<void(const uint32_t)>;
-	using ReturnLastFn
-		= std::function<std::tuple<RawVectorT, RawVectorT, int16_t>(const uint32_t)>;
-
 	virtual void checkStartupCalibration() {}
-
 	virtual void startCalibration(int calibrationType){};
 
 	virtual bool calibrationMatches(
