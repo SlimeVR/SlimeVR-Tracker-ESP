@@ -397,11 +397,13 @@ private:
 	SampleRateCalibrationStep<RawSensorT> sampleRateCalibrationStep{calibration};
 	MotionlessCalibrationStep<IMU, RawSensorT> motionlessCalibrationStep{
 		calibration,
-		sensor};
+		sensor
+	};
 	GyroBiasCalibrationStep<RawSensorT> gyroBiasCalibrationStep{calibration};
 	AccelBiasCalibrationStep<RawSensorT> accelBiasCalibrationStep{
 		calibration,
-		static_cast<float>(Consts::AScale)};
+		static_cast<float>(Consts::AScale)
+	};
 	NullCalibrationStep<RawSensorT> nullCalibrationStep{calibration};
 
 	CalibrationStep<RawSensorT>* currentStep = &nullCalibrationStep;
