@@ -173,30 +173,29 @@ public:
 		sensorInterface->init();
 		sensorInterface->swapIn();
 
-		if (imuInterface.hasSensorOnBus()) {
-			m_Manager->m_Logger.trace(
-				"Sensor %d found at address %s",
-				sensorID + 1,
-				imuInterface.toString()
-			);
-		} else {
+		if (!imuInterface.hasSensorOnBus()) {
 			if (!optional) {
 				m_Manager->m_Logger.error(
 					"Mandatory sensor %d not found at address %s",
 					sensorID + 1,
 					imuInterface.toString()
 				);
-				sensor = std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
+				return std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
 			} else {
 				m_Manager->m_Logger.debug(
 					"Optional sensor %d not found at address %s",
 					sensorID + 1,
 					imuInterface.toString()
 				);
-				sensor = std::make_unique<EmptySensor>(sensorID);
+				return std::make_unique<EmptySensor>(sensorID);
 			}
-			return sensor;
 		}
+
+		m_Manager->m_Logger.trace(
+			"Sensor %d found at address %s",
+			sensorID + 1,
+			imuInterface.toString()
+		);
 
 		sensor = std::make_unique<ImuType>(
 			sensorID,
