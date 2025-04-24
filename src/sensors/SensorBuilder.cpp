@@ -305,7 +305,7 @@ SensorTypeID SensorBuilder::findSensorType(
 	//	return SensorTypeID::ICM45605;
 	// }
 
-	//return SensorTypeID::Unknown;
+	// return SensorTypeID::Unknown;
 }
 
 }  // namespace SlimeVR::Sensors
