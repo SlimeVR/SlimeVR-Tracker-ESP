@@ -29,6 +29,7 @@
 
 #include "EmptySensor.h"
 #include "ErroneousSensor.h"
+#include "SensorManager.h"
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
@@ -77,8 +78,7 @@
 #include "driver/i2c.h"
 #endif
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 using SoftFusionLSM6DS3TRC
 	= SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC, SFCALIBRATOR>;
 using SoftFusionICM42688
@@ -97,71 +97,9 @@ class SensorAuto {};
 struct SensorBuilder {
 public:
 	SensorManager* m_Manager;
-	SensorBuilder(SensorManager* sensorManager)
-		: m_Manager(sensorManager) {}
+	SensorBuilder(SensorManager* sensorManager);
 
-	uint8_t buildAllSensors() {
-		SensorInterfaceManager interfaceManager;
-
-		uint8_t sensorID = 0;
-		uint8_t activeSensorCount = 0;
-
-#define NO_PIN nullptr
-#define DIRECT_PIN(pin) interfaceManager.directPinInterface().get(pin)
-#define DIRECT_WIRE(scl, sda) interfaceManager.i2cWireInterface().get(scl, sda)
-#define MCP_PIN(pin) interfaceManager.mcpPinInterface().get(pin)
-#define PCA_WIRE(scl, sda, addr, ch) \
-	interfaceManager.pcaWireInterface().get(scl, sda, addr, ch);
-#define DIRECT_SPI(clockfreq, bitorder, datamode, CS_PIN) \
-	*(new SPIImpl(SPI, SPISettings(clockfreq, bitorder, datamode), CS_PIN))
-
-#define SENSOR_DESC_ENTRY(ImuType, ...)                                              \
-	{                                                                                \
-		do {                                                                         \
-			std::unique_ptr<::Sensor> sensor;                                        \
-			if constexpr (std::is_same<ImuType, SensorAuto>::value) {                \
-				auto sensorType = findSensorType(sensorID, __VA_ARGS__);             \
-				if (sensorType == SensorTypeID::Unknown) {                           \
-					m_Manager->m_Logger.error(                                       \
-						"Can't find sensor type for sensor %d",                      \
-						sensorID                                                     \
-					);                                                               \
-					break;                                                           \
-				} else {                                                             \
-					m_Manager->m_Logger.info(                                        \
-						"Sensor %d automatically detected with %s",                  \
-						sensorID,                                                    \
-						getIMUNameByType(sensorType)                                 \
-					);                                                               \
-					sensor                                                           \
-						= buildSensorDynamically(sensorType, sensorID, __VA_ARGS__); \
-				}                                                                    \
-			} else {                                                                 \
-				sensor = buildSensor<ImuType>(sensorID, __VA_ARGS__);                \
-			}                                                                        \
-			if (sensor->isWorking()) {                                               \
-				m_Manager->m_Logger.info("Sensor %d configured", sensorID);          \
-				activeSensorCount++;                                                 \
-			}                                                                        \
-			m_Manager->m_Sensors.push_back(std::move(sensor));                       \
-		} while (false);                                                             \
-		sensorID++;                                                                  \
-	}
-
-		// Apply descriptor list and expand to entries
-		SENSOR_DESC_LIST;
-
-#define SENSOR_INFO_ENTRY(ImuID, ...) \
-	{ m_Manager->m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); }
-
-		// Apply sensor info list
-		SENSOR_INFO_LIST;
-
-		return activeSensorCount;
-	}
-
-#define BUILD_SENSOR_ARGS \
-	sensorID, imuInterface, rotation, sensorInterface, optional, intPin, extraParam
+	uint8_t buildAllSensors();
 
 	std::unique_ptr<::Sensor> buildSensorDynamically(
 		SensorTypeID type,
@@ -172,61 +110,7 @@ public:
 		bool optional,
 		PinInterface* intPin,
 		int extraParam
-	) {
-		switch (type) {
-			// case SensorTypeID::MPU9250:
-			//	return buildSensor<MPU9250Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::BNO080:
-			//	return buildSensor<BNO080Sensor>(BUILD_SENSOR_ARGS);
-			case SensorTypeID::BNO085:
-				return buildSensor<BNO085Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::BNO055:
-			//	return buildSensor<BNO055Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::MPU6050:
-			//	return buildSensor<SoftFusionMPU6050>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			// case SensorTypeID::BNO086:
-			//	return buildSensor<BNO086Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::BMI160:
-			//	return buildSensor<BMI160Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::ICM20948:
-			//	return buildSensor<ICM20948Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::ICM42688:
-			//	return buildSensor<SoftFusionICM42688>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			case SensorTypeID::BMI270:
-				return buildSensor<SoftFusionBMI270>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::LSM6DS3TRC:
-			//	return buildSensor<SoftFusionLSM6DS3TRC>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			case SensorTypeID::LSM6DSV:
-				return buildSensor<SoftFusionLSM6DSV>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::LSM6DSO:
-			//	return buildSensor<SoftFusionLSM6DSO>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			// case SensorTypeID::LSM6DSR:
-			//	return buildSensor<SoftFusionLSM6DSR>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			case SensorTypeID::ICM45686:
-				return buildSensor<SoftFusionICM45686>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::ICM45605:
-			//	return buildSensor<SoftFusionICM45605>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			default:
-				m_Manager->m_Logger.error(
-					"Unable to create sensor with type %s (%d)",
-					getIMUNameByType(type),
-					type
-				);
-		}
-		return std::make_unique<EmptySensor>(sensorID);
-	}
+	);
 
 	std::unique_ptr<::Sensor> buildSensorDynamically(
 		SensorTypeID type,
@@ -237,61 +121,7 @@ public:
 		bool optional,
 		PinInterface* intPin,
 		int extraParam
-	) {
-		switch (type) {
-			// case SensorTypeID::MPU9250:
-			//	return buildSensor<MPU9250Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::BNO080:
-			//	return buildSensor<BNO080Sensor>(BUILD_SENSOR_ARGS);
-			case SensorTypeID::BNO085:
-				return buildSensor<BNO085Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::BNO055:
-			//	return buildSensor<BNO055Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::MPU6050:
-			//	return buildSensor<SoftFusionMPU6050>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			// case SensorTypeID::BNO086:
-			//	return buildSensor<BNO086Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::BMI160:
-			//	return buildSensor<BMI160Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::ICM20948:
-			//	return buildSensor<ICM20948Sensor>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::ICM42688:
-			//	return buildSensor<SoftFusionICM42688>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			case SensorTypeID::BMI270:
-				return buildSensor<SoftFusionBMI270>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::LSM6DS3TRC:
-			//	return buildSensor<SoftFusionLSM6DS3TRC>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			case SensorTypeID::LSM6DSV:
-				return buildSensor<SoftFusionLSM6DSV>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::LSM6DSO:
-			//	return buildSensor<SoftFusionLSM6DSO>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			// case SensorTypeID::LSM6DSR:
-			//	return buildSensor<SoftFusionLSM6DSR>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			case SensorTypeID::ICM45686:
-				return buildSensor<SoftFusionICM45686>(BUILD_SENSOR_ARGS);
-			// case SensorTypeID::ICM45605:
-			//	return buildSensor<SoftFusionICM45605>(
-			//		BUILD_SENSOR_ARGS
-			//	);
-			default:
-				m_Manager->m_Logger.error(
-					"Unable to create sensor with type %s (%d)",
-					getIMUNameByType(type),
-					type
-				);
-		}
-		return std::make_unique<EmptySensor>(sensorID);
-	}
+	);
 
 	SensorTypeID findSensorType(
 		uint8_t sensorID,
@@ -301,40 +131,7 @@ public:
 		bool optional,
 		PinInterface* intPin,
 		int extraParam
-	) {
-		sensorInterface->init();
-		sensorInterface->swapIn();
-		// if (SoftFusionLSM6DS3TRC::checkPresent(sensorID, imuAddress))
-		// { 	return SensorTypeID::LSM6DS3TRC;
-		// }
-		// if (SoftFusionICM42688::checkPresent(sensorID, imuAddress)) {
-		//	return SensorTypeID::ICM42688;
-		//}
-		if (SoftFusionBMI270::checkPresent(sensorID, imuAddress)) {
-			return SensorTypeID::BMI270;
-		}
-		if (SoftFusionLSM6DSV::checkPresent(sensorID, imuAddress)) {
-			return SensorTypeID::LSM6DSV;
-		}
-		// if (SoftFusionLSM6DSO::checkPresent(sensorID, imuAddress)) {
-		//	return SensorTypeID::LSM6DSO;
-		// }
-		// if (SoftFusionLSM6DSR::checkPresent(sensorID, imuAddress)) {
-		//	return SensorTypeID::LSM6DSR;
-		// }
-		// if (SoftFusionMPU6050::checkPresent(sensorID, imuAddress)) {
-		//	return SensorTypeID::MPU6050;
-		// }
-		if (SoftFusionICM45686::checkPresent(sensorID, imuAddress)) {
-			return SensorTypeID::ICM45686;
-		}
-		return BNO080Sensor::checkIfPresent(sensorID, imuAddress, intPin);
-		// if (SoftFusionICM45605::checkPresent(sensorID, imuAddress)) {
-		//	return SensorTypeID::ICM45605;
-		// }
-
-		return SensorTypeID::Unknown;
-	}
+	);
 
 	SensorTypeID findSensorType(
 		uint8_t sensorID,
@@ -344,40 +141,7 @@ public:
 		bool optional,
 		PinInterface* intPin,
 		int extraParam
-	) {
-		sensorInterface->init();
-		sensorInterface->swapIn();
-		// if (SoftFusionLSM6DS3TRC::checkPresent(sensorID, imuInterface))
-		// { 	return SensorTypeID::LSM6DS3TRC;
-		// }
-		// if (SoftFusionICM42688::checkPresent(sensorID, imuInterface)) {
-		//	return SensorTypeID::ICM42688;
-		//}
-		if (SoftFusionBMI270::checkPresent(sensorID, imuInterface)) {
-			return SensorTypeID::BMI270;
-		}
-		if (SoftFusionLSM6DSV::checkPresent(sensorID, imuInterface)) {
-			return SensorTypeID::LSM6DSV;
-		}
-		// if (SoftFusionLSM6DSO::checkPresent(sensorID, imuInterface)) {
-		//	return SensorTypeID::LSM6DSO;
-		// }
-		// if (SoftFusionLSM6DSR::checkPresent(sensorID, imuInterface)) {
-		//	return SensorTypeID::LSM6DSR;
-		// }
-		// if (SoftFusionMPU6050::checkPresent(sensorID, imuInterface)) {
-		//	return SensorTypeID::MPU6050;
-		// }
-		if (SoftFusionICM45686::checkPresent(sensorID, imuInterface)) {
-			return SensorTypeID::ICM45686;
-		}
-		return BNO080Sensor::checkIfPresent(sensorID, sensorInterface, intPin);
-		// if (SoftFusionICM45605::checkPresent(sensorID, imuInterface)) {
-		//	return SensorTypeID::ICM45605;
-		// }
-
-		return SensorTypeID::Unknown;
-	}
+	);
 
 	template <typename ImuType>
 	std::unique_ptr<::Sensor> buildSensor(
@@ -490,5 +254,4 @@ public:
 		return sensor;
 	}
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors
