@@ -35,13 +35,6 @@
 namespace SlimeVR::Sensors {
 
 struct SPIImpl : public RegisterInterface {
-	SPIImpl(uint8_t address)
-		: m_spiClass(SPI)
-		, m_spiSettings(SPISettings())
-		, m_csPin(nullptr) {
-		static_assert("SPI requires explicit declaration");
-	}
-
 	SPIImpl(SPIClass& spiClass, SPISettings spiSettings, PinInterface* csPin)
 		: m_spiClass(spiClass)
 		, m_spiSettings(spiSettings)
