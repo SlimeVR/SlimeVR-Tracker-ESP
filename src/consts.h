@@ -73,15 +73,15 @@ enum class SensorTypeID : uint8_t {
 #define IMU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 #define BOARD_UNKNOWN 0
-#define BOARD_SLIMEVR_LEGACY 1
-#define BOARD_SLIMEVR_DEV 2
+#define BOARD_SLIMEVR_LEGACY 1 // More ancient development version of SlimeVR
+#define BOARD_SLIMEVR_DEV 2 // Ancient development version of SlimeVR
 #define BOARD_NODEMCU 3
 #define BOARD_CUSTOM 4
 #define BOARD_WROOM32 5
 #define BOARD_WEMOSD1MINI 6
 #define BOARD_TTGO_TBASE 7
 #define BOARD_ESP01 8
-#define BOARD_SLIMEVR 9
+#define BOARD_SLIMEVR 9 // SlimeVR v1.0 & v1.1
 #define BOARD_LOLIN_C3_MINI 10
 #define BOARD_BEETLE32C3 11
 #define BOARD_ESP32C3DEVKITM1 12
@@ -94,6 +94,7 @@ enum class SensorTypeID : uint8_t {
 #define BOARD_ESP32C6DEVKITC1 19
 #define BOARD_GLOVE_IMU_SLIMEVR_DEV 20  // IMU Glove
 #define BOARD_GESTURES 21  // Used by Gestures
+#define BOARD_SLIMEVR_V1_2 22 // SlimeVR v1.2
 #define BOARD_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 #define BAT_EXTERNAL 1

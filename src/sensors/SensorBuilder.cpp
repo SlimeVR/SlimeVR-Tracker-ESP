@@ -39,7 +39,7 @@ uint8_t SensorBuilder::buildAllSensors() {
 #define DIRECT_WIRE(scl, sda) interfaceManager.i2cWireInterface().get(scl, sda)
 #define MCP_PIN(pin) interfaceManager.mcpPinInterface().get(pin)
 #define PCA_WIRE(scl, sda, addr, ch) \
-	interfaceManager.pcaWireInterface().get(scl, sda, addr, ch);
+	interfaceManager.pcaWireInterface().get(scl, sda, addr, ch)
 #define DIRECT_SPI(clockfreq, bitorder, datamode, CS_PIN) \
 	*(new SPIImpl(SPI, SPISettings(clockfreq, bitorder, datamode), CS_PIN))
 
@@ -80,7 +80,7 @@ uint8_t SensorBuilder::buildAllSensors() {
 	SENSOR_DESC_LIST;
 
 #define SENSOR_INFO_ENTRY(ImuID, ...) \
-	{ m_Manager->m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); }
+	{ m_Manager->m_Sensors[ImuID]->setSensorInfo(__VA_ARGS__); }
 
 	// Apply sensor info list
 	SENSOR_INFO_LIST;

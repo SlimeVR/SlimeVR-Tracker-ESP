@@ -81,7 +81,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 #ifndef SENSOR_DESC_LIST
 #define MAX_SENSORS_COUNT 10
 #define TRACKER_TYPE TrackerType::TRACKER_TYPE_SVR_GLOVE_LEFT
-#define GLOVE_SIDE GloveSide::GLOVE_LEFT
+#define GLOVE_SIDE GLOVE_LEFT
 #define PRIMARY_IMU_ADDRESS_ONE 0x4a
 #define SECONDARY_IMU_ADDRESS_TWO 0x4b
 
@@ -177,7 +177,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 		0                                                \
 	)
 
-#if GLOVE_SIDE == GloveSide::GLOVE_LEFT
+#if GLOVE_SIDE == GLOVE_LEFT
 #define SENSOR_INFO_LIST                                                               \
 	SENSOR_INFO_ENTRY(0, SensorPosition::POSITION_LEFT_HAND)                           \
 	SENSOR_INFO_ENTRY(1, SensorPosition::POSITION_LEFT_LITTLE_INTERMEDIATE)            \
@@ -187,9 +187,9 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 	SENSOR_INFO_ENTRY(5, SensorPosition::POSITION_LEFT_MIDDLE_DISTAL)                  \
 	SENSOR_INFO_ENTRY(6, SensorPosition::POSITION_LEFT_INDEX_INTERMEDIATE)             \
 	SENSOR_INFO_ENTRY(7, SensorPosition::POSITION_LEFT_INDEX_DISTAL)                   \
-	SENSOR_INFO_ENTRY(8, SensorPosition::SensorPosition::POSITION_LEFT_THUMB_PROXIMAL) \
+	SENSOR_INFO_ENTRY(8, SensorPosition::POSITION_LEFT_THUMB_PROXIMAL) \
 	SENSOR_INFO_ENTRY(9, SensorPosition::POSITION_LEFT_THUMB_DISTAL)
-#elif GLOVE_SDIE == GloveSide::GLOVE_RIGHT
+#elif GLOVE_SDIE == GLOVE_RIGHT
 #define SENSOR_INFO_LIST                                                     \
 	SENSOR_INFO_ENTRY(0, SensorPosition::POSITION_RIGHT_HAND)                \
 	SENSOR_INFO_ENTRY(1, SensorPosition::POSITION_RIGHT_LITTLE_INTERMEDIATE) \
@@ -239,6 +239,23 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 
 // Board-specific configurations
 #if BOARD == BOARD_SLIMEVR
+#define PIN_IMU_SDA 14
+#define PIN_IMU_SCL 12
+#define PIN_IMU_INT 16
+#define PIN_IMU_INT_2 13
+#define PIN_BATTERY_LEVEL 17
+#define LED_PIN 2
+#define LED_INVERTED true
+#ifndef BATTERY_SHIELD_RESISTANCE
+#define BATTERY_SHIELD_RESISTANCE 0
+#endif
+#ifndef BATTERY_SHIELD_R1
+#define BATTERY_SHIELD_R1 10
+#endif
+#ifndef BATTERY_SHIELD_R2
+#define BATTERY_SHIELD_R2 40.2
+#endif
+#elif BOARD == BOARD_SLIMEVR_V1_2
 #define PIN_IMU_SDA 4
 #define PIN_IMU_SCL 5
 #define PIN_IMU_INT 2
