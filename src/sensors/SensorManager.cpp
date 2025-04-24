@@ -121,4 +121,4 @@ void SensorManager::update() {
 #endif
 }
 
-}  // namespace Sensors::SlimeVR
+}  // namespace SlimeVR::Sensors

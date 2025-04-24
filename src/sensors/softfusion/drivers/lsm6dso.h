@@ -128,15 +128,14 @@ struct LSM6DSO : LSM6DSOutputHandler {
 		GyroCall&& processGyroSample,
 		TempCall&& processTempSample
 	) {
-		LSM6DSOutputHandler::
-			template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
-				processAccelSample,
-				processGyroSample,
-				processTempSample,
-				GyrTs,
-				AccTs,
-				TempTs
-			);
+		LSM6DSOutputHandler::template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
+			processAccelSample,
+			processGyroSample,
+			processTempSample,
+			GyrTs,
+			AccTs,
+			TempTs
+		);
 	}
 };
 

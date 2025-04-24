@@ -67,4 +67,4 @@ private:
 
 	friend class SensorBuilder;
 };
-}  // namespace Sensors::SlimeVR
+}  // namespace SlimeVR::Sensors

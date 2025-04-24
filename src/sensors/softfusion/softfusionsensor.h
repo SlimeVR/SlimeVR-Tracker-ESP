@@ -38,12 +38,10 @@
 namespace SlimeVR::Sensors {
 
 template <
-	typename T,
+	typename SensorType,
 	template <typename IMU, typename RawSensorT, typename RawVectorT>
 	typename Calibrator>
 class SoftFusionSensor : public Sensor {
-	using SensorType = T;
-
 	static constexpr sensor_real_t getDefaultTempTs() {
 		if constexpr (DirectTempReadOnly) {
 			return DirectTempReadTs;
