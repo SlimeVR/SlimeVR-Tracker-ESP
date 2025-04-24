@@ -38,7 +38,7 @@ uint8_t SensorBuilder::buildAllSensors() {
 #define NO_WIRE new EmptySensorInterface
 #define DIRECT_PIN(pin) interfaceManager.directPinInterface().get(pin)
 #define DIRECT_WIRE(scl, sda) interfaceManager.i2cWireInterface().get(scl, sda)
-#define MCP_PIN(pin) interfaceManager.mcpPinInterface().get(pin)
+#define MCP_PIN(pin) interfaceManager.mcpPinInterface().get(&m_Manager->m_MCP, pin)
 #define PCA_WIRE(scl, sda, addr, ch) \
 	interfaceManager.pcaWireInterface().get(scl, sda, addr, ch)
 #define DIRECT_SPI(clockfreq, bitorder, datamode, CS_PIN) \
