@@ -453,7 +453,8 @@ public:
 
 	static bool checkPresent(uint8_t sensorID, uint8_t imuAddress) {
 		uint8_t address = imuAddress > 0 ? imuAddress : Address + sensorID;
-		if (!I2CSCAN::hasDevOnBus(address)) {
+		// Ask twice, because we're nice like this
+		if (!I2CSCAN::hasDevOnBus(address) && !I2CSCAN::hasDevOnBus(address)) {
 			return false;
 		}
 		const I2CImpl& i2c = I2CImpl(address);
