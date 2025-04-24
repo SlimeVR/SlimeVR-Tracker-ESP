@@ -36,7 +36,7 @@ public:
 
 	MPU6050Sensor(
 		uint8_t id,
-		uint8_t i2cAddress,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface*,
@@ -46,7 +46,7 @@ public:
 			"MPU6050Sensor",
 			SensorTypeID::MPU6050,
 			id,
-			i2cAddress,
+			registerInterface,
 			rotation,
 			sensorInterface
 		){};

@@ -37,7 +37,6 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 500Hz, accel ODR = 100Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
-template <typename I2CImpl>
 struct ICM42688 {
 	static constexpr uint8_t Address = 0x68;
 	static constexpr auto Name = "ICM-42688";
@@ -65,11 +64,11 @@ struct ICM42688 {
 		.restThAcc = 0.196f,
 	};
 
-	I2CImpl i2c;
-	SlimeVR::Logging::Logger& logger;
-	ICM42688(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: i2c(i2c)
-		, logger(logger) {}
+	RegisterInterface& m_RegisterInterface;
+	SlimeVR::Logging::Logger& m_Logger;
+	ICM42688(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+		: m_RegisterInterface(registerInterface)
+		, m_Logger(logger) {}
 
 	struct Regs {
 		struct WhoAmI {
@@ -142,22 +141,25 @@ struct ICM42688 {
 
 	bool initialize() {
 		// perform initialization step
-		i2c.writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
+		m_RegisterInterface.writeReg(
+			Regs::DeviceConfig::reg,
+			Regs::DeviceConfig::valueSwReset
+		);
 		delay(20);
 
-		i2c.writeReg(Regs::IntfConfig0::reg, Regs::IntfConfig0::value);
-		i2c.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
-		i2c.writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
-		i2c.writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
-		i2c.writeReg(Regs::FifoConfig1::reg, Regs::FifoConfig1::value);
-		i2c.writeReg(Regs::PwrMgmt::reg, Regs::PwrMgmt::value);
+		m_RegisterInterface.writeReg(Regs::IntfConfig0::reg, Regs::IntfConfig0::value);
+		m_RegisterInterface.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
+		m_RegisterInterface.writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
+		m_RegisterInterface.writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
+		m_RegisterInterface.writeReg(Regs::FifoConfig1::reg, Regs::FifoConfig1::value);
+		m_RegisterInterface.writeReg(Regs::PwrMgmt::reg, Regs::PwrMgmt::value);
 		delay(1);
 
 		return true;
 	}
 
 	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
-		const auto fifo_bytes = i2c.readReg16(Regs::FifoCount);
+		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
 		const auto bytes_to_read = std::min(
@@ -165,7 +167,8 @@ struct ICM42688 {
 									   static_cast<size_t>(fifo_bytes)
 								   )
 								 / FullFifoEntrySize * FullFifoEntrySize;
-		i2c.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
+		m_RegisterInterface
+			.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
 		for (auto i = 0u; i < bytes_to_read; i += FullFifoEntrySize) {
 			FifoEntryAligned entry;
 			memcpy(

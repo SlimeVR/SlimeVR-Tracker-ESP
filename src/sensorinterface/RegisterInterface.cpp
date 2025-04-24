@@ -1,6 +1,5 @@
-/*
-	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+/* SlimeVR Code is placed under the MIT license
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,29 +20,26 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORS_ERRONEOUSSENSOR_H
-#define SENSORS_ERRONEOUSSENSOR_H
-
-#include "../sensorinterface/RegisterInterface.h"
-#include "sensor.h"
+#include "RegisterInterface.h"
 
 namespace SlimeVR::Sensors {
-class ErroneousSensor : public Sensor {
-public:
-	ErroneousSensor(uint8_t id, SensorTypeID type)
-		: Sensor("ErroneousSensor", type, id, EmptyRegisterInterface::instance, 0.0)
-		, m_ExpectedType(type){};
-	~ErroneousSensor(){};
 
-	void motionSetup() override;
-	void motionLoop() override final{};
-	void sendData() override{};
-	void startCalibration(int calibrationType) override final{};
-	SensorStatus getSensorState() override final;
-
-private:
-	SensorTypeID m_ExpectedType;
+[[nodiscard]] uint8_t EmptyRegisterInterface::readReg(uint8_t regAddr) const {
+	return 0;
 };
-}  // namespace SlimeVR::Sensors
+[[nodiscard]] uint16_t EmptyRegisterInterface::readReg16(uint8_t regAddr) const {
+	return 0;
+};
+void EmptyRegisterInterface::writeReg(uint8_t regAddr, uint8_t value) const {};
+void EmptyRegisterInterface::writeReg16(uint8_t regAddr, uint16_t value) const {};
+void EmptyRegisterInterface::readBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer)
+	const {};
+void EmptyRegisterInterface::writeBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer)
+	const {};
+[[nodiscard]] uint8_t EmptyRegisterInterface::getAddress() const { return 0; };
+bool EmptyRegisterInterface::hasSensorOnBus() { return true; };
+[[nodiscard]] std::string EmptyRegisterInterface::toString() const { return "Empty"; };
 
-#endif
+EmptyRegisterInterface EmptyRegisterInterface::instance;
+
+}  // namespace SlimeVR::Sensors

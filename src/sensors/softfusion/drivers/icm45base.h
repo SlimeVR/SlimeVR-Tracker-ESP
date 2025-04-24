@@ -24,6 +24,7 @@
 #include <array>
 #include <cstdint>
 
+#include "../../../sensorinterface/RegisterInterface.h"
 #include "callbacks.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -35,7 +36,6 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
-template <typename I2CImpl>
 struct ICM45Base {
 	static constexpr uint8_t Address = 0x68;
 
@@ -53,11 +53,11 @@ struct ICM45Base {
 
 	static constexpr float TemperatureZROChange = 20.0f;
 
-	I2CImpl i2c;
-	SlimeVR::Logging::Logger& logger;
-	ICM45Base(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: i2c(i2c)
-		, logger(logger) {}
+	RegisterInterface& m_RegisterInterface;
+	SlimeVR::Logging::Logger& m_Logger;
+	ICM45Base(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+		: m_RegisterInterface(registerInterface)
+		, m_Logger(logger) {}
 
 	struct BaseRegs {
 		static constexpr uint8_t TempData = 0x0c;
@@ -119,17 +119,35 @@ struct ICM45Base {
 	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
 	void softResetIMU() {
-		i2c.writeReg(BaseRegs::DeviceConfig::reg, BaseRegs::DeviceConfig::valueSwReset);
+		m_RegisterInterface.writeReg(
+			BaseRegs::DeviceConfig::reg,
+			BaseRegs::DeviceConfig::valueSwReset
+		);
 		delay(35);
 	}
 
 	bool initializeBase() {
 		// perform initialization step
-		i2c.writeReg(BaseRegs::GyroConfig::reg, BaseRegs::GyroConfig::value);
-		i2c.writeReg(BaseRegs::AccelConfig::reg, BaseRegs::AccelConfig::value);
-		i2c.writeReg(BaseRegs::FifoConfig0::reg, BaseRegs::FifoConfig0::value);
-		i2c.writeReg(BaseRegs::FifoConfig3::reg, BaseRegs::FifoConfig3::value);
-		i2c.writeReg(BaseRegs::PwrMgmt0::reg, BaseRegs::PwrMgmt0::value);
+		m_RegisterInterface.writeReg(
+			BaseRegs::GyroConfig::reg,
+			BaseRegs::GyroConfig::value
+		);
+		m_RegisterInterface.writeReg(
+			BaseRegs::AccelConfig::reg,
+			BaseRegs::AccelConfig::value
+		);
+		m_RegisterInterface.writeReg(
+			BaseRegs::FifoConfig0::reg,
+			BaseRegs::FifoConfig0::value
+		);
+		m_RegisterInterface.writeReg(
+			BaseRegs::FifoConfig3::reg,
+			BaseRegs::FifoConfig3::value
+		);
+		m_RegisterInterface.writeReg(
+			BaseRegs::PwrMgmt0::reg,
+			BaseRegs::PwrMgmt0::value
+		);
 		delay(1);
 
 		return true;
@@ -143,7 +161,7 @@ struct ICM45Base {
 
 		constexpr int16_t InvalidReading = -32768;
 
-		size_t fifo_packets = i2c.readReg16(BaseRegs::FifoCount);
+		size_t fifo_packets = m_RegisterInterface.readReg16(BaseRegs::FifoCount);
 
 		if (fifo_packets >= 1) {
 			//
@@ -173,7 +191,8 @@ struct ICM45Base {
 		fifo_packets = std::min(fifo_packets, MaxReadings);
 
 		size_t bytes_to_read = fifo_packets * FullFifoEntrySize;
-		i2c.readBytes(BaseRegs::FifoData, bytes_to_read, read_buffer.data());
+		m_RegisterInterface
+			.readBytes(BaseRegs::FifoData, bytes_to_read, read_buffer.data());
 
 		for (auto i = 0u; i < bytes_to_read; i += FullFifoEntrySize) {
 			uint8_t header = read_buffer[i];

@@ -23,106 +23,18 @@
 
 #include "SensorManager.h"
 
-#include <map>
-#include <type_traits>
-
-#include "bmi160sensor.h"
-#include "bno055sensor.h"
-#include "bno080sensor.h"
-#include "icm20948sensor.h"
-#include "mpu6050sensor.h"
-#include "mpu9250sensor.h"
-#include "sensorinterface/SensorInterfaceManager.h"
-#include "sensors/softfusion/SoftfusionCalibration.h"
-#include "sensors/softfusion/runtimecalibration/RuntimeCalibration.h"
-#include "softfusion/drivers/bmi270.h"
-#include "softfusion/drivers/icm42688.h"
-#include "softfusion/drivers/icm45605.h"
-#include "softfusion/drivers/icm45686.h"
-#include "softfusion/drivers/lsm6ds3trc.h"
-#include "softfusion/drivers/lsm6dso.h"
-#include "softfusion/drivers/lsm6dsr.h"
-#include "softfusion/drivers/lsm6dsv.h"
-#include "softfusion/drivers/mpu6050.h"
-#include "softfusion/i2cimpl.h"
-#include "softfusion/softfusionsensor.h"
-
-#if ESP32
-#include "driver/i2c.h"
-#endif
-
-#if USE_RUNTIME_CALIBRATION
-#define SFCALIBRATOR RuntimeCalibration::RuntimeCalibrator
-#else
-#define SFCALIBRATOR SoftfusionCalibrator
-#endif
+#include "SensorBuilder.h"
 
 namespace SlimeVR::Sensors {
-using SoftFusionLSM6DS3TRC = SoftFusionSensor<
-	SoftFusion::Drivers::LSM6DS3TRC,
-	SoftFusion::I2CImpl,
-	SFCALIBRATOR>;
-using SoftFusionICM42688 = SoftFusionSensor<
-	SoftFusion::Drivers::ICM42688,
-	SoftFusion::I2CImpl,
-	SFCALIBRATOR>;
-using SoftFusionBMI270
-	= SoftFusionSensor<SoftFusion::Drivers::BMI270, SoftFusion::I2CImpl, SFCALIBRATOR>;
-using SoftFusionLSM6DSV
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, SoftFusion::I2CImpl, SFCALIBRATOR>;
-using SoftFusionLSM6DSO
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::I2CImpl, SFCALIBRATOR>;
-using SoftFusionLSM6DSR
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl, SFCALIBRATOR>;
-using SoftFusionMPU6050
-	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl, SFCALIBRATOR>;
-using SoftFusionICM45686 = SoftFusionSensor<
-	SoftFusion::Drivers::ICM45686,
-	SoftFusion::I2CImpl,
-	SFCALIBRATOR>;
-using SoftFusionICM45605 = SoftFusionSensor<
-	SoftFusion::Drivers::ICM45605,
-	SoftFusion::I2CImpl,
-	SFCALIBRATOR>;
 
 void SensorManager::setup() {
-	SensorInterfaceManager interfaceManager;
-
-	uint8_t sensorID = 0;
-	uint8_t activeSensorCount = 0;
 	if (m_MCP.begin_I2C()) {
 		m_Logger.info("MCP initialized");
 	}
 
-#define NO_PIN nullptr
-#define DIRECT_PIN(pin) interfaceManager.directPinInterface().get(pin)
-#define DIRECT_WIRE(scl, sda) interfaceManager.i2cWireInterface().get(scl, sda)
-#define MCP_PIN(pin) interfaceManager.mcpPinInterface().get(pin)
-#define PCA_WIRE(scl, sda, addr, ch) \
-	interfaceManager.pcaWireInterface().get(scl, sda, addr, ch);
+	SensorBuilder sensorBuilder = SensorBuilder(this);
+	uint8_t activeSensorCount = sensorBuilder.buildAllSensors();
 
-#define SENSOR_DESC_ENTRY(ImuType, ...)                            \
-	{                                                              \
-		auto sensor = buildSensor<ImuType>(sensorID, __VA_ARGS__); \
-		if (sensor->isWorking()) {                                 \
-			m_Logger.info("Sensor %d configured", sensorID + 1);   \
-			activeSensorCount++;                                   \
-		}                                                          \
-		m_Sensors.push_back(std::move(sensor));                    \
-		sensorID++;                                                \
-	}
-
-	// Apply descriptor list and expand to entries
-	SENSOR_DESC_LIST;
-
-#define SENSOR_INFO_ENTRY(ImuID, ...) \
-	{ m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); }
-	SENSOR_INFO_LIST;
-
-#undef SENSOR_DESC_ENTRY
-#undef NO_PIN
-#undef DIRECT_PIN
-#undef DIRECT_WIRE
 	m_Logger.info("%d sensor(s) configured", activeSensorCount);
 	// Check and scan i2c if no sensors active
 	if (activeSensorCount == 0) {
@@ -208,4 +120,5 @@ void SensorManager::update() {
 	networkConnection.endBundle();
 #endif
 }
+
 }  // namespace SlimeVR::Sensors
