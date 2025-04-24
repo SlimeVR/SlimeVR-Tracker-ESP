@@ -64,7 +64,7 @@ public:
 	bool isFlagSupported(SensorToggles toggle) const final;
 	void sendTempIfNeeded();
 
-	static SensorTypeID checkIfPresent(
+	static SensorTypeID checkPresent(
 		uint8_t sensorID,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface* intPin
@@ -78,7 +78,7 @@ public:
 	}
 
 	static SensorTypeID
-	checkIfPresent(uint8_t sensorID, uint8_t imuAddress, PinInterface* intPin) {
+	checkPresent(uint8_t sensorID, uint8_t imuAddress, PinInterface* intPin) {
 		uint8_t address = imuAddress > 0 ? imuAddress : Address + sensorID;
 		// Lazy check for if BNO is present, we only check if I2C has an address here
 		if (I2CSCAN::hasDevOnBus(address)) {

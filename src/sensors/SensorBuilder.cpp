@@ -35,6 +35,7 @@ uint8_t SensorBuilder::buildAllSensors() {
 	uint8_t activeSensorCount = 0;
 
 #define NO_PIN nullptr
+#define NO_WIRE new EmptySensorInterface
 #define DIRECT_PIN(pin) interfaceManager.directPinInterface().get(pin)
 #define DIRECT_WIRE(scl, sda) interfaceManager.i2cWireInterface().get(scl, sda)
 #define MCP_PIN(pin) interfaceManager.mcpPinInterface().get(pin)
@@ -256,7 +257,7 @@ SensorTypeID SensorBuilder::findSensorType(
 	if (SoftFusionICM45686::checkPresent(sensorID, imuAddress)) {
 		return SensorTypeID::ICM45686;
 	}
-	return BNO080Sensor::checkIfPresent(sensorID, imuAddress, intPin);
+	return BNO080Sensor::checkPresent(sensorID, imuAddress, intPin);
 	// if (SoftFusionICM45605::checkPresent(sensorID, imuAddress)) {
 	//	return SensorTypeID::ICM45605;
 	// }
@@ -299,12 +300,12 @@ SensorTypeID SensorBuilder::findSensorType(
 	if (SoftFusionICM45686::checkPresent(sensorID, imuInterface)) {
 		return SensorTypeID::ICM45686;
 	}
-	return BNO080Sensor::checkIfPresent(sensorID, sensorInterface, intPin);
+	return BNO080Sensor::checkPresent(sensorID, sensorInterface, intPin);
 	// if (SoftFusionICM45605::checkPresent(sensorID, imuInterface)) {
 	//	return SensorTypeID::ICM45605;
 	// }
 
-	return SensorTypeID::Unknown;
+	//return SensorTypeID::Unknown;
 }
 
 }  // namespace SlimeVR::Sensors

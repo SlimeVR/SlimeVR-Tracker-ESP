@@ -28,7 +28,7 @@
 // Set parameters of IMU and board used
 #define IMU IMU_AUTO
 #define SECOND_IMU IMU_AUTO
-#define BOARD BOARD_SLIMEVR
+#define BOARD BOARD_SLIMEVR_V1_2
 #define IMU_ROTATION DEG_270
 #define SECOND_IMU_ROTATION DEG_270
 
@@ -54,12 +54,13 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 */
 
 #ifndef SENSOR_DESC_LIST
+#if BOARD == BOARD_SLIMEVR_V1_2
 #define SENSOR_DESC_LIST                                             \
-	SENSOR_DESC_ENTRY(                                           \
+	SENSOR_DESC_ENTRY(                                               \
 		IMU,                                                         \
 		DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3, DIRECT_PIN(15)), \
 		IMU_ROTATION,                                                \
-		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),                       \
+		NO_WIRE,                                                     \
 		PRIMARY_IMU_OPTIONAL,                                        \
 		DIRECT_PIN(PIN_IMU_INT),                                     \
 		0                                                            \
@@ -73,8 +74,28 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 		DIRECT_PIN(PIN_IMU_INT_2),                                   \
 		0                                                            \
 	)
+#else
+#define SENSOR_DESC_LIST                       \
+	SENSOR_DESC_ENTRY(                         \
+		IMU,                                   \
+		PRIMARY_IMU_ADDRESS_ONE,               \
+		IMU_ROTATION,                          \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), \
+		PRIMARY_IMU_OPTIONAL,                  \
+		DIRECT_PIN(PIN_IMU_INT),               \
+		0                                      \
+	)                                          \
+	SENSOR_DESC_ENTRY(                         \
+		SECOND_IMU,                            \
+		SECONDARY_IMU_ADDRESS_TWO,             \
+		SECOND_IMU_ROTATION,                   \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA), \
+		SECONDARY_IMU_OPTIONAL,                \
+		DIRECT_PIN(PIN_IMU_INT_2),             \
+		0                                      \
+	)
 #endif
-
+#endif
 #else
 
 // Predefines for the GLOVE
@@ -178,16 +199,16 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 	)
 
 #if GLOVE_SIDE == GLOVE_LEFT
-#define SENSOR_INFO_LIST                                                               \
-	SENSOR_INFO_ENTRY(0, SensorPosition::POSITION_LEFT_HAND)                           \
-	SENSOR_INFO_ENTRY(1, SensorPosition::POSITION_LEFT_LITTLE_INTERMEDIATE)            \
-	SENSOR_INFO_ENTRY(2, SensorPosition::POSITION_LEFT_RING_INTERMEDIATE)              \
-	SENSOR_INFO_ENTRY(3, SensorPosition::POSITION_LEFT_RING_DISTAL)                    \
-	SENSOR_INFO_ENTRY(4, SensorPosition::POSITION_LEFT_MIDDLE_INTERMEDIATE)            \
-	SENSOR_INFO_ENTRY(5, SensorPosition::POSITION_LEFT_MIDDLE_DISTAL)                  \
-	SENSOR_INFO_ENTRY(6, SensorPosition::POSITION_LEFT_INDEX_INTERMEDIATE)             \
-	SENSOR_INFO_ENTRY(7, SensorPosition::POSITION_LEFT_INDEX_DISTAL)                   \
-	SENSOR_INFO_ENTRY(8, SensorPosition::POSITION_LEFT_THUMB_PROXIMAL) \
+#define SENSOR_INFO_LIST                                                    \
+	SENSOR_INFO_ENTRY(0, SensorPosition::POSITION_LEFT_HAND)                \
+	SENSOR_INFO_ENTRY(1, SensorPosition::POSITION_LEFT_LITTLE_INTERMEDIATE) \
+	SENSOR_INFO_ENTRY(2, SensorPosition::POSITION_LEFT_RING_INTERMEDIATE)   \
+	SENSOR_INFO_ENTRY(3, SensorPosition::POSITION_LEFT_RING_DISTAL)         \
+	SENSOR_INFO_ENTRY(4, SensorPosition::POSITION_LEFT_MIDDLE_INTERMEDIATE) \
+	SENSOR_INFO_ENTRY(5, SensorPosition::POSITION_LEFT_MIDDLE_DISTAL)       \
+	SENSOR_INFO_ENTRY(6, SensorPosition::POSITION_LEFT_INDEX_INTERMEDIATE)  \
+	SENSOR_INFO_ENTRY(7, SensorPosition::POSITION_LEFT_INDEX_DISTAL)        \
+	SENSOR_INFO_ENTRY(8, SensorPosition::POSITION_LEFT_THUMB_PROXIMAL)      \
 	SENSOR_INFO_ENTRY(9, SensorPosition::POSITION_LEFT_THUMB_DISTAL)
 #elif GLOVE_SDIE == GLOVE_RIGHT
 #define SENSOR_INFO_LIST                                                     \

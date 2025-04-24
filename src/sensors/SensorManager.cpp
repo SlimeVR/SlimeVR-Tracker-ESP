@@ -25,8 +25,7 @@
 
 #include "SensorBuilder.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 
 void SensorManager::setup() {
 	if (m_MCP.begin_I2C()) {
@@ -122,5 +121,4 @@ void SensorManager::update() {
 #endif
 }
 
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace Sensors::SlimeVR

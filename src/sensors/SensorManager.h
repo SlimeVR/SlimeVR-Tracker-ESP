@@ -38,8 +38,7 @@
 #include "sensorinterface/RegisterInterface.h"
 #include "sensorinterface/i2cimpl.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 
 class SensorManager {
 public:
@@ -68,5 +67,4 @@ private:
 
 	friend class SensorBuilder;
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace Sensors::SlimeVR
