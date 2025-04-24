@@ -31,6 +31,8 @@
 #include "I2CPCAInterface.h"
 #include "I2CWireSensorInterface.h"
 #include "MCP23X17PinInterface.h"
+#include "SensorInterface.h"
+#include "i2cimpl.h"
 
 namespace SlimeVR {
 

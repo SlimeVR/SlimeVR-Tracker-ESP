@@ -126,13 +126,13 @@ struct SPIImpl : public RegisterInterface {
 		m_spiClass.endTransaction();
 	}
 
-	bool hasSensorOnBus() {
+	bool hasSensorOnBus() override {
 		return true;  // TODO
 	}
 
 	uint8_t getAddress() const override { return 0; }
 
-	std::string toString() const { return std::string("SPI"); }
+	std::string toString() const override { return std::string("SPI"); }
 
 private:
 	SPIClass& m_spiClass;

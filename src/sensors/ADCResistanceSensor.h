@@ -22,8 +22,8 @@
 */
 #pragma once
 
+#include "../sensorinterface/RegisterInterface.h"
 #include "sensor.h"
-#include "sensorinterface/SensorInterface.h"
 
 namespace SlimeVR::Sensors {
 class ADCResistanceSensor : Sensor {
@@ -41,7 +41,7 @@ public:
 			"ADCResistanceSensor",
 			SensorTypeID::ADC_RESISTANCE,
 			id,
-			*(new I2CImpl(0)),
+			EmptyRegisterInterface::instance,
 			0.0f,
 			new SlimeVR::EmptySensorInterface
 		)
