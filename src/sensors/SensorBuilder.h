@@ -153,49 +153,6 @@ public:
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
-		return buildSensorReal<ImuType>(
-			sensorID,
-			imuInterface,
-			rotation,
-			sensorInterface,
-			optional,
-			intPin,
-			extraParam
-		);
-	}
-
-	template <typename ImuType>
-	std::unique_ptr<::Sensor> buildSensor(
-		uint8_t sensorID,
-		uint8_t imuAddress,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional = false,
-		PinInterface* intPin = nullptr,
-		int extraParam = 0
-	) {
-		uint8_t address = imuAddress > 0 ? imuAddress : ImuType::Address + sensorID;
-		return buildSensorReal<ImuType>(
-			sensorID,
-			*(new I2CImpl(address)),
-			rotation,
-			sensorInterface,
-			optional,
-			intPin,
-			extraParam
-		);
-	}
-
-	template <typename ImuType>
-	std::unique_ptr<::Sensor> buildSensorReal(
-		uint8_t sensorID,
-		RegisterInterface& imuInterface,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional = false,
-		PinInterface* intPin = nullptr,
-		int extraParam = 0
-	) {
 		m_Manager->m_Logger.trace(
 			"Building IMU with: id=%d,\n\
 						address=%s, rotation=%f,\n\
@@ -252,6 +209,28 @@ public:
 
 		sensor->motionSetup();
 		return sensor;
+	}
+
+	template <typename ImuType>
+	std::unique_ptr<::Sensor> buildSensor(
+		uint8_t sensorID,
+		uint8_t imuAddress,
+		float rotation,
+		SensorInterface* sensorInterface,
+		bool optional = false,
+		PinInterface* intPin = nullptr,
+		int extraParam = 0
+	) {
+		uint8_t address = imuAddress > 0 ? imuAddress : ImuType::Address + sensorID;
+		return buildSensor<ImuType>(
+			sensorID,
+			*(new I2CImpl(address)),
+			rotation,
+			sensorInterface,
+			optional,
+			intPin,
+			extraParam
+		);
 	}
 };
 }  // namespace SlimeVR::Sensors
