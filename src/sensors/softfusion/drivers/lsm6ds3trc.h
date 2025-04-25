@@ -158,6 +158,6 @@ struct LSM6DS3TRC {
 			callbacks.processTempSample(read_buffer[i + 9], TempTs);
 		}
 	}
-};
+};  // namespace SlimeVR::Sensors::SoftFusion::Drivers
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers

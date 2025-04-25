@@ -220,6 +220,6 @@ struct MPU6050 {
 			callbacks.processGyroSample(xyz, GyrTs);
 		}
 	}
-};
+};  // namespace SlimeVR::Sensors::SoftFusion::Drivers
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers
