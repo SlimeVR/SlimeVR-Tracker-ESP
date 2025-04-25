@@ -49,7 +49,7 @@ public:
 
 	MPU9250Sensor(
 		uint8_t id,
-		uint8_t i2cAddress,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface*,
@@ -59,7 +59,7 @@ public:
 			"MPU9250Sensor",
 			SensorTypeID::MPU9250,
 			id,
-			i2cAddress,
+			registerInterface,
 			rotation,
 			sensorInterface
 		)

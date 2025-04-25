@@ -27,6 +27,7 @@
 #include <array>
 #include <cstdint>
 
+#include "../../../sensorinterface/RegisterInterface.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -35,7 +36,6 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 416Hz, accel ODR = 416Hz
 
-template <typename I2CImpl>
 struct LSM6DS3TRC {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DS3TR-C";
@@ -64,11 +64,11 @@ struct LSM6DS3TRC {
 		.restThAcc = 0.392f,
 	};
 
-	I2CImpl i2c;
-	SlimeVR::Logging::Logger logger;
-	LSM6DS3TRC(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: i2c(i2c)
-		, logger(logger) {}
+	RegisterInterface& m_RegisterInterface;
+	SlimeVR::Logging::Logger m_Logger;
+	LSM6DS3TRC(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+		: m_RegisterInterface(registerInterface)
+		, m_Logger(logger) {}
 
 	struct Regs {
 		struct WhoAmI {
@@ -111,14 +111,14 @@ struct LSM6DS3TRC {
 
 	bool initialize() {
 		// perform initialization step
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
 		delay(20);
-		i2c.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
-		i2c.writeReg(Regs::Ctrl2G::reg, Regs::Ctrl2G::value);
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
-		i2c.writeReg(Regs::FifoCtrl2::reg, Regs::FifoCtrl2::value);
-		i2c.writeReg(Regs::FifoCtrl3::reg, Regs::FifoCtrl3::value);
-		i2c.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl2G::reg, Regs::Ctrl2G::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
+		m_RegisterInterface.writeReg(Regs::FifoCtrl2::reg, Regs::FifoCtrl2::value);
+		m_RegisterInterface.writeReg(Regs::FifoCtrl3::reg, Regs::FifoCtrl3::value);
+		m_RegisterInterface.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
 		return true;
 	}
 
@@ -128,12 +128,12 @@ struct LSM6DS3TRC {
 		GyroCall&& processGyroSample,
 		TempCall&& processTemperatureSample
 	) {
-		const auto read_result = i2c.readReg16(Regs::FifoStatus);
+		const auto read_result = m_RegisterInterface.readReg16(Regs::FifoStatus);
 		if (read_result & 0x4000) {  // overrun!
 			// disable and re-enable fifo to clear it
-			logger.debug("Fifo overrun, resetting...");
-			i2c.writeReg(Regs::FifoCtrl5::reg, 0);
-			i2c.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
+			m_Logger.debug("Fifo overrun, resetting...");
+			m_RegisterInterface.writeReg(Regs::FifoCtrl5::reg, 0);
+			m_RegisterInterface.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
 			return;
 		}
 		const auto unread_entries = read_result & 0x7ff;
@@ -150,7 +150,7 @@ struct LSM6DS3TRC {
 								 * sizeof(uint16_t) / single_measurement_bytes
 								 * single_measurement_bytes;
 
-		i2c.readBytes(
+		m_RegisterInterface.readBytes(
 			Regs::FifoData,
 			bytes_to_read,
 			reinterpret_cast<uint8_t*>(read_buffer.data())
