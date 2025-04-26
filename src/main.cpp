@@ -173,7 +173,7 @@ void loop() {
 	I2CSCAN::update();
 	BENCHMARK_END(8)
 #ifdef TARGET_LOOPTIME_MICROS
-    BENCHMARK_END(9)
+    BENCHMARK_START(9)
 	long elapsed = (micros() - loopTime);
 	if (elapsed < TARGET_LOOPTIME_MICROS) {
 		long sleepus = TARGET_LOOPTIME_MICROS - elapsed - 100;  // µs to sleep
