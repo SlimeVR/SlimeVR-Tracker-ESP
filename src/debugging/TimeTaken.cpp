@@ -22,34 +22,76 @@
 
 namespace SlimeVR::Debugging {
 
-TimeTakenMeasurer::TimeTakenMeasurer(const char* name)
-	: name{name} {}
+void TimeTakenMeasurer::before(int measurement) { timings[measurement].start = micros(); }
+void TimeTakenMeasurer::after(int measurement) { timings[measurement].end = micros(); }
 
-void TimeTakenMeasurer::before() { startMicros = micros(); }
+void TimeTakenMeasurer::calculate() {
+	for (auto& timing : timings) {
+		if (timing.start == 0 && timing.end == 0) {
+			continue;  // Skip if not measured
+		}
+		unsigned long d = timing.end - timing.start;
+		timing.min = min(timing.min, d);
+		timing.max = max(timing.max, d);
+		timing.timeTaken += d;
+		timing.count++;
+		timing.start = 0;
+		timing.end = 0;
+	}
+	if (lastTimingsPrint < millis() - SecondsBetweenReports * 1000) {
+		nextPeriod();
+		report();
+	}
+}
 
-void TimeTakenMeasurer::after() {
-	uint64_t elapsedMicros = micros() - startMicros;
-	timeTakenMicros += elapsedMicros;
-
-	uint64_t sinceLastReportMillis = millis() - lastTimeTakenReportMillis;
-
-	if (sinceLastReportMillis < static_cast<uint64_t>(SecondsBetweenReports * 1e3)) {
-		return;
+void TimeTakenMeasurer::nextPeriod() {
+	// Calculate the time since the last report
+	unsigned long sinceLastReportMillis = millis() - lastTimingsPrint;
+	lastTimingsPrint = millis();
+	for (auto& timing : timings) {
+		timing.timeTakenPercent = static_cast<float>(timing.timeTaken) / 1e3f
+										/ static_cast<float>(sinceLastReportMillis) * 100;
+		timing.timeTotal = sinceLastReportMillis;
+		timing.avg = timing.timeTaken / max(timing.count, 1ul);
 	}
 
-	float usedPercentage = static_cast<float>(timeTakenMicros) / 1e3f
-						 / static_cast<float>(sinceLastReportMillis) * 100;
+	// Copy the values to the past measurement
+	pasttimings = timings;
 
-	m_Logger.info(
-		"%s: %.2f%% of the last period taken (%.2f/%lld millis)",
-		name,
-		usedPercentage,
-		timeTakenMicros / 1e3f,
-		sinceLastReportMillis
-	);
+	// Reset the current measurement
+	for (auto& timing : timings) {
+		timing.avg = 0;
+		timing.min = -1;
+		timing.max = 0;
+		timing.timeTaken = 0;
+		timing.count = 0;
+		timing.start = 0;
+		timing.end = 0;
+		timing.timeTakenPercent = 0;
+		timing.timeTotal = 0;
+	}
+}
 
-	timeTakenMicros = 0;
-	lastTimeTakenReportMillis = millis();
+void TimeTakenMeasurer::report() {
+	unsigned long totalTime = 0;
+	unsigned long count = 0;
+    for (size_t i = 0; i < pasttimings.size(); ++i) {
+        const auto& timing = pasttimings[i];
+        const auto& name = names[i];
+		m_Logger.info("%-24s | avg: %5lu us | min: %5lu us | max: %5lu us | time taken: %5lu ms or %5.2f%% of %lu ms count: %lu",
+			name.c_str(),
+			timing.avg,
+			timing.min,
+			timing.max,
+			static_cast<unsigned long>(timing.timeTaken / 1000),
+			timing.timeTakenPercent,
+			timing.timeTotal,
+			timing.count
+		);
+		totalTime = max(timing.timeTotal, totalTime);
+		count = max (timing.count, count);
+	}
+	m_Logger.info("Time Total: %lu ms Loops: %lu PrintReport Time: %lu ms", totalTime, count, millis()-lastTimingsPrint);
 }
 
 }  // namespace SlimeVR::Debugging

@@ -47,6 +47,11 @@
 #include "softfusion/i2cimpl.h"
 #include "softfusion/softfusionsensor.h"
 
+#if DEBUG_MEASURE_TIME_TAKEN
+#include "debugging/TimeTaken.h"
+extern SlimeVR::Debugging::TimeTakenMeasurer timingsMeasurer;
+#endif
+
 #if ESP32
 #include "driver/i2c.h"
 #endif
@@ -149,7 +154,14 @@ void SensorManager::postSetup() {
 void SensorManager::update() {
 	// Gather IMU data
 	bool allIMUGood = true;
+#if DEBUG_MEASURE_TIME_TAKEN
+	uint8_t sensorcount = 0;
+#endif
 	for (auto& sensor : m_Sensors) {
+#if DEBUG_MEASURE_TIME_TAKEN
+
+		timingsMeasurer.before(11+sensorcount);
+#endif
 		if (sensor->isWorking()) {
 			if (sensor->m_hwInterface != nullptr) {
 				sensor->m_hwInterface->swapIn();
@@ -159,6 +171,10 @@ void SensorManager::update() {
 		if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR) {
 			allIMUGood = false;
 		}
+#if DEBUG_MEASURE_TIME_TAKEN
+		timingsMeasurer.after(11+sensorcount);
+		sensorcount++;
+#endif
 	}
 
 	statusManager.setStatus(SlimeVR::Status::IMU_ERROR, !allIMUGood);

@@ -26,33 +26,60 @@
 
 namespace SlimeVR::Debugging {
 
+struct TimingMeasurement {
+	unsigned long avg = 0;
+	unsigned long min = -1;
+	unsigned long max = 0;
+	unsigned long timeTaken = 0;
+	float timeTakenPercent = 0;
+	unsigned long timeTotal = 0;
+	unsigned long count = 0;
+	unsigned long start = 0;
+	unsigned long end = 0;
+};
+
 /*
  * Usage:
  *
- * TimeTakenMeasurer measurer{"Some event"};
+ * std::vector<const char*> timingNames = {
+ *    "tpsCounter.update()",  <- 0
+ *    "globalTimer.tick()"    <- 1
+ * }
+ * TimeTakenMeasurer measurer{timingNames};
  *
  * ...
  *
- * measurer.before();
+ * measurer.before(0);
  * thing to measure
- * measurer.after();
+ * measurer.after(0);
  */
 class TimeTakenMeasurer {
 public:
-	explicit TimeTakenMeasurer(const char* name);
-	void before();
-	void after();
+	explicit TimeTakenMeasurer(const std::vector<const char*>& names) {
+		for (const auto& name : names) {
+			this->names.push_back(name);
+			this->timings.push_back({0, 2 ^ 64, 0, 0, 0, 0, 0, 0});
+			//this->timingPoints.push_back({0, 0});
+		}
+	}
+
+	void before(int measurement);
+	void after(int measurement);
+	void calculate();
+
 
 private:
-	static constexpr float SecondsBetweenReports = 1.0f;
+	void nextPeriod();
+	void report();
+	static constexpr float SecondsBetweenReports = 10.0f;
+	unsigned long lastTimingsPrint = 0;
 
-	const char* name;
+	std::vector<String> names;
+	std::vector<TimingMeasurement> timings;
+
+	std::vector<TimingMeasurement> pasttimings;
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("TimeTaken");
-
-	uint64_t lastTimeTakenReportMillis = 0;
-	uint64_t timeTakenMicros = 0;
-
-	uint64_t startMicros = 0;
+	unsigned long  lastTimeTakenReportMillis = 0;
 };
 
 }  // namespace SlimeVR::Debugging

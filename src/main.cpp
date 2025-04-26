@@ -43,8 +43,34 @@ SlimeVR::Configuration::Configuration configuration;
 SlimeVR::Network::Manager networkManager;
 SlimeVR::Network::Connection networkConnection;
 
-#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
-SlimeVR::Debugging::TimeTakenMeasurer sensorMeasurer{"Sensors"};
+#if DEBUG_MEASURE_TIME_TAKEN
+// Define the names of the measurements
+// The order of the names should match the order of the measurements in the
+// timings array
+// The names are used to identify the measurements in the report
+std::vector<const char*> timingNames = {
+	"tpsCounter.update()",
+	"globalTimer.tick()",
+	"Serial update()",
+	"OTA::otaUpdate()",
+	"networkManager.update()",
+	"sensorManager.update()",
+	"battery.Loop()",
+	"ledManager.update()",
+	"I2CSCAN::update()",
+	"TARGET_LOOPTIME_MICROS",
+	"Serial printState()",
+	"IMU1 Sensor loop",
+	"IMU2 Sensor loop"
+};
+SlimeVR::Debugging::TimeTakenMeasurer timingsMeasurer(timingNames);
+#define BENCHMARK_START(number) \
+	timingsMeasurer.before(number);
+#define BENCHMARK_END(number) \
+	timingsMeasurer.after(number);
+#else
+#define BENCHMARK_START(number)
+#define BENCHMARK_END(number)
 #endif
 
 int sensorToCalibrate = -1;
@@ -119,24 +145,35 @@ void setup() {
 }
 
 void loop() {
+	BENCHMARK_START(0)
 	tpsCounter.update();
+	BENCHMARK_END(0)
+	BENCHMARK_START(1)
 	globalTimer.tick();
+	BENCHMARK_END(1)
+	BENCHMARK_START(2)
 	SerialCommands::update();
+	BENCHMARK_END(2)
+	BENCHMARK_START(3)
 	OTA::otaUpdate();
+	BENCHMARK_END(3)
+	BENCHMARK_START(4)
 	networkManager.update();
-
-#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
-	sensorMeasurer.before();
-#endif
+	BENCHMARK_END(4)
+	BENCHMARK_START(5)
 	sensorManager.update();
-#if DEBUG_MEASURE_SENSOR_TIME_TAKEN
-	sensorMeasurer.after();
-#endif
-
+	BENCHMARK_END(5)
+	BENCHMARK_START(6)
 	battery.Loop();
+	BENCHMARK_END(6)
+	BENCHMARK_START(7)
 	ledManager.update();
+	BENCHMARK_END(7)
+	BENCHMARK_START(8)
 	I2CSCAN::update();
+	BENCHMARK_END(8)
 #ifdef TARGET_LOOPTIME_MICROS
+    BENCHMARK_END(9)
 	long elapsed = (micros() - loopTime);
 	if (elapsed < TARGET_LOOPTIME_MICROS) {
 		long sleepus = TARGET_LOOPTIME_MICROS - elapsed - 100;  // µs to sleep
@@ -151,7 +188,9 @@ void loop() {
 		}
 	}
 	loopTime = micros();
+	BENCHMARK_END(9)
 #endif
+	BENCHMARK_START(10)
 #if defined(PRINT_STATE_EVERY_MS) && PRINT_STATE_EVERY_MS > 0
 	unsigned long now = millis();
 	if (lastStatePrint + PRINT_STATE_EVERY_MS < now) {
@@ -159,4 +198,9 @@ void loop() {
 		SerialCommands::printState();
 	}
 #endif
+	BENCHMARK_END(10)
+#if DEBUG_MEASURE_TIME_TAKEN
+	timingsMeasurer.calculate();
+#endif
+
 }
