@@ -90,8 +90,9 @@ public:
 	inline auto& spiImpl() { return spiImpls; }
 
 private:
-	SensorInterface<DirectPinInterface, int> directPinInterfaces{
-		[](int pin) { return pin != 255 && pin != -1; }};
+	SensorInterface<DirectPinInterface, int> directPinInterfaces{[](int pin) {
+		return pin != 255 && pin != -1;
+	}};
 	SensorInterface<MCP23X17PinInterface, Adafruit_MCP23X17*, int> mcpPinInterfaces;
 	SensorInterface<I2CWireSensorInterface, int, int> i2cWireInterfaces;
 	SensorInterface<I2CPCASensorInterface, int, int, int, int> pcaWireInterfaces;
