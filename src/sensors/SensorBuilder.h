@@ -95,141 +95,166 @@ using SoftFusionICM45605
 class SensorAuto {};
 
 struct SensorBuilder {
+private:
+	struct SensorDefinition {
+		uint8_t sensorID;
+		RegisterInterface& imuInterface;
+		float rotation;
+		SensorInterface* sensorInterface;
+		bool optional;
+		PinInterface* intPin;
+		int extraParam;
+	};
+
 public:
 	SensorManager* m_Manager;
-	SensorBuilder(SensorManager* sensorManager);
+	explicit SensorBuilder(SensorManager* sensorManager);
 
 	uint8_t buildAllSensors();
 
-	std::unique_ptr<::Sensor> buildSensorDynamically(
-		SensorTypeID type,
-		uint8_t sensorID,
-		RegisterInterface& imuInterface,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional,
-		PinInterface* intPin,
-		int extraParam
-	);
+	std::unique_ptr<::Sensor>
+	buildSensorDynamically(SensorTypeID type, SensorDefinition sensorDef);
 
-	std::unique_ptr<::Sensor> buildSensorDynamically(
-		SensorTypeID type,
-		uint8_t sensorID,
-		uint8_t imuInterface,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional,
-		PinInterface* intPin,
-		int extraParam
-	);
+	SensorTypeID findSensorType(SensorDefinition sensorDef);
 
-	SensorTypeID findSensorType(
-		uint8_t sensorID,
-		uint8_t imuAddress,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional,
-		PinInterface* intPin,
-		int extraParam
-	);
-
-	SensorTypeID findSensorType(
-		uint8_t sensorID,
-		RegisterInterface& imuInterface,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional,
-		PinInterface* intPin,
-		int extraParam
-	);
-
-	template <typename ImuType>
-	std::unique_ptr<::Sensor> buildSensor(
-		uint8_t sensorID,
-		RegisterInterface& imuInterface,
+	template <typename SensorType, typename AccessInterface>
+	bool sensorDescEntry(
+		uint8_t& sensorID,
+		AccessInterface&& accessInterface,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
+		RegisterInterface& regInterface = [&]() constexpr -> auto& {
+			if constexpr (std::is_convertible_v<AccessInterface, RegisterInterface&>) {
+				return accessInterface;
+			} else {
+				return *interfaceManager.i2cImpl().get(accessInterface);
+			}
+		}();
+
+		std::unique_ptr<::Sensor> sensor;
+		if constexpr (std::is_same<SensorType, SensorAuto>::value) {
+			auto sensorType = findSensorType({
+				sensorID,
+				regInterface,
+				rotation,
+				sensorInterface,
+				optional,
+				intPin,
+				extraParam,
+			});
+
+			if (sensorType == SensorTypeID::Unknown) {
+				m_Manager->m_Logger.error(
+					"Can't find sensor type for sensor %d",
+					sensorID
+				);
+				return false;
+			}
+
+			m_Manager->m_Logger.info(
+				"Sensor %d automatically detected with %s",
+				sensorID,
+				getIMUNameByType(sensorType)
+			);
+			sensor = buildSensorDynamically(
+				sensorType,
+				{
+					sensorID,
+					regInterface,
+					rotation,
+					sensorInterface,
+					optional,
+					intPin,
+					extraParam,
+				}
+			);
+		} else {
+			sensor = buildSensor<SensorType>({
+				sensorID,
+				regInterface,
+				rotation,
+				sensorInterface,
+				optional,
+				intPin,
+				extraParam,
+			});
+		}
+		if (sensor->isWorking()) {
+			m_Manager->m_Logger.info("Sensor %d configured", sensorID);
+		}
+		m_Manager->m_Sensors.push_back(std::move(sensor));
+
+		return true;
+	}
+
+	template <typename ImuType>
+	std::unique_ptr<::Sensor> buildSensor(SensorDefinition sensorDef) {
 		m_Manager->m_Logger.trace(
 			"Building IMU with: id=%d,\n\
 						address=%s, rotation=%f,\n\
 						interface=%s, int=%s, extraParam=%d, optional=%d",
-			sensorID,
-			imuInterface.toString(),
-			rotation,
-			sensorInterface,
-			intPin,
-			extraParam,
-			optional
+			sensorDef.sensorID,
+			sensorDef.imuInterface.toString(),
+			sensorDef.rotation,
+			sensorDef.sensorInterface,
+			sensorDef.intPin,
+			sensorDef.extraParam,
+			sensorDef.optional
 		);
 
 		// Now start detecting and building the IMU
 		std::unique_ptr<::Sensor> sensor;
 
 		// Init I2C bus for each sensor upon startup
-		sensorInterface->init();
-		sensorInterface->swapIn();
+		sensorDef.sensorInterface->init();
+		sensorDef.sensorInterface->swapIn();
 
-		if (!imuInterface.hasSensorOnBus()) {
-			if (!optional) {
+		if (!sensorDef.imuInterface.hasSensorOnBus()) {
+			if (!sensorDef.optional) {
 				m_Manager->m_Logger.error(
 					"Mandatory sensor %d not found at address %s",
-					sensorID + 1,
-					imuInterface.toString()
+					sensorDef.sensorID + 1,
+					sensorDef.imuInterface.toString()
 				);
-				return std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
+				return std::make_unique<ErroneousSensor>(
+					sensorDef.sensorID,
+					ImuType::TypeID
+				);
 			} else {
 				m_Manager->m_Logger.debug(
 					"Optional sensor %d not found at address %s",
-					sensorID + 1,
-					imuInterface.toString()
+					sensorDef.sensorID + 1,
+					sensorDef.imuInterface.toString()
 				);
-				return std::make_unique<EmptySensor>(sensorID);
+				return std::make_unique<EmptySensor>(sensorDef.sensorID);
 			}
 		}
 
 		m_Manager->m_Logger.trace(
 			"Sensor %d found at address %s",
-			sensorID + 1,
-			imuInterface.toString()
+			sensorDef.sensorID + 1,
+			sensorDef.imuInterface.toString()
 		);
 
 		sensor = std::make_unique<ImuType>(
-			sensorID,
-			imuInterface,
-			rotation,
-			sensorInterface,
-			intPin,
-			extraParam
+			sensorDef.sensorID,
+			sensorDef.imuInterface,
+			sensorDef.rotation,
+			sensorDef.sensorInterface,
+			sensorDef.intPin,
+			sensorDef.extraParam
 		);
 
 		sensor->motionSetup();
 		return sensor;
 	}
 
-	template <typename ImuType>
-	std::unique_ptr<::Sensor> buildSensor(
-		uint8_t sensorID,
-		uint8_t imuAddress,
-		float rotation,
-		SensorInterface* sensorInterface,
-		bool optional = false,
-		PinInterface* intPin = nullptr,
-		int extraParam = 0
-	) {
-		uint8_t address = imuAddress > 0 ? imuAddress : ImuType::Address + sensorID;
-		return buildSensor<ImuType>(
-			sensorID,
-			*(new I2CImpl(address)),
-			rotation,
-			sensorInterface,
-			optional,
-			intPin,
-			extraParam
-		);
-	}
+private:
+	SensorInterfaceManager interfaceManager;
 };
+
 }  // namespace SlimeVR::Sensors

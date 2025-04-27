@@ -31,8 +31,12 @@
 #include "I2CPCAInterface.h"
 #include "I2CWireSensorInterface.h"
 #include "MCP23X17PinInterface.h"
+#include "SPIImpl.h"
 #include "SensorInterface.h"
 #include "i2cimpl.h"
+
+bool operator<(const SPISettings& lhs, const SPISettings& rhs);
+bool operator<(const SPIClass& lhs, const SPIClass& rhs);
 
 namespace SlimeVR {
 
@@ -54,7 +58,15 @@ private:
 
 			if (!cache.contains(key)) {
 				auto ptr = new InterfaceClass(args...);
-				if (!ptr->init()) {
+
+				bool success;
+				if constexpr (requires { ptr->init(); }) {
+					success = ptr->init();
+				} else {
+					success = true;
+				}
+
+				if (!success) {
 					cache[key] = nullptr;
 					return nullptr;
 				}
@@ -74,14 +86,17 @@ public:
 	inline auto& mcpPinInterface() { return mcpPinInterfaces; }
 	inline auto& i2cWireInterface() { return i2cWireInterfaces; }
 	inline auto& pcaWireInterface() { return pcaWireInterfaces; }
+	inline auto& i2cImpl() { return i2cImpls; }
+	inline auto& spiImpl() { return spiImpls; }
 
 private:
-	SensorInterface<DirectPinInterface, int> directPinInterfaces{[](int pin) {
-		return pin != 255 && pin != -1;
-	}};
+	SensorInterface<DirectPinInterface, int> directPinInterfaces{
+		[](int pin) { return pin != 255 && pin != -1; }};
 	SensorInterface<MCP23X17PinInterface, Adafruit_MCP23X17*, int> mcpPinInterfaces;
 	SensorInterface<I2CWireSensorInterface, int, int> i2cWireInterfaces;
 	SensorInterface<I2CPCASensorInterface, int, int, int, int> pcaWireInterfaces;
+	SensorInterface<Sensors::I2CImpl, uint8_t> i2cImpls;
+	SensorInterface<Sensors::SPIImpl, SPIClass, SPISettings, PinInterface*> spiImpls;
 };
 
 }  // namespace SlimeVR
