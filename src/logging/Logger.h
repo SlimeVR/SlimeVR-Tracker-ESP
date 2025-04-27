@@ -6,8 +6,7 @@
 #include "Level.h"
 #include "debug.h"
 
-namespace SlimeVR {
-namespace Logging {
+namespace SlimeVR::Logging {
 class Logger {
 public:
 	Logger(const char* prefix)
@@ -92,7 +91,6 @@ private:
 	const char* const m_Prefix;
 	char* m_Tag;
 };
-}  // namespace Logging
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Logging
 
 #endif
