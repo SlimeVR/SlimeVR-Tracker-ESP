@@ -48,26 +48,23 @@ SlimeVR::Network::Connection networkConnection;
 // The order of the names should match the order of the measurements in the
 // timings array
 // The names are used to identify the measurements in the report
-std::vector<const char*> timingNames = {
-	"tpsCounter.update()",
-	"globalTimer.tick()",
-	"Serial update()",
-	"OTA::otaUpdate()",
-	"networkManager.update()",
-	"sensorManager.update()",
-	"battery.Loop()",
-	"ledManager.update()",
-	"I2CSCAN::update()",
-	"TARGET_LOOPTIME_MICROS",
-	"Serial printState()",
-	"IMU1 Sensor loop",
-	"IMU2 Sensor loop"
-};
+std::vector<const char*> timingNames
+	= {"tpsCounter.update()",
+	   "globalTimer.tick()",
+	   "Serial update()",
+	   "OTA::otaUpdate()",
+	   "networkManager.update()",
+	   "sensorManager.update()",
+	   "battery.Loop()",
+	   "ledManager.update()",
+	   "I2CSCAN::update()",
+	   "TARGET_LOOPTIME_MICROS",
+	   "Serial printState()",
+	   "IMU1 Sensor loop",
+	   "IMU2 Sensor loop"};
 SlimeVR::Debugging::TimeTakenMeasurer timingsMeasurer(timingNames);
-#define BENCHMARK_START(number) \
-	timingsMeasurer.before(number);
-#define BENCHMARK_END(number) \
-	timingsMeasurer.after(number);
+#define BENCHMARK_START(number) timingsMeasurer.before(number);
+#define BENCHMARK_END(number) timingsMeasurer.after(number);
 #else
 #define BENCHMARK_START(number)
 #define BENCHMARK_END(number)
@@ -173,7 +170,7 @@ void loop() {
 	I2CSCAN::update();
 	BENCHMARK_END(8)
 #ifdef TARGET_LOOPTIME_MICROS
-    BENCHMARK_START(9)
+	BENCHMARK_START(9)
 	long elapsed = (micros() - loopTime);
 	if (elapsed < TARGET_LOOPTIME_MICROS) {
 		long sleepus = TARGET_LOOPTIME_MICROS - elapsed - 100;  // µs to sleep
@@ -202,5 +199,4 @@ void loop() {
 #if DEBUG_MEASURE_TIME_TAKEN
 	timingsMeasurer.calculate();
 #endif
-
 }

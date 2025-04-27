@@ -59,14 +59,12 @@ public:
 		for (const auto& name : names) {
 			this->names.push_back(name);
 			this->timings.push_back({0, 2 ^ 64, 0, 0, 0, 0, 0, 0});
-			//this->timingPoints.push_back({0, 0});
 		}
 	}
 
 	void before(int measurement);
 	void after(int measurement);
 	void calculate();
-
 
 private:
 	void nextPeriod();
@@ -79,7 +77,7 @@ private:
 
 	std::vector<TimingMeasurement> pasttimings;
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("TimeTaken");
-	unsigned long  lastTimeTakenReportMillis = 0;
+	unsigned long lastTimeTakenReportMillis = 0;
 };
 
 }  // namespace SlimeVR::Debugging

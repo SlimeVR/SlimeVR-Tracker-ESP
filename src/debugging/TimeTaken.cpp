@@ -22,7 +22,9 @@
 
 namespace SlimeVR::Debugging {
 
-void TimeTakenMeasurer::before(int measurement) { timings[measurement].start = micros(); }
+void TimeTakenMeasurer::before(int measurement) {
+	timings[measurement].start = micros();
+}
 void TimeTakenMeasurer::after(int measurement) { timings[measurement].end = micros(); }
 
 void TimeTakenMeasurer::calculate() {
@@ -50,7 +52,7 @@ void TimeTakenMeasurer::nextPeriod() {
 	lastTimingsPrint = millis();
 	for (auto& timing : timings) {
 		timing.timeTakenPercent = static_cast<float>(timing.timeTaken) / 1e3f
-										/ static_cast<float>(sinceLastReportMillis) * 100;
+								/ static_cast<float>(sinceLastReportMillis) * 100;
 		timing.timeTotal = sinceLastReportMillis;
 		timing.avg = timing.timeTaken / max(timing.count, 1ul);
 	}
@@ -75,10 +77,12 @@ void TimeTakenMeasurer::nextPeriod() {
 void TimeTakenMeasurer::report() {
 	unsigned long totalTime = 0;
 	unsigned long count = 0;
-    for (size_t i = 0; i < pasttimings.size(); ++i) {
-        const auto& timing = pasttimings[i];
-        const auto& name = names[i];
-		m_Logger.info("%-24s | avg: %5lu us | min: %5lu us | max: %5lu us | time taken: %5lu ms or %5.2f%% of %lu ms count: %lu",
+	for (size_t i = 0; i < pasttimings.size(); ++i) {
+		const auto& timing = pasttimings[i];
+		const auto& name = names[i];
+		m_Logger.info(
+			"%-24s | avg: %5lu us | min: %5lu us | max: %5lu us | time taken: %5lu ms "
+			"or %5.2f%% of %lu ms count: %lu",
 			name.c_str(),
 			timing.avg,
 			timing.min,
@@ -89,9 +93,14 @@ void TimeTakenMeasurer::report() {
 			timing.count
 		);
 		totalTime = max(timing.timeTotal, totalTime);
-		count = max (timing.count, count);
+		count = max(timing.count, count);
 	}
-	m_Logger.info("Time Total: %lu ms Loops: %lu PrintReport Time: %lu ms", totalTime, count, millis()-lastTimingsPrint);
+	m_Logger.info(
+		"Time Total: %lu ms Loops: %lu PrintReport Time: %lu ms",
+		totalTime,
+		count,
+		millis() - lastTimingsPrint
+	);
 }
 
 }  // namespace SlimeVR::Debugging

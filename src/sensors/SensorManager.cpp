@@ -159,8 +159,7 @@ void SensorManager::update() {
 #endif
 	for (auto& sensor : m_Sensors) {
 #if DEBUG_MEASURE_TIME_TAKEN
-
-		timingsMeasurer.before(11+sensorcount);
+		timingsMeasurer.before(11 + sensorcount);
 #endif
 		if (sensor->isWorking()) {
 			if (sensor->m_hwInterface != nullptr) {
@@ -172,7 +171,7 @@ void SensorManager::update() {
 			allIMUGood = false;
 		}
 #if DEBUG_MEASURE_TIME_TAKEN
-		timingsMeasurer.after(11+sensorcount);
+		timingsMeasurer.after(11 + sensorcount);
 		sensorcount++;
 #endif
 	}
