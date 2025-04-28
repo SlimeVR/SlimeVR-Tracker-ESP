@@ -36,8 +36,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 480Hz, accel ODR = 120Hz
 
-template <typename I2CImpl>
-struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
+struct LSM6DSV : LSM6DSOutputHandler {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DSV";
 	static constexpr auto Type = SensorTypeID::LSM6DSV;
@@ -67,8 +66,6 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 		.restThGyr = 1.0f,
 		.restThAcc = 0.192f,
 	};
-
-	using LSM6DSOutputHandler<I2CImpl>::i2c;
 
 	struct Regs {
 		struct WhoAmI {
@@ -116,21 +113,27 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 		static constexpr uint8_t FifoData = 0x78;
 	};
 
-	LSM6DSV(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: LSM6DSOutputHandler<I2CImpl>(i2c, logger) {}
+	LSM6DSV(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+		: LSM6DSOutputHandler(registerInterface, logger) {}
 
 	bool initialize() {
 		// perform initialization step
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
 		delay(20);
-		i2c.writeReg(Regs::HAODRCFG::reg, Regs::HAODRCFG::value);
-		i2c.writeReg(Regs::Ctrl1XLODR::reg, Regs::Ctrl1XLODR::value);
-		i2c.writeReg(Regs::Ctrl2GODR::reg, Regs::Ctrl2GODR::value);
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
-		i2c.writeReg(Regs::Ctrl6GFS::reg, Regs::Ctrl6GFS::value);
-		i2c.writeReg(Regs::Ctrl8XLFS::reg, Regs::Ctrl8XLFS::value);
-		i2c.writeReg(Regs::FifoCtrl3BDR::reg, Regs::FifoCtrl3BDR::value);
-		i2c.writeReg(Regs::FifoCtrl4Mode::reg, Regs::FifoCtrl4Mode::value);
+		m_RegisterInterface.writeReg(Regs::HAODRCFG::reg, Regs::HAODRCFG::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl1XLODR::reg, Regs::Ctrl1XLODR::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl2GODR::reg, Regs::Ctrl2GODR::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl6GFS::reg, Regs::Ctrl6GFS::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl8XLFS::reg, Regs::Ctrl8XLFS::value);
+		m_RegisterInterface.writeReg(
+			Regs::FifoCtrl3BDR::reg,
+			Regs::FifoCtrl3BDR::value
+		);
+		m_RegisterInterface.writeReg(
+			Regs::FifoCtrl4Mode::reg,
+			Regs::FifoCtrl4Mode::value
+		);
 		return true;
 	}
 
@@ -140,15 +143,14 @@ struct LSM6DSV : LSM6DSOutputHandler<I2CImpl> {
 		GyroCall&& processGyroSample,
 		TempCall&& processTempSample
 	) {
-		LSM6DSOutputHandler<I2CImpl>::
-			template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
-				processAccelSample,
-				processGyroSample,
-				processTempSample,
-				GyrTs,
-				AccTs,
-				TempTs
-			);
+		LSM6DSOutputHandler::bulkRead<AccelCall, GyroCall, TempCall, Regs>(
+			processAccelSample,
+			processGyroSample,
+			processTempSample,
+			GyrTs,
+			AccTs,
+			TempTs
+		);
 	}
 };
 

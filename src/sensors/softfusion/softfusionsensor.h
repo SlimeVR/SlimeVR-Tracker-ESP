@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <tuple>
 
+#include "../../sensorinterface/i2cimpl.h"
 #include "../RestCalibrationDetector.h"
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
@@ -37,36 +38,33 @@
 namespace SlimeVR::Sensors {
 
 template <
-	template <typename I2CImpl>
-	typename T,
-	typename I2CImpl,
+	typename SensorType,
 	template <typename IMU, typename RawSensorT, typename RawVectorT>
 	typename Calibrator>
 class SoftFusionSensor : public Sensor {
-	using imu = T<I2CImpl>;
-
 	static constexpr sensor_real_t getDefaultTempTs() {
 		if constexpr (DirectTempReadOnly) {
 			return DirectTempReadTs;
 		} else {
-			return imu::TempTs;
+			return SensorType::TempTs;
 		}
 	}
 
 	static constexpr bool Uses32BitSensorData
-		= requires(imu& i) { i.Uses32BitSensorData; };
+		= requires(SensorType& i) { i.Uses32BitSensorData; };
 
-	static constexpr bool DirectTempReadOnly = requires(imu& i) { i.getDirectTemp(); };
+	static constexpr bool DirectTempReadOnly
+		= requires(SensorType& i) { i.getDirectTemp(); };
 
 	using RawSensorT =
 		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
 	using RawVectorT = std::array<RawSensorT, 3>;
 
 	static constexpr float GScale
-		= ((32768. / imu::GyroSensitivity) / 32768.) * (PI / 180.0);
-	static constexpr float AScale = CONST_EARTH_GRAVITY / imu::AccelSensitivity;
+		= ((32768. / SensorType::GyroSensitivity) / 32768.) * (PI / 180.0);
+	static constexpr float AScale = CONST_EARTH_GRAVITY / SensorType::AccelSensitivity;
 
-	using Calib = Calibrator<imu, RawSensorT, RawVectorT>;
+	using Calib = Calibrator<SensorType, RawSensorT, RawVectorT>;
 
 	static constexpr auto UpsideDownCalibrationInit = Calib::HasUpsideDownCalibration;
 
@@ -76,12 +74,13 @@ class SoftFusionSensor : public Sensor {
 	uint32_t lastTempPollTime = micros();
 
 	bool detected() const {
-		const auto value = m_sensor.i2c.readReg(imu::Regs::WhoAmI::reg);
-		if (imu::Regs::WhoAmI::value != value) {
+		const auto value
+			= m_sensor.m_RegisterInterface.readReg(SensorType::Regs::WhoAmI::reg);
+		if (SensorType::Regs::WhoAmI::value != value) {
 			m_Logger.error(
 				"Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
-				imu::Regs::WhoAmI::reg,
-				imu::Regs::WhoAmI::value,
+				SensorType::Regs::WhoAmI::reg,
+				SensorType::Regs::WhoAmI::value,
 				value
 			);
 			return false;
@@ -139,9 +138,10 @@ class SoftFusionSensor : public Sensor {
 	void
 	processTempSample(const int16_t rawTemperature, const sensor_real_t timeDelta) {
 		if constexpr (!DirectTempReadOnly) {
-			const float scaledTemperature = imu::TemperatureBias
-										  + static_cast<float>(rawTemperature)
-												* (1.0 / imu::TemperatureSensitivity);
+			const float scaledTemperature
+				= SensorType::TemperatureBias
+				+ static_cast<float>(rawTemperature)
+					  * (1.0 / SensorType::TemperatureSensitivity);
 
 			lastReadTemperature = scaledTemperature;
 			if (toggles.getToggle(SensorToggles::TempGradientCalibrationEnabled)) {
@@ -204,20 +204,32 @@ class SoftFusionSensor : public Sensor {
 	}
 
 public:
-	static constexpr auto TypeID = imu::Type;
-	static constexpr uint8_t Address = imu::Address;
+	static constexpr auto TypeID = SensorType::Type;
+	static constexpr uint8_t Address = SensorType::Address;
 
 	SoftFusionSensor(
 		uint8_t id,
-		uint8_t i2cAddress,
+		RegisterInterface& registerInterface,
 		float rotation,
-		SlimeVR::SensorInterface* sensorInterface,
+		SlimeVR::SensorInterface* sensorInterface = nullptr,
 		PinInterface* intPin = nullptr,
 		uint8_t = 0
 	)
-		: Sensor(imu::Name, imu::Type, id, i2cAddress, rotation, sensorInterface)
-		, m_fusion(imu::SensorVQFParams, imu::GyrTs, imu::AccTs, imu::MagTs)
-		, m_sensor(I2CImpl(i2cAddress), m_Logger) {}
+		: Sensor(
+			SensorType::Name,
+			SensorType::Type,
+			id,
+			registerInterface,
+			rotation,
+			sensorInterface
+		)
+		, m_fusion(
+			  SensorType::SensorVQFParams,
+			  SensorType::GyrTs,
+			  SensorType::AccTs,
+			  SensorType::MagTs
+		  )
+		, m_sensor(registerInterface, m_Logger) {}
 	~SoftFusionSensor() override = default;
 
 	void checkSensorTimeout() {
@@ -346,7 +358,7 @@ public:
 		bool initResult = false;
 
 		if constexpr (Calib::HasMotionlessCalib) {
-			typename imu::MotionlessCalibrationData calibData;
+			typename SensorType::MotionlessCalibrationData calibData;
 			std::memcpy(
 				&calibData,
 				calibrator.getMotionlessCalibrationData(),
@@ -409,7 +421,7 @@ public:
 	SensorStatus getSensorState() final { return m_status; }
 
 	SensorFusionRestDetect m_fusion;
-	imu m_sensor;
+	SensorType m_sensor;
 	Calib calibrator{
 		m_fusion,
 		m_sensor,
@@ -428,6 +440,26 @@ public:
 	uint32_t m_lastTemperaturePacketSent = 0;
 
 	RestCalibrationDetector calibrationDetector;
+
+	static bool checkPresent(uint8_t sensorID, const RegisterInterface& imuInterface) {
+		I2Cdev::readTimeout = 100;
+		auto value = imuInterface.readReg(SensorType::Regs::WhoAmI::reg);
+		I2Cdev::readTimeout = I2CDEV_DEFAULT_READ_TIMEOUT;
+		if (SensorType::Regs::WhoAmI::value == value) {
+			return true;
+		}
+		return false;
+	}
+
+	static bool checkPresent(uint8_t sensorID, uint8_t imuAddress) {
+		uint8_t address = imuAddress > 0 ? imuAddress : Address + sensorID;
+		// Ask twice, because we're nice like this
+		if (!I2CSCAN::hasDevOnBus(address) && !I2CSCAN::hasDevOnBus(address)) {
+			return false;
+		}
+		const I2CImpl& i2c = I2CImpl(address);
+		return checkPresent(sensorID, i2c);
+	}
 };
 
 }  // namespace SlimeVR::Sensors

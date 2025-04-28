@@ -31,6 +31,8 @@
 #include "I2CPCAInterface.h"
 #include "I2CWireSensorInterface.h"
 #include "MCP23X17PinInterface.h"
+#include "SensorInterface.h"
+#include "i2cimpl.h"
 
 namespace SlimeVR {
 
@@ -77,7 +79,7 @@ private:
 	SensorInterface<DirectPinInterface, int> directPinInterfaces{[](int pin) {
 		return pin != 255 && pin != -1;
 	}};
-	SensorInterface<MCP23X17PinInterface, int> mcpPinInterfaces;
+	SensorInterface<MCP23X17PinInterface, Adafruit_MCP23X17*, int> mcpPinInterfaces;
 	SensorInterface<I2CWireSensorInterface, int, int> i2cWireInterfaces;
 	SensorInterface<I2CPCASensorInterface, int, int, int, int> pcaWireInterfaces;
 };

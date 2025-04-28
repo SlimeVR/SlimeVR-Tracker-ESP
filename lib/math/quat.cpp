@@ -229,3 +229,12 @@ void Quat::set_axis_angle(const Vector3& axis, const float& angle) {
 			cos_angle);
 	}
 }
+
+void Quat::sandwich(Vector3& v) {
+	float tempX, tempY;
+	tempX = w * w * v.x + 2 * y * w * v.z - 2 * z * w * v.y + x * x * v.x + 2 * y * x * v.y + 2 * z * x * v.z - z * z * v.x - y * y * v.x;
+	tempY = 2 * x * y * v.x + y * y * v.y + 2 * z * y * v.z + 2 * w * z * v.x - z * z * v.y + w * w * v.y - 2 * x * w * v.z - x * x * v.y;
+	v.z = 2 * x * z * v.x + 2 * y * z * v.y + z * z * v.z - 2 * w * y * v.x - y * y * v.z + 2 * w * x * v.y - x * x * v.z + w * w * v.z;
+	v.x = tempX;
+	v.y = tempY;
+}
