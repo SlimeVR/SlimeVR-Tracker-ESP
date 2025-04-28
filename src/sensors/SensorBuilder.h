@@ -109,7 +109,7 @@ public:
 		SensorInterface* sensorInterface,
 		bool optional,
 		PinInterface* intPin,
-		int extraParam
+		int extraParam = 0
 	);
 
 	std::unique_ptr<::Sensor> buildSensorDynamically(
@@ -120,7 +120,7 @@ public:
 		SensorInterface* sensorInterface,
 		bool optional,
 		PinInterface* intPin,
-		int extraParam
+		int extraParam = 0
 	);
 
 	SensorTypeID findSensorType(
@@ -130,7 +130,7 @@ public:
 		SensorInterface* sensorInterface,
 		bool optional,
 		PinInterface* intPin,
-		int extraParam
+		int extraParam = 0
 	);
 
 	SensorTypeID findSensorType(
@@ -140,7 +140,7 @@ public:
 		SensorInterface* sensorInterface,
 		bool optional,
 		PinInterface* intPin,
-		int extraParam
+		int extraParam = 0
 	);
 
 	template <typename ImuType>
