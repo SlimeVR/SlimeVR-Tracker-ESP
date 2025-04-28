@@ -55,24 +55,24 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 
 #ifndef SENSOR_DESC_LIST
 #if BOARD == BOARD_SLIMEVR_V1_2
-#define SENSOR_DESC_LIST                                             \
-	SENSOR_DESC_ENTRY(                                               \
-		IMU,                                                         \
-		DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3, DIRECT_PIN(15)), \
-		IMU_ROTATION,                                                \
-		NO_WIRE,                                                     \
-		PRIMARY_IMU_OPTIONAL,                                        \
-		DIRECT_PIN(PIN_IMU_INT),                                     \
-		0                                                            \
-	)                                                                \
-	SENSOR_DESC_ENTRY(                                               \
-		SECOND_IMU,                                                  \
-		SECONDARY_IMU_ADDRESS_TWO,                                   \
-		SECOND_IMU_ROTATION,                                         \
-		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),                       \
-		SECONDARY_IMU_OPTIONAL,                                      \
-		DIRECT_PIN(PIN_IMU_INT_2),                                   \
-		0                                                            \
+#define SENSOR_DESC_LIST                             \
+	SENSOR_DESC_ENTRY(                               \
+		IMU,                                         \
+		DIRECT_PIN(15),                              \
+		IMU_ROTATION,                                \
+		DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3), \
+		PRIMARY_IMU_OPTIONAL,                        \
+		DIRECT_PIN(PIN_IMU_INT),                     \
+		0                                            \
+	)                                                \
+	SENSOR_DESC_ENTRY(                               \
+		SECOND_IMU,                                  \
+		SECONDARY_IMU_ADDRESS_TWO,                   \
+		SECOND_IMU_ROTATION,                         \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),       \
+		SECONDARY_IMU_OPTIONAL,                      \
+		DIRECT_PIN(PIN_IMU_INT_2),                   \
+		0                                            \
 	)
 #else
 #define SENSOR_DESC_LIST                       \
@@ -236,15 +236,16 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 #define BATTERY_MONITOR BAT_EXTERNAL
 
 // BAT_EXTERNAL definition override
-// D1 Mini boards with ESP8266 have internal resistors. For these boards you only have
-// to adjust BATTERY_SHIELD_RESISTANCE. For other boards you can now adjust the other
-// resistor values. The diagram looks like this:
-//   (Battery)--- [BATTERY_SHIELD_RESISTANCE] ---(INPUT_BOARD)---  [BATTERY_SHIELD_R2]
+// D1 Mini boards with ESP8266 have internal resistors. For these boards you
+// only have to adjust BATTERY_SHIELD_RESISTANCE. For other boards you can now
+// adjust the other resistor values. The diagram looks like this:
+//   (Battery)--- [BATTERY_SHIELD_RESISTANCE] ---(INPUT_BOARD)---
+//   [BATTERY_SHIELD_R2]
 //   ---(ESP32_INPUT)--- [BATTERY_SHIELD_R1] --- (GND)
-// #define BATTERY_SHIELD_RESISTANCE 180 //130k BatteryShield, 180k SlimeVR or fill in
-// external resistor value in kOhm #define BATTERY_SHIELD_R1 100 // Board voltage
-// divider resistor Ain to GND in kOhm #define BATTERY_SHIELD_R2 220 // Board voltage
-// divider resistor Ain to INPUT_BOARD in kOhm
+// #define BATTERY_SHIELD_RESISTANCE 180 //130k BatteryShield, 180k SlimeVR or
+// fill in external resistor value in kOhm #define BATTERY_SHIELD_R1 100 //
+// Board voltage divider resistor Ain to GND in kOhm #define BATTERY_SHIELD_R2
+// 220 // Board voltage divider resistor Ain to INPUT_BOARD in kOhm
 
 // LED configuration:
 // Configuration Priority 1 = Highest:
@@ -376,8 +377,8 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 #define PIN_IMU_INT_2 7
 #define PIN_BATTERY_LEVEL 3
 #define LED_PIN \
-	LED_OFF  // RGB LED Protocol would need to be implementetet did not brother for the
-			 // test, because the board ideal for tracker ifself
+	LED_OFF  // RGB LED Protocol would need to be implementetet did not brother
+			 // for the test, because the board ideal for tracker ifself
 //  #define LED_INVERTED false
 #elif BOARD == BOARD_WEMOSWROOM02
 #define PIN_IMU_SDA 2

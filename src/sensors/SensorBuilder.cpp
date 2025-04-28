@@ -41,10 +41,21 @@ uint8_t SensorBuilder::buildAllSensors() {
 #define MCP_PIN(pin) interfaceManager.mcpPinInterface().get(&m_Manager->m_MCP, pin)
 #define PCA_WIRE(scl, sda, addr, ch) \
 	interfaceManager.pcaWireInterface().get(scl, sda, addr, ch)
-#define DIRECT_SPI(clockfreq, bitorder, datamode, CS_PIN) \
-	*(new SPIImpl(SPI, SPISettings(clockfreq, bitorder, datamode), CS_PIN))
+#define DIRECT_SPI(clockfreq, bitorder, datamode)  \
+	interfaceManager.directSPIInterface().get(     \
+		SPI,                                       \
+		SPISettings(clockfreq, bitorder, datamode) \
+	)
 
-#define SENSOR_DESC_ENTRY(ImuType, ...)                                              \
+#define SENSOR_DESC_ENTRY(                                                           \
+	ImuType,                                                                         \
+	access,                                                                          \
+	rotation,                                                                        \
+	interface,                                                                       \
+	optional,                                                                        \
+	intPin,                                                                          \
+	extraParam                                                                       \
+)                                                                                    \
 	{                                                                                \
 		do {                                                                         \
 			std::unique_ptr<::Sensor> sensor;                                        \

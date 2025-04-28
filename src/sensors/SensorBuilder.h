@@ -29,6 +29,7 @@
 
 #include "EmptySensor.h"
 #include "ErroneousSensor.h"
+#include "PinInterface.h"
 #include "SensorManager.h"
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
@@ -40,6 +41,7 @@
 #include "mpu9250sensor.h"
 #include "sensor.h"
 #include "sensorinterface/DirectPinInterface.h"
+#include "sensorinterface/DirectSPIInterface.h"
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/I2CWireSensorInterface.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
