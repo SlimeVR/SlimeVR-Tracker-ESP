@@ -104,6 +104,12 @@ public:
 		return SensorDataType::SENSOR_DATATYPE_ROTATION;
 	};
 
+	virtual bool isStateUpdated(
+		SensorStatus ackedState,
+		bool ackedCalibration,
+		SlimeVR::Configuration::SensorConfigBits ackedConfig
+	);
+
 	SensorPosition getSensorPosition() { return m_SensorPosition; };
 
 	void setSensorInfo(SensorPosition sensorPosition) {
