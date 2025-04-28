@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <PinInterface.h>
+#include <SPI.h>
+
 #include <functional>
 #include <map>
 #include <optional>
@@ -34,6 +37,11 @@
 #include "SPIImpl.h"
 #include "SensorInterface.h"
 #include "i2cimpl.h"
+#include "sensorinterface/DirectSPIInterface.h"
+#include "sensorinterface/SPIImpl.h"
+
+bool operator<(const SPISettings& lhs, const SPISettings& rhs);
+bool operator<(const SPIClass& lhs, const SPIClass& rhs);
 
 bool operator<(const SPISettings& lhs, const SPISettings& rhs);
 bool operator<(const SPIClass& lhs, const SPIClass& rhs);
@@ -87,17 +95,18 @@ public:
 	inline auto& i2cWireInterface() { return i2cWireInterfaces; }
 	inline auto& pcaWireInterface() { return pcaWireInterfaces; }
 	inline auto& i2cImpl() { return i2cImpls; }
+	inline auto& directSPIInterface() { return directSPIInterfaces; }
 	inline auto& spiImpl() { return spiImpls; }
 
 private:
-	SensorInterface<DirectPinInterface, int> directPinInterfaces{[](int pin) {
-		return pin != 255 && pin != -1;
-	}};
+	SensorInterface<DirectPinInterface, int> directPinInterfaces{
+		[](int pin) { return pin != 255 && pin != -1; }};
 	SensorInterface<MCP23X17PinInterface, Adafruit_MCP23X17*, int> mcpPinInterfaces;
 	SensorInterface<I2CWireSensorInterface, int, int> i2cWireInterfaces;
 	SensorInterface<I2CPCASensorInterface, int, int, int, int> pcaWireInterfaces;
 	SensorInterface<Sensors::I2CImpl, uint8_t> i2cImpls;
-	SensorInterface<Sensors::SPIImpl, SPIClass, SPISettings, PinInterface*> spiImpls;
+	SensorInterface<DirectSPIInterface, SPIClass, SPISettings> directSPIInterfaces;
+	SensorInterface<Sensors::SPIImpl, DirectSPIInterface*, PinInterface*> spiImpls;
 };
 
 }  // namespace SlimeVR

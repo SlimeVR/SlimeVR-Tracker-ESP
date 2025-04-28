@@ -32,6 +32,7 @@
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
+#include "PinInterface.h"
 #include "motionprocessing/types.h"
 #include "sensors/softfusion/TempGradientCalculator.h"
 
@@ -430,8 +431,7 @@ public:
 		getDefaultTempTs(),
 		AScale,
 		GScale,
-		toggles
-	};
+		toggles};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();
@@ -441,7 +441,7 @@ public:
 
 	RestCalibrationDetector calibrationDetector;
 
-	static bool checkPresent(uint8_t sensorID, const RegisterInterface& imuInterface) {
+	static bool checkPresent(const RegisterInterface& imuInterface) {
 		I2Cdev::readTimeout = 100;
 		auto value = imuInterface.readReg(SensorType::Regs::WhoAmI::reg);
 		I2Cdev::readTimeout = I2CDEV_DEFAULT_READ_TIMEOUT;
@@ -449,16 +449,6 @@ public:
 			return true;
 		}
 		return false;
-	}
-
-	static bool checkPresent(uint8_t sensorID, uint8_t imuAddress) {
-		uint8_t address = imuAddress > 0 ? imuAddress : Address + sensorID;
-		// Ask twice, because we're nice like this
-		if (!I2CSCAN::hasDevOnBus(address) && !I2CSCAN::hasDevOnBus(address)) {
-			return false;
-		}
-		const I2CImpl& i2c = I2CImpl(address);
-		return checkPresent(sensorID, i2c);
 	}
 };
 

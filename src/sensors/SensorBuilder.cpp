@@ -28,6 +28,10 @@ namespace SlimeVR::Sensors {
 SensorBuilder::SensorBuilder(SensorManager* sensorManager)
 	: m_Manager(sensorManager) {}
 
+#define SENSOR_DESC_ENTRY(ImuType, ...)                                           \
+	activeSensorCount += sensorDescEntry<ImuType>(sensorID, __VA_ARGS__) ? 1 : 0; \
+	sensorID++;
+
 uint8_t SensorBuilder::buildAllSensors() {
 	uint8_t sensorID = 0;
 	uint8_t activeSensorCount = 0;
@@ -46,16 +50,13 @@ uint8_t SensorBuilder::buildAllSensors() {
 		= [&](uint8_t scl, uint8_t sda, uint8_t addr, uint8_t ch) {
 			  return interfaceManager.pcaWireInterface().get(scl, sda, addr, ch);
 		  };
-	[[maybe_unused]] const auto DIRECT_SPI =
-		[&](uint32_t clockFreq, uint8_t bitOrder, uint8_t dataMode, PinInterface* csPin
-		) -> auto& {
-		return *interfaceManager.spiImpl()
-					.get(SPI, SPISettings(clockFreq, bitOrder, dataMode), csPin);
-	};
-
-#define SENSOR_DESC_ENTRY(ImuType, ...)                                           \
-	activeSensorCount += sensorDescEntry<ImuType>(sensorID, __VA_ARGS__) ? 1 : 0; \
-	sensorID++;
+	[[maybe_unused]] const auto DIRECT_SPI
+		= [&](uint32_t clockFreq, uint8_t bitOrder, uint8_t dataMode) {
+			  return interfaceManager.directSPIInterface().get(
+				  SPI,
+				  SPISettings(clockFreq, bitOrder, dataMode)
+			  );
+		  };
 
 	// Apply descriptor list and expand to entries
 	SENSOR_DESC_LIST;
@@ -122,49 +123,6 @@ SensorBuilder::buildSensorDynamically(SensorTypeID type, SensorDefinition sensor
 			);
 	}
 	return std::make_unique<EmptySensor>(sensorDef.sensorID);
-}
-
-SensorTypeID SensorBuilder::findSensorType(SensorDefinition sensorDef) {
-	sensorDef.sensorInterface->init();
-	sensorDef.sensorInterface->swapIn();
-	// if (SoftFusionLSM6DS3TRC::checkPresent(sensorDef.sensorID,
-	// sensorDef.imuInterface))
-	// {
-	// return SensorTypeID::LSM6DS3TRC;
-	// }
-	// if (SoftFusionICM42688::checkPresent(sensorDef.sensorID, sensorDef.imuInterface))
-	// {
-	//	return SensorTypeID::ICM42688;
-	//}
-	if (SoftFusionBMI270::checkPresent(sensorDef.sensorID, sensorDef.imuInterface)) {
-		return SensorTypeID::BMI270;
-	}
-	if (SoftFusionLSM6DSV::checkPresent(sensorDef.sensorID, sensorDef.imuInterface)) {
-		return SensorTypeID::LSM6DSV;
-	}
-	if (SoftFusionLSM6DSO::checkPresent(sensorDef.sensorID, sensorDef.imuInterface)) {
-		return SensorTypeID::LSM6DSO;
-	}
-	if (SoftFusionLSM6DSR::checkPresent(sensorDef.sensorID, sensorDef.imuInterface)) {
-		return SensorTypeID::LSM6DSR;
-	}
-	// if (SoftFusionMPU6050::checkPresent(sensorDef.sensorID, sensorDef.imuInterface))
-	// {
-	//	return SensorTypeID::MPU6050;
-	// }
-	if (SoftFusionICM45686::checkPresent(sensorDef.sensorID, sensorDef.imuInterface)) {
-		return SensorTypeID::ICM45686;
-	}
-	// if (SoftFusionICM45605::checkPresent(sensorDef.sensorID, sensorDef.imuInterface))
-	// {
-	//	return SensorTypeID::ICM45605;
-	// }
-
-	return BNO080Sensor::checkPresent(
-		sensorDef.sensorID,
-		sensorDef.sensorInterface,
-		sensorDef.intPin
-	);
 }
 
 }  // namespace SlimeVR::Sensors

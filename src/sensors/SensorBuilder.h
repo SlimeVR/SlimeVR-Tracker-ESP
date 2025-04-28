@@ -29,10 +29,12 @@
 
 #include "EmptySensor.h"
 #include "ErroneousSensor.h"
+#include "PinInterface.h"
 #include "SensorManager.h"
 #include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
+#include "consts.h"
 #include "globals.h"
 #include "icm20948sensor.h"
 #include "logging/Logger.h"
@@ -40,11 +42,13 @@
 #include "mpu9250sensor.h"
 #include "sensor.h"
 #include "sensorinterface/DirectPinInterface.h"
+#include "sensorinterface/DirectSPIInterface.h"
 #include "sensorinterface/I2CPCAInterface.h"
 #include "sensorinterface/I2CWireSensorInterface.h"
 #include "sensorinterface/MCP23X17PinInterface.h"
 #include "sensorinterface/RegisterInterface.h"
 #include "sensorinterface/SPIImpl.h"
+#include "sensorinterface/SensorInterface.h"
 #include "sensorinterface/SensorInterfaceManager.h"
 #include "sensorinterface/i2cimpl.h"
 #include "softfusion/drivers/bmi270.h"
@@ -115,45 +119,133 @@ public:
 	std::unique_ptr<::Sensor>
 	buildSensorDynamically(SensorTypeID type, SensorDefinition sensorDef);
 
-	SensorTypeID findSensorType(SensorDefinition sensorDef);
+	template <typename Sensor, typename AccessInterface>
+	std::optional<std::pair<SensorTypeID, RegisterInterface*>> checkSensorPresent(
+		uint8_t sensorId,
+		SensorInterface* sensorInterface,
+		AccessInterface accessInterface
+	) {
+		auto* registerInterface
+			= getRegisterInterface<Sensor>(sensorId, sensorInterface, accessInterface);
+
+		if (!registerInterface->hasSensorOnBus()) {
+			return {};
+		}
+
+		if constexpr (requires {
+						  {
+							  Sensor::checkPresent(*registerInterface)
+						  } -> std::same_as<SensorTypeID>;
+					  }) {
+			if constexpr (std::is_same_v<Sensor, BNO085Sensor>) {
+				auto type = Sensor::checkPresent(*registerInterface);
+
+				if (type == SensorTypeID::Unknown) {
+					return {};
+				}
+
+				return std::make_pair(type, registerInterface);
+			} else {
+				if (!Sensor::checkPresent(*registerInterface)) {
+					return {};
+				}
+			}
+		}
+
+		return std::make_pair(Sensor::TypeID, registerInterface);
+	}
+
+	template <typename AccessInterface>
+	inline std::optional<std::pair<SensorTypeID, RegisterInterface*>>
+	checkSensorsPresent(uint8_t, SensorInterface*, AccessInterface) {
+		return std::nullopt;
+	}
+
+	template <typename AccessInterface, typename Sensor, typename... Rest>
+	inline std::optional<std::pair<SensorTypeID, RegisterInterface*>>
+	checkSensorsPresent(
+		uint8_t sensorId,
+		SensorInterface* sensorInterface,
+		AccessInterface accessInterface
+	) {
+		auto result
+			= checkSensorPresent<Sensor>(sensorId, sensorInterface, accessInterface);
+		if (result) {
+			return result;
+		}
+
+		return checkSensorsPresent<AccessInterface, Rest...>(
+			sensorId,
+			sensorInterface,
+			accessInterface
+		);
+	}
+
+	template <typename Sensor, typename AccessInterface>
+	RegisterInterface* getRegisterInterface(
+		uint8_t sensorId,
+		SensorInterface* interface,
+		AccessInterface access
+	) {
+		if constexpr (std::is_convertible_v<AccessInterface, uint8_t>) {
+			access = access > 0 ? access : Sensor::Address + sensorId;
+
+			return interfaceManager.i2cImpl().get(access);
+		} else {
+			return interfaceManager.spiImpl().get(
+				static_cast<DirectSPIInterface*>(interface),
+				access
+			);
+		}
+	}
+
+	template <typename AccessInterface>
+	std::optional<std::pair<SensorTypeID, RegisterInterface*>> findSensorType(
+		uint8_t sensorID,
+		SensorInterface* sensorInterface,
+		AccessInterface accessInterface
+	) {
+		sensorInterface->init();
+		sensorInterface->swapIn();
+
+		return checkSensorsPresent<
+			AccessInterface,
+			// SoftFusionLSM6DS3TRC,
+			// SoftFusionICM42688,
+			SoftFusionBMI270,
+			SoftFusionLSM6DSV,
+			SoftFusionLSM6DSO,
+			SoftFusionLSM6DSR,
+			// SoftFusionMPU6050,
+			SoftFusionICM45686,
+			// SoftFusionICM45605
+			BNO085Sensor>(sensorID, sensorInterface, accessInterface);
+	}
 
 	template <typename SensorType, typename AccessInterface>
 	bool sensorDescEntry(
-		uint8_t& sensorID,
-		AccessInterface&& accessInterface,
+		uint8_t sensorID,
+		AccessInterface accessInterface,
 		float rotation,
 		SensorInterface* sensorInterface,
 		bool optional = false,
 		PinInterface* intPin = nullptr,
 		int extraParam = 0
 	) {
-		RegisterInterface& regInterface = [&]() constexpr -> auto& {
-			if constexpr (std::is_convertible_v<AccessInterface, RegisterInterface&>) {
-				return accessInterface;
-			} else {
-				return *interfaceManager.i2cImpl().get(accessInterface);
-			}
-		}();
-
 		std::unique_ptr<::Sensor> sensor;
 		if constexpr (std::is_same<SensorType, SensorAuto>::value) {
-			auto sensorType = findSensorType({
-				sensorID,
-				regInterface,
-				rotation,
-				sensorInterface,
-				optional,
-				intPin,
-				extraParam,
-			});
+			auto result = findSensorType(sensorID, sensorInterface, accessInterface);
 
-			if (sensorType == SensorTypeID::Unknown) {
+			if (!result) {
 				m_Manager->m_Logger.error(
 					"Can't find sensor type for sensor %d",
 					sensorID
 				);
 				return false;
 			}
+
+			auto sensorType = result->first;
+			auto& regInterface = *(result->second);
 
 			m_Manager->m_Logger.info(
 				"Sensor %d automatically detected with %s",
@@ -173,6 +265,12 @@ public:
 				}
 			);
 		} else {
+			auto& regInterface = getRegisterInterface<SensorType>(
+				sensorID,
+				sensorInterface,
+				accessInterface
+			);
+
 			sensor = buildSensor<SensorType>({
 				sensorID,
 				regInterface,
