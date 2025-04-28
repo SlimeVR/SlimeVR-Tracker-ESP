@@ -25,6 +25,7 @@
 #include <cstdint>
 
 #include "../../../sensorinterface/RegisterInterface.h"
+#include "callbacks.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -51,8 +52,6 @@ struct ICM45Base {
 	static constexpr float TemperatureSensitivity = 128.0f;
 
 	static constexpr float TemperatureZROChange = 20.0f;
-
-	static constexpr bool Uses32BitSensorData = true;
 
 	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
@@ -154,12 +153,7 @@ struct ICM45Base {
 		return true;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTemperatureSample
-	) {
+	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		// Allocate statically so that it does not take up stack space, which
 		// can result in stack overflow and panic
 		constexpr size_t MaxReadings = 8;
@@ -218,7 +212,7 @@ struct ICM45Base {
 					static_cast<int32_t>(entry.gyro[1]) << 4 | (entry.lsb[1] & 0xf),
 					static_cast<int32_t>(entry.gyro[2]) << 4 | (entry.lsb[2] & 0xf),
 				};
-				processGyroSample(gyroData, GyrTs);
+				callbacks.processGyroSample(gyroData, GyrTs);
 			}
 
 			if (has_accel && entry.accel[0] != InvalidReading) {
@@ -230,11 +224,11 @@ struct ICM45Base {
 					static_cast<int32_t>(entry.accel[2]) << 4
 						| (static_cast<int32_t>((entry.lsb[2]) & 0xf0) >> 4),
 				};
-				processAccelSample(accelData, AccTs);
+				callbacks.processAccelSample(accelData, AccTs);
 			}
 
 			if (entry.temp != 0x8000) {
-				processTemperatureSample(static_cast<int16_t>(entry.temp), TempTs);
+				callbacks.processTempSample(static_cast<int16_t>(entry.temp), TempTs);
 			}
 		}
 	}
