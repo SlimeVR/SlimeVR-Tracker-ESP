@@ -493,7 +493,7 @@ void Connection::updateSensorState(std::vector<std::unique_ptr<Sensor>>& sensors
 	m_LastSensorInfoPacketTimestamp = millis();
 
 	for (int i = 0; i < (int)sensors.size(); i++) {
-		if (isSensorStateUpdated(i, sensors[i])) {
+		if (sensors[i]->isStateUpdated()) {
 			sendSensorInfo(*sensors[i]);
 		}
 	}
@@ -511,14 +511,6 @@ void Connection::maybeRequestFeatureFlags() {
 	sendFeatureFlags();
 	m_FeatureFlagsRequestTimestamp = millis();
 	m_FeatureFlagsRequestAttempts++;
-}
-
-bool Connection::isSensorStateUpdated(int i, std::unique_ptr<Sensor>& sensor) {
-	return sensor->isStateUpdated(
-		m_AckedSensorState[i],
-		m_AckedSensorCalibration[i],
-		m_AckedSensorConfigData[i]
-	);
 }
 
 void Connection::searchForServer() {
@@ -586,21 +578,10 @@ void Connection::searchForServer() {
 
 void Connection::reset() {
 	m_Connected = false;
-	std::fill(
-		m_AckedSensorState,
-		m_AckedSensorState + MAX_SENSORS_COUNT,
-		SensorStatus::SENSOR_OFFLINE
-	);
-	std::fill(
-		m_AckedSensorCalibration,
-		m_AckedSensorCalibration + MAX_SENSORS_COUNT,
-		false
-	);
-	std::fill(
-		m_AckedSensorConfigData,
-		m_AckedSensorConfigData + MAX_SENSORS_COUNT,
-		SlimeVR::Configuration::SensorConfigBits{}
-	);
+
+	for (auto& sensor : sensorManager.getSensors()) {
+		sensor->resetAckedState();
+	}
 
 	m_UDP.begin(m_ServerPort);
 
@@ -622,16 +603,9 @@ void Connection::update() {
 		statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 
 		m_Connected = false;
-		std::fill(
-			m_AckedSensorState,
-			m_AckedSensorState + MAX_SENSORS_COUNT,
-			SensorStatus::SENSOR_OFFLINE
-		);
-		std::fill(
-			m_AckedSensorCalibration,
-			m_AckedSensorCalibration + MAX_SENSORS_COUNT,
-			false
-		);
+		for (auto& sensor : sensorManager.getSensors()) {
+			sensor->resetAckedState();
+		}
 		m_Logger.warn("Connection to server timed out");
 
 		return;
@@ -691,15 +665,19 @@ void Connection::update() {
 
 			for (int i = 0; i < (int)sensors.size(); i++) {
 				if (sensorInfoPacket.sensorId == sensors[i]->getSensorId()) {
-					m_AckedSensorState[i] = sensorInfoPacket.sensorState;
 					if (len < 12) {
-						m_AckedSensorCalibration[i]
-							= sensors[i]->hasCompletedRestCalibration();
-						m_AckedSensorConfigData[i] = sensors[i]->getSensorConfigData();
+						sensors[i]->signalAckedStateUpdate(
+							sensorInfoPacket.sensorState,
+							sensors[i]->hasCompletedRestCalibration(),
+							sensors[i]->getSensorConfigData()
+						);
 						break;
 					}
-					m_AckedSensorCalibration[i]
-						= sensorInfoPacket.hasCompletedRestCalibration;
+					sensors[i]->signalAckedStateUpdate(
+						sensorInfoPacket.sensorState,
+						sensorInfoPacket.hasCompletedRestCalibration,
+						sensorInfoPacket.sensorConfigData
+					);
 					break;
 				}
 			}
