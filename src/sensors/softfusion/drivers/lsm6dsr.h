@@ -156,28 +156,14 @@ struct LSM6DSR : LSM6DSOutputHandler {
 		return true;
 	}
 
-	template <
-		typename AccelCall,
-		typename GyroCall,
-		typename TempCall,
-		typename MagCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTempSample,
-		MagCall&& processMagSample
-	) {
-		LSM6DSOutputHandler::
-			template bulkRead<AccelCall, GyroCall, TempCall, MagCall, Regs>(
-				processAccelSample,
-				processGyroSample,
-				processTempSample,
-				processMagSample,
-				GyrTs,
-				AccTs,
-				TempTs,
-				MagTs
-			);
+	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+		LSM6DSOutputHandler::template bulkRead<Regs>(
+			std::move(callbacks),
+			GyrTs,
+			AccTs,
+			TempTs,
+			MagTs
+		);
 	}
 
 	void setAuxDeviceId(uint8_t id) { LSM6DSOutputHandler::setAuxDeviceId(id); }
@@ -193,10 +179,6 @@ struct LSM6DSR : LSM6DSOutputHandler {
 	template <typename T>
 	void readAux(uint8_t address, T* outData, size_t count) {
 		return LSM6DSOutputHandler::template readAux<T, Regs>(address, outData, count);
-	}
-
-	void setAuxByteWidth(MagDefinition::DataWidth width) {
-		LSM6DSOutputHandler::template setAuxByteWidth<Regs>(width);
 	}
 
 	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {

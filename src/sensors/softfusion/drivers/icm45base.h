@@ -25,6 +25,8 @@
 #include <cstdint>
 
 #include "../../../sensorinterface/RegisterInterface.h"
+#include "../magdriver.h"
+#include "callbacks.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -51,8 +53,6 @@ struct ICM45Base {
 	static constexpr float TemperatureSensitivity = 128.0f;
 
 	static constexpr float TemperatureZROChange = 20.0f;
-
-	static constexpr bool Uses32BitSensorData = true;
 
 	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
@@ -105,6 +105,60 @@ struct ICM45Base {
 
 		static constexpr uint8_t FifoCount = 0x12;
 		static constexpr uint8_t FifoData = 0x14;
+
+		// Indirect register access
+
+		static constexpr uint8_t IRegAddr = 0x7c;
+		static constexpr uint8_t IRegData = 0x7e;
+
+		enum class Bank : uint8_t {
+			IMemSram = 0x00,
+			IPregBar = 0xa0,
+			IPregSys1 = 0xa4,
+			IPregSys2 = 0xa5,
+			IPregTop1 = 0xa2,
+		};
+
+		// Mag support
+
+		struct IOCPadScenarioOvrd {
+			static constexpr uint8_t reg = 0x30;
+			static constexpr uint8_t value = (0b1 << 4)  // override aux1_mode
+										   | (0b01 << 2)  // i2cm in master mode
+										   | (0b1 << 1)  // override aux1_enable
+										   | (0b1 << 0);  // enable aux1
+		};
+
+		struct I2CMCommand0 {
+			static constexpr Bank bank = Bank::IPregTop1;
+			static constexpr uint8_t reg = 0x06;
+		};
+
+		struct I2CMDevProfile0 {
+			static constexpr Bank bank = Bank::IPregTop1;
+			static constexpr uint8_t reg = 0x0e;
+		};
+
+		struct I2CMWRData0 {
+			static constexpr Bank bank = Bank::IPregTop1;
+			static constexpr uint8_t reg = 0x33;
+		};
+
+		struct I2CMRDData0 {
+			static constexpr Bank bank = Bank::IPregTop1;
+			static constexpr uint8_t reg = 0x1b;
+		};
+
+		struct DmpExtSenOdr {
+			static constexpr uint8_t reg = 0x27;
+			static constexpr uint8_t value = (0b1 << 6)  // enable ext sensor
+										   | (0b101 << 3);  // 100Hz ODR
+		};
+
+		struct I2CMControl {
+			static constexpr Bank bank = Bank::IPregTop1;
+			static constexpr uint8_t reg = 0x16;
+		};
 	};
 
 #pragma pack(push, 1)
@@ -149,17 +203,20 @@ struct ICM45Base {
 			BaseRegs::PwrMgmt0::reg,
 			BaseRegs::PwrMgmt0::value
 		);
+
+		if constexpr (!USE_6_AXIS) {
+			m_RegisterInterface.writeReg(
+				BaseRegs::IOCPadScenarioOvrd::reg,
+				BaseRegs::IOCPadScenarioOvrd::value
+			);
+		}
+
 		delay(1);
 
 		return true;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTemperatureSample
-	) {
+	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		// Allocate statically so that it does not take up stack space, which
 		// can result in stack overflow and panic
 		constexpr size_t MaxReadings = 8;
@@ -218,7 +275,7 @@ struct ICM45Base {
 					static_cast<int32_t>(entry.gyro[1]) << 4 | (entry.lsb[1] & 0xf),
 					static_cast<int32_t>(entry.gyro[2]) << 4 | (entry.lsb[2] & 0xf),
 				};
-				processGyroSample(gyroData, GyrTs);
+				callbacks.processGyroSample(gyroData, GyrTs);
 			}
 
 			if (has_accel && entry.accel[0] != InvalidReading) {
@@ -230,14 +287,102 @@ struct ICM45Base {
 					static_cast<int32_t>(entry.accel[2]) << 4
 						| (static_cast<int32_t>((entry.lsb[2]) & 0xf0) >> 4),
 				};
-				processAccelSample(accelData, AccTs);
+				callbacks.processAccelSample(accelData, AccTs);
 			}
 
 			if (entry.temp != 0x8000) {
-				processTemperatureSample(static_cast<int16_t>(entry.temp), TempTs);
+				callbacks.processTempSample(static_cast<int16_t>(entry.temp), TempTs);
 			}
 		}
 	}
+
+	// Indirect register access
+
+	template <typename R, size_t Offset = 0x00>
+	void writeBankRegister() {
+		uint8_t value = R::value;
+		writeBankRegister<R, Offset>(&value, sizeof(value));
+	}
+
+	template <typename R, size_t Offset = 0x00>
+	void writeBankRegister(uint8_t value) {
+		writeBankRegister<R, Offset>(&value, sizeof(value));
+	}
+
+	template <typename R, size_t Offset = 0x00>
+	void writeBankRegister(uint8_t* value, size_t size) {
+		uint8_t data[] = {static_cast<uint8_t>(R::bank), R::reg + Offset, value[0]};
+		m_RegisterInterface.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
+		delayMicroseconds(4);
+		for (size_t i = 1; i < size; i++) {
+			m_RegisterInterface.writeReg(BaseRegs::IRegData, value[i]);
+			delayMicroseconds(4);
+		}
+	};
+
+	template <typename R>
+	uint8_t readBankRegister() {
+		uint8_t out;
+		readBankRegister<R, uint8_t>(&out, sizeof(out));
+		return out;
+	}
+
+	template <typename R, typename T>
+	void readBankRegister(T* outData, size_t count) {
+		uint8_t data[] = {static_cast<uint8_t>(R::bank), R::reg};
+		m_RegisterInterface.writeBytes(BaseRegs::IRegAddr, sizeof(data), data);
+		delayMicroseconds(4);
+		auto* buffer = reinterpret_cast<uint8_t*>(outData);
+		for (size_t i = 0; i < count * sizeof(T); i++) {
+			buffer[i] = m_RegisterInterface.readReg(BaseRegs::IRegData);
+			delayMicroseconds(4);
+		}
+	}
+
+	// Mag support
+
+	void writeAux(uint8_t address, uint8_t value) {
+		uint8_t writeData[] = {address, value};
+		writeBankRegister<typename BaseRegs::I2CMWRData0>(writeData, sizeof(writeData));
+		writeBankRegister<typename BaseRegs::I2CMCommand0>(
+			(0b1 << 7)  // last command
+			| (0b0 << 6)  // channel 0
+			| (0b00 << 4)  // write
+			| (0b010 << 0)  // write 1 byte
+		);
+		writeBankRegister<typename BaseRegs::I2CMControl>(
+			(0b0 << 6)  // no restarts
+			| (0b0 << 3)  // fast mode
+			| (0b1 << 0)  // start operation
+		);
+
+		while (readBankRegister<typename BaseRegs::I2CMControl>() & 0x01)
+			;
+	}
+
+	uint8_t readAux(uint8_t address) {
+		writeBankRegister<typename BaseRegs::I2CMDevProfile0, 0>(address);
+		writeBankRegister<typename BaseRegs::I2CMCommand0>(
+			(0b1 << 7)  // last command
+			| (0b0 << 6)  // channel 0
+			| (0b01 << 4)  // read with address
+			| (0b010 << 0)  // read 1 byte
+		);
+		writeBankRegister<typename BaseRegs::I2CMControl>(
+			(0b0 << 6)  // no restarts
+			| (0b0 << 3)  // fast mode
+			| (0b1 << 0)  // start operation
+		);
+		while ((readBankRegister<typename BaseRegs::I2CMControl>() & 0b1) != 0)
+			;
+		return readBankRegister<typename BaseRegs::I2CMRDData0>();
+	}
+
+	void setAuxDeviceId(uint8_t id) {
+		writeBankRegister<typename BaseRegs::I2CMDevProfile0, 1>(id);
+	}
+
+	void setupAuxSensorPolling(uint8_t dataReg, MagDefinition::DataWidth byteWidth) {}
 };
 
-};  // namespace SlimeVR::Sensors::SoftFusion::Drivers
+}  // namespace SlimeVR::Sensors::SoftFusion::Drivers

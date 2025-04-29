@@ -63,7 +63,6 @@ struct AuxInterface {
 	const I2CWriteFunc& writeI2C;
 	const I2CReadFunc& readI2C;
 	const I2CSetIdFunc& setId;
-	const I2CSetByteWidthFunc& setByteWidth;
 	const I2CSetupPollingFunc& setupPolling;
 };
 

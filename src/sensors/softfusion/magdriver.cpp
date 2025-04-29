@@ -60,7 +60,6 @@ void MagDriver::init(AuxInterface auxInterface) {
 		state = State::Ok;
 
 		m_Logger.info("Found mag of type %s, initializing!", mag.name);
-		auxInterface.setByteWidth(mag.dataWidth);
 		selectedMag.setup(auxInterface.writeI2C);
 		auxInterface.setupPolling(mag.dataReg, mag.dataWidth);
 
