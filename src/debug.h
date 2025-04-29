@@ -82,7 +82,7 @@
 // Experimental
 #define OPTIMIZE_UPDATES true
 
-#define I2C_SPEED 800000
+#define I2C_SPEED 400000
 
 #define COMPLIANCE_MODE true
 #define USE_ATTENUATION COMPLIANCE_MODE&& ESP8266
@@ -108,6 +108,10 @@
 
 #ifndef DEBUG_MEASURE_SENSOR_TIME_TAKEN
 #define DEBUG_MEASURE_SENSOR_TIME_TAKEN false
+#endif
+
+#ifndef USE_OTA_TIMEOUT
+#define USE_OTA_TIMEOUT false
 #endif
 
 #endif  // SLIMEVR_DEBUG_H_

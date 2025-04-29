@@ -43,7 +43,7 @@ public:
 		, m_Channel(channel){};
 	~I2CPCASensorInterface(){};
 
-	void init() override final;
+	bool init() override final;
 	void swapIn() override final;
 
 protected:

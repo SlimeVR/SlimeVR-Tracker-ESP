@@ -36,8 +36,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 416Hz, accel ODR = 104Hz
 
-template <typename I2CImpl>
-struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
+struct LSM6DSR : LSM6DSOutputHandler {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DSR";
 	static constexpr auto Type = SensorTypeID::LSM6DSR;
@@ -67,8 +66,6 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 		.restThGyr = 1.0f,
 		.restThAcc = 0.192f,
 	};
-
-	using LSM6DSOutputHandler<I2CImpl>::i2c;
 
 	struct Regs {
 		struct WhoAmI {
@@ -138,18 +135,24 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 		static constexpr uint8_t FifoData = 0x78;
 	};
 
-	LSM6DSR(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: LSM6DSOutputHandler<I2CImpl>(i2c, logger) {}
+	LSM6DSR(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+		: LSM6DSOutputHandler(registerInterface, logger) {}
 
 	bool initialize() {
 		// perform initialization step
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
 		delay(20);
-		i2c.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
-		i2c.writeReg(Regs::Ctrl2GY::reg, Regs::Ctrl2GY::value);
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
-		i2c.writeReg(Regs::FifoCtrl3BDR::reg, Regs::FifoCtrl3BDR::value);
-		i2c.writeReg(Regs::FifoCtrl4Mode::reg, Regs::FifoCtrl4Mode::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl2GY::reg, Regs::Ctrl2GY::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
+		m_RegisterInterface.writeReg(
+			Regs::FifoCtrl3BDR::reg,
+			Regs::FifoCtrl3BDR::value
+		);
+		m_RegisterInterface.writeReg(
+			Regs::FifoCtrl4Mode::reg,
+			Regs::FifoCtrl4Mode::value
+		);
 		return true;
 	}
 
@@ -164,7 +167,7 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 		TempCall&& processTempSample,
 		MagCall&& processMagSample
 	) {
-		LSM6DSOutputHandler<I2CImpl>::
+		LSM6DSOutputHandler::
 			template bulkRead<AccelCall, GyroCall, TempCall, MagCall, Regs>(
 				processAccelSample,
 				processGyroSample,
@@ -177,36 +180,27 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 			);
 	}
 
-	void setAuxDeviceId(uint8_t id) {
-		LSM6DSOutputHandler<I2CImpl>::setAuxDeviceId(id);
-	}
+	void setAuxDeviceId(uint8_t id) { LSM6DSOutputHandler::setAuxDeviceId(id); }
 
 	void writeAux(uint8_t address, uint8_t value) {
-		LSM6DSOutputHandler<I2CImpl>::template writeAux<Regs>(address, value);
+		LSM6DSOutputHandler::template writeAux<Regs>(address, value);
 	}
 
 	uint8_t readAux(uint8_t address) {
-		return LSM6DSOutputHandler<I2CImpl>::template readAux<Regs>(address);
+		return LSM6DSOutputHandler::template readAux<Regs>(address);
 	}
 
 	template <typename T>
 	void readAux(uint8_t address, T* outData, size_t count) {
-		return LSM6DSOutputHandler<I2CImpl>::template readAux<T, Regs>(
-			address,
-			outData,
-			count
-		);
+		return LSM6DSOutputHandler::template readAux<T, Regs>(address, outData, count);
 	}
 
 	void setAuxByteWidth(MagDefinition::DataWidth width) {
-		LSM6DSOutputHandler<I2CImpl>::template setAuxByteWidth<Regs>(width);
+		LSM6DSOutputHandler::template setAuxByteWidth<Regs>(width);
 	}
 
 	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {
-		LSM6DSOutputHandler<I2CImpl>::template setupAuxSensorPolling<Regs>(
-			address,
-			byteWidth
-		);
+		LSM6DSOutputHandler::template setupAuxSensorPolling<Regs>(address, byteWidth);
 	}
 };
 

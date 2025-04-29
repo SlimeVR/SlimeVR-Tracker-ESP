@@ -31,10 +31,13 @@
 #include <memory>
 
 #include "PinInterface.h"
+#include "SensorToggles.h"
 #include "configuration/Configuration.h"
 #include "globals.h"
 #include "logging/Logger.h"
+#include "sensorinterface/RegisterInterface.h"
 #include "sensorinterface/SensorInterface.h"
+#include "sensorinterface/i2cimpl.h"
 #include "status/TPSCounter.h"
 #include "utils.h"
 
@@ -47,24 +50,18 @@ enum class SensorStatus : uint8_t {
 	SENSOR_ERROR = 2
 };
 
-enum class MagnetometerStatus : uint8_t {
-	MAG_NOT_SUPPORTED = 0,
-	MAG_DISABLED = 1,
-	MAG_ENABLED = 2,
-};
-
 class Sensor {
 public:
 	Sensor(
 		const char* sensorName,
 		SensorTypeID type,
 		uint8_t id,
-		uint8_t address,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface = nullptr
 	)
 		: m_hwInterface(sensorInterface)
-		, addr(address)
+		, m_RegisterInterface(registerInterface)
 		, sensorId(id)
 		, sensorType(type)
 		, sensorOffset({Quat(Vector3(0, 0, 1), rotation)})
@@ -72,6 +69,7 @@ public:
 		char buf[4];
 		sprintf(buf, "%u", id);
 		m_Logger.setTag(buf);
+		addr = registerInterface.getAddress();
 	}
 
 	virtual ~Sensor(){};
@@ -87,19 +85,20 @@ public:
 	virtual void printDebugTemperatureCalibrationState();
 	virtual void resetTemperatureCalibrationState();
 	virtual void saveTemperatureCalibration();
-	virtual void setFlag(uint16_t flagId, bool state){};
-	virtual uint16_t getSensorConfigData();
 	bool isWorking() { return working; };
 	bool getHadData() const { return hadData; };
 	bool isValid() { return m_hwInterface != nullptr; };
-	bool isMagEnabled() { return magStatus == MagnetometerStatus::MAG_ENABLED; };
 	uint8_t getSensorId() { return sensorId; };
 	SensorTypeID getSensorType() { return sensorType; };
-	MagnetometerStatus getMagStatus() { return magStatus; };
 	const Vector3& getAcceleration() { return acceleration; };
 	const Quat& getFusedRotation() { return fusedRotation; };
 	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
 	inline bool hasCompletedRestCalibration() { return restCalibrationComplete; }
+	void setFlag(SensorToggles toggle, bool state);
+	[[nodiscard]] virtual bool isFlagSupported(SensorToggles toggle) const {
+		return false;
+	}
+	SlimeVR::Configuration::SensorConfigBits getSensorConfigData();
 
 	virtual SensorDataType getDataType() {
 		return SensorDataType::SENSOR_DATATYPE_ROTATION;
@@ -116,13 +115,13 @@ public:
 	SlimeVR::SensorInterface* m_hwInterface = nullptr;
 
 protected:
-	uint8_t addr = 0;
+	SlimeVR::Sensors::RegisterInterface& m_RegisterInterface;
+	uint8_t addr;
 	uint8_t sensorId = 0;
 	SensorTypeID sensorType = SensorTypeID::Unknown;
 	bool working = false;
 	bool hadData = false;
 	uint8_t calibrationAccuracy = 0;
-	MagnetometerStatus magStatus = MagnetometerStatus::MAG_NOT_SUPPORTED;
 	Quat sensorOffset;
 
 	bool newFusedRotation = false;
@@ -133,6 +132,8 @@ protected:
 	Vector3 acceleration{};
 
 	SensorPosition m_SensorPosition = SensorPosition::POSITION_NO;
+
+	SensorToggleState toggles;
 
 	void markRestCalibrationComplete(bool completed = true);
 

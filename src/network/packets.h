@@ -24,49 +24,62 @@
 #ifndef SLIMEVR_PACKETS_H_
 #define SLIMEVR_PACKETS_H_
 
-#define PACKET_HEARTBEAT 0
-// #define PACKET_ROTATION 1 // Deprecated
-// #define PACKET_GYRO 2 // Deprecated
-#define PACKET_HANDSHAKE 3
-#define PACKET_ACCEL 4
-// #define PACKET_MAG 5 // Deprecated
-// #define PACKET_RAW_CALIBRATION_DATA 6 // Deprecated
-// #define PACKET_CALIBRATION_FINISHED 7 // Deprecated
-#define PACKET_CONFIG 8
-// #define PACKET_RAW_MAGNETOMETER 9 // Deprecated
-#define PACKET_PING_PONG 10
-#define PACKET_SERIAL 11
-#define PACKET_BATTERY_LEVEL 12
-#define PACKET_TAP 13
-#define PACKET_ERROR 14
-#define PACKET_SENSOR_INFO 15
-// #define PACKET_ROTATION_2 16 // Deprecated
-#define PACKET_ROTATION_DATA 17
-#define PACKET_MAGNETOMETER_ACCURACY 18
-#define PACKET_SIGNAL_STRENGTH 19
-#define PACKET_TEMPERATURE 20
-// #define PACKET_USER_ACTION 21 // Joycon buttons only currently
-#define PACKET_FEATURE_FLAGS 22
-// #define PACKET_ROTATION_ACCELERATION 23 // Unification of rot and accel data in one
-// packet
-#define PACKET_ACKNOWLEDGE_CONFIG_CHANGE 24
-#define PACKET_SET_CONFIG_FLAG 25
-#define PACKET_FLEX_DATA 26
+#include <cstdint>
 
-#define PACKET_BUNDLE 100
+#include "../consts.h"
+#include "../sensors/sensor.h"
 
-#define PACKET_INSPECTION 105  // 0x69
+enum class SendPacketType : uint8_t {
+	HeartBeat = 0,
+	//  Rotation = 1,
+	//  Gyro = 2,
+	Handshake = 3,
+	Accel = 4,
+	// Mag = 5,
+	// RawCalibrationData = 6,
+	// CalibrationFinished = 7,
+	// RawMagnetometer = 9,
+	Serial = 11,
+	BatteryLevel = 12,
+	Tap = 13,
+	Error = 14,
+	SensorInfo = 15,
+	// Rotation2 = 16,
+	RotationData = 17,
+	MagnetometerAccuracy = 18,
+	SignalStrength = 19,
+	Temperature = 20,
+	// UserAction = 21,
+	FeatureFlags = 22,
+	// RotationAcceleration = 23,
+	AcknowledgeConfigChange = 24,
+	FlexData = 26,
+	Bundle = 100,
+	Inspection = 105,
+};
 
-#define PACKET_RECEIVE_HEARTBEAT 1
-#define PACKET_RECEIVE_VIBRATE 2
-#define PACKET_RECEIVE_HANDSHAKE 3
-#define PACKET_RECEIVE_COMMAND 4
+enum class ReceivePacketType : uint8_t {
+	HeartBeat = 1,
+	Vibrate = 2,
+	Handshake = 3,
+	Command = 4,
+	Config = 8,
+	PingPong = 10,
+	SensorInfo = 15,
+	FeatureFlags = 22,
+	SetConfigFlag = 25,
+};
 
-#define PACKET_INSPECTION_PACKETTYPE_RAW_IMU_DATA 1
-#define PACKET_INSPECTION_PACKETTYPE_FUSED_IMU_DATA 2
-#define PACKET_INSPECTION_PACKETTYPE_CORRECTION_DATA 3
-#define PACKET_INSPECTION_DATATYPE_INT 1
-#define PACKET_INSPECTION_DATATYPE_FLOAT 2
+enum class InspectionPacketType : uint8_t {
+	RawImuData = 1,
+	FusedImuData = 2,
+	CorrectionData = 3,
+};
+
+enum class InspectionDataType : uint8_t {
+	Int = 1,
+	Float = 2,
+};
 
 // From the SH-2 interface that BNO08x use.
 enum class PacketErrorCode : uint8_t {
@@ -77,5 +90,146 @@ enum class PacketErrorCode : uint8_t {
 	EXTERNAL_RESET = 4,
 	OTHER = 5,
 };
+
+#pragma pack(push, 1)
+
+template <typename T>
+T swapEndianness(T value) {
+	auto* bytes = reinterpret_cast<uint8_t*>(&value);
+	std::reverse(bytes, bytes + sizeof(T));
+	return value;
+}
+
+template <typename T>
+struct BigEndian {
+	BigEndian() = default;
+	explicit(false) BigEndian(T val) { value = swapEndianness(val); }
+	explicit(false) operator T() const { return swapEndianness(value); }
+
+	T value{};
+};
+
+struct AccelPacket {
+	BigEndian<float> x;
+	BigEndian<float> y;
+	BigEndian<float> z;
+	uint8_t sensorId{};
+};
+
+struct BatteryLevelPacket {
+	BigEndian<float> batteryVoltage;
+	BigEndian<float> batteryPercentage;
+};
+
+struct TapPacket {
+	uint8_t sensorId;
+	uint8_t value;
+};
+
+struct ErrorPacket {
+	uint8_t sensorId;
+	uint8_t error;
+};
+
+struct SensorInfoPacket {
+	uint8_t sensorId{};
+	SensorStatus sensorState{};
+	SensorTypeID sensorType{};
+	BigEndian<SlimeVR::Configuration::SensorConfigBits> sensorConfigData{};
+	bool hasCompletedRestCalibration{};
+	SensorPosition sensorPosition{};
+	SensorDataType sensorDataType{};
+	// ADD NEW FIELDS ABOVE THIS COMMENT ^^^^^^^^
+	// WARNING! Only for debug purposes and SHOULD ALWAYS BE LAST IN THE PACKET.
+	// It WILL BE REMOVED IN THE FUTURE
+	// Send TPS
+	BigEndian<float> tpsCounterAveragedTps;
+	BigEndian<float> dataCounterAveragedTps;
+};
+
+struct RotationDataPacket {
+	uint8_t sensorId{};
+	uint8_t dataType{};
+	BigEndian<float> x;
+	BigEndian<float> y;
+	BigEndian<float> z;
+	BigEndian<float> w;
+	uint8_t accuracyInfo{};
+};
+
+struct MagnetometerAccuracyPacket {
+	uint8_t sensorId{};
+	BigEndian<float> accuracyInfo;
+};
+
+struct SignalStrengthPacket {
+	uint8_t sensorId;
+	uint8_t signalStrength;
+};
+
+struct TemperaturePacket {
+	uint8_t sensorId{};
+	BigEndian<float> temperature;
+};
+
+struct AcknowledgeConfigChangePacket {
+	uint8_t sensorId{};
+	BigEndian<SensorToggles> configType;
+};
+
+struct FlexDataPacket {
+	uint8_t sensorId{};
+	BigEndian<float> flexLevel;
+};
+
+struct IntRawImuDataInspectionPacket {
+	InspectionPacketType inspectionPacketType{};
+	uint8_t sensorId{};
+	InspectionDataType inspectionDataType{};
+
+	BigEndian<uint32_t> rX;
+	BigEndian<uint32_t> rY;
+	BigEndian<uint32_t> rZ;
+	uint8_t rA{};
+
+	BigEndian<uint32_t> aX;
+	BigEndian<uint32_t> aY;
+	BigEndian<uint32_t> aZ;
+	uint8_t aA{};
+
+	BigEndian<uint32_t> mX;
+	BigEndian<uint32_t> mY;
+	BigEndian<uint32_t> mZ;
+	uint8_t mA{};
+};
+
+struct FloatRawImuDataInspectionPacket {
+	InspectionPacketType inspectionPacketType{};
+	uint8_t sensorId{};
+	InspectionDataType inspectionDataType{};
+
+	BigEndian<float> rX;
+	BigEndian<float> rY;
+	BigEndian<float> rZ;
+	uint8_t rA{};
+
+	BigEndian<float> aX;
+	BigEndian<float> aY;
+	BigEndian<float> aZ;
+	uint8_t aA{};
+
+	BigEndian<float> mX;
+	BigEndian<float> mY;
+	BigEndian<float> mZ;
+	uint8_t mA{};
+};
+
+struct SetConfigFlagPacket {
+	uint8_t sensorId{};
+	BigEndian<SensorToggles> flag;
+	bool newState{};
+};
+
+#pragma pack(pop)
 
 #endif  // SLIMEVR_PACKETS_H_

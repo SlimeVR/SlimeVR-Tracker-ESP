@@ -22,7 +22,7 @@
 */
 #pragma once
 
-enum class SensorPosition {
+enum class SensorPosition : uint8_t {
 	POSITION_NO = 0,
 	POSITION_HEAD = 1,
 	POSITION_NECK = 2,
@@ -76,4 +76,6 @@ enum class SensorPosition {
 	POSITION_RIGHT_LITTLE_DISTAL = 50
 };
 
-enum class GloveSide { NO_GLOVE = 0, GLOVE_LEFT = 1, GLOVE_RIGHT = 2 };
+#define NO_GLOVE 0
+#define GLOVE_LEFT 1
+#define GLOVE_RIGHT 2

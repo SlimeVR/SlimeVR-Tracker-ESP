@@ -33,7 +33,7 @@ class NullCalibrationStep : public CalibrationStep<SensorRawT> {
 	using typename CalibrationStep<SensorRawT>::TickResult;
 
 public:
-	NullCalibrationStep(
+	explicit NullCalibrationStep(
 		SlimeVR::Configuration::RuntimeCalibrationSensorConfig& sensorConfig
 	)
 		: CalibrationStep<SensorRawT>{sensorConfig} {}

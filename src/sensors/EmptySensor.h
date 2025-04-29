@@ -24,14 +24,20 @@
 #ifndef SENSORS_EMPTYSENSOR_H
 #define SENSORS_EMPTYSENSOR_H
 
+#include "../sensorinterface/RegisterInterface.h"
 #include "sensor.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 class EmptySensor : public Sensor {
 public:
 	EmptySensor(uint8_t id)
-		: Sensor("EmptySensor", SensorTypeID::Empty, id, 0, 0.0){};
+		: Sensor(
+			"EmptySensor",
+			SensorTypeID::Empty,
+			id,
+			EmptyRegisterInterface::instance,
+			0.0
+		){};
 	~EmptySensor(){};
 
 	void motionSetup() override final{};
@@ -42,7 +48,6 @@ public:
 		return SensorStatus::SENSOR_OFFLINE;
 	};
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors
 
 #endif

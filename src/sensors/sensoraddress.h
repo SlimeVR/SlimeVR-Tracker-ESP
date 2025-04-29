@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+	Copyright (c) 2025 Eiren Rain & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,29 +21,33 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORS_ERRONEOUSSENSOR_H
-#define SENSORS_ERRONEOUSSENSOR_H
+#pragma once
+#include <memory>
 
-#include "../sensorinterface/RegisterInterface.h"
-#include "sensor.h"
-
-namespace SlimeVR::Sensors {
-class ErroneousSensor : public Sensor {
+namespace SlimeVR {
+namespace Sensors {
+class ImuAddress {
 public:
-	ErroneousSensor(uint8_t id, SensorTypeID type)
-		: Sensor("ErroneousSensor", type, id, EmptyRegisterInterface::instance, 0.0)
-		, m_ExpectedType(type){};
-	~ErroneousSensor(){};
+	ImuAddress(bool isPrimary)
+		: m_isPrimary(isPrimary) {}
 
-	void motionSetup() override;
-	void motionLoop() override final{};
-	void sendData() override{};
-	void startCalibration(int calibrationType) override final{};
-	SensorStatus getSensorState() override final;
+	ImuAddress(int fixedAddress)
+		: m_isDefined(true)
+		, m_definedAs(fixedAddress) {}
 
-private:
-	SensorTypeID m_ExpectedType;
+	bool m_isPrimary = false;
+	bool m_isDefined = false;
+	uint8_t m_definedAs = 0;
+
+	uint8_t getAddress(uint8_t imuDefaultAddress) {
+		if (m_isDefined) {
+			return m_definedAs;
+		}
+		if (m_isPrimary) {
+			return imuDefaultAddress;
+		}
+		return imuDefaultAddress + 1;
+	}
 };
-}  // namespace SlimeVR::Sensors
-
-#endif
+}  // namespace Sensors
+}  // namespace SlimeVR
