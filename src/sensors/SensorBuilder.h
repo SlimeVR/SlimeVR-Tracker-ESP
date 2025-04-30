@@ -63,11 +63,11 @@
 #include "softfusion/softfusionsensor.h"
 
 #ifndef PRIMARY_IMU_ADDRESS_ONE
-#define PRIMARY_IMU_ADDRESS_ONE 0
+#define PRIMARY_IMU_ADDRESS_ONE false
 #endif
 
 #ifndef SECONDARY_IMU_ADDRESS_TWO
-#define SECONDARY_IMU_ADDRESS_TWO 0
+#define SECONDARY_IMU_ADDRESS_TWO true
 #endif
 
 #if USE_RUNTIME_CALIBRATION
@@ -188,9 +188,10 @@ public:
 		AccessInterface access
 	) {
 		if constexpr (std::is_convertible_v<AccessInterface, uint8_t>) {
-			access = access > 0 ? access : Sensor::Address + sensorId;
-
 			return interfaceManager.i2cImpl().get(access);
+		} else if constexpr (std::is_convertible_v<AccessInterface, bool>) {
+			uint8_t addressIncrement = access ? 1 : 0;
+			return interfaceManager.i2cImpl().get(Sensor::Address + addressIncrement);
 		} else {
 			return interfaceManager.spiImpl().get(
 				static_cast<DirectSPIInterface*>(interface),
