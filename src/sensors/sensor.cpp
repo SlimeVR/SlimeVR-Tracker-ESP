@@ -163,6 +163,4 @@ void Sensor::setFlag(SensorToggles toggle, bool state) {
 
 	configuration.setSensorToggles(sensorId, toggles);
 	configuration.save();
-
-	motionSetup();
 }

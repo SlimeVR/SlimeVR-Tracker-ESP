@@ -262,7 +262,7 @@ struct ICM45Base {
 			bool has_gyro = header & (1 << 5);
 			bool has_accel = header & (1 << 6);
 
-			FifoEntryAligned entry;
+			static FifoEntryAligned entry;
 			memcpy(
 				&entry,
 				&read_buffer[i + 0x1],
@@ -383,6 +383,8 @@ struct ICM45Base {
 	}
 
 	void setupAuxSensorPolling(uint8_t dataReg, MagDefinition::DataWidth byteWidth) {}
+
+	void stopAuxSensorPolling() {}
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers

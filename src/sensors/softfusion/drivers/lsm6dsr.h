@@ -184,6 +184,10 @@ struct LSM6DSR : LSM6DSOutputHandler {
 	void setupAuxSensorPolling(uint8_t address, MagDefinition::DataWidth byteWidth) {
 		LSM6DSOutputHandler::template setupAuxSensorPolling<Regs>(address, byteWidth);
 	}
+
+	void stopAuxSensorPolling() {
+		LSM6DSOutputHandler::template stopAuxSensorPolling<Regs>();
+	}
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers

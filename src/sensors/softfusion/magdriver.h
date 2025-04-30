@@ -58,18 +58,24 @@ using I2CReadFunc = std::function<uint8_t(uint8_t)>;
 using I2CSetIdFunc = std::function<void(uint8_t)>;
 using I2CSetByteWidthFunc = std::function<void(MagDefinition::DataWidth)>;
 using I2CSetupPollingFunc = std::function<void(uint8_t, MagDefinition::DataWidth)>;
+using I2CStopPollingFunc = std::function<void()>;
 
 struct AuxInterface {
-	const I2CWriteFunc& writeI2C;
-	const I2CReadFunc& readI2C;
-	const I2CSetIdFunc& setId;
-	const I2CSetupPollingFunc& setupPolling;
+	const I2CWriteFunc writeI2C;
+	const I2CReadFunc readI2C;
+	const I2CSetIdFunc setId;
+	const I2CSetupPollingFunc setupPolling;
+	const I2CStopPollingFunc stopPolling;
 };
 
 class MagDriver {
 public:
-	void init(AuxInterface auxInterface);
+	explicit MagDriver(AuxInterface&& auxInterface);
+	void init();
 	void scaleMagSample(const uint8_t* rawData, float outData[3]);
+	void start();
+	void stop();
+	[[nodiscard]] bool isWorking() const;
 
 private:
 	static std::vector<MagDefinition> mags;
@@ -79,6 +85,7 @@ private:
 		Error,
 	};
 
+	AuxInterface auxInterface;
 	State state = State::NotSetup;
 	MagDefinition selectedMag;
 	Logging::Logger m_Logger = Logging::Logger("MagDriver");

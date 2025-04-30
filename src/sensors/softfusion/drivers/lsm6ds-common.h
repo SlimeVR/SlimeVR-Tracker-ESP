@@ -214,6 +214,22 @@ struct LSM6DSOutputHandler {
 			Regs::FuncCFGAccess::sensorHubAccessOff
 		);
 	}
+
+	template <typename Regs>
+	void stopAuxSensorPolling() {
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOn
+		);
+		m_RegisterInterface.writeReg(
+			Regs::MasterConfig::reg,
+			Regs::MasterConfig::valueDisable
+		);
+		m_RegisterInterface.writeReg(
+			Regs::FuncCFGAccess::reg,
+			Regs::FuncCFGAccess::sensorHubAccessOff
+		);
+	}
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers

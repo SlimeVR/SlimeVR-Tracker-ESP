@@ -24,6 +24,8 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
+#include <vector>
 
 #include "../debug.h"
 
@@ -37,9 +39,12 @@ class SensorToggleState {
 public:
 	void setToggle(SensorToggles toggle, bool state);
 	[[nodiscard]] bool getToggle(SensorToggles toggle) const;
+	void onToggleChange(std::function<void(SensorToggles, bool)>&& callback);
 
 private:
 	bool magEnabled = !USE_6_AXIS;
 	bool calibrationEnabled = true;
 	bool tempGradientCalibrationEnabled = true;
+
+	std::vector<std::function<void(SensorToggles, bool)>> onToggleChangeCallbacks;
 };

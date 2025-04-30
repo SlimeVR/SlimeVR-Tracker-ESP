@@ -142,8 +142,12 @@ class SoftFusionSensor : public Sensor {
 	}
 
 	void processMagSample(const uint8_t* rawData, const sensor_real_t timeDelta) {
+		if (!magDriver) {
+			return;
+		}
+
 		float scaledData[3];
-		magDriver.scaleMagSample(rawData, scaledData);
+		magDriver->scaleMagSample(rawData, scaledData);
 		m_fusion.updateMag(scaledData, timeDelta);
 	}
 
@@ -324,20 +328,35 @@ public:
 		}
 
 		if constexpr (!USE_6_AXIS && Consts::SupportsMag) {
-			magDriver.init(SoftFusion::AuxInterface{
+			magDriver.emplace(SoftFusion::AuxInterface{
 				.writeI2C = [&](uint8_t address,
 								uint8_t value) { m_sensor.writeAux(address, value); },
 				.readI2C = [&](uint8_t address) { return m_sensor.readAux(address); },
 				.setId = [&](uint8_t id) { m_sensor.setAuxDeviceId(id); },
 				.setupPolling
 				= [&](uint8_t address, SoftFusion::MagDefinition::DataWidth byteWidth
-				  ) { m_sensor.setupAuxSensorPolling(address, byteWidth); }});
+				  ) { m_sensor.setupAuxSensorPolling(address, byteWidth); },
+				.stopPolling = [&]() { m_sensor.stopAuxSensorPolling(); },
+			});
+			magDriver->init();
 		}
 
 		m_status = SensorStatus::SENSOR_OK;
 		working = true;
 
 		calibrator.checkStartupCalibration();
+
+		toggles.onToggleChange([&](SensorToggles toggle, bool newValue) {
+			if (toggle == SensorToggles::MagEnabled) {
+				if (newValue) {
+					printf("Mag started\n");
+					magDriver->start();
+				} else {
+					printf("Mag stopped\n");
+					magDriver->stop();
+				}
+			}
+		});
 	}
 
 	void startCalibration(int calibrationType) final {
@@ -346,7 +365,9 @@ public:
 
 	[[nodiscard]] bool isFlagSupported(SensorToggles toggle) const final {
 		return toggle == SensorToggles::CalibrationEnabled
-			|| toggle == SensorToggles::TempGradientCalibrationEnabled;
+			|| toggle == SensorToggles::TempGradientCalibrationEnabled
+			|| (toggle == SensorToggles::MagEnabled && magDriver
+				&& magDriver->isWorking());
 	}
 
 	SensorStatus getSensorState() final { return m_status; }
@@ -362,7 +383,8 @@ public:
 	uint32_t m_lastTemperaturePacketSent = 0;
 
 	RestCalibrationDetector calibrationDetector;
-	[[maybe_unused]] SoftFusion::MagDriver magDriver;
+
+	std::optional<SoftFusion::MagDriver> magDriver;
 
 	static bool checkPresent(uint8_t sensorID, const RegisterInterface& imuInterface) {
 		I2Cdev::readTimeout = 100;

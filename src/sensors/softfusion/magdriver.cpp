@@ -93,7 +93,10 @@ std::vector<MagDefinition> MagDriver::mags = {
 	},
 };
 
-void MagDriver::init(AuxInterface auxInterface) {
+MagDriver::MagDriver(AuxInterface&& auxInterface)
+	: auxInterface{auxInterface} {}
+
+void MagDriver::init() {
 	for (auto& mag : mags) {
 		auxInterface.setId(mag.deviceId);
 		m_Logger.info("Trying mag %s", mag.name);
@@ -106,13 +109,19 @@ void MagDriver::init(AuxInterface auxInterface) {
 
 		m_Logger.info("Found mag of type %s, initializing!", mag.name);
 		selectedMag.setup(auxInterface.writeI2C);
-		auxInterface.setupPolling(mag.dataReg, mag.dataWidth);
+		start();
 
 		return;
 	}
 
 	m_Logger.info("No mag found!");
 }
+
+void MagDriver::start() {
+	auxInterface.setupPolling(selectedMag.dataReg, selectedMag.dataWidth);
+}
+
+void MagDriver::stop() { auxInterface.stopPolling(); }
 
 #pragma pack(push, 1)
 struct ThreeByteValues {
@@ -144,5 +153,7 @@ void MagDriver::scaleMagSample(const uint8_t* rawData, float outData[3]) {
 	outData[1] = rawDataConcat[1] * selectedMag.resolution;
 	outData[2] = rawDataConcat[2] * selectedMag.resolution;
 }
+
+bool MagDriver::isWorking() const { return state == State::Ok; }
 
 }  // namespace SlimeVR::Sensors::SoftFusion
