@@ -12,6 +12,10 @@ void SensorToggleState::setToggle(SensorToggles toggle, bool state) {
 			tempGradientCalibrationEnabled = state;
 			break;
 	}
+
+	for (auto& callback : onToggleChangeCallbacks) {
+		callback(toggle, state);
+	}
 }
 
 bool SensorToggleState::getToggle(SensorToggles toggle) const {
@@ -24,4 +28,10 @@ bool SensorToggleState::getToggle(SensorToggles toggle) const {
 			return tempGradientCalibrationEnabled;
 	}
 	return false;
+}
+
+void SensorToggleState::onToggleChange(
+	std::function<void(SensorToggles, bool)>&& callback
+) {
+	onToggleChangeCallbacks.push_back(callback);
 }

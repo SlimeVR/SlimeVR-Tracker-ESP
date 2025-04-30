@@ -27,6 +27,7 @@
 #include <array>
 #include <cstdint>
 
+#include "callbacks.h"
 #include "lsm6ds-common.h"
 #include "vqf.h"
 
@@ -122,19 +123,13 @@ struct LSM6DSO : LSM6DSOutputHandler {
 		return true;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTempSample
-	) {
-		LSM6DSOutputHandler::template bulkRead<AccelCall, GyroCall, TempCall, Regs>(
-			processAccelSample,
-			processGyroSample,
-			processTempSample,
+	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+		LSM6DSOutputHandler::template bulkRead<Regs>(
+			std::move(callbacks),
 			GyrTs,
 			AccTs,
-			TempTs
+			TempTs,
+			MagTs
 		);
 	}
 };

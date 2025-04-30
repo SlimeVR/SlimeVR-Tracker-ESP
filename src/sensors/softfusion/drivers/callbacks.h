@@ -25,26 +25,11 @@
 
 #include <cstdint>
 #include <functional>
-#include <vector>
 
-#include "../debug.h"
-
-enum class SensorToggles : uint16_t {
-	MagEnabled = 1,
-	CalibrationEnabled = 2,
-	TempGradientCalibrationEnabled = 3,
-};
-
-class SensorToggleState {
-public:
-	void setToggle(SensorToggles toggle, bool state);
-	[[nodiscard]] bool getToggle(SensorToggles toggle) const;
-	void onToggleChange(std::function<void(SensorToggles, bool)>&& callback);
-
-private:
-	bool magEnabled = !USE_6_AXIS;
-	bool calibrationEnabled = true;
-	bool tempGradientCalibrationEnabled = true;
-
-	std::vector<std::function<void(SensorToggles, bool)>> onToggleChangeCallbacks;
+template <typename SampleType>
+struct DriverCallbacks {
+	std::function<void(const SampleType sample[3], float AccTs)> processAccelSample;
+	std::function<void(const SampleType sample[3], float GyrTs)> processGyroSample;
+	std::function<void(int16_t sample, float TempTs)> processTempSample;
+	std::function<void(const uint8_t sample[9], float MagTs)> processMagSample;
 };
