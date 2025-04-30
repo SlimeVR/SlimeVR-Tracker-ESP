@@ -23,7 +23,8 @@
 
 #include "DirectSPIInterface.h"
 
-#include "PinInterface.h"
+#include <Arduino.h>
+#include <PinInterface.h>
 
 namespace SlimeVR {
 
