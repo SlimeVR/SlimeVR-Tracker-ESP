@@ -137,18 +137,16 @@ public:
 							  Sensor::checkPresent(*registerInterface)
 						  } -> std::same_as<SensorTypeID>;
 					  }) {
-			if constexpr (std::is_same_v<Sensor, BNO085Sensor>) {
-				auto type = Sensor::checkPresent(*registerInterface);
+			auto type = Sensor::checkPresent(*registerInterface);
 
-				if (type == SensorTypeID::Unknown) {
-					return {};
-				}
+			if (type == SensorTypeID::Unknown) {
+				return {};
+			}
 
-				return std::make_pair(type, registerInterface);
-			} else {
-				if (!Sensor::checkPresent(*registerInterface)) {
-					return {};
-				}
+			return std::make_pair(type, registerInterface);
+		} else {
+			if (!Sensor::checkPresent(*registerInterface)) {
+				return {};
 			}
 		}
 
