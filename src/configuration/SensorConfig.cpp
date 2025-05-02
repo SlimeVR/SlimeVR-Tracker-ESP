@@ -23,8 +23,7 @@
 
 #include "SensorConfig.h"
 
-namespace SlimeVR {
-namespace Configuration {
+namespace SlimeVR::Configuration {
 const char* calibrationConfigTypeToString(SensorConfigType type) {
 	switch (type) {
 		case SensorConfigType::NONE:
@@ -60,5 +59,4 @@ bool SensorConfigBits::operator!=(const SensorConfigBits& rhs) const {
 	return !(*this == rhs);
 }
 
-}  // namespace Configuration
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Configuration

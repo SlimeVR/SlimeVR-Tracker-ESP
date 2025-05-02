@@ -29,8 +29,7 @@
 
 #include <functional>
 
-namespace SlimeVR {
-namespace Utils {
+namespace SlimeVR::Utils {
 
 class File {
 public:
@@ -62,7 +61,6 @@ bool ensureDirectory(const char* directory);
 File openFile(const char* path, const char* mode);
 
 void forEachFile(const char* directory, std::function<void(File file)> callback);
-}  // namespace Utils
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Utils
 
 #endif

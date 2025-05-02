@@ -692,7 +692,7 @@ void BMI160Sensor::printTemperatureCalibrationState() {
 		gyroTempCalibrator->config.maxTemperatureRange
 	);
 	m_Logger.info(
-		"  done: %0.1f%",
+		"  done: %0.1f%%",
 		gyroTempCalibrator->config.getCalibrationDonePercent()
 	);
 }

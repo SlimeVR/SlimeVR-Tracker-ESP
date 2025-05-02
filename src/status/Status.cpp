@@ -1,7 +1,6 @@
 #include "Status.h"
 
-namespace SlimeVR {
-namespace Status {
+namespace SlimeVR::Status {
 const char* statusToString(Status status) {
 	switch (status) {
 		case LOADING:
@@ -18,5 +17,4 @@ const char* statusToString(Status status) {
 			return "UNKNOWN";
 	}
 }
-}  // namespace Status
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Status

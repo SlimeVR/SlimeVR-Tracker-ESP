@@ -31,8 +31,7 @@
 #include "DeviceConfig.h"
 #include "logging/Logger.h"
 
-namespace SlimeVR {
-namespace Configuration {
+namespace SlimeVR::Configuration {
 class Configuration {
 public:
 	void setup();
@@ -72,7 +71,6 @@ private:
 
 	Logging::Logger m_Logger = Logging::Logger("Configuration");
 };
-}  // namespace Configuration
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Configuration
 
 #endif

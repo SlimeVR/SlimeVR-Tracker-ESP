@@ -25,8 +25,7 @@
 
 #include <functional>
 
-namespace SlimeVR {
-namespace Utils {
+namespace SlimeVR::Utils {
 SlimeVR::Logging::Logger m_Logger("FSHelper");
 
 bool ensureDirectory(const char* directory) {
@@ -88,5 +87,4 @@ void forEachFile(const char* directory, std::function<void(File file)> callback)
 	}
 #endif
 }
-}  // namespace Utils
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Utils

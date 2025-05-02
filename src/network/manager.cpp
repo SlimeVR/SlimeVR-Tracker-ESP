@@ -24,8 +24,7 @@
 
 #include "GlobalVars.h"
 
-namespace SlimeVR {
-namespace Network {
+namespace SlimeVR::Network {
 
 void Manager::setup() { ::WiFiNetwork::setUp(); }
 
@@ -48,5 +47,4 @@ void Manager::update() {
 	networkConnection.update();
 }
 
-}  // namespace Network
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Network

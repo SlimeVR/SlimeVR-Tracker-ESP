@@ -28,8 +28,7 @@
 #include "wifihandler.h"
 #include "wifiprovisioning.h"
 
-namespace SlimeVR {
-namespace Network {
+namespace SlimeVR::Network {
 
 class Manager {
 public:
@@ -40,7 +39,6 @@ private:
 	bool m_IsConnected = false;
 };
 
-}  // namespace Network
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Network
 
 #endif  // SLIMEVR_NETWORK_MANAGER_H_
