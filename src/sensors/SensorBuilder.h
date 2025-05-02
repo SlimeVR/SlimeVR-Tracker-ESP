@@ -160,8 +160,8 @@ public:
 			sensorID,
 			imuInterface.toString().c_str(),
 			rotation,
-			sensorInterface,
-			intPin,
+			sensorInterface->toString().c_str(),
+			intPin->toString().c_str(),
 			extraParam,
 			optional
 		);
