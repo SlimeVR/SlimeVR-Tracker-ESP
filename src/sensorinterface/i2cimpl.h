@@ -76,7 +76,7 @@ struct I2CImpl : public RegisterInterface {
 
 	bool hasSensorOnBus() {
 		// Ask twice, because we're nice like this
-		return I2CSCAN::hasDevOnBus(m_devAddr) && I2CSCAN::hasDevOnBus(m_devAddr);
+		return I2CSCAN::hasDevOnBus(m_devAddr) || I2CSCAN::hasDevOnBus(m_devAddr);
 	}
 
 	uint8_t getAddress() const override { return m_devAddr; }
