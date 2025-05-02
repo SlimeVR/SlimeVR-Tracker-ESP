@@ -164,7 +164,7 @@ class SoftFusionSensor : public Sensor {
 #endif
 			auto currentSecondsRemaining = (targetDelay - millis()) / 1000;
 			if (currentSecondsRemaining != lastSecondsRemaining) {
-				m_Logger.info("%d...", currentSecondsRemaining + 1);
+				m_Logger.info("%ld...", currentSecondsRemaining + 1);
 				lastSecondsRemaining = currentSecondsRemaining;
 			}
 			m_sensor.bulkRead(

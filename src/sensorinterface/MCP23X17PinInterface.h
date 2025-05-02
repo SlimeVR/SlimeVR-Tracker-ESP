@@ -56,6 +56,11 @@ public:
 	void pinMode(uint8_t mode) override final;
 	void digitalWrite(uint8_t val) override final;
 
+	[[nodiscard]] std::string toString() const final {
+		using namespace std::string_literals;
+		return "MCPPin("s + std::to_string(_pinNum) + ")";
+	}
+
 private:
 	Adafruit_MCP23X17* _mcp23x17;
 	uint8_t _pinNum;
