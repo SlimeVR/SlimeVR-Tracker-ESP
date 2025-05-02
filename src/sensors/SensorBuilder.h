@@ -295,10 +295,10 @@ public:
 						address=%s, rotation=%f,\n\
 						interface=%s, int=%s, extraParam=%d, optional=%d",
 			sensorDef.sensorID,
-			sensorDef.imuInterface.toString(),
+			sensorDef.imuInterface.toString().c_str(),
 			sensorDef.rotation,
-			sensorDef.sensorInterface,
-			sensorDef.intPin,
+			sensorDef.sensorInterface->toString().c_str(),
+			sensorDef.intPin->toString().c_str(),
 			sensorDef.extraParam,
 			sensorDef.optional
 		);
@@ -315,7 +315,7 @@ public:
 				m_Manager->m_Logger.error(
 					"Mandatory sensor %d not found at address %s",
 					sensorDef.sensorID + 1,
-					sensorDef.imuInterface.toString()
+					sensorDef.imuInterface.toString().c_str()
 				);
 				return std::make_unique<ErroneousSensor>(
 					sensorDef.sensorID,
@@ -325,7 +325,7 @@ public:
 				m_Manager->m_Logger.debug(
 					"Optional sensor %d not found at address %s",
 					sensorDef.sensorID + 1,
-					sensorDef.imuInterface.toString()
+					sensorDef.imuInterface.toString().c_str()
 				);
 				return std::make_unique<EmptySensor>(sensorDef.sensorID);
 			}
@@ -334,7 +334,7 @@ public:
 		m_Manager->m_Logger.trace(
 			"Sensor %d found at address %s",
 			sensorDef.sensorID + 1,
-			sensorDef.imuInterface.toString()
+			sensorDef.imuInterface.toString().c_str()
 		);
 
 		sensor = std::make_unique<ImuType>(

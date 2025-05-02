@@ -24,11 +24,14 @@
 #ifndef SENSORINTERFACE_H
 #define SENSORINTERFACE_H
 
+#include <string>
+
 namespace SlimeVR {
 class SensorInterface {
 public:
 	virtual bool init() = 0;
 	virtual void swapIn() = 0;
+	[[nodiscard]] virtual std::string toString() const;
 };
 
 class EmptySensorInterface : public SensorInterface {
@@ -36,6 +39,7 @@ public:
 	EmptySensorInterface(){};
 	bool init() override final { return true; };
 	void swapIn() override final{};
+	[[nodiscard]] std::string toString() const final { return "None"; }
 
 	static EmptySensorInterface instance;
 };

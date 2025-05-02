@@ -318,7 +318,7 @@ void cmdGet(CmdParser* parser) {
 					WiFi.SSID(i).length(),
 					WiFi.SSID(i).c_str(),
 					WiFi.RSSI(i),
-					getEncryptionTypeName(WiFi.encryptionType(i))
+					getEncryptionTypeName(WiFi.encryptionType(i)).c_str()
 				);
 			}
 			WiFi.scanDelete();
@@ -402,7 +402,7 @@ void cmdTemperatureCalibration(CmdParser* parser) {
 	logger.info("Note:");
 	logger.info(
 		"  Temperature calibration config saves automatically when calibration percent "
-		"is at 100%"
+		"is at 100%%"
 	);
 }
 

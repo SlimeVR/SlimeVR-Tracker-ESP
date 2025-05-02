@@ -39,6 +39,11 @@ public:
 	void pinMode(uint8_t mode) override final;
 	void digitalWrite(uint8_t val) override final;
 
+	[[nodiscard]] std::string toString() const final {
+		using namespace std::string_literals;
+		return "Pin("s + std::to_string(_pinNum) + ")";
+	}
+
 private:
 	uint8_t _pinNum;
 };
