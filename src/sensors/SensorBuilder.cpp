@@ -119,7 +119,7 @@ SensorBuilder::buildSensorDynamically(SensorTypeID type, SensorDefinition sensor
 			m_Manager->m_Logger.error(
 				"Unable to create sensor with type %s (%d)",
 				getIMUNameByType(type),
-				type
+				static_cast<int>(type)
 			);
 	}
 	return std::make_unique<EmptySensor>(sensorDef.sensorID);

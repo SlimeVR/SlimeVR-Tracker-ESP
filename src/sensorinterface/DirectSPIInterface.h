@@ -39,6 +39,8 @@ public:
 	void beginTransaction(PinInterface* csPin);
 	void endTransaction(PinInterface* csPin);
 
+	[[nodiscard]] std::string toString() const final { return std::string{"SPI"}; }
+
 	template <typename... Args>
 	auto transfer(Args... args) {
 		return m_spiClass.transfer(args...);
