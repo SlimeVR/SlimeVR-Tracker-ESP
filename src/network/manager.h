@@ -26,7 +26,7 @@
 #include "globals.h"
 #include "packets.h"
 #include "wifihandler.h"
-#include "wifiprovisioning.h"
+#include "wifiprovisioning/wifi-provisioning.h"
 
 namespace SlimeVR::Network {
 

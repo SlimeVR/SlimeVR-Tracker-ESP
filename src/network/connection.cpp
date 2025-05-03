@@ -21,11 +21,10 @@
 	THE SOFTWARE.
 */
 
-#include "connection.h"
-
 #include <string_view>
 
 #include "GlobalVars.h"
+#include "connection.h"
 #include "logging/Logger.h"
 #include "packets.h"
 
@@ -777,6 +776,23 @@ void Connection::update() {
 			}
 			sendAcknowledgeConfigChange(sensorId, flag);
 			configuration.save();
+			break;
+		}
+
+		case ReceivePacketType::StartWiFiProvisioning: {
+			StartWiFiProvisioningPacket wifiProvisioningPacket{};
+			memcpy(
+				&wifiProvisioningPacket,
+				m_Packet + 12,
+				sizeof(StartWiFiProvisioningPacket)
+			);
+
+			if (wifiProvisioningPacket.start) {
+				wifiProvisioning.startProvisioning();
+			} else {
+				wifiProvisioning.stopProvisioning();
+			}
+
 			break;
 		}
 	}

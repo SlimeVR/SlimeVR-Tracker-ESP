@@ -21,14 +21,13 @@
 	THE SOFTWARE.
 */
 
-#include "serialcommands.h"
-
 #include <CmdCallback.hpp>
 
 #include "GlobalVars.h"
 #include "base64.hpp"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
+#include "serialcommands.h"
 #include "utils.h"
 
 #ifdef ESP32
@@ -162,7 +161,7 @@ void printState() {
 		wifiNetwork.getAddress().toString().c_str(),
 		WiFi.macAddress().c_str(),
 		statusManager.getStatus(),
-		wifiNetwork.getWiFiState()
+		static_cast<int>(wifiNetwork.getWiFiState())
 	);
 
 	char vendorBuffer[512];
@@ -323,7 +322,7 @@ void cmdGet(CmdParser* parser) {
 			wifiNetwork.getAddress().toString().c_str(),
 			WiFi.macAddress().c_str(),
 			statusManager.getStatus(),
-			wifiNetwork.getWiFiState()
+			static_cast<int>(wifiNetwork.getWiFiState())
 		);
 		auto& sensor0 = sensorManager.getSensors()[0];
 		sensor0->motionLoop();
@@ -356,9 +355,7 @@ void cmdGet(CmdParser* parser) {
 		if (WiFi.status() != WL_CONNECTED) {
 			WiFi.disconnect();
 		}
-		if (wifiProvisioning.isProvisioning()) {
-			wifiProvisioning.stopProvisioning();
-		}
+		wifiProvisioning.stopSearchForProvider();
 
 		WiFi.scanNetworks();
 

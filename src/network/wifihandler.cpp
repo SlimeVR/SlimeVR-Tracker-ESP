@@ -51,7 +51,7 @@ bool WiFiNetwork::isConnected() const {
 }
 
 void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
-	wifiProvisioning.stopProvisioning();
+	wifiProvisioning.stopSearchForProvider();
 	tryConnecting(false, SSID, pass);
 	retriedOnG = false;
 	// Reset state, will get back into provisioning if can't connect
@@ -144,7 +144,7 @@ String WiFiNetwork::getPassword() {
 WiFiNetwork::WiFiReconnectionStatus WiFiNetwork::getWiFiState() { return wifiState; }
 
 void WiFiNetwork::upkeep() {
-	wifiProvisioning.upkeepProvisioning();
+	wifiProvisioning.tick();
 
 	if (WiFi.status() == WL_CONNECTED) {
 		if (!isConnected()) {
@@ -222,6 +222,13 @@ void WiFiNetwork::upkeep() {
 				}
 				wifiProvisioning.startProvisioning();
 			}
+			wifiHandlerLogger.error(
+				"Can't connect from any credentials, error: %d, reason: %s.",
+				static_cast<int>(statusToFailure(WiFi.status())),
+				statusToReasonString(WiFi.status())
+			);
+			wifiHandlerLogger.info("Starting wifi provisioning");
+			wifiProvisioning.startSearchForProvider();
 			return;
 	}
 }

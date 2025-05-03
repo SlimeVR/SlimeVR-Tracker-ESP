@@ -20,40 +20,50 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "wifiprovisioning.h"
+#ifndef SLIMEVR_WIFIPROVISIONING_H_
+#define SLIMEVR_WIFIPROVISIONING_H_
+
+#include <cstdint>
+#include <memory>
+#include <optional>
 
 #include "logging/Logger.h"
-#include "wifihandler.h"
+#include "network/wifiprovisioning/provisioning-party.h"
 
-// TODO Currently provisioning implemented via SmartConfig
-// it sucks.
-// TODO: New implementation: https://github.com/SlimeVR/SlimeVR-Tracker-ESP/issues/71
+#if ESP32
+#include <esp_now.h>
+#endif
 
-namespace SlimeVR {
+namespace SlimeVR::Network {
 
-void WifiProvisioning::upkeepProvisioning() {
-	// Called even when not provisioning to do things like provide neighbours or other
-	// upkeep
-}
+class WiFiProvisioning {
+public:
+	bool startProvisioning();
+	void stopProvisioning();
 
-void WifiProvisioning::startProvisioning() {
-	if (WiFi.beginSmartConfig()) {
-		provisioning = true;
-		wifiProvisioningLogger.info("SmartConfig started");
-	}
-}
+	bool startSearchForProvider();
+	void stopSearchForProvider();
 
-void WifiProvisioning::stopProvisioning() {
-	WiFi.stopSmartConfig();
-	provisioning = false;
-}
+	void tick();
 
-void WifiProvisioning::provideNeighbours() {
-	// TODO: SmartConfig can't do this, created for future
-}
+private:
+	bool initEspnow();
+	void handleMessage(uint8_t* macAddress, const uint8_t* data, uint8_t length);
 
-bool WifiProvisioning::isProvisioning() const {
-	return provisioning && !WiFi.smartConfigDone();
-}
+	std::unique_ptr<ProvisioningParty> role;
+	SlimeVR::Logging::Logger logger{"WiFiProvisioning"};
 
-}  // namespace SlimeVR
+#if ESP8266
+	friend void espnowReceiveCallback(uint8_t*, uint8_t*, uint8_t);
+#elif ESP32
+	friend void espnowReceiveCallback(
+		const esp_now_recv_info_t* senderInfo,
+		const uint8_t* data,
+		int dataLen
+	);
+#endif
+};
+
+}  // namespace SlimeVR::Network
+
+#endif  // SLIMEVR_WIFIPROVISIONING_H_
