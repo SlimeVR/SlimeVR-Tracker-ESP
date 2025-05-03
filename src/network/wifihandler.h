@@ -20,33 +20,67 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMEVR_WIFI_H_
-#define SLIMEVR_WIFI_H_
+#pragma once
 
+#include "logging/Logger.h"
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
 #else
 #include <WiFi.h>
 #endif
 
-namespace WiFiNetwork {
-bool isConnected();
-void setUp();
-void upkeep();
-void setWiFiCredentials(const char* SSID, const char* pass);
-IPAddress getAddress();
-uint8_t getWiFiState();
-}  // namespace WiFiNetwork
+namespace SlimeVR {
+
+class WiFiNetwork {
+public:
+	enum class WiFiReconnectionStatus {
+		NotSetup = 0,
+		SavedAttempt,
+		HardcodeAttempt,
+		ServerCredAttempt,
+		Failed,
+		Success
+	};
+
+	[[nodiscard]] bool isConnected() const;
+	void setUp();
+	void upkeep();
+	void setWiFiCredentials(const char* SSID, const char* pass);
+	static IPAddress getAddress();
+	WiFiReconnectionStatus getWiFiState();
+
+private:
+	static constexpr float WiFiTimeoutSeconds = 11;
+
+	void reportWifiProgress();
+	void setStaticIPIfDefined();
+	void onConnected();
+
+	bool trySavedCredentials();
+	bool tryHardcodedCredentials();
+	bool tryServerCredentials();
+	bool tryConnecting(
+		bool phyModeG = false,
+		const char* SSID = nullptr,
+		const char* pass = nullptr
+	);
+
+	void showConnectionAttemptFailed(const char* type) const;
+
+	static const char* statusToReasonString(wl_status_t status);
+
+	unsigned long lastWifiReportTime = 0;
+	unsigned long wifiConnectionTimeout = millis();
+	bool isWifiConnected = false;
+	WiFiReconnectionStatus wifiState = WiFiReconnectionStatus::NotSetup;
+	bool retriedOnG = false;
+	bool hadWifi = false;
+	unsigned long lastRssiSample = 0;
+
+	uint8_t lastFailStatus = 0;
+
+	SlimeVR::Logging::Logger wifiHandlerLogger{"WiFiHandler"};
+};
 
 /** Wifi Reconnection Statuses **/
-typedef enum {
-	SLIME_WIFI_NOT_SETUP = 0,
-	SLIME_WIFI_SAVED_ATTEMPT,
-	SLIME_WIFI_SAVED_G_ATTEMPT,
-	SLIME_WIFI_HARDCODE_ATTEMPT,
-	SLIME_WIFI_HARDCODE_G_ATTEMPT,
-	SLIME_WIFI_SERVER_CRED_ATTEMPT,
-	SLIME_WIFI_SERVER_CRED_G_ATTEMPT
-} wifi_reconnection_statuses;
-
-#endif  // SLIMEVR_WIFI_H_
+}  // namespace SlimeVR
