@@ -42,6 +42,13 @@ public:
 		Success
 	};
 
+	enum class WiFiFailureReason {
+		Timeout = 0,
+		SSIDNotFound = 1,
+		WrongPassword = 2,
+		Unknown = 3,
+	};
+
 	[[nodiscard]] bool isConnected() const;
 	void setUp();
 	void upkeep();
@@ -68,6 +75,7 @@ private:
 	void showConnectionAttemptFailed(const char* type) const;
 
 	static const char* statusToReasonString(wl_status_t status);
+	static WiFiFailureReason statusToFailure(wl_status_t status);
 
 	unsigned long lastWifiReportTime = 0;
 	unsigned long wifiConnectionTimeout = millis();

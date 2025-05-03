@@ -187,8 +187,8 @@ void WiFiNetwork::upkeep() {
 					   >= static_cast<uint32_t>(WiFiTimeoutSeconds * 1000)) {
 				if (WiFi.status() != WL_IDLE_STATUS) {
 					wifiHandlerLogger.error(
-						"Can't connect from any credentials, status: %d, reason: %s.",
-						WiFi.status(),
+						"Can't connect from any credentials, error: %d, reason: %s.",
+						static_cast<int>(statusToFailure(WiFi.status())),
 						statusToReasonString(WiFi.status())
 					);
 					wifiConnectionTimeout = millis();
@@ -220,11 +220,30 @@ const char* WiFiNetwork::statusToReasonString(wl_status_t status) {
 	}
 }
 
+WiFiNetwork::WiFiFailureReason WiFiNetwork::statusToFailure(wl_status_t status) {
+	switch (status) {
+		case WL_DISCONNECTED:
+			return WiFiFailureReason::Timeout;
+#ifdef ESP8266
+		case WL_WRONG_PASSWORD:
+			return WiFiFailureReason::WrongPassword;
+#elif ESP32
+		case WL_CONNECT_FAILED:
+			return WiFiFailureReason::WrongPassword;
+#endif
+
+		case WL_NO_SSID_AVAIL:
+			return WiFiFailureReason::SSIDNotFound;
+		default:
+			return WiFiFailureReason::Unknown;
+	}
+}
+
 void WiFiNetwork::showConnectionAttemptFailed(const char* type) const {
 	wifiHandlerLogger.error(
-		"Can't connect from %s credentials, status: %d, reason: %s.",
+		"Can't connect from %s credentials, error: %d, reason: %s.",
 		type,
-		WiFi.status(),
+		static_cast<int>(statusToFailure(WiFi.status())),
 		statusToReasonString(WiFi.status())
 	);
 }
