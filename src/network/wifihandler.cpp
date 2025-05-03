@@ -137,11 +137,12 @@ void WiFiNetwork::upkeep() {
 	}
 
 	if (isConnected()) {
+		statusManager.setStatus(SlimeVR::Status::WIFI_CONNECTING, true);
 		wifiHandlerLogger.warn("Connection to WiFi lost, reconnecting...");
-		wifiState = WiFiReconnectionStatus::SavedAttempt;
+		trySavedCredentials();
+		return;
 	}
 
-	statusManager.setStatus(SlimeVR::Status::WIFI_CONNECTING, true);
 	reportWifiProgress();
 	if (millis() - wifiConnectionTimeout
 			< static_cast<uint32_t>(WiFiTimeoutSeconds * 1000)
