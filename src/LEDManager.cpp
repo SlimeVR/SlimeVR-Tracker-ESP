@@ -37,24 +37,50 @@ void LEDManager::setup() {
 }
 
 void LEDManager::on() {
+	if (forcedOn) {
+		return;
+	}
+
 #if ENABLE_LEDS
 	digitalWrite(m_Pin, LED__ON);
 #endif
 }
 
 void LEDManager::off() {
+	if (forcedOn) {
+		return;
+	}
+
 #if ENABLE_LEDS
 	digitalWrite(m_Pin, LED__OFF);
 #endif
 }
 
+void LEDManager::forceOn() {
+	on();
+	forcedOn = true;
+}
+
+void LEDManager::forceOff() {
+	forcedOn = false;
+	off();
+}
+
 void LEDManager::blink(unsigned long time) {
+	if (forcedOn) {
+		return;
+	}
+
 	on();
 	delay(time);
 	off();
 }
 
 void LEDManager::pattern(unsigned long timeon, unsigned long timeoff, int times) {
+	if (forcedOn) {
+		return;
+	}
+
 	for (int i = 0; i < times; i++) {
 		blink(timeon);
 		delay(timeoff);
