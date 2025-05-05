@@ -763,6 +763,16 @@ void Connection::update() {
 			configuration.save();
 			break;
 		}
+
+		case ReceivePacketType::Identification: {
+			IdentificationPacket packet{};
+			memcpy(&packet, m_Packet + 12, sizeof(packet));
+			if (packet.on) {
+				ledManager.forceOn();
+			} else {
+				ledManager.forceOff();
+			}
+		}
 	}
 }
 
