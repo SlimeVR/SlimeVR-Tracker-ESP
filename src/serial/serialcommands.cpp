@@ -35,12 +35,12 @@
 #endif
 
 #ifdef EXT_SERIAL_COMMANDS
-#define CALLBACK_SIZE 7  // Increase callback size to allow for debug commands
+#define CALLBACK_SIZE 8  // Increase callback size to allow for debug commands
 #include "i2cscan.h"
 #endif
 
 #ifndef CALLBACK_SIZE
-#define CALLBACK_SIZE 6  // Default callback size
+#define CALLBACK_SIZE 7  // Default callback size
 #endif
 
 namespace SerialCommands {
@@ -470,6 +470,18 @@ void cmdScanI2C(CmdParser* parser) {
 }
 #endif
 
+void cmdStart(CmdParser* parser) {
+	if (parser->getParamCount() == 1) {
+		logger.info("Usage:");
+		logger.info("  START PROVISION: start wifi provisioning");
+		return;
+	}
+
+	if (parser->equalCmdParam(1, "PROVISION")) {
+		wifiProvisioning.startProvisioning();
+	}
+}
+
 void setUp() {
 	cmdCallbacks.addCmd("SET", &cmdSet);
 	cmdCallbacks.addCmd("GET", &cmdGet);
@@ -477,6 +489,7 @@ void setUp() {
 	cmdCallbacks.addCmd("REBOOT", &cmdReboot);
 	cmdCallbacks.addCmd("DELCAL", &cmdDeleteCalibration);
 	cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
+	cmdCallbacks.addCmd("START", &cmdStart);
 #if EXT_SERIAL_COMMANDS
 	cmdCallbacks.addCmd("SCANI2C", &cmdScanI2C);
 #endif

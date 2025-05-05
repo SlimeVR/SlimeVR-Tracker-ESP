@@ -52,6 +52,8 @@ bool WiFiNetwork::isConnected() const {
 
 void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
 	wifiProvisioning.stopSearchForProvider();
+	wifiProvisioning.stopProvisioning();
+	WiFi.persistent(true);
 	tryConnecting(false, SSID, pass);
 	retriedOnG = false;
 	// Reset state, will get back into provisioning if can't connect
@@ -65,7 +67,7 @@ void WiFiNetwork::setUp() {
 	// Don't need to save the already saved credentials or the hardcoded ones
 	WiFi.persistent(false);
 	wifiHandlerLogger.info("Setting up WiFi");
-	WiFi.mode(WIFI_STA);
+	WiFi.mode(WIFI_AP_STA);
 	WiFi.hostname("SlimeVR FBT Tracker");
 	wifiHandlerLogger.info(
 		"Loaded credentials for SSID '%s' and pass length %d",
@@ -201,26 +203,8 @@ void WiFiNetwork::upkeep() {
 			return;
 		case WiFiReconnectionStatus::Failed:  // Couldn't connect with second set of
 											  // credentials or server credentials
-// Return to the default PHY Mode N.
-#if ESP8266
-			if constexpr (USE_ATTENUATION) {
-				WiFi.setOutputPower(20.0 - ATTENUATION_N);
-			}
-			WiFi.setPhyMode(WIFI_PHY_MODE_11N);
-#endif
-			// Start smart config
-			if (!hadWifi && !WiFi.smartConfigDone()
-				&& millis() - wifiConnectionTimeout
-					   >= static_cast<uint32_t>(WiFiTimeoutSeconds * 1000)) {
-				if (WiFi.status() != WL_IDLE_STATUS) {
-					wifiHandlerLogger.error(
-						"Can't connect from any credentials, error: %d, reason: %s.",
-						static_cast<int>(statusToFailure(WiFi.status())),
-						statusToReasonString(WiFi.status())
-					);
-					wifiConnectionTimeout = millis();
-				}
-				wifiProvisioning.startProvisioning();
+			if (startedProvisioning) {
+				return;
 			}
 			wifiHandlerLogger.error(
 				"Can't connect from any credentials, error: %d, reason: %s.",
@@ -229,6 +213,7 @@ void WiFiNetwork::upkeep() {
 			);
 			wifiHandlerLogger.info("Starting wifi provisioning");
 			wifiProvisioning.startSearchForProvider();
+			startedProvisioning = true;
 			return;
 	}
 }

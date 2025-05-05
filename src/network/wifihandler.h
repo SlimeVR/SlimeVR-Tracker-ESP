@@ -55,6 +55,7 @@ public:
 	void setWiFiCredentials(const char* SSID, const char* pass);
 	static IPAddress getAddress();
 	WiFiReconnectionStatus getWiFiState();
+	bool startedProvisioning = false;
 
 private:
 	static constexpr float WiFiTimeoutSeconds = 11;

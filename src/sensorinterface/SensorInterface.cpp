@@ -23,6 +23,10 @@
 
 #include "SensorInterface.h"
 
+#if ESP32
+#include <esp_now.h>
+#endif
+
 namespace SlimeVR {
 
 EmptySensorInterface EmptySensorInterface::instance;

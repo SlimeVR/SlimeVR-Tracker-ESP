@@ -21,10 +21,10 @@
 	THE SOFTWARE.
 */
 
-#include "DirectSPIInterface.h"
-
 #include <Arduino.h>
 #include <PinInterface.h>
+
+#include "DirectSPIInterface.h"
 
 namespace SlimeVR {
 
@@ -50,5 +50,7 @@ void DirectSPIInterface::endTransaction(PinInterface* csPin) {
 }
 
 const SPISettings& DirectSPIInterface::getSpiSettings() { return m_spiSettings; }
+
+void WiFiProvisioning::delPeer(uint8_t* macAddress) { esp_now_del_peer(macAddress); }
 
 }  // namespace SlimeVR
