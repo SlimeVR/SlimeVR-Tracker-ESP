@@ -252,6 +252,7 @@ bool WiFiNetwork::trySavedCredentials() {
 	if (WiFi.SSID().length() == 0) {
 		wifiHandlerLogger.debug("Skipping saved credentials attempt on 0-length SSID..."
 		);
+		wifiState = WiFiReconnectionStatus::HardcodeAttempt;
 		return false;
 	}
 
