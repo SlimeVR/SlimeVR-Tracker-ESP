@@ -213,6 +213,8 @@ private:
 
 	void sendAcknowledgeConfigChange(uint8_t sensorId, SensorToggles configType);
 
+	void sendAcknowledgeIdentification(uint8_t sensorId, bool on);
+
 	bool m_Connected = false;
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("UDPConnection");
 

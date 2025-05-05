@@ -347,6 +347,14 @@ void Connection::sendAcknowledgeConfigChange(
 	));
 }
 
+void Connection::sendAcknowledgeIdentification(uint8_t sensorId, bool on) {
+	MUST(m_Connected);
+	MUST(sendPacket(
+		SendPacketType::AcknowledgeIdentificiation,
+		IdentificationPacket{.sensorId = sensorId, .on = on}
+	));
+}
+
 void Connection::sendTrackerDiscovery() {
 	MUST(!m_Connected);
 	MUST(sendPacketCallback(
@@ -766,12 +774,20 @@ void Connection::update() {
 
 		case ReceivePacketType::Identification: {
 			IdentificationPacket packet{};
+
+			// TODO: do something with sensorId, currently we don't have a way
+			// to light up a LED on an extension, even if it had one, instead
+			// for the time being it will just light up the main LED
+
 			memcpy(&packet, m_Packet + 12, sizeof(packet));
 			if (packet.on) {
 				ledManager.forceOn();
 			} else {
 				ledManager.forceOff();
 			}
+
+			sendAcknowledgeIdentification(packet.sensorId, packet.on);
+			break;
 		}
 	}
 }
