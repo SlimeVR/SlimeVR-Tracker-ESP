@@ -78,6 +78,8 @@ public:
 
 	void updateBiasForgettingTime(float biasForgettingTime);
 
+	[[nodiscard]] bool getRestDetected() const;
+
 protected:
 	sensor_real_t gyrTs;
 	sensor_real_t accTs;

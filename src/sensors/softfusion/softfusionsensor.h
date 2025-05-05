@@ -29,10 +29,10 @@
 
 #include "../../sensorinterface/i2cimpl.h"
 #include "../RestCalibrationDetector.h"
-#include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
 #include "motionprocessing/types.h"
+#include "sensors/SensorFusion.h"
 #include "sensors/softfusion/TempGradientCalculator.h"
 
 namespace SlimeVR::Sensors {
@@ -420,7 +420,7 @@ public:
 
 	SensorStatus getSensorState() final { return m_status; }
 
-	SensorFusionRestDetect m_fusion;
+	SensorFusion m_fusion;
 	SensorType m_sensor;
 	Calib calibrator{
 		m_fusion,
@@ -430,8 +430,7 @@ public:
 		getDefaultTempTs(),
 		AScale,
 		GScale,
-		toggles
-	};
+		toggles};
 
 	SensorStatus m_status = SensorStatus::SENSOR_OFFLINE;
 	uint32_t m_lastPollTime = micros();

@@ -130,5 +130,7 @@ void SensorFusion::updateBiasForgettingTime(float biasForgettingTime) {
 	vqf.updateBiasForgettingTime(biasForgettingTime);
 }
 
+bool SensorFusion::getRestDetected() const { return vqf.getRestDetected(); }
+
 }  // namespace Sensors
 }  // namespace SlimeVR

@@ -30,9 +30,9 @@
 #include "../motionprocessing/RestDetection.h"
 #include "../motionprocessing/types.h"
 #include "RestCalibrationDetector.h"
-#include "SensorFusionRestDetect.h"
 #include "magneto1.4.h"
 #include "sensor.h"
+#include "sensors/SensorFusion.h"
 #include "sensors/axisremap.h"
 
 #if BMI160_USE_VQF
@@ -212,7 +212,7 @@ private:
 	BMI160 imu{};
 	int axisRemap;
 
-	SlimeVR::Sensors::SensorFusionRestDetect sfusion;
+	SlimeVR::Sensors::SensorFusion sfusion;
 
 	// clock sync and sample timestamping
 	uint32_t sensorTime0 = 0;

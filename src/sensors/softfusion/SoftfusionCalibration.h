@@ -31,7 +31,7 @@
 #include "logging/Logger.h"
 #include "motionprocessing/RestDetection.h"
 #include "motionprocessing/types.h"
-#include "sensors/SensorFusionRestDetect.h"
+#include "sensors/SensorFusion.h"
 #include "sensors/softfusion/CalibrationBase.h"
 
 namespace SlimeVR::Sensor {
@@ -44,7 +44,7 @@ public:
 	using Base = CalibrationBase<IMU, RawSensorT, RawVectorT>;
 
 	SoftfusionCalibrator(
-		Sensors::SensorFusionRestDetect& fusion,
+		Sensors::SensorFusion& fusion,
 		IMU& sensor,
 		uint8_t sensorId,
 		SlimeVR::Logging::Logger& logger,

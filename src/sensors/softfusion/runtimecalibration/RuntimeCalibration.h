@@ -29,7 +29,6 @@
 
 #include "../../../GlobalVars.h"
 #include "../../../configuration/Configuration.h"
-#include "../../SensorFusionRestDetect.h"
 #include "AccelBiasCalibrationStep.h"
 #include "GyroBiasCalibrationStep.h"
 #include "MotionlessCalibrationStep.h"
@@ -37,6 +36,7 @@
 #include "SampleRateCalibrationStep.h"
 #include "configuration/SensorConfig.h"
 #include "logging/Logger.h"
+#include "sensors/SensorFusion.h"
 #include "sensors/softfusion/CalibrationBase.h"
 
 namespace SlimeVR::Sensors::RuntimeCalibration {
@@ -50,7 +50,7 @@ public:
 	using Self = RuntimeCalibrator<IMU, RawSensorT, RawVectorT>;
 
 	RuntimeCalibrator(
-		SensorFusionRestDetect& fusion,
+		SensorFusion& fusion,
 		IMU& imu,
 		uint8_t sensorId,
 		Logging::Logger& logger,
@@ -397,13 +397,11 @@ private:
 	SampleRateCalibrationStep<RawSensorT> sampleRateCalibrationStep{calibration};
 	MotionlessCalibrationStep<IMU, RawSensorT> motionlessCalibrationStep{
 		calibration,
-		sensor
-	};
+		sensor};
 	GyroBiasCalibrationStep<RawSensorT> gyroBiasCalibrationStep{calibration};
 	AccelBiasCalibrationStep<RawSensorT> accelBiasCalibrationStep{
 		calibration,
-		static_cast<float>(Base::AScale)
-	};
+		static_cast<float>(Base::AScale)};
 	NullCalibrationStep<RawSensorT> nullCalibrationStep{calibration};
 
 	CalibrationStep<RawSensorT>* currentStep = &nullCalibrationStep;
