@@ -235,7 +235,7 @@ struct SetConfigFlagPacket {
 struct IdentificationPacket {
 	uint8_t sensorId{};
 	bool on{};
-}
+};
 
 #pragma pack(pop)
 
