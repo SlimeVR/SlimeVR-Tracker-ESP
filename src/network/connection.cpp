@@ -573,14 +573,10 @@ void Connection::searchForServer() {
 
 	auto now = millis();
 
-	// This makes the LED blink for 20ms every second
 	if (m_LastConnectionAttemptTimestamp + 1000 < now) {
 		m_LastConnectionAttemptTimestamp = now;
 		m_Logger.info("Searching for the server on the local network...");
 		Connection::sendTrackerDiscovery();
-		ledManager.on();
-	} else if (m_LastConnectionAttemptTimestamp + 20 < now) {
-		ledManager.off();
 	}
 }
 
@@ -609,8 +605,12 @@ void Connection::reset() {
 
 void Connection::update() {
 	if (!m_Connected) {
+		statusManager.setStatus(SlimeVR::Status::SERVER_SEARCHING, true);
 		searchForServer();
 		return;
+	} else
+	{
+		statusManager.setStatus(SlimeVR::Status::SERVER_SEARCHING, false);
 	}
 
 	auto& sensors = sensorManager.getSensors();
