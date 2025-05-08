@@ -27,12 +27,22 @@
 
 namespace SlimeVR {
 namespace Utils {
-SlimeVR::Logging::Logger m_Logger("FSHelper");
+
+enum class FSLogs {
+	FailedToCreateDir = 0,
+	FailedToRemoveDir = 1,
+};
+
+SlimeVR::Logging::Logger<FSLogs> m_Logger("FSHelper", "fs");
 
 bool ensureDirectory(const char* directory) {
 	if (!LittleFS.exists(directory)) {
 		if (!LittleFS.mkdir(directory)) {
-			m_Logger.error("Failed to create directory: %s", directory);
+			m_Logger.error(
+				FSLogs::FailedToCreateDir,
+				"Failed to create directory: %s",
+				directory
+			);
 			return false;
 		}
 	}
@@ -43,12 +53,20 @@ bool ensureDirectory(const char* directory) {
 
 	if (!isDirectory) {
 		if (!LittleFS.remove(directory)) {
-			m_Logger.error("Failed to remove directory: %s", directory);
+			m_Logger.error(
+				FSLogs::FailedToRemoveDir,
+				"Failed to remove directory: %s",
+				directory
+			);
 			return false;
 		}
 
 		if (!LittleFS.mkdir(directory)) {
-			m_Logger.error("Failed to create directory: %s", directory);
+			m_Logger.error(
+				FSLogs::FailedToCreateDir,
+				"Failed to create directory: %s",
+				directory
+			);
 			return false;
 		}
 	}

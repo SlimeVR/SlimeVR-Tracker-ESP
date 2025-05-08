@@ -31,8 +31,11 @@
 // saved to NVS. Increments through the list then stops; to prevent unwelcome eeprom
 // wear.
 int bias_save_periods[]
-	= {120, 180, 300, 600, 600
-};  // 2min + 3min + 5min + 10min + 10min (no more saves after 30min)
+	= {120,
+	   180,
+	   300,
+	   600,
+	   600};  // 2min + 3min + 5min + 10min + 10min (no more saves after 30min)
 
 #define ACCEL_SENSITIVITY_4G 8192.0f
 
@@ -108,7 +111,7 @@ void ICM20948Sensor::readFIFOToEnd() {
 	ICM_20948_Status_e readStatus = imu.readDMPdataFromFIFO(&dmpDataTemp);
 
 #ifdef DEBUG_SENSOR
-	{ m_Logger.trace("e0x%02x", readStatus); }
+	{ m_Logger.trace(Logs::DebugStatus, "e0x%02x", readStatus); }
 #endif
 
 	if (readStatus == ICM_20948_Stat_Ok) {
@@ -183,30 +186,42 @@ void ICM20948Sensor::startDMP() {
 #endif
 
 	if (imu.initializeDMP() == ICM_20948_Stat_Ok) {
-		m_Logger.debug("DMP initialized");
+		m_Logger.debug(Logs::SensorInitialization, "DMP initialized");
 	} else {
-		m_Logger.fatal("Failed to initialize DMP");
+		m_Logger.fatal(Logs::SensorInitialization, "Failed to initialize DMP");
 		return;
 	}
 
 #if (USE_6_AXIS)
 	{
-		m_Logger.debug("Using 6 axis configuration");
+		m_Logger.debug(Logs::SensorInitialization, "Using 6 axis configuration");
 		if (imu.enableDMPSensor(INV_ICM20948_SENSOR_GAME_ROTATION_VECTOR)
 			== ICM_20948_Stat_Ok) {
-			m_Logger.debug("Enabled DMP sensor for game rotation vector");
+			m_Logger.debug(
+				Logs::SensorInitialization,
+				"Enabled DMP sensor for game rotation vector"
+			);
 		} else {
-			m_Logger.fatal("Failed to enable DMP sensor for game rotation vector");
+			m_Logger.fatal(
+				Logs::SensorInitialization,
+				"Failed to enable DMP sensor for game rotation vector"
+			);
 			return;
 		}
 	}
 #else
 	{
-		m_Logger.debug("Using 9 axis configuration");
+		m_Logger.debug(Logs::SensorInitialization, "Using 9 axis configuration");
 		if (imu.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok) {
-			m_Logger.debug("Enabled DMP sensor for sensor orientation");
+			m_Logger.debug(
+				Logs::SensorInitialization,
+				"Enabled DMP sensor for sensor orientation"
+			);
 		} else {
-			m_Logger.fatal("Failed to enable DMP sensor orientation");
+			m_Logger.fatal(
+				Logs::SensorInitialization,
+				"Failed to enable DMP sensor orientation"
+			);
 			return;
 		}
 	}
@@ -215,9 +230,15 @@ void ICM20948Sensor::startDMP() {
 #if (SEND_ACCELERATION)
 	if (imu.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER)
 		== ICM_20948_Stat_Ok) {
-		m_Logger.debug("Enabled DMP sensor for accelerometer");
+		m_Logger.debug(
+			Logs::SensorInitialization,
+			"Enabled DMP sensor for accelerometer"
+		);
 	} else {
-		m_Logger.fatal("Failed to enable DMP sensor for accelerometer");
+		m_Logger.fatal(
+			Logs::SensorInitialization,
+			"Failed to enable DMP sensor for accelerometer"
+		);
 		return;
 	}
 #endif
@@ -228,9 +249,12 @@ void ICM20948Sensor::startDMP() {
 	{
 		if (imu.setDMPODRrate(DMP_ODR_Reg_Quat6, ICM20948_ODRGYR)
 			== ICM_20948_Stat_Ok) {
-			m_Logger.debug("Set Quat6 to 100Hz frequency");
+			m_Logger.debug(Logs::SensorInitialization, "Set Quat6 to 100Hz frequency");
 		} else {
-			m_Logger.fatal("Failed to set Quat6 to 100Hz frequency");
+			m_Logger.fatal(
+				Logs::SensorInitialization,
+				"Failed to set Quat6 to 100Hz frequency"
+			);
 			return;
 		}
 	}
@@ -238,9 +262,12 @@ void ICM20948Sensor::startDMP() {
 	{
 		if (imu.setDMPODRrate(DMP_ODR_Reg_Quat9, ICM20948_ODRGYR)
 			== ICM_20948_Stat_Ok) {
-			m_Logger.debug("Set Quat9 to 100Hz frequency");
+			m_Logger.debug(Logs::SensorInitialization, "Set Quat9 to 100Hz frequency");
 		} else {
-			m_Logger.fatal("Failed to set Quat9 to 100Hz frequency");
+			m_Logger.fatal(
+				Logs::SensorInitialization,
+				"Failed to set Quat9 to 100Hz frequency"
+			);
 			return;
 		}
 	}
@@ -249,42 +276,48 @@ void ICM20948Sensor::startDMP() {
 #if (SEND_ACCELERATION)
 	if (this->imu.setDMPODRrate(DMP_ODR_Reg_Accel, ICM20948_ODRAXL)
 		== ICM_20948_Stat_Ok) {
-		this->m_Logger.debug("Set Accel to 100Hz frequency");
+		this->m_Logger.debug(
+			Logs::SensorInitialization,
+			"Set Accel to 100Hz frequency"
+		);
 	} else {
-		this->m_Logger.fatal("Failed to set Accel to 100Hz frequency");
+		this->m_Logger.fatal(
+			Logs::SensorInitialization,
+			"Failed to set Accel to 100Hz frequency"
+		);
 		return;
 	}
 #endif
 
 	// Enable the FIFO
 	if (imu.enableFIFO() == ICM_20948_Stat_Ok) {
-		m_Logger.debug("FIFO Enabled");
+		m_Logger.debug(Logs::SensorInitialization, "FIFO Enabled");
 	} else {
-		m_Logger.fatal("Failed to enable FIFO");
+		m_Logger.fatal(Logs::SensorInitialization, "Failed to enable FIFO");
 		return;
 	}
 
 	// Enable the DMP
 	if (imu.enableDMP() == ICM_20948_Stat_Ok) {
-		m_Logger.debug("DMP Enabled");
+		m_Logger.debug(Logs::SensorInitialization, "DMP Enabled");
 	} else {
-		m_Logger.fatal("Failed to enable DMP");
+		m_Logger.fatal(Logs::SensorInitialization, "Failed to enable DMP");
 		return;
 	}
 
 	// Reset DMP
 	if (imu.resetDMP() == ICM_20948_Stat_Ok) {
-		m_Logger.debug("Reset DMP");
+		m_Logger.debug(Logs::SensorInitialization, "Reset DMP");
 	} else {
-		m_Logger.fatal("Failed to reset DMP");
+		m_Logger.fatal(Logs::SensorInitialization, "Failed to reset DMP");
 		return;
 	}
 
 	// Reset FIFO
 	if (imu.resetFIFO() == ICM_20948_Stat_Ok) {
-		m_Logger.debug("Reset FIFO");
+		m_Logger.debug(Logs::SensorInitialization, "Reset FIFO");
 	} else {
-		m_Logger.fatal("Failed to reset FIFO");
+		m_Logger.fatal(Logs::SensorInitialization, "Failed to reset FIFO");
 		return;
 	}
 }
@@ -302,13 +335,18 @@ void ICM20948Sensor::connectSensor() {
 	} else if (addr == 0x69) {
 		isOnSecondAddress = true;
 	} else {
-		m_Logger.fatal("I2C Address not supported by ICM20948 library: 0x%02x", addr);
+		m_Logger.fatal(
+			Logs::SensorInitialization,
+			"I2C Address not supported by ICM20948 library: 0x%02x",
+			addr
+		);
 		return;
 	}
 
 	ICM_20948_Status_e imu_err = imu.begin(Wire, isOnSecondAddress);
 	if (imu_err != ICM_20948_Stat_Ok) {
 		m_Logger.fatal(
+			Logs::SensorNotDetected,
 			"Can't connect to ICM20948 at address 0x%02x, error code: 0x%02x",
 			addr,
 			imu_err
@@ -328,7 +366,8 @@ void ICM20948Sensor::checkSensorTimeout() {
 	if (lastData + 2000 < currenttime) {
 		working = false;
 		m_Logger.error(
-			"Sensor timeout I2C Address 0x%02x delaytime: %d ms",
+			Logs::SensorTimeout,
+			"Sensor timeout I2C Address 0x%02x delaytime: %ld ms",
 			addr,
 			currenttime - lastData
 		);
@@ -403,7 +442,7 @@ void ICM20948Sensor::saveCalibration(bool repeat) {
 	{ return; }
 #endif
 #ifdef DEBUG_SENSOR
-	m_Logger.trace("Saving Bias");
+	m_Logger.trace(Logs::SavingCalibration, "Saving Bias");
 #endif
 
 	imu.GetBiasGyroX(&m_Config.G[0]);
@@ -421,10 +460,22 @@ void ICM20948Sensor::saveCalibration(bool repeat) {
 #endif
 
 #ifdef DEBUG_SENSOR
-	m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.G));
-	m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.A));
+	m_Logger.trace(
+		Logs::CalibrationState,
+		"Gyrometer bias:     [%d, %d, %d]",
+		UNPACK_VECTOR_ARRAY(m_Config.G)
+	);
+	m_Logger.trace(
+		Logs::CalibrationState,
+		"Accelerometer bias: [%d, %d, %d]",
+		UNPACK_VECTOR_ARRAY(m_Config.A)
+	);
 #if !USE_6_AXIS
-	m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.C));
+	m_Logger.trace(
+		Logs::CalibrationState,
+		"Compass bias:       [%d, %d, %d]",
+		UNPACK_VECTOR_ARRAY(m_Config.C)
+	);
 #endif
 #endif
 
@@ -467,25 +518,39 @@ void ICM20948Sensor::loadCalibration() {
 
 		case SlimeVR::Configuration::SensorConfigType::NONE:
 			m_Logger.warn(
+				Logs::NoCalibrationData,
 				"No calibration data found for sensor %d, ignoring...",
 				sensorId
 			);
-			m_Logger.info("Calibration is advised");
+			m_Logger.info(Logs::NoCalibrationData, "Calibration is advised");
 			break;
 
 		default:
 			m_Logger.warn(
+				Logs::IncompatibleCalibrationData,
 				"Incompatible calibration data found for sensor %d, ignoring...",
 				sensorId
 			);
-			m_Logger.info("Calibration is advised");
+			m_Logger.info(Logs::IncompatibleCalibrationData, "Calibration is advised");
 	}
 
 #ifdef DEBUG_SENSOR
-	m_Logger.trace("Gyrometer bias:     [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.G));
-	m_Logger.trace("Accelerometer bias: [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.A));
+	m_Logger.trace(
+		Logs::CalibrationState,
+		"Gyrometer bias:     [%d, %d, %d]",
+		UNPACK_VECTOR_ARRAY(m_Config.G)
+	);
+	m_Logger.trace(
+		Logs::CalibrationState,
+		"Accelerometer bias: [%d, %d, %d]",
+		UNPACK_VECTOR_ARRAY(m_Config.A)
+	);
 #if !USE_6_AXIS
-	m_Logger.trace("Compass bias:       [%d, %d, %d]", UNPACK_VECTOR_ARRAY(m_Config.C));
+	m_Logger.trace(
+		Logs::CalibrationState,
+		"Compass bias:       [%d, %d, %d]",
+		UNPACK_VECTOR_ARRAY(m_Config.C)
+	);
 #endif
 #endif
 

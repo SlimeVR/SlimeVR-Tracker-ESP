@@ -36,7 +36,31 @@
 #endif
 
 namespace SerialCommands {
-SlimeVR::Logging::Logger logger("SerialCommands");
+
+enum class CommandsLogs {
+	ParamTooLong = 1,
+	TooFewArguments = 2,
+	Usage = 3,
+	NewCredentialsSet = 4,
+	UnrecognizedVariable = 5,
+	PrintState = 6,
+	SensorInfo = 7,
+	BatteryReading = 8,
+	GitCommit = 9,
+	NoData = 10,
+	HadData = 11,
+	ScanningStarted = 12,
+	FoundNetworks = 13,
+	NetworkInfo = 14,
+	ScanFailed = 15,
+	Reboot = 16,
+	FactoryReset = 17,
+	FactoryResetNotSupported = 18,
+	FactoryResetHardcodedWarning = 19,
+	EraseCalibration = 20,
+};
+
+SlimeVR::Logging::Logger<CommandsLogs> logger("SerialCommands", "commands");
 
 CmdCallback<6> cmdCallbacks;
 CmdParser cmdParser;
@@ -51,6 +75,7 @@ bool lengthCheck(
 	size_t l = text != nullptr ? strlen(text) : 0;
 	if ((l > length)) {
 		logger.error(
+			CommandsLogs::ParamTooLong,
 			"%s ERROR: %s is longer than %d bytes / Characters",
 			cmd,
 			name,
@@ -74,8 +99,14 @@ void cmdSet(CmdParser* parser) {
 	if (parser->getParamCount() != 1) {
 		if (parser->equalCmdParam(1, "WIFI")) {
 			if (parser->getParamCount() < 3) {
-				logger.error("CMD SET WIFI ERROR: Too few arguments");
-				logger.info("Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\"");
+				logger.error(
+					CommandsLogs::TooFewArguments,
+					"CMD SET WIFI ERROR: Too few arguments"
+				);
+				logger.info(
+					CommandsLogs::Usage,
+					"Syntax: SET WIFI \"<SSID>\" \"<PASSWORD>\""
+				);
 			} else {
 				const char* sc_ssid = parser->getCmdParam(2);
 				const char* sc_pw = parser->getCmdParam(3);
@@ -86,12 +117,21 @@ void cmdSet(CmdParser* parser) {
 				}
 
 				WiFiNetwork::setWiFiCredentials(sc_ssid, sc_pw);
-				logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
+				logger.info(
+					CommandsLogs::NewCredentialsSet,
+					"CMD SET WIFI OK: New wifi credentials set, reconnecting"
+				);
 			}
 		} else if (parser->equalCmdParam(1, "BWIFI")) {
 			if (parser->getParamCount() < 3) {
-				logger.error("CMD SET BWIFI ERROR: Too few arguments");
-				logger.info("Syntax: SET BWIFI <B64SSID> <B64PASSWORD>");
+				logger.error(
+					CommandsLogs::TooFewArguments,
+					"CMD SET BWIFI ERROR: Too few arguments"
+				);
+				logger.info(
+					CommandsLogs::Usage,
+					"Syntax: SET BWIFI <B64SSID> <B64PASSWORD>"
+				);
 			} else {
 				const char* b64ssid = parser->getCmdParam(2);
 				const char* b64pass = parser->getCmdParam(3);
@@ -132,18 +172,28 @@ void cmdSet(CmdParser* parser) {
 					ppass = NULL;
 				}
 				WiFiNetwork::setWiFiCredentials(ssid, ppass);
-				logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
+				logger.info(
+					CommandsLogs::NewCredentialsSet,
+					"CMD SET BWIFI OK: New wifi credentials set, reconnecting"
+				);
 			}
 		} else {
-			logger.error("CMD SET ERROR: Unrecognized variable to set");
+			logger.error(
+				CommandsLogs::UnrecognizedVariable,
+				"CMD SET ERROR: Unrecognized variable to set"
+			);
 		}
 	} else {
-		logger.error("CMD SET ERROR: No variable to set");
+		logger.error(
+			CommandsLogs::TooFewArguments,
+			"CMD SET ERROR: No variable to set"
+		);
 	}
 }
 
 void printState() {
 	logger.info(
+		CommandsLogs::PrintState,
 		"SlimeVR Tracker, board: %d, hardware: %d, protocol: %d, firmware: %s, "
 		"address: %s, mac: %s, status: %d, wifi state: %d",
 		BOARD,
@@ -157,6 +207,7 @@ void printState() {
 	);
 	for (auto& sensor : sensorManager.getSensors()) {
 		logger.info(
+			CommandsLogs::SensorInfo,
 			"Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
 			sensor->getSensorId(),
 			getIMUNameByType(sensor->getSensorType()),
@@ -166,6 +217,7 @@ void printState() {
 		);
 	}
 	logger.info(
+		CommandsLogs::BatteryReading,
 		"Battery voltage: %.3f, level: %.1f%%",
 		battery.getVoltage(),
 		battery.getLevel() * 100
@@ -223,7 +275,7 @@ void cmdGet(CmdParser* parser) {
 		printState();
 
 		// We don't want to print this on every timed state output
-		logger.info("Git commit: %s", GIT_REV);
+		logger.info(CommandsLogs::GitCommit, "Git commit: %s", GIT_REV);
 	}
 
 	if (parser->equalCmdParam(1, "CONFIG")) {
@@ -268,6 +320,7 @@ void cmdGet(CmdParser* parser) {
 
 	if (parser->equalCmdParam(1, "TEST")) {
 		logger.info(
+			CommandsLogs::PrintState,
 			"[TEST] Board: %d, hardware: %d, protocol: %d, firmware: %s, address: %s, "
 			"mac: %s, status: %d, wifi state: %d",
 			BOARD,
@@ -282,6 +335,7 @@ void cmdGet(CmdParser* parser) {
 		auto& sensor0 = sensorManager.getSensors()[0];
 		sensor0->motionLoop();
 		logger.info(
+			CommandsLogs::SensorInfo,
 			"[TEST] Sensor[0]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
 			getIMUNameByType(sensor0->getSensorType()),
 			UNPACK_QUATERNION(sensor0->getFusedRotation()),
@@ -289,14 +343,23 @@ void cmdGet(CmdParser* parser) {
 			sensor0->getHadData() ? "true" : "false"
 		);
 		if (!sensor0->getHadData()) {
-			logger.error("[TEST] Sensor[0] didn't send any data yet!");
+			logger.error(
+				CommandsLogs::NoData,
+				"[TEST] Sensor[0] didn't send any data yet!"
+			);
 		} else {
-			logger.info("[TEST] Sensor[0] sent some data, looks working.");
+			logger.info(
+				CommandsLogs::HadData,
+				"[TEST] Sensor[0] sent some data, looks working."
+			);
 		}
 	}
 
 	if (parser->equalCmdParam(1, "WIFISCAN")) {
-		logger.info("[WSCAN] Scanning for WiFi networks...");
+		logger.info(
+			CommandsLogs::ScanningStarted,
+			"[WSCAN] Scanning for WiFi networks..."
+		);
 
 		// Scan would fail if connecting, stop connecting before scan
 		if (WiFi.status() != WL_CONNECTED) {
@@ -310,9 +373,14 @@ void cmdGet(CmdParser* parser) {
 
 		int scanRes = WiFi.scanComplete();
 		if (scanRes >= 0) {
-			logger.info("[WSCAN] Found %d networks:", scanRes);
+			logger.info(
+				CommandsLogs::FoundNetworks,
+				"[WSCAN] Found %d networks:",
+				scanRes
+			);
 			for (int i = 0; i < scanRes; i++) {
 				logger.info(
+					CommandsLogs::NetworkInfo,
 					"[WSCAN] %d:\t%02d\t'%s'\t(%d dBm)\t%s",
 					i,
 					WiFi.SSID(i).length(),
@@ -323,7 +391,7 @@ void cmdGet(CmdParser* parser) {
 			}
 			WiFi.scanDelete();
 		} else {
-			logger.info("[WSCAN] Scan failed!");
+			logger.info(CommandsLogs::ScanFailed, "[WSCAN] Scan failed!");
 		}
 
 		// Restore conencting state
@@ -334,12 +402,12 @@ void cmdGet(CmdParser* parser) {
 }
 
 void cmdReboot(CmdParser* parser) {
-	logger.info("REBOOT");
+	logger.info(CommandsLogs::Reboot, "REBOOT");
 	ESP.restart();
 }
 
 void cmdFactoryReset(CmdParser* parser) {
-	logger.info("FACTORY RESET");
+	logger.info(CommandsLogs::FactoryReset, "FACTORY RESET");
 
 	configuration.reset();
 
@@ -350,13 +418,16 @@ void cmdFactoryReset(CmdParser* parser) {
 	nvs_flash_erase();
 #else
 #warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED
-	logger.info("FACTORY RESET NOT SUPPORTED");
+	logger.info(CommandsLogs::FactoryResetNotSupported, "FACTORY RESET NOT SUPPORTED");
 	return;
 #endif
 
 #if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
 #warning FACTORY RESET does not clear your hardcoded WiFi credentials!
-	logger.warn("FACTORY RESET does not clear your hardcoded WiFi credentials!");
+	logger.warn(
+		CommandsLogs::FactoryResetHardcodedWarning,
+		"FACTORY RESET does not clear your hardcoded WiFi credentials!"
+	);
 #endif
 
 	delay(3000);
@@ -387,27 +458,20 @@ void cmdTemperatureCalibration(CmdParser* parser) {
 			return;
 		}
 	}
-	logger.info("Usage:");
-	logger.info("  TCAL PRINT: print current temperature calibration config");
 	logger.info(
-		"  TCAL DEBUG: print debug values for the current temperature calibration "
-		"profile"
-	);
-	logger.info(
-		"  TCAL RESET: reset current temperature calibration in RAM (does not delete "
-		"already saved)"
-	);
-	logger.info("  TCAL SAVE: save current temperature calibration to persistent flash"
-	);
-	logger.info("Note:");
-	logger.info(
-		"  Temperature calibration config saves automatically when calibration percent "
-		"is at 100%%"
+		CommandsLogs::Usage,
+		R"(Usage:
+  TCAL PRINT: print current temperature calibration config
+  TCAL DEBUG: print debug values for the current temperature calibration profile
+  TCAL RESET: reset current temperature calibration in RAM (does not delete already saved
+  TCAL SAVE: save current temperature calibration to persistent flash
+Note:
+  Temperature calibration config saves automatically when calibration percent  is at 100%%)"
 	);
 }
 
 void cmdDeleteCalibration(CmdParser* parser) {
-	logger.info("ERASE CALIBRATION");
+	logger.info(CommandsLogs::EraseCalibration, "ERASE CALIBRATION");
 
 	configuration.eraseSensors();
 }

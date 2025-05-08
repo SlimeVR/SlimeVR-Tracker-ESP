@@ -180,6 +180,7 @@ public:
 	void resetTemperatureCalibrationState() override final {
 		gyroTempCalibrator->reset();
 		m_Logger.info(
+			Logs::TempCalReset,
 			"Temperature calibration state has been reset for sensorId:%i",
 			sensorId
 		);

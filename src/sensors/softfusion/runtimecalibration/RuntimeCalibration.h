@@ -53,13 +53,12 @@ public:
 		SensorFusionRestDetect& fusion,
 		IMU& imu,
 		uint8_t sensorId,
-		Logging::Logger& logger,
 		float TempTs,
 		float AScale,
 		float GScale,
 		SensorToggleState& toggles
 	)
-		: Base{fusion, imu, sensorId, logger, TempTs, AScale, GScale, toggles} {
+		: Base{fusion, imu, sensorId, TempTs, AScale, GScale, toggles} {
 		calibration.T_Ts = TempTs;
 		activeCalibration.T_Ts = TempTs;
 	}
@@ -325,28 +324,30 @@ private:
 		if (any(toPrint & CalibrationPrintFlags::TIMESTEPS)) {
 			if (calibration.sensorTimestepsCalibrated) {
 				logger.info(
+					Logs::CalibrationState,
 					"Calibrated timesteps: Accel %f, Gyro %f, Temperature %f",
 					calibration.A_Ts,
 					calibration.G_Ts,
 					calibration.T_Ts
 				);
 			} else {
-				logger.info("Sensor timesteps not calibrated");
+				logger.info(Logs::CalibrationState, "Sensor timesteps not calibrated");
 			}
 		}
 
 		if (Base::HasMotionlessCalib
 			&& any(toPrint & CalibrationPrintFlags::MOTIONLESS)) {
 			if (calibration.motionlessCalibrated) {
-				logger.info("Motionless calibration done");
+				logger.info(Logs::CalibrationState, "Motionless calibration done");
 			} else {
-				logger.info("Motionless calibration not done");
+				logger.info(Logs::CalibrationState, "Motionless calibration not done");
 			}
 		}
 
 		if (any(toPrint & CalibrationPrintFlags::GYRO_BIAS)) {
 			if (calibration.gyroPointsCalibrated != 0) {
 				logger.info(
+					Logs::CalibrationState,
 					"Calibrated gyro bias at %fC: %f %f %f",
 					calibration.gyroMeasurementTemperature1,
 					calibration.G_off1[0],
@@ -354,11 +355,12 @@ private:
 					calibration.G_off1[2]
 				);
 			} else {
-				logger.info("Gyro bias not calibrated");
+				logger.info(Logs::CalibrationState, "Gyro bias not calibrated");
 			}
 
 			if (calibration.gyroPointsCalibrated == 2) {
 				logger.info(
+					Logs::CalibrationState,
 					"Calibrated gyro bias at %fC: %f %f %f",
 					calibration.gyroMeasurementTemperature2,
 					calibration.G_off2[0],
@@ -371,6 +373,7 @@ private:
 		if (any(toPrint & CalibrationPrintFlags::ACCEL_BIAS)) {
 			if (accelBiasCalibrationStep.allAxesCalibrated()) {
 				logger.info(
+					Logs::CalibrationState,
 					"Calibrated accel bias: %f %f %f",
 					calibration.A_off[0],
 					calibration.A_off[1],
@@ -378,13 +381,14 @@ private:
 				);
 			} else if (accelBiasCalibrationStep.anyAxesCalibrated()) {
 				logger.info(
+					Logs::CalibrationState,
 					"Partially calibrated accel bias: %f %f %f",
 					calibration.A_off[0],
 					calibration.A_off[1],
 					calibration.A_off[2]
 				);
 			} else {
-				logger.info("Accel bias not calibrated");
+				logger.info(Logs::CalibrationState, "Accel bias not calibrated");
 			}
 		}
 	}
@@ -397,13 +401,11 @@ private:
 	SampleRateCalibrationStep<RawSensorT> sampleRateCalibrationStep{calibration};
 	MotionlessCalibrationStep<IMU, RawSensorT> motionlessCalibrationStep{
 		calibration,
-		sensor
-	};
+		sensor};
 	GyroBiasCalibrationStep<RawSensorT> gyroBiasCalibrationStep{calibration};
 	AccelBiasCalibrationStep<RawSensorT> accelBiasCalibrationStep{
 		calibration,
-		static_cast<float>(Base::AScale)
-	};
+		static_cast<float>(Base::AScale)};
 	NullCalibrationStep<RawSensorT> nullCalibrationStep{calibration};
 
 	CalibrationStep<RawSensorT>* currentStep = &nullCalibrationStep;
@@ -440,10 +442,15 @@ private:
 
 	Configuration::RuntimeCalibrationSensorConfig activeCalibration = calibration;
 
+	enum class Logs {
+		CalibrationState = 0,
+	};
+
+	Logging::Logger<Logs> logger{"RuntimeCalibration", "runtimecalib"};
+
 	using Base::AScale;
 	using Base::fusion;
 	using Base::GScale;
-	using Base::logger;
 	using Base::sensor;
 	using Base::sensorId;
 	using Base::toggles;

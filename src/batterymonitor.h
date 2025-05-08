@@ -92,7 +92,11 @@ private:
 	float voltage = -1;
 	float level = -1;
 
-	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("BatteryMonitor");
+	enum class Logs {
+		MCPNotFound = 0,
+	};
+
+	SlimeVR::Logging::Logger<Logs> m_Logger{"BatteryMonitor", "battery"};
 };
 
 #endif  // SLIMEVR_BATTERYMONITOR_H_

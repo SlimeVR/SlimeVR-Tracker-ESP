@@ -8,7 +8,7 @@ void StatusManager::setStatus(Status status, bool value) {
 			return;
 		}
 
-		m_Logger.trace("Added status %s", statusToString(status));
+		m_Logger.trace(Logs::AddedStatus, "Added status %s", statusToString(status));
 
 		m_Status |= status;
 	} else {
@@ -16,7 +16,8 @@ void StatusManager::setStatus(Status status, bool value) {
 			return;
 		}
 
-		m_Logger.trace("Removed status %s", statusToString(status));
+		m_Logger
+			.trace(Logs::RemovedStatus, "Removed status %s", statusToString(status));
 
 		m_Status &= ~status;
 	}
