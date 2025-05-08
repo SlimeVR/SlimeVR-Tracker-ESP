@@ -34,8 +34,13 @@
 #include "serial/serialcommands.h"
 #include "status/TPSCounter.h"
 
+enum class MainLogs {
+	Starting = 0,
+	CantClearI2C = 1,
+};
+
 Timer<> globalTimer;
-SlimeVR::Logging::Logger logger("SlimeVR");
+SlimeVR::Logging::Logger<MainLogs> logger("SlimeVR", "main");
 SlimeVR::Sensors::SensorManager sensorManager;
 SlimeVR::LEDManager ledManager(LED_PIN);
 SlimeVR::Status::StatusManager statusManager;
@@ -64,7 +69,7 @@ void setup() {
 	Serial.println();
 	Serial.println();
 
-	logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
+	logger.info(MainLogs::Starting, "SlimeVR v" FIRMWARE_VERSION " starting up...");
 
 	statusManager.setStatus(SlimeVR::Status::LOADING, true);
 
@@ -78,7 +83,8 @@ void setup() {
 	// this, check needs to be re-added.
 	auto clearResult = I2CSCAN::clearBus(PIN_IMU_SDA, PIN_IMU_SCL);
 	if (clearResult != 0) {
-		logger.warn("Can't clear I2C bus, error %d", clearResult);
+		logger
+			.warn(MainLogs::CantClearI2C, "Can't clear I2C bus, error %d", clearResult);
 	}
 
 	// join I2C bus

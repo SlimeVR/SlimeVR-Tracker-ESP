@@ -28,6 +28,7 @@
 #include <cstdint>
 
 #include "../../../sensorinterface/RegisterInterface.h"
+#include "sensors/sensor.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -65,8 +66,11 @@ struct LSM6DS3TRC {
 	};
 
 	RegisterInterface& m_RegisterInterface;
-	SlimeVR::Logging::Logger m_Logger;
-	LSM6DS3TRC(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+	SlimeVR::Logging::Logger<Sensor::Logs> m_Logger;
+	LSM6DS3TRC(
+		RegisterInterface& registerInterface,
+		SlimeVR::Logging::Logger<Sensor::Logs>& logger
+	)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger) {}
 
@@ -131,7 +135,7 @@ struct LSM6DS3TRC {
 		const auto read_result = m_RegisterInterface.readReg16(Regs::FifoStatus);
 		if (read_result & 0x4000) {  // overrun!
 			// disable and re-enable fifo to clear it
-			m_Logger.debug("Fifo overrun, resetting...");
+			m_Logger.debug(Sensor::Logs::FifoOverrun, "Fifo overrun, resetting...");
 			m_RegisterInterface.writeReg(Regs::FifoCtrl5::reg, 0);
 			m_RegisterInterface.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
 			return;

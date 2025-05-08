@@ -42,8 +42,6 @@ namespace SlimeVR::Sensors {
 
 class SensorManager {
 public:
-	SensorManager()
-		: m_Logger(SlimeVR::Logging::Logger("SensorManager")) {}
 	void setup();
 	void postSetup();
 
@@ -58,7 +56,20 @@ public:
 	}
 
 private:
-	SlimeVR::Logging::Logger m_Logger;
+	enum class Logs {
+		MCPInitialized = 0,
+		SensorConfigured = 1,
+		CantFindI2CDevice = 2,
+		BuildingSensor = 3,
+		MandatoryNotFound = 4,
+		OptionalNotFound = 5,
+		SensorNotFound = 6,
+		CantFindSensorType = 7,
+		SensorAutomaticallyDetected = 8,
+		UnableToCreateSensor = 9,
+	};
+
+	SlimeVR::Logging::Logger<Logs> m_Logger{"SensorManager", "sensormanager"};
 
 	std::vector<std::unique_ptr<::Sensor>> m_Sensors;
 	Adafruit_MCP23X17 m_MCP;

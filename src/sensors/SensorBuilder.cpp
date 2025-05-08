@@ -52,12 +52,14 @@ uint8_t SensorBuilder::buildAllSensors() {
 				auto sensorType = findSensorType(sensorID, __VA_ARGS__);             \
 				if (sensorType == SensorTypeID::Unknown) {                           \
 					m_Manager->m_Logger.error(                                       \
+						SensorManager::Logs::CantFindSensorType,                     \
 						"Can't find sensor type for sensor %d",                      \
 						sensorID                                                     \
 					);                                                               \
 					break;                                                           \
 				} else {                                                             \
 					m_Manager->m_Logger.info(                                        \
+						SensorManager::Logs::SensorAutomaticallyDetected,            \
 						"Sensor %d automatically detected with %s",                  \
 						sensorID,                                                    \
 						getIMUNameByType(sensorType)                                 \
@@ -69,7 +71,11 @@ uint8_t SensorBuilder::buildAllSensors() {
 				sensor = buildSensor<ImuType>(sensorID, __VA_ARGS__);                \
 			}                                                                        \
 			if (sensor->isWorking()) {                                               \
-				m_Manager->m_Logger.info("Sensor %d configured", sensorID);          \
+				m_Manager->m_Logger.info(                                            \
+					SensorManager::Logs::SensorConfigured,                           \
+					"Sensor %d configured",                                          \
+					sensorID                                                         \
+				);                                                                   \
 				activeSensorCount++;                                                 \
 			}                                                                        \
 			m_Manager->m_Sensors.push_back(std::move(sensor));                       \
@@ -149,6 +155,7 @@ std::unique_ptr<::Sensor> SensorBuilder::buildSensorDynamically(
 		//	);
 		default:
 			m_Manager->m_Logger.error(
+				SensorManager::Logs::UnableToCreateSensor,
 				"Unable to create sensor with type %s (%d)",
 				getIMUNameByType(type),
 				type
@@ -214,6 +221,7 @@ std::unique_ptr<::Sensor> SensorBuilder::buildSensorDynamically(
 		//	);
 		default:
 			m_Manager->m_Logger.error(
+				SensorManager::Logs::UnableToCreateSensor,
 				"Unable to create sensor with type %s (%d)",
 				getIMUNameByType(type),
 				type

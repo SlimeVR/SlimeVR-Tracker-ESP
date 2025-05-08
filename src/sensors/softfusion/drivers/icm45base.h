@@ -55,10 +55,8 @@ struct ICM45Base {
 	static constexpr bool Uses32BitSensorData = true;
 
 	RegisterInterface& m_RegisterInterface;
-	SlimeVR::Logging::Logger& m_Logger;
-	ICM45Base(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
-		: m_RegisterInterface(registerInterface)
-		, m_Logger(logger) {}
+	explicit ICM45Base(RegisterInterface& registerInterface)
+		: m_RegisterInterface(registerInterface) {}
 
 	struct BaseRegs {
 		static constexpr uint8_t TempData = 0x0c;

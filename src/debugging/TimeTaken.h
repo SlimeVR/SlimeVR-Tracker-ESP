@@ -47,7 +47,12 @@ private:
 	static constexpr float SecondsBetweenReports = 1.0f;
 
 	const char* name;
-	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("TimeTaken");
+
+	enum class Logs {
+		TimeTaken = 0,
+	};
+
+	SlimeVR::Logging::Logger<Logs> m_Logger{"TimeTaken", "timetaken"};
 
 	uint64_t lastTimeTakenReportMillis = 0;
 	uint64_t timeTakenMicros = 0;

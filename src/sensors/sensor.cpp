@@ -62,7 +62,11 @@ void Sensor::sendData() {
 		);
 
 #ifdef DEBUG_SENSOR
-		m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
+		m_Logger.trace(
+			Logs::DebugQuat,
+			"Quaternion: %f, %f, %f, %f",
+			UNPACK_QUATERNION(fusedRotation)
+		);
 #endif
 
 #if SEND_ACCELERATION
@@ -76,6 +80,7 @@ void Sensor::sendData() {
 
 void Sensor::printTemperatureCalibrationUnsupported() {
 	m_Logger.error(
+		Logs::TempCalNotSupported,
 		"Temperature calibration not supported for IMU %s",
 		getIMUNameByType(sensorType)
 	);
@@ -151,7 +156,7 @@ const char* getIMUNameByType(SensorTypeID imuType) {
 
 void Sensor::markRestCalibrationComplete(bool completed) {
 	if (restCalibrationComplete != completed) {
-		m_Logger.info("Rest calibration completed");
+		m_Logger.info(Logs::RestCalCompleted, "Rest calibration completed");
 	}
 	restCalibrationComplete = completed;
 }

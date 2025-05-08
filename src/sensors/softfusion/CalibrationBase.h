@@ -40,7 +40,6 @@ public:
 		SlimeVR::Sensors::SensorFusionRestDetect& fusion,
 		IMU& sensor,
 		uint8_t sensorId,
-		SlimeVR::Logging::Logger& logger,
 		float TempTs,
 		float AScale,
 		float GScale,
@@ -49,7 +48,6 @@ public:
 		: fusion{fusion}
 		, sensor{sensor}
 		, sensorId{sensorId}
-		, logger{logger}
 		, TempTs{TempTs}
 		, AScale{AScale}
 		, GScale{GScale}
@@ -115,7 +113,6 @@ protected:
 	Sensors::SensorFusionRestDetect& fusion;
 	IMU& sensor;
 	uint8_t sensorId;
-	SlimeVR::Logging::Logger& logger;
 	float TempTs;
 	float AScale;
 	float GScale;

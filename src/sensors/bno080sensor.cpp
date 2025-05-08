@@ -32,6 +32,7 @@ void BNO080Sensor::motionSetup() {
 #endif
 	if (!imu.begin(addr, Wire, m_IntPin)) {
 		m_Logger.fatal(
+			Logs::SensorNotDetected,
 			"Can't connect to %s at address 0x%02x",
 			getIMUNameByType(sensorType),
 			addr
@@ -41,6 +42,7 @@ void BNO080Sensor::motionSetup() {
 	}
 
 	m_Logger.info(
+		Logs::SensorDetected,
 		"Connected to %s on 0x%02x. "
 		"Info: SW Version Major: 0x%02x "
 		"SW Version Minor: 0x%02x "
@@ -252,6 +254,7 @@ void BNO080Sensor::motionLoop() {
 				onTableCalEnabled
 			);
 			m_Logger.info(
+				Logs::CalibrationState,
 				"BNO08X calibration satus received: Status: %d, Accel: %d, Gyro: %d, "
 				"Mag: %d, Planar: %d, OnTable: %d",
 				calibrationResponseStatus,
@@ -279,6 +282,7 @@ void BNO080Sensor::motionLoop() {
 			}
 			lastError = error;
 			m_Logger.error(
+				Logs::SensorError,
 				"BNO08X error. Severity: %d, seq: %d, src: %d, err: %d, mod: %d, code: "
 				"%d",
 				error.severity,
@@ -299,11 +303,13 @@ void BNO080Sensor::motionLoop() {
 		}
 
 		m_Logger.error(
-			"Sensor %d doesn't respond. Last reset reason:",
+			Logs::SensorTimeout,
+			"Sensor %d doesn't respond. Last reset reason: %d",
 			sensorId,
 			lastReset
 		);
 		m_Logger.error(
+			Logs::SensorTimeout,
 			"Last error: %d, seq: %d, src: %d, err: %d, mod: %d, code: %d",
 			lastError.severity,
 			lastError.error_sequence_number,
@@ -336,7 +342,11 @@ void BNO080Sensor::sendData() {
 		);
 
 #ifdef DEBUG_SENSOR
-		m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
+		m_Logger.trace(
+			Logs::DebugQuat,
+			"Quaternion: %f, %f, %f, %f",
+			UNPACK_QUATERNION(fusedRotation)
+		);
 #endif
 
 #if SEND_ACCELERATION

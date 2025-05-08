@@ -214,7 +214,24 @@ private:
 	void sendAcknowledgeConfigChange(uint8_t sensorId, SensorToggles configType);
 
 	bool m_Connected = false;
-	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("UDPConnection");
+
+	enum class Logs {
+		BeginPacketFailed = 1,
+		DebugReceived = 2,
+		DebugPacketContents = 3,
+		InvalidHandshake = 4,
+		HandshakeSuccessful = 5,
+		SearchingServer = 6,
+		ConnectionTimedOut = 7,
+		HandshakeReceivedAgain = 8,
+		WrongSensorInfoPacket = 9,
+		InvalidFeatureFlagsPacket = 10,
+		PacketBundlingSupported = 11,
+		SensorConfigFlagShort = 12,
+		SensorConfigFlagInvalidId = 13,
+	};
+
+	SlimeVR::Logging::Logger<Logs> m_Logger{"UDPConnection", "connection"};
 
 	WiFiUDP m_UDP;
 	unsigned char m_Packet[128];  // buffer for incoming packets

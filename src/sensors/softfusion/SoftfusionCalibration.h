@@ -47,13 +47,12 @@ public:
 		Sensors::SensorFusionRestDetect& fusion,
 		IMU& sensor,
 		uint8_t sensorId,
-		SlimeVR::Logging::Logger& logger,
 		float TempTs,
 		float AScale,
 		float GScale,
 		SensorToggleState& toggles
 	)
-		: Base{fusion, sensor, sensorId, logger, TempTs, AScale, GScale, toggles} {
+		: Base{fusion, sensor, sensorId, TempTs, AScale, GScale, toggles} {
 		calibration.T_Ts = TempTs;
 	}
 
@@ -87,7 +86,10 @@ public:
 				sensor.motionlessCalibration(calibData);
 				std::memcpy(calibration.MotionlessData, &calibData, sizeof(calibData));
 			} else {
-				logger.info("Sensor doesn't provide any custom motionless calibration");
+				logger.info(
+					Logs::MotionlessNotSupported,
+					"Sensor doesn't provide any custom motionless calibration"
+				);
 			}
 		}
 
@@ -177,7 +179,7 @@ private:
 	static constexpr auto AccelCalibRestSeconds = 3;
 
 	void saveCalibration() {
-		logger.debug("Saving the calibration data");
+		logger.debug(Logs::SavingCalibData, "Saving the calibration data");
 		SlimeVR::Configuration::SensorConfig calibration{};
 		calibration.type = SlimeVR::Configuration::SensorConfigType::SFUSION;
 		calibration.data.sfusion = this->calibration;
@@ -192,6 +194,7 @@ private:
 
 		// Wait for sensor to calm down before calibration
 		logger.info(
+			Logs::CalibrationInstruction,
 			"Put down the device and wait for baseline gyro reading calibration (%d "
 			"seconds)",
 			GyroCalibDelaySeconds
@@ -202,11 +205,15 @@ private:
 
 		calibration.temperature = std::get<2>(lastSamples) / IMU::TemperatureSensitivity
 								+ IMU::TemperatureBias;
-		logger.trace("Calibration temperature: %f", calibration.temperature);
+		logger.trace(
+			Logs::CalibrationInstruction,
+			"Calibration temperature: %f",
+			calibration.temperature
+		);
 
 		ledManager.pattern(100, 100, 3);
 		ledManager.on();
-		logger.info("Gyro calibration started...");
+		logger.info(Logs::CalibrationInstruction, "Gyro calibration started...");
 
 		int32_t sumXYZ[3] = {0};
 		const auto targetCalib = millis() + 1000 * GyroCalibSeconds;
@@ -238,6 +245,7 @@ private:
 			= static_cast<float>(sumXYZ[2]) / static_cast<float>(sampleCount);
 
 		logger.info(
+			Logs::CalibrationInstruction,
 			"Gyro offset after %d samples: %f %f %f",
 			sampleCount,
 			UNPACK_VECTOR_ARRAY(calibration.G_off)
@@ -251,6 +259,7 @@ private:
 
 		auto magneto = std::make_unique<MagnetoCalibration>();
 		logger.info(
+			Logs::CalibrationInstruction,
 			"Put the device into 6 unique orientations (all sides), leave it still and "
 			"do not hold/touch for %d seconds each",
 			AccelCalibRestSeconds
@@ -280,8 +289,9 @@ private:
 		accelCalibrationChunk.resize(numSamplesPerPosition * 3);
 		ledManager.pattern(100, 100, 6);
 		ledManager.on();
-		logger.info("Gathering accelerometer data...");
+		logger.info(Logs::CalibrationInstruction, "Gathering accelerometer data...");
 		logger.info(
+			Logs::CalibrationInstruction,
 			"Waiting for position %i, you can leave the device as is...",
 			numPositionsRecorded + 1
 		);
@@ -332,6 +342,7 @@ private:
 								ledManager.pattern(50, 50, 2);
 								ledManager.on();
 								logger.info(
+									Logs::CalibrationInstruction,
 									"Recorded, waiting for position %i...",
 									numPositionsRecorded + 1
 								);
@@ -351,21 +362,28 @@ private:
 			);
 		}
 		ledManager.off();
-		logger.debug("Calculating accelerometer calibration data...");
+		logger.debug(
+			Logs::CalibrationInstruction,
+			"Calculating accelerometer calibration data..."
+		);
 		accelCalibrationChunk.resize(0);
 
 		float A_BAinv[4][3];
 		magneto->current_calibration(A_BAinv);
 
-		logger.debug("Finished calculating accelerometer calibration");
-		logger.debug("Accelerometer calibration matrix:");
-		logger.debug("{");
+		logger.debug(
+			Logs::CalibrationInstruction,
+			"Finished calculating accelerometer calibration"
+		);
+		logger.debug(Logs::CalibrationInstruction, "Accelerometer calibration matrix:");
+		logger.debug(Logs::CalibrationInstruction, "{");
 		for (int i = 0; i < 3; i++) {
 			calibration.A_B[i] = A_BAinv[0][i];
 			calibration.A_Ainv[0][i] = A_BAinv[1][i];
 			calibration.A_Ainv[1][i] = A_BAinv[2][i];
 			calibration.A_Ainv[2][i] = A_BAinv[3][i];
 			logger.debug(
+				Logs::CalibrationInstruction,
 				"  %f, %f, %f, %f",
 				A_BAinv[0][i],
 				A_BAinv[1][i],
@@ -373,11 +391,12 @@ private:
 				A_BAinv[3][i]
 			);
 		}
-		logger.debug("}");
+		logger.debug(Logs::CalibrationInstruction, "}");
 	}
 
 	void calibrateSampleRate(const Base::EatSamplesFn& eatSamplesForSeconds) {
 		logger.debug(
+			Logs::CalibrationInstruction,
 			"Calibrating IMU sample rate in %d second(s)...",
 			SampleRateCalibDelaySeconds
 		);
@@ -389,7 +408,7 @@ private:
 		uint32_t tempSamples = 0;
 
 		const auto calibTarget = millis() + 1000 * SampleRateCalibSeconds;
-		logger.debug("Counting samples now...");
+		logger.debug(Logs::CalibrationInstruction, "Counting samples now...");
 		uint32_t currentTime;
 		while ((currentTime = millis()) < calibTarget) {
 			sensor.bulkRead(
@@ -410,6 +429,7 @@ private:
 			currentTime - (calibTarget - 1000 * SampleRateCalibSeconds)
 		);
 		logger.debug(
+			Logs::CalibrationInstruction,
 			"Collected %d gyro, %d acc samples during %d ms",
 			gyroSamples,
 			accelSamples,
@@ -423,6 +443,7 @@ private:
 			= millisFromStart / (static_cast<float>(tempSamples) * 1000.0f);
 
 		logger.debug(
+			Logs::CalibrationInstruction,
 			"Gyro frequency %fHz, accel frequency: %fHz, temperature frequency: %fHz",
 			1.0 / calibration.G_Ts,
 			1.0 / calibration.A_Ts,
@@ -452,10 +473,16 @@ private:
 		.T_Ts = 0,
 	};
 
+	enum class Logs {
+		MotionlessNotSupported = 0,
+		SavingCalibData = 1,
+		CalibrationInstruction = 2,
+	};
+	Logging::Logger<Logs> logger{"SoftfusionCalibration", "softfusioncalib"};
+
 private:
 	using Base::AScale;
 	using Base::GScale;
-	using Base::logger;
 	using Base::sensor;
 	using Base::sensorId;
 	using Base::toggles;

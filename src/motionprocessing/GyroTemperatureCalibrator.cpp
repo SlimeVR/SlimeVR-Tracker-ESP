@@ -211,11 +211,12 @@ bool GyroTemperatureCalibrator::loadConfig(float newSensitivity) {
 		}
 	} else {
 		m_Logger.warn(
+			Logs::NoTempCalData,
 			"No temperature calibration data found for sensor %d, ignoring...",
 			sensorId
 		);
-		// m_Logger.info("Temperature calibration is advised");
 		m_Logger.info(
+			Logs::TempCalWarning,
 			"Temperature calibration is a work-in-progress feature; any changes to its "
 			"parameters or updates will render the saved temperature curve invalid and "
 			"unloadable."
@@ -227,18 +228,22 @@ bool GyroTemperatureCalibrator::loadConfig(float newSensitivity) {
 bool GyroTemperatureCalibrator::saveConfig() {
 	if (configuration.saveTemperatureCalibration(sensorId, config)) {
 		m_Logger.info(
-			"Saved temperature calibration config (%0.1f%) for sensorId:%i",
+			Logs::SavedTempCal,
+			"Saved temperature calibration config (%0.1f%%) for sensorId:%i",
 			config.getCalibrationDonePercent(),
 			sensorId
 		);
 		if (config.fullyCalibrated()) {
 			configSaved = true;
 		} else {
-			m_Logger.info("Calibration will resume from this checkpoint after reboot");
+			m_Logger.info(
+				Logs::CalibrationWillResume,
+				"Calibration will resume from this checkpoint after reboot"
+			);
 		}
 	} else {
 		configSaveFailed = true;
-		m_Logger.error("Something went wrong");
+		m_Logger.error(Logs::SomethingWentWrong, "Something went wrong");
 	}
 	return configSaved;
 }

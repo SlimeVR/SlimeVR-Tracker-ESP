@@ -190,8 +190,7 @@ public:
 	)
 		: sensorId(_sensorId)
 		, config(_configType, sensitivity)
-		, samplesPerStep(_samplesPerStep)
-		, m_Logger(SlimeVR::Logging::Logger("GyroTemperatureCalibrator")) {
+		, samplesPerStep(_samplesPerStep) {
 		char buf[4];
 		sprintf(buf, "%u", _sensorId);
 		m_Logger.setTag(buf);
@@ -219,7 +218,16 @@ public:
 private:
 	GyroTemperatureCalibrationState state;
 	uint32_t samplesPerStep;
-	SlimeVR::Logging::Logger m_Logger;
+
+	enum class Logs {
+		NoTempCalData = 0,
+		TempCalWarning = 1,
+		SavedTempCal = 2,
+		CalibrationWillResume = 3,
+		SomethingWentWrong = 4,
+	};
+
+	SlimeVR::Logging::Logger<Logs> m_Logger{"GyroTemperatureCalibrator", "gyrotempcal"};
 
 	float lastApproximatedTemperature = 0.0f;
 	float lastApproximatedOffsets[3];

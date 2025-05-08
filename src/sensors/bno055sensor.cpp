@@ -36,7 +36,11 @@ void BNO055Sensor::motionSetup() {
 	if (!imu.begin(Adafruit_BNO055::OPERATION_MODE_NDOF))
 #endif
 	{
-		m_Logger.fatal("Can't connect to BNO055 at address 0x%02x", addr);
+		m_Logger.fatal(
+			Logs::SensorNotDetected,
+			"Can't connect to BNO055 at address 0x%02x",
+			addr
+		);
 		ledManager.pattern(50, 50, 200);
 		return;
 	}
@@ -46,7 +50,8 @@ void BNO055Sensor::motionSetup() {
 								 // otherwise it does not work.
 	imu.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
 	imu.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
-	m_Logger.info("Connected to BNO055 at address 0x%02x", addr);
+	m_Logger
+		.info(Logs::SensorInitialized, "Connected to BNO055 at address 0x%02x", addr);
 
 	working = true;
 	m_tpsCounter.reset();

@@ -29,16 +29,17 @@ namespace SlimeVR::Sensors {
 
 void SensorManager::setup() {
 	if (m_MCP.begin_I2C()) {
-		m_Logger.info("MCP initialized");
+		m_Logger.info(Logs::MCPInitialized, "MCP initialized");
 	}
 
 	SensorBuilder sensorBuilder = SensorBuilder(this);
 	uint8_t activeSensorCount = sensorBuilder.buildAllSensors();
 
-	m_Logger.info("%d sensor(s) configured", activeSensorCount);
+	m_Logger.info(Logs::SensorConfigured, "%d sensor(s) configured", activeSensorCount);
 	// Check and scan i2c if no sensors active
 	if (activeSensorCount == 0) {
 		m_Logger.error(
+			Logs::CantFindI2CDevice,
 			"Can't find I2C device on provided addresses, scanning for all I2C devices "
 			"in the background"
 		);

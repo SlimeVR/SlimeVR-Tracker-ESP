@@ -38,7 +38,7 @@ void BatteryMonitor::Setup() {
 		}
 	}
 	if (address == 0) {
-		m_Logger.error("MCP3021 not found on I2C bus");
+		m_Logger.error(Logs::MCPNotFound, "MCP3021 not found on I2C bus");
 	}
 #endif
 }

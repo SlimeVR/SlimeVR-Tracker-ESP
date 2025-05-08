@@ -113,7 +113,10 @@ struct LSM6DSV : LSM6DSOutputHandler {
 		static constexpr uint8_t FifoData = 0x78;
 	};
 
-	LSM6DSV(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+	LSM6DSV(
+		RegisterInterface& registerInterface,
+		SlimeVR::Logging::Logger<Sensor::Logs>& logger
+	)
 		: LSM6DSOutputHandler(registerInterface, logger) {}
 
 	bool initialize() {

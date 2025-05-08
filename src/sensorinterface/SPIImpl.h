@@ -40,6 +40,7 @@ struct SPIImpl : public RegisterInterface {
 		, m_spiSettings(spiSettings)
 		, m_csPin(csPin) {
 		m_Logger.info(
+			Logs::SPIInfo,
 			"SPI settings: clock: %d, bit order: 0x%02X, data mode: 0x%02X",
 			spiSettings._clock,
 			spiSettings._bitOrder,
@@ -138,7 +139,12 @@ private:
 	SPIClass& m_spiClass;
 	SPISettings m_spiSettings;
 	PinInterface* m_csPin;
-	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("SPI");
+
+	enum class Logs {
+		SPIInfo = 0,
+	};
+
+	SlimeVR::Logging::Logger<Logs> m_Logger{"SPI", "spi"};
 };
 
 }  // namespace SlimeVR::Sensors

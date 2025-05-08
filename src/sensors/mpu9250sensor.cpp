@@ -48,6 +48,7 @@ void MPU9250Sensor::motionSetup() {
 	imu.initialize(addr);
 	if (!imu.testConnection()) {
 		m_Logger.fatal(
+			Logs::SensorNotDetected,
 			"Can't connect to MPU9250 (reported device ID 0x%02x) at address 0x%02x",
 			imu.getDeviceID(),
 			addr
@@ -56,6 +57,7 @@ void MPU9250Sensor::motionSetup() {
 	}
 
 	m_Logger.info(
+		Logs::SensorDetected,
 		"Connected to MPU9250 (reported device ID 0x%02x) at address 0x%02x",
 		imu.getDeviceID(),
 		addr
@@ -69,14 +71,17 @@ void MPU9250Sensor::motionSetup() {
 	float g_az = (float)az / 16384;  // For 2G sensitivity
 	if (g_az < -0.75f) {
 		ledManager.on();
-		m_Logger.info("Flip front to confirm start calibration");
+		m_Logger.info(
+			Logs::CalibrationInstructions,
+			"Flip front to confirm start calibration"
+		);
 		delay(5000);
 		ledManager.off();
 
 		imu.getAcceleration(&ax, &ay, &az);
 		g_az = (float)az / 16384;
 		if (g_az > 0.75f) {
-			m_Logger.debug("Starting calibration...");
+			m_Logger.debug(Logs::CalibrationInstructions, "Starting calibration...");
 			startCalibration(0);
 		}
 	}
@@ -94,18 +99,23 @@ void MPU9250Sensor::motionSetup() {
 
 			case SlimeVR::Configuration::SensorConfigType::NONE:
 				m_Logger.warn(
+					Logs::NoCalibrationData,
 					"No calibration data found for sensor %d, ignoring...",
 					sensorId
 				);
-				m_Logger.info("Calibration is advised");
+				m_Logger.info(Logs::NoCalibrationData, "Calibration is advised");
 				break;
 
 			default:
 				m_Logger.warn(
+					Logs::IncompatibleCalibrationData,
 					"Incompatible calibration data found for sensor %d, ignoring...",
 					sensorId
 				);
-				m_Logger.info("Calibration is advised");
+				m_Logger.info(
+					Logs::IncompatibleCalibrationData,
+					"Calibration is advised"
+				);
 		}
 	}
 
@@ -115,14 +125,17 @@ void MPU9250Sensor::motionSetup() {
 		ledManager.pattern(50, 50, 5);
 
 		// turn on the DMP, now that it's ready
-		m_Logger.debug("Enabling DMP...");
+		m_Logger.debug(Logs::SensorInitialization, "Enabling DMP...");
 		imu.setDMPEnabled(true);
 
 		// TODO: Add interrupt support
 		// mpuIntStatus = imu.getIntStatus();
 
 		// set our DMP Ready flag so the main loop() function knows it's okay to use it
-		m_Logger.debug("DMP ready! Waiting for first interrupt...");
+		m_Logger.debug(
+			Logs::SensorInitialization,
+			"DMP ready! Waiting for first interrupt..."
+		);
 		dmpReady = true;
 
 		// get expected DMP packet size for later comparison
@@ -133,7 +146,11 @@ void MPU9250Sensor::motionSetup() {
 		// 1 = initial memory load failed
 		// 2 = DMP configuration updates failed
 		// (if it's going to break, usually the code will be 1)
-		m_Logger.error("DMP Initialization failed (code %d)", devStatus);
+		m_Logger.error(
+			Logs::SensorInitialization,
+			"DMP Initialization failed (code %d)",
+			devStatus
+		);
 	}
 #else
 	// NOTE: could probably combine these into less total writes, but this should work,
@@ -246,7 +263,10 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 	constexpr int calibrationSamples = 300;
 
 	// Blink calibrating led before user should rotate the sensor
-	m_Logger.info("Gently rotate the device while it's gathering magnetometer data");
+	m_Logger.info(
+		Logs::CalibrationInstructions,
+		"Gently rotate the device while it's gathering magnetometer data"
+	);
 	ledManager.pattern(15, 300, 3000 / 310);
 	MagnetoCalibration* magneto = new MagnetoCalibration();
 	for (int i = 0; i < calibrationSamples; i++) {
@@ -258,20 +278,24 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 		ledManager.off();
 		delay(250);
 	}
-	m_Logger.debug("Calculating calibration data...");
+	m_Logger.debug(Logs::CalibrationInstructions, "Calculating calibration data...");
 
 	float M_BAinv[4][3];
 	magneto->current_calibration(M_BAinv);
 	delete magneto;
 
-	m_Logger.debug("[INFO] Magnetometer calibration matrix:");
-	m_Logger.debug("{");
+	m_Logger.debug(
+		Logs::CalibrationInstructions,
+		"[INFO] Magnetometer calibration matrix:"
+	);
+	m_Logger.debug(Logs::CalibrationInstructions, "{");
 	for (int i = 0; i < 3; i++) {
 		m_Config.M_B[i] = M_BAinv[0][i];
 		m_Config.M_Ainv[0][i] = M_BAinv[1][i];
 		m_Config.M_Ainv[1][i] = M_BAinv[2][i];
 		m_Config.M_Ainv[2][i] = M_BAinv[3][i];
 		m_Logger.debug(
+			Logs::CalibrationInstructions,
 			"  %f, %f, %f, %f",
 			M_BAinv[0][i],
 			M_BAinv[1][i],
@@ -279,11 +303,14 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 			M_BAinv[3][i]
 		);
 	}
-	m_Logger.debug("}");
+	m_Logger.debug(Logs::CalibrationInstructions, "}");
 
 #else
 
-	m_Logger.debug("Gathering raw data for device calibration...");
+	m_Logger.debug(
+		Logs::CalibrationInstructions,
+		"Gathering raw data for device calibration..."
+	);
 	constexpr int calibrationSamples = 300;
 	// Reset values
 	Gxyz[0] = 0;
@@ -291,7 +318,10 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 	Gxyz[2] = 0;
 
 	// Wait for sensor to calm down before calibration
-	m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
+	m_Logger.info(
+		Logs::CalibrationInstructions,
+		"Put down the device and wait for baseline gyro reading calibration"
+	);
 	delay(2000);
 
 	union fifo_sample_raw buf;
@@ -313,7 +343,13 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 	Gxyz[2] /= calibrationSamples;
 
 #ifdef DEBUG_SENSOR
-	m_Logger.trace("Gyro calibration results: %f %f %f", Gxyz[0], Gxyz[1], Gxyz[2]);
+	m_Logger.trace(
+		Logs::CalibrationInstructions,
+		"Gyro calibration results: %f %f %f",
+		Gxyz[0],
+		Gxyz[1],
+		Gxyz[2]
+	);
 #endif
 
 	// TODO: use offset registers?
@@ -323,6 +359,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 
 	// Blink calibrating led before user should rotate the sensor
 	m_Logger.info(
+		Logs::CalibrationInstructions,
 		"Gently rotate the device while it's gathering accelerometer and magnetometer "
 		"data"
 	);
@@ -344,7 +381,7 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 		ledManager.off();
 		delay(250);
 	}
-	m_Logger.debug("Calculating calibration data...");
+	m_Logger.debug(Logs::CalibrationInstructions, "Calculating calibration data...");
 
 	float A_BAinv[4][3];
 	magneto_acc->current_calibration(A_BAinv);
@@ -354,15 +391,19 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 	magneto_mag->current_calibration(M_BAinv);
 	delete magneto_mag;
 
-	m_Logger.debug("Finished Calculate Calibration data");
-	m_Logger.debug("Accelerometer calibration matrix:");
-	m_Logger.debug("{");
+	m_Logger.debug(
+		Logs::CalibrationInstructions,
+		"Finished Calculate Calibration data"
+	);
+	m_Logger.debug(Logs::CalibrationInstructions, "Accelerometer calibration matrix:");
+	m_Logger.debug(Logs::CalibrationInstructions, "{");
 	for (int i = 0; i < 3; i++) {
 		m_Config.A_B[i] = A_BAinv[0][i];
 		m_Config.A_Ainv[0][i] = A_BAinv[1][i];
 		m_Config.A_Ainv[1][i] = A_BAinv[2][i];
 		m_Config.A_Ainv[2][i] = A_BAinv[3][i];
 		m_Logger.debug(
+			Logs::CalibrationInstructions,
 			"  %f, %f, %f, %f",
 			A_BAinv[0][i],
 			A_BAinv[1][i],
@@ -370,15 +411,19 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 			A_BAinv[3][i]
 		);
 	}
-	m_Logger.debug("}");
-	m_Logger.debug("[INFO] Magnetometer calibration matrix:");
-	m_Logger.debug("{");
+	m_Logger.debug(Logs::CalibrationInstructions, "}");
+	m_Logger.debug(
+		Logs::CalibrationInstructions,
+		"[INFO] Magnetometer calibration matrix:"
+	);
+	m_Logger.debug(Logs::CalibrationInstructions, "{");
 	for (int i = 0; i < 3; i++) {
 		m_Config.M_B[i] = M_BAinv[0][i];
 		m_Config.M_Ainv[0][i] = M_BAinv[1][i];
 		m_Config.M_Ainv[1][i] = M_BAinv[2][i];
 		m_Config.M_Ainv[2][i] = M_BAinv[3][i];
 		m_Logger.debug(
+			Logs::CalibrationInstructions,
 			"  %f, %f, %f, %f",
 			M_BAinv[0][i],
 			M_BAinv[1][i],
@@ -386,10 +431,10 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 			M_BAinv[3][i]
 		);
 	}
-	m_Logger.debug("}");
+	m_Logger.debug(Logs::CalibrationInstructions, "}");
 #endif
 
-	m_Logger.debug("Saving the calibration data");
+	m_Logger.debug(Logs::SavingCalibration, "Saving the calibration data");
 
 	SlimeVR::Configuration::SensorConfig config;
 	config.type = SlimeVR::Configuration::SensorConfigType::MPU9250;
@@ -398,9 +443,9 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 	configuration.save();
 
 	ledManager.off();
-	m_Logger.debug("Saved the calibration data");
+	m_Logger.debug(Logs::SavedCalibration, "Saved the calibration data");
 
-	m_Logger.info("Calibration data gathered");
+	m_Logger.info(Logs::SavedCalibration, "Calibration data gathered");
 	// fifo will certainly have overflown due to magnetometer calibration, reset it.
 	imu.resetFIFO();
 }

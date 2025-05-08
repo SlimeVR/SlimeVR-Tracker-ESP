@@ -24,6 +24,7 @@
 #pragma once
 
 #include "icm45base.h"
+#include "sensors/sensor.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -47,8 +48,8 @@ struct ICM45686 : public ICM45Base {
 		.restThAcc = 0.196f,
 	};
 
-	ICM45686(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
-		: ICM45Base{registerInterface, logger} {}
+	explicit ICM45686(RegisterInterface& registerInterface, Logging::Logger<Sensor::Logs>&)
+		: ICM45Base{registerInterface} {}
 
 	struct Regs {
 		struct WhoAmI {

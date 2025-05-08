@@ -41,6 +41,7 @@ void TimeTakenMeasurer::after() {
 						 / static_cast<float>(sinceLastReportMillis) * 100;
 
 	m_Logger.info(
+		Logs::TimeTaken,
 		"%s: %.2f%% of the last period taken (%.2f/%lld millis)",
 		name,
 		usedPercentage,

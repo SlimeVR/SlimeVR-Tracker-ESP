@@ -50,7 +50,7 @@ bool Connection::beginPacket() {
 		// This *technically* should *never* fail, since the underlying UDP
 		// library just returns 1.
 
-		m_Logger.warn("UDP beginPacket() failed");
+		m_Logger.warn(Logs::BeginPacketFailed, "UDP beginPacket() failed");
 	}
 
 	return r > 0;
@@ -533,12 +533,18 @@ void Connection::searchForServer() {
 
 #ifdef DEBUG_NETWORK
 		m_Logger.trace(
+			Logs::DebugReceived,
 			"Received %d bytes from %s, port %d",
 			packetSize,
 			m_UDP.remoteIP().toString().c_str(),
 			m_UDP.remotePort()
 		);
-		m_Logger.traceArray("UDP packet contents: ", m_Packet, len);
+		m_Logger.traceArray(
+			Logs::DebugPacketContents,
+			"UDP packet contents: ",
+			m_Packet,
+			len
+		);
 #endif
 
 		// Handshake is different, it has 3 in the first byte, not the 4th, and data
@@ -546,7 +552,10 @@ void Connection::searchForServer() {
 		if (static_cast<ReceivePacketType>(m_Packet[0])
 			== ReceivePacketType::Handshake) {
 			if (strncmp((char*)m_Packet + 1, "Hey OVR =D 5", 12) != 0) {
-				m_Logger.error("Received invalid handshake packet");
+				m_Logger.error(
+					Logs::InvalidHandshake,
+					"Received invalid handshake packet"
+				);
 				continue;
 			}
 
@@ -562,6 +571,7 @@ void Connection::searchForServer() {
 			ledManager.off();
 
 			m_Logger.debug(
+				Logs::HandshakeSuccessful,
 				"Handshake successful, server is %s:%d",
 				m_UDP.remoteIP().toString().c_str(),
 				m_UDP.remotePort()
@@ -576,7 +586,10 @@ void Connection::searchForServer() {
 	// This makes the LED blink for 20ms every second
 	if (m_LastConnectionAttemptTimestamp + 1000 < now) {
 		m_LastConnectionAttemptTimestamp = now;
-		m_Logger.info("Searching for the server on the local network...");
+		m_Logger.info(
+			Logs::SearchingServer,
+			"Searching for the server on the local network..."
+		);
 		Connection::sendTrackerDiscovery();
 		ledManager.on();
 	} else if (m_LastConnectionAttemptTimestamp + 20 < now) {
@@ -632,7 +645,7 @@ void Connection::update() {
 			m_AckedSensorCalibration + MAX_SENSORS_COUNT,
 			false
 		);
-		m_Logger.warn("Connection to server timed out");
+		m_Logger.warn(Logs::ConnectionTimedOut, "Connection to server timed out");
 
 		return;
 	}
@@ -647,12 +660,14 @@ void Connection::update() {
 
 #ifdef DEBUG_NETWORK
 	m_Logger.trace(
+		Logs::DebugReceived,
 		"Received %d bytes from %s, port %d",
 		packetSize,
 		m_UDP.remoteIP().toString().c_str(),
 		m_UDP.remotePort()
 	);
-	m_Logger.traceArray("UDP packet contents: ", m_Packet, len);
+	m_Logger
+		.traceArray(Logs::DebugPacketContents, "UDP packet contents: ", m_Packet, len);
 #else
 	(void)packetSize;
 #endif
@@ -667,7 +682,10 @@ void Connection::update() {
 
 		case ReceivePacketType::Handshake:
 			// Assume handshake successful
-			m_Logger.warn("Handshake received again, ignoring");
+			m_Logger.warn(
+				Logs::HandshakeReceivedAgain,
+				"Handshake received again, ignoring"
+			);
 			break;
 
 		case ReceivePacketType::Command:
@@ -682,7 +700,7 @@ void Connection::update() {
 
 		case ReceivePacketType::SensorInfo: {
 			if (len < 6) {
-				m_Logger.warn("Wrong sensor info packet");
+				m_Logger.warn(Logs::WrongSensorInfoPacket, "Wrong sensor info packet");
 				break;
 			}
 
@@ -709,7 +727,10 @@ void Connection::update() {
 		case ReceivePacketType::FeatureFlags: {
 			// Packet type (4) + Packet number (8) + flags (len - 12)
 			if (len < 13) {
-				m_Logger.warn("Invalid feature flags packet: too short");
+				m_Logger.warn(
+					Logs::InvalidFeatureFlagsPacket,
+					"Invalid feature flags packet: too short"
+				);
 				break;
 			}
 
@@ -721,7 +742,10 @@ void Connection::update() {
 			if (!hadFlags) {
 #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
 				if (m_ServerFeatures.has(ServerFeatures::PROTOCOL_BUNDLE_SUPPORT)) {
-					m_Logger.debug("Server supports packet bundling");
+					m_Logger.debug(
+						Logs::PacketBundlingSupported,
+						"Server supports packet bundling"
+					);
 				}
 #endif
 			}
@@ -733,7 +757,10 @@ void Connection::update() {
 			// Packet type (4) + Packet number (8) + sensor_id(1) + flag_id (2) + state
 			// (1)
 			if (len < 16) {
-				m_Logger.warn("Invalid sensor config flag packet: too short");
+				m_Logger.warn(
+					Logs::SensorConfigFlagShort,
+					"Invalid sensor config flag packet: too short"
+				);
 				break;
 			}
 
@@ -751,7 +778,9 @@ void Connection::update() {
 				auto& sensors = sensorManager.getSensors();
 
 				if (sensorId >= sensors.size()) {
-					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id"
+					m_Logger.warn(
+						Logs::SensorConfigFlagInvalidId,
+						"Invalid sensor config flag packet: invalid sensor id"
 					);
 					break;
 				}

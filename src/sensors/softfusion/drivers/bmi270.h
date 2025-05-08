@@ -31,6 +31,7 @@
 
 #include "../../../sensorinterface/RegisterInterface.h"
 #include "bmi270fw.h"
+#include "sensors/sensor.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -69,9 +70,12 @@ struct BMI270 {
 	};
 
 	RegisterInterface& m_RegisterInterface;
-	SlimeVR::Logging::Logger& m_Logger;
+	SlimeVR::Logging::Logger<Sensor::Logs>& m_Logger;
 	int8_t m_zxFactor;
-	BMI270(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+	BMI270(
+		RegisterInterface& registerInterface,
+		SlimeVR::Logging::Logger<Sensor::Logs>& logger
+	)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger)
 		, m_zxFactor(0) {}
@@ -358,7 +362,10 @@ struct BMI270 {
 
 		while (m_RegisterInterface.readReg(Regs::GyrCrtConf::reg)
 			   == Regs::GyrCrtConf::valueRunning) {
-			m_Logger.info("CRT running. Do not move tracker!");
+			m_Logger.info(
+				Sensor::Logs::CalibrationInstructions,
+				"CRT running. Do not move tracker!"
+			);
 			delay(200);
 		}
 
@@ -377,11 +384,15 @@ struct BMI270 {
 
 		if (status != 0) {
 			m_Logger.error(
+				Sensor::Logs::CRTFailed,
 				"CRT failed with status 0x%x. Recalibrate again to enable CRT.",
 				status
 			);
 			if (status == 0x03) {
-				m_Logger.error("Reason: tracker was moved during CRT!");
+				m_Logger.error(
+					Sensor::Logs::CRTFailed,
+					"Reason: tracker was moved during CRT!"
+				);
 			}
 
 			success = false;
@@ -390,6 +401,7 @@ struct BMI270 {
 			m_RegisterInterface
 				.readBytes(Regs::GyrUserGain, crt_values.size(), crt_values.data());
 			m_Logger.debug(
+				Sensor::Logs::CRTFinished,
 				"CRT finished successfully, result 0x%x, 0x%x, 0x%x",
 				crt_values[0],
 				crt_values[1],

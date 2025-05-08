@@ -34,8 +34,25 @@ uint8_t wifiState = SLIME_WIFI_NOT_SETUP;
 bool hadWifi = false;
 unsigned long last_rssi_sample = 0;
 
+enum class WiFiLogs {
+	SettingUp = 0,
+	LoadedCredentials = 1,
+	CantGetConfig = 2,
+	Status = 3,
+	Connected = 4,
+	ConnectionLost = 5,
+	CantConnectSaved = 6,
+	RetryingSavedG = 7,
+	SkippingSavedG = 8,
+	CantConnectSavedG = 9,
+	TryingHardcoded = 10,
+	CantConnectHardcoded = 11,
+	TryingHardcodedG = 12,
+	CantConnectFromAny = 13,
+};
+
 // TODO: Cleanup with proper classes
-SlimeVR::Logging::Logger wifiHandlerLogger("WiFiHandler");
+SlimeVR::Logging::Logger<WiFiLogs> wifiHandlerLogger("WiFiHandler", "wifi");
 
 void reportWifiError() {
 	if (lastWifiReportTime + 1000 < millis()) {
@@ -68,7 +85,7 @@ void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
 IPAddress WiFiNetwork::getAddress() { return WiFi.localIP(); }
 
 void WiFiNetwork::setUp() {
-	wifiHandlerLogger.info("Setting up WiFi");
+	wifiHandlerLogger.info(WiFiLogs::SettingUp, "Setting up WiFi");
 	WiFi.persistent(true);
 	WiFi.mode(WIFI_STA);
 #if ESP8266
@@ -79,6 +96,7 @@ void WiFiNetwork::setUp() {
 #endif
 	WiFi.hostname("SlimeVR FBT Tracker");
 	wifiHandlerLogger.info(
+		WiFiLogs::LoadedCredentials,
 		"Loaded credentials for SSID '%s' and pass length %d",
 		WiFi.SSID().c_str(),
 		WiFi.psk().length()
@@ -87,7 +105,7 @@ void WiFiNetwork::setUp() {
 	wl_status_t status = WiFi.begin(
 	);  // Should connect to last used access point, see
 		// https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/station-class.html#begin
-	wifiHandlerLogger.debug("Status: %d", status);
+	wifiHandlerLogger.debug(WiFiLogs::Status, "Status: %d", status);
 	wifiState = SLIME_WIFI_SAVED_ATTEMPT;
 	wifiConnectionTimeout = millis();
 
@@ -115,7 +133,10 @@ void WiFiNetwork::setUp() {
 		esp_wifi_set_config(WIFI_IF_STA, &conf);
 		WiFi.setSleep(WIFI_PS_MAX_MODEM);
 	} else {
-		wifiHandlerLogger.error("Unable to get WiFi config, power saving not enabled!");
+		wifiHandlerLogger.error(
+			WiFiLogs::CantGetConfig,
+			"Unable to get WiFi config, power saving not enabled!"
+		);
 	}
 #endif
 #endif
@@ -127,6 +148,7 @@ void onConnected() {
 	isWifiConnected = true;
 	hadWifi = true;
 	wifiHandlerLogger.info(
+		WiFiLogs::Connected,
 		"Connected successfully to SSID '%s', IP address %s",
 		WiFi.SSID().c_str(),
 		WiFi.localIP().toString().c_str()
@@ -139,7 +161,10 @@ void WiFiNetwork::upkeep() {
 	upkeepProvisioning();
 	if (WiFi.status() != WL_CONNECTED) {
 		if (isWifiConnected) {
-			wifiHandlerLogger.warn("Connection to WiFi lost, reconnecting...");
+			wifiHandlerLogger.warn(
+				WiFiLogs::ConnectionLost,
+				"Connection to WiFi lost, reconnecting..."
+			);
 			isWifiConnected = false;
 		}
 		statusManager.setStatus(SlimeVR::Status::WIFI_CONNECTING, true);
@@ -163,14 +188,17 @@ void WiFiNetwork::upkeep() {
 						WiFi.begin();
 						wifiConnectionTimeout = millis();
 						wifiHandlerLogger.error(
+							WiFiLogs::CantConnectSaved,
 							"Can't connect from saved credentials, status: %d.",
 							WiFi.status()
 						);
 						wifiHandlerLogger.debug(
+							WiFiLogs::RetryingSavedG,
 							"Trying saved credentials with PHY Mode G..."
 						);
 					} else {
 						wifiHandlerLogger.debug(
+							WiFiLogs::SkippingSavedG,
 							"Skipping PHY Mode G attempt on 0-length SSID..."
 						);
 					}
@@ -191,10 +219,14 @@ void WiFiNetwork::upkeep() {
 					WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
 					wifiConnectionTimeout = millis();
 					wifiHandlerLogger.error(
+						WiFiLogs::CantConnectSavedG,
 						"Can't connect from saved credentials, status: %d.",
 						WiFi.status()
 					);
-					wifiHandlerLogger.debug("Trying hardcoded credentials...");
+					wifiHandlerLogger.debug(
+						WiFiLogs::TryingHardcoded,
+						"Trying hardcoded credentials..."
+					);
 #endif
 					wifiState = SLIME_WIFI_HARDCODE_ATTEMPT;
 					return;
@@ -211,10 +243,12 @@ void WiFiNetwork::upkeep() {
 					WiFi.begin(WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
 					wifiConnectionTimeout = millis();
 					wifiHandlerLogger.error(
+						WiFiLogs::CantConnectHardcoded,
 						"Can't connect from saved credentials, status: %d.",
 						WiFi.status()
 					);
 					wifiHandlerLogger.debug(
+						WiFiLogs::TryingHardcodedG,
 						"Trying hardcoded credentials with WiFi PHY Mode G..."
 					);
 #endif
@@ -250,6 +284,7 @@ void WiFiNetwork::upkeep() {
 						&& wifiConnectionTimeout + 11000 < millis()) {
 						if (WiFi.status() != WL_IDLE_STATUS) {
 							wifiHandlerLogger.error(
+								WiFiLogs::CantConnectFromAny,
 								"Can't connect from any credentials, status: %d.",
 								WiFi.status()
 							);
