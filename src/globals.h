@@ -31,6 +31,10 @@
 #include "defines_bmi160.h"
 #include "defines_sensitivity.h"
 
+// clang-format off
+#include "board_default.h"
+// clang-format on
+
 #ifndef SECOND_IMU
 #define SECOND_IMU IMU
 #endif

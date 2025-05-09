@@ -52,9 +52,6 @@
 #endif
 
 #if BATTERY_MONITOR == BAT_EXTERNAL
-#ifndef PIN_BATTERY_LEVEL
-#error Internal ADC enabled without pin! Please select a pin.
-#endif
 // Wemos D1 Mini has an internal Voltage Divider with R1=100K and R2=220K > this
 // means, 3.3V analogRead input voltage results in 1023.0 Wemos D1 Mini with Wemos
 // Battery Shield v1.2.0 or higher: Battery Shield with J2 closed, has an additional
