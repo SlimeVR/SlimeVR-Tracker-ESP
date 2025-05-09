@@ -249,5 +249,3 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 // #define BATTERY_SHIELD_R2 40.2
 
 // ------------------------------
-
-#include "board_default.h"
