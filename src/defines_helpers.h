@@ -18,8 +18,8 @@
 #define INT(pin)
 #endif
 
-#ifndef PIN_IMU_INT2
-#define INT2(pin) constexpr uint8_t PIN_IMU_INT2 = pin;
+#ifndef PIN_IMU_INT_2
+#define INT2(pin) constexpr uint8_t PIN_IMU_INT_2 = pin;
 #else
 #define INT2(pin)
 #endif
