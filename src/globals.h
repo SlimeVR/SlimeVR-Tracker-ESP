@@ -29,6 +29,10 @@
 #include "debug.h"
 #include "defines.h"
 
+// clang-format off
+#include "board_default.h"
+// clang-format on
+
 #ifndef SECOND_IMU
 #define SECOND_IMU IMU
 #endif
