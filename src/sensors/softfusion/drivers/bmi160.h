@@ -187,7 +187,7 @@ struct BMI160 {
 		GyroCall&& processGyroSample,
 		TempCall&& processTempSample
 	) {
-		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoLength);
+		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoLength) & 0x7FF;
 
 		const auto bytes_to_read = std::min(
 			static_cast<size_t>(read_buffer.size()),
