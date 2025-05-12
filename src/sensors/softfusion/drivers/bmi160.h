@@ -54,9 +54,11 @@ struct BMI160 {
 	static constexpr float GyroSensitivity = 32.768f;
 	static constexpr float AccelSensitivity = 8192.0f;
 
-	static constexpr float TemperatureZROChange = 2.0f; // wow maybe BMI270 isn't that bad actually
+	static constexpr float TemperatureZROChange
+		= 2.0f;  // wow maybe BMI270 isn't that bad actually
 
-	static constexpr VQFParams SensorVQFParams{ // need to be refined, this IMU sucks
+	static constexpr VQFParams SensorVQFParams{
+		// need to be refined, this IMU sucks
 		.motionBiasEstEnabled = true,
 		.biasSigmaInit = 0.5f,
 		.biasClip = 2.0f,
@@ -82,38 +84,39 @@ struct BMI160 {
 			static constexpr uint8_t reg = 0x7E;
 			static constexpr uint8_t valueSoftReset = 0xB6;
 			static constexpr uint8_t valueFifoFlush = 0xB0;
-            static constexpr uint8_t valueAccPowerNormal = 0x11;
-            static constexpr uint8_t valueGyrPowerNormal = 0x15;
+			static constexpr uint8_t valueAccPowerNormal = 0x11;
+			static constexpr uint8_t valueGyrPowerNormal = 0x15;
 		};
-        
-        struct AccelConf {
-            static constexpr uint8_t reg = 0x40;
-            static constexpr uint8_t value = 0b0101000; // 100Hz, filter mode normal
-        };
 
-        struct AccelRange {
-            static constexpr uint8_t reg = 0x41;
-            static constexpr uint8_t value = 0b0101; // 4G range
-        };
+		struct AccelConf {
+			static constexpr uint8_t reg = 0x40;
+			static constexpr uint8_t value = 0b0101000;  // 100Hz, filter mode normal
+		};
 
-        struct GyrConf {
-            static constexpr uint8_t reg = 0x42;
-            static constexpr uint8_t value = 0b0101010; // 400Hz, filter mode normal
-        };
+		struct AccelRange {
+			static constexpr uint8_t reg = 0x41;
+			static constexpr uint8_t value = 0b0101;  // 4G range
+		};
 
-        struct GyrRange {
-            static constexpr uint8_t reg = 0x43;
-            static constexpr uint8_t value = 0b001; // 1000 DPS range
-        };
+		struct GyrConf {
+			static constexpr uint8_t reg = 0x42;
+			static constexpr uint8_t value = 0b0101010;  // 400Hz, filter mode normal
+		};
 
-        struct FifoConfig {
-            static constexpr uint8_t reg = 0x47;
-            static constexpr uint8_t value = 0b11010000; // Gyro and accel data in FIFO, enable FIFO header
-        };
+		struct GyrRange {
+			static constexpr uint8_t reg = 0x43;
+			static constexpr uint8_t value = 0b001;  // 1000 DPS range
+		};
 
-			static constexpr uint8_t FifoLength = 0x22;
-			static constexpr uint8_t FifoData = 0x24;
-            static constexpr uint8_t ErrReg = 0x02;
+		struct FifoConfig {
+			static constexpr uint8_t reg = 0x47;
+			static constexpr uint8_t value
+				= 0b11010000;  // Gyro and accel data in FIFO, enable FIFO header
+		};
+
+		static constexpr uint8_t FifoLength = 0x22;
+		static constexpr uint8_t FifoData = 0x24;
+		static constexpr uint8_t ErrReg = 0x02;
 	};
 
 	struct Fifo {
@@ -127,30 +130,34 @@ struct BMI160 {
 
 	bool initialize() {
 		m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueSoftReset);
-        delay(12);
-        m_RegisterInterface.writeReg(Regs::AccelConf::reg, Regs::AccelConf::value);
-        delay(1);
-        m_RegisterInterface.writeReg(Regs::AccelRange::reg, Regs::AccelRange::value);
-        delay(1);
-        m_RegisterInterface.writeReg(Regs::GyrConf::reg, Regs::GyrConf::value);
-        delay(1);
-        m_RegisterInterface.writeReg(Regs::GyrRange::reg, Regs::GyrRange::value);
-        delay(1);
-        m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueAccPowerNormal);
-        delay(10);
-        m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueGyrPowerNormal);
-        delay(100);
-        m_RegisterInterface.writeReg(Regs::FifoConfig::reg, Regs::FifoConfig::value);
-        delay(4);
-        m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueFifoFlush);
-        delay(2); // delay values ripped straight from old BMI160 driver, could maybe be lower?
+		delay(12);
+		m_RegisterInterface.writeReg(Regs::AccelConf::reg, Regs::AccelConf::value);
+		delay(1);
+		m_RegisterInterface.writeReg(Regs::AccelRange::reg, Regs::AccelRange::value);
+		delay(1);
+		m_RegisterInterface.writeReg(Regs::GyrConf::reg, Regs::GyrConf::value);
+		delay(1);
+		m_RegisterInterface.writeReg(Regs::GyrRange::reg, Regs::GyrRange::value);
+		delay(1);
+		m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueAccPowerNormal);
+		delay(10);
+		m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueGyrPowerNormal);
+		delay(100);
+		m_RegisterInterface.writeReg(Regs::FifoConfig::reg, Regs::FifoConfig::value);
+		delay(4);
+		m_RegisterInterface.writeReg(Regs::Cmd::reg, Regs::Cmd::valueFifoFlush);
+		delay(2);  // delay values ripped straight from old BMI160 driver, could maybe
+				   // be lower?
 
-        if (m_RegisterInterface.readReg(Regs::ErrReg) != 0) {
-            m_Logger.error("BMI160 error: 0x%x", m_RegisterInterface.readReg(Regs::ErrReg));
-            return false;
-        } else {
-            return true;
-        }
+		if (m_RegisterInterface.readReg(Regs::ErrReg) != 0) {
+			m_Logger.error(
+				"BMI160 error: 0x%x",
+				m_RegisterInterface.readReg(Regs::ErrReg)
+			);
+			return false;
+		} else {
+			return true;
+		}
 	}
 
 	float getDirectTemp() const {
@@ -164,8 +171,10 @@ struct BMI160 {
 	using FifoBuffer = std::array<uint8_t, RegisterInterface::MaxTransactionLength>;
 	FifoBuffer read_buffer;
 
-	template <typename T> // sorry tailsy I ripped all of this from BMI270 driver because I don't even want to try and understand the FIFO format
-	inline T getFromFifo(uint32_t& position, FifoBuffer& fifo) {
+	template <typename T>  // sorry tailsy I ripped all of this from BMI270 driver
+						   // because I don't even want to try and understand the FIFO
+						   // format
+						   inline T getFromFifo(uint32_t& position, FifoBuffer& fifo) {
 		T to_ret;
 		std::memcpy(&to_ret, &fifo[position], sizeof(T));
 		position += sizeof(T);
