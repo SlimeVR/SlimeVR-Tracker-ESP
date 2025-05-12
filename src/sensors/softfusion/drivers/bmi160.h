@@ -174,7 +174,7 @@ struct BMI160 {
 	template <typename T>  // sorry tailsy I ripped all of this from BMI270 driver
 						   // because I don't even want to try and understand the FIFO
 						   // format
-						   inline T getFromFifo(uint32_t& position, FifoBuffer& fifo) {
+	inline T getFromFifo(uint32_t& position, FifoBuffer& fifo) {
 		T to_ret;
 		std::memcpy(&to_ret, &fifo[position], sizeof(T));
 		position += sizeof(T);
