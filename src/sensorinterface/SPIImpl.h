@@ -28,6 +28,7 @@
 #include <cstdint>
 
 #include "../logging/Logger.h"
+#include "DirectSPIInterface.h"
 #include "RegisterInterface.h"
 
 #define ICM_READ_FLAG 0x80
@@ -35,10 +36,10 @@
 namespace SlimeVR::Sensors {
 
 struct SPIImpl : public RegisterInterface {
-	SPIImpl(SPIClass& spiClass, SPISettings spiSettings, PinInterface* csPin)
-		: m_spiClass(spiClass)
-		, m_spiSettings(spiSettings)
+	SPIImpl(DirectSPIInterface* spi, PinInterface* csPin)
+		: m_spi(spi)
 		, m_csPin(csPin) {
+		auto& spiSettings = spi->getSpiSettings();
 		m_Logger.info(
 			"SPI settings: clock: %d, bit order: 0x%02X, data mode: 0x%02X",
 			spiSettings._clock,
@@ -47,83 +48,69 @@ struct SPIImpl : public RegisterInterface {
 		);
 		csPin->pinMode(OUTPUT);
 		csPin->digitalWrite(HIGH);
-		spiClass.begin();
 	}
 
 	uint8_t readReg(uint8_t regAddr) const override {
-		m_spiClass.beginTransaction(m_spiSettings);
-		m_csPin->digitalWrite(LOW);
+		m_spi->beginTransaction(m_csPin);
 
-		m_spiClass.transfer(regAddr | ICM_READ_FLAG);
-		uint8_t buffer = m_spiClass.transfer(0);
+		m_spi->transfer(regAddr | ICM_READ_FLAG);
+		uint8_t buffer = m_spi->transfer(0);
 
-		m_csPin->digitalWrite(HIGH);
-		m_spiClass.endTransaction();
+		m_spi->endTransaction(m_csPin);
 
 		return buffer;
 	}
 
 	uint16_t readReg16(uint8_t regAddr) const override {
-		m_spiClass.beginTransaction(m_spiSettings);
-		m_csPin->digitalWrite(LOW);
+		m_spi->beginTransaction(m_csPin);
 
-		m_spiClass.transfer(regAddr | ICM_READ_FLAG);
-		uint8_t b1 = m_spiClass.transfer(0);
-		uint8_t b2 = m_spiClass.transfer(0);
+		m_spi->transfer(regAddr | ICM_READ_FLAG);
+		uint8_t b1 = m_spi->transfer(0);
+		uint8_t b2 = m_spi->transfer(0);
 
-		m_csPin->digitalWrite(HIGH);
-		m_spiClass.endTransaction();
+		m_spi->endTransaction(m_csPin);
 		return b2 << 8 | b1;
 	}
 
 	void writeReg(uint8_t regAddr, uint8_t value) const override {
-		m_spiClass.beginTransaction(m_spiSettings);
-		m_csPin->digitalWrite(LOW);
+		m_spi->beginTransaction(m_csPin);
 
-		m_spiClass.transfer(regAddr);
-		m_spiClass.transfer(value);
+		m_spi->transfer(regAddr);
+		m_spi->transfer(value);
 
-		m_csPin->digitalWrite(HIGH);
-		m_spiClass.endTransaction();
+		m_spi->endTransaction(m_csPin);
 	}
 
 	void writeReg16(uint8_t regAddr, uint16_t value) const override {
-		m_spiClass.beginTransaction(m_spiSettings);
-		m_csPin->digitalWrite(LOW);
+		m_spi->beginTransaction(m_csPin);
 
-		m_spiClass.transfer(regAddr);
-		m_spiClass.transfer(value & 0xFF);
-		m_spiClass.transfer(value >> 8);
+		m_spi->transfer(regAddr);
+		m_spi->transfer(value & 0xFF);
+		m_spi->transfer(value >> 8);
 
-		m_csPin->digitalWrite(HIGH);
-		m_spiClass.endTransaction();
+		m_spi->endTransaction(m_csPin);
 	}
 
 	void readBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const override {
-		m_spiClass.beginTransaction(m_spiSettings);
-		m_csPin->digitalWrite(LOW);
-		;
+		m_spi->beginTransaction(m_csPin);
 
-		m_spiClass.transfer(regAddr | ICM_READ_FLAG);
+		m_spi->transfer(regAddr | ICM_READ_FLAG);
 		for (uint8_t i = 0; i < size; ++i) {
-			buffer[i] = m_spiClass.transfer(0);
+			buffer[i] = m_spi->transfer(0);
 		}
 
-		m_csPin->digitalWrite(HIGH);
-		m_spiClass.endTransaction();
+		m_spi->endTransaction(m_csPin);
 	}
 
 	void writeBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const override {
-		m_spiClass.beginTransaction(m_spiSettings);
-		m_csPin->digitalWrite(LOW);
+		m_spi->beginTransaction(m_csPin);
 
-		m_spiClass.transfer(regAddr);
+		m_spi->transfer(regAddr);
 		for (uint8_t i = 0; i < size; ++i) {
-			m_spiClass.transfer(buffer[i]);
+			m_spi->transfer(buffer[i]);
 		}
 
-		m_csPin->digitalWrite(HIGH);
-		m_spiClass.endTransaction();
+		m_spi->endTransaction(m_csPin);
 	}
 
 	bool hasSensorOnBus() override {
@@ -135,8 +122,7 @@ struct SPIImpl : public RegisterInterface {
 	std::string toString() const override { return std::string("SPI"); }
 
 private:
-	SPIClass& m_spiClass;
-	SPISettings m_spiSettings;
+	DirectSPIInterface* m_spi;
 	PinInterface* m_csPin;
 	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("SPI");
 };

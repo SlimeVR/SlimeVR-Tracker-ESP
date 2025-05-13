@@ -151,6 +151,26 @@ class SoftFusionSensor : public Sensor {
 		m_fusion.updateMag(scaledData, timeDelta);
 	}
 
+	void eatSamplesForSeconds(const uint32_t seconds) {
+		const auto targetDelay = millis() + 1000 * seconds;
+		auto lastSecondsRemaining = seconds;
+		while (millis() < targetDelay) {
+#ifdef ESP8266
+			ESP.wdtFeed();
+#endif
+			auto currentSecondsRemaining = (targetDelay - millis()) / 1000;
+			if (currentSecondsRemaining != lastSecondsRemaining) {
+				m_Logger.info("%ld...", currentSecondsRemaining + 1);
+				lastSecondsRemaining = currentSecondsRemaining;
+			}
+			m_sensor.bulkRead(
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
+				[](const int16_t xyz, const sensor_real_t timeDelta) {}
+			);
+		}
+	}
+
 public:
 	static constexpr auto TypeID = SensorType::Type;
 	static constexpr uint8_t Address = SensorType::Address;
@@ -386,7 +406,7 @@ public:
 
 	std::optional<SoftFusion::MagDriver> magDriver;
 
-	static bool checkPresent(uint8_t sensorID, const RegisterInterface& imuInterface) {
+	static bool checkPresent(const RegisterInterface& imuInterface) {
 		I2Cdev::readTimeout = 100;
 		auto value = imuInterface.readReg(SensorType::Regs::WhoAmI::reg);
 		I2Cdev::readTimeout = I2CDEV_DEFAULT_READ_TIMEOUT;
@@ -394,16 +414,6 @@ public:
 			return true;
 		}
 		return false;
-	}
-
-	static bool checkPresent(uint8_t sensorID, uint8_t imuAddress) {
-		uint8_t address = imuAddress > 0 ? imuAddress : Address + sensorID;
-		// Ask twice, because we're nice like this
-		if (!I2CSCAN::hasDevOnBus(address) && !I2CSCAN::hasDevOnBus(address)) {
-			return false;
-		}
-		const I2CImpl& i2c = I2CImpl(address);
-		return checkPresent(sensorID, i2c);
 	}
 };
 

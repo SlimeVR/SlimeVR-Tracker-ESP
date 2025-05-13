@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,43 +20,35 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef I2C_PCA_INTERFACE_H
-#define I2C_PCA_INTERFACE_H
 
-#include "I2CWireSensorInterface.h"
+#include "DirectSPIInterface.h"
+
+#include <Arduino.h>
+#include <PinInterface.h>
 
 namespace SlimeVR {
-/**
- * I2C Sensor interface for use with PCA9547 (8-channel I2C-buss multiplexer)
- * or PCA9546A (4-channel I2C-bus multiplexer) or analogs
- */
-class I2CPCASensorInterface : public SensorInterface {
-public:
-	I2CPCASensorInterface(
-		uint8_t sclpin,
-		uint8_t sdapin,
-		uint8_t address,
-		uint8_t channel
-	)
-		: m_Wire(sclpin, sdapin)
-		, m_Address(address)
-		, m_Channel(channel){};
-	~I2CPCASensorInterface(){};
 
-	bool init() override final;
-	void swapIn() override final;
+DirectSPIInterface::DirectSPIInterface(SPIClass& spiClass, SPISettings spiSettings)
+	: m_spiClass{spiClass}
+	, m_spiSettings{spiSettings} {}
 
-	[[nodiscard]] std::string toString() const final {
-		using namespace std::string_literals;
-		return "PCAWire("s + std::to_string(m_Channel) + ")";
-	}
+bool DirectSPIInterface::init() {
+	m_spiClass.begin();
+	return true;
+}
 
-protected:
-	I2CWireSensorInterface m_Wire;
-	uint8_t m_Address;
-	uint8_t m_Channel;
-};
+void DirectSPIInterface::swapIn() {}
+
+void DirectSPIInterface::beginTransaction(PinInterface* csPin) {
+	m_spiClass.beginTransaction(m_spiSettings);
+	csPin->digitalWrite(LOW);
+}
+
+void DirectSPIInterface::endTransaction(PinInterface* csPin) {
+	csPin->digitalWrite(HIGH);
+	m_spiClass.endTransaction();
+}
+
+const SPISettings& DirectSPIInterface::getSpiSettings() { return m_spiSettings; }
 
 }  // namespace SlimeVR
-
-#endif

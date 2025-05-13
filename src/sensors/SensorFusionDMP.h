@@ -4,8 +4,7 @@
 #include "SensorFusion.h"
 #include "dmpmag.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 class SensorFusionDMP {
 public:
 	void updateQuaternion(sensor_real_t nqwxyz[4]);
@@ -41,7 +40,6 @@ protected:
 	sensor_real_t linAccel_guard;  // Temporary patch for some weird ESP32 bug
 #endif
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors
 
 #endif  // SLIMEVR_SENSORFUSIONDMP_H

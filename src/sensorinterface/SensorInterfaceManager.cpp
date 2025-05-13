@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,43 +20,27 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef I2C_PCA_INTERFACE_H
-#define I2C_PCA_INTERFACE_H
 
-#include "I2CWireSensorInterface.h"
+#include "SensorInterfaceManager.h"
 
-namespace SlimeVR {
-/**
- * I2C Sensor interface for use with PCA9547 (8-channel I2C-buss multiplexer)
- * or PCA9546A (4-channel I2C-bus multiplexer) or analogs
- */
-class I2CPCASensorInterface : public SensorInterface {
-public:
-	I2CPCASensorInterface(
-		uint8_t sclpin,
-		uint8_t sdapin,
-		uint8_t address,
-		uint8_t channel
-	)
-		: m_Wire(sclpin, sdapin)
-		, m_Address(address)
-		, m_Channel(channel){};
-	~I2CPCASensorInterface(){};
+template <typename T>
+bool byteCompare(const T& lhs, const T& rhs) {
+	const auto* lhsBytes = reinterpret_cast<const uint8_t*>(&lhs);
+	const auto* rhsBytes = reinterpret_cast<const uint8_t*>(&rhs);
 
-	bool init() override final;
-	void swapIn() override final;
-
-	[[nodiscard]] std::string toString() const final {
-		using namespace std::string_literals;
-		return "PCAWire("s + std::to_string(m_Channel) + ")";
+	for (size_t i = 0; i < sizeof(T); i++) {
+		if (lhsBytes[i] < rhsBytes[i]) {
+			return true;
+		}
 	}
 
-protected:
-	I2CWireSensorInterface m_Wire;
-	uint8_t m_Address;
-	uint8_t m_Channel;
-};
+	return false;
+}
 
-}  // namespace SlimeVR
+bool operator<(const SPISettings& lhs, const SPISettings& rhs) {
+	return byteCompare(lhs, rhs);
+}
 
-#endif
+bool operator<(const SPIClass& lhs, const SPIClass& rhs) {
+	return byteCompare(lhs, rhs);
+}
