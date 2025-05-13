@@ -23,5 +23,9 @@
 
 #include "defines_helpers.h"
 
+#ifndef LED_BUILTIN
+#define LED_BUILTIN LED_OFF
+#endif
+
 extern const uint8_t __attribute__((weak)) LED_PIN = LED_BUILTIN;
 extern const bool __attribute__((weak)) LED_INVERTED = true;
