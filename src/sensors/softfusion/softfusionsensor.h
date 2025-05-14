@@ -48,8 +48,6 @@ namespace SlimeVR::Sensors {
 
 template <typename SensorType, template <typename IMU> typename Calibrator>
 class SoftFusionSensor : public Sensor {
-	using Self = SoftFusionSensor<SensorType, Calibrator>;
-
 	using Consts = IMUConsts<SensorType>;
 	using RawSensorT = typename Consts::RawSensorT;
 
@@ -62,14 +60,8 @@ class SoftFusionSensor : public Sensor {
 	bool detected() const {
 		const auto value
 			= m_sensor.m_RegisterInterface.readReg(SensorType::Regs::WhoAmI::reg);
-		if (SensorType::Regs::WhoAmI::value != value) {
-			m_Logger.error(
-				"Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
-				SensorType::Regs::WhoAmI::reg,
-				SensorType::Regs::WhoAmI::value,
-				value
-			);
-			return false;
+		if (SensorType::Regs::WhoAmI::value == value) {
+			return true;
 		}
 
 		return true;
@@ -149,26 +141,6 @@ class SoftFusionSensor : public Sensor {
 		float scaledData[3];
 		magDriver->scaleMagSample(rawData, scaledData);
 		m_fusion.updateMag(scaledData, timeDelta);
-	}
-
-	void eatSamplesForSeconds(const uint32_t seconds) {
-		const auto targetDelay = millis() + 1000 * seconds;
-		auto lastSecondsRemaining = seconds;
-		while (millis() < targetDelay) {
-#ifdef ESP8266
-			ESP.wdtFeed();
-#endif
-			auto currentSecondsRemaining = (targetDelay - millis()) / 1000;
-			if (currentSecondsRemaining != lastSecondsRemaining) {
-				m_Logger.info("%ld...", currentSecondsRemaining + 1);
-				lastSecondsRemaining = currentSecondsRemaining;
-			}
-			m_sensor.bulkRead(
-				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const RawSensorT xyz[3], const sensor_real_t timeDelta) {},
-				[](const int16_t xyz, const sensor_real_t timeDelta) {}
-			);
-		}
 	}
 
 public:
