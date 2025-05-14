@@ -28,24 +28,24 @@
 
 namespace SlimeVR {
 void LEDManager::setup() {
-#if ENABLE_LEDS
-	pinMode(m_Pin, OUTPUT);
-#endif
+	if (m_Enabled) {
+		pinMode(m_Pin, OUTPUT);
+	}
 
 	// Do the initial pull of the state
 	update();
 }
 
 void LEDManager::on() {
-#if ENABLE_LEDS
-	digitalWrite(m_Pin, LED__ON);
-#endif
+	if (m_Enabled) {
+		digitalWrite(m_Pin, m_On);
+	}
 }
 
 void LEDManager::off() {
-#if ENABLE_LEDS
-	digitalWrite(m_Pin, LED__OFF);
-#endif
+	if (m_Enabled) {
+		digitalWrite(m_Pin, m_Off);
+	}
 }
 
 void LEDManager::blink(unsigned long time) {
