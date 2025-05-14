@@ -30,7 +30,6 @@
 #include "EmptySensor.h"
 #include "ErroneousSensor.h"
 #include "SensorManager.h"
-#include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
 #include "globals.h"
@@ -47,6 +46,7 @@
 #include "sensorinterface/SPIImpl.h"
 #include "sensorinterface/SensorInterfaceManager.h"
 #include "sensorinterface/i2cimpl.h"
+#include "softfusion/drivers/bmi160.h"
 #include "softfusion/drivers/bmi270.h"
 #include "softfusion/drivers/icm42688.h"
 #include "softfusion/drivers/icm45605.h"
@@ -92,6 +92,7 @@ using SoftFusionICM45686
 	= SoftFusionSensor<SoftFusion::Drivers::ICM45686, SFCALIBRATOR>;
 using SoftFusionICM45605
 	= SoftFusionSensor<SoftFusion::Drivers::ICM45605, SFCALIBRATOR>;
+using SoftFusionBMI160 = SoftFusionSensor<SoftFusion::Drivers::BMI160, SFCALIBRATOR>;
 class SensorAuto {};
 
 struct SensorBuilder {
