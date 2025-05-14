@@ -46,8 +46,6 @@ namespace SlimeVR::Sensors {
 
 template <typename SensorType, template <typename IMU> typename Calibrator>
 class SoftFusionSensor : public Sensor {
-	using Self = SoftFusionSensor<SensorType, Calibrator>;
-
 	using Consts = IMUConsts<SensorType>;
 	using RawSensorT = typename Consts::RawSensorT;
 
