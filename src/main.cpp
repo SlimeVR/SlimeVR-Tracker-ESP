@@ -37,7 +37,7 @@
 Timer<> globalTimer;
 SlimeVR::Logging::Logger logger("SlimeVR");
 SlimeVR::Sensors::SensorManager sensorManager;
-SlimeVR::LEDManager ledManager(LED_PIN);
+SlimeVR::LEDManager ledManager;
 SlimeVR::Status::StatusManager statusManager;
 SlimeVR::Configuration::Configuration configuration;
 SlimeVR::Network::Manager networkManager;
