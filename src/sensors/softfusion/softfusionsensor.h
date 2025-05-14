@@ -60,14 +60,8 @@ class SoftFusionSensor : public Sensor {
 	bool detected() const {
 		const auto value
 			= m_sensor.m_RegisterInterface.readReg(SensorType::Regs::WhoAmI::reg);
-		if (SensorType::Regs::WhoAmI::value != value) {
-			m_Logger.error(
-				"Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
-				SensorType::Regs::WhoAmI::reg,
-				SensorType::Regs::WhoAmI::value,
-				value
-			);
-			return false;
+		if (SensorType::Regs::WhoAmI::value == value) {
+			return true;
 		}
 
 		m_Logger.error(
