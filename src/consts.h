@@ -58,7 +58,7 @@ enum class SensorTypeID : uint8_t {
 #define IMU_BNO055 BNO055Sensor
 #define IMU_MPU6050 MPU6050Sensor
 #define IMU_BNO086 BNO086Sensor
-#define IMU_BMI160 BMI160Sensor
+#define IMU_BMI160 SoftFusionBMI160
 #define IMU_ICM20948 ICM20948Sensor
 #define IMU_ICM42688 SoftFusionICM42688
 #define IMU_BMI270 SoftFusionBMI270
