@@ -30,7 +30,6 @@
 #include "EmptySensor.h"
 #include "ErroneousSensor.h"
 #include "SensorManager.h"
-#include "bmi160sensor.h"
 #include "bno055sensor.h"
 #include "bno080sensor.h"
 #include "globals.h"
@@ -47,6 +46,7 @@
 #include "sensorinterface/SPIImpl.h"
 #include "sensorinterface/SensorInterfaceManager.h"
 #include "sensorinterface/i2cimpl.h"
+#include "softfusion/drivers/bmi160.h"
 #include "softfusion/drivers/bmi270.h"
 #include "softfusion/drivers/icm42688.h"
 #include "softfusion/drivers/icm45605.h"
@@ -92,6 +92,7 @@ using SoftFusionICM45686
 	= SoftFusionSensor<SoftFusion::Drivers::ICM45686, SFCALIBRATOR>;
 using SoftFusionICM45605
 	= SoftFusionSensor<SoftFusion::Drivers::ICM45605, SFCALIBRATOR>;
+using SoftFusionBMI160 = SoftFusionSensor<SoftFusion::Drivers::BMI160, SFCALIBRATOR>;
 class SensorAuto {};
 
 struct SensorBuilder {
@@ -158,10 +159,10 @@ public:
 						address=%s, rotation=%f,\n\
 						interface=%s, int=%s, extraParam=%d, optional=%d",
 			sensorID,
-			imuInterface.toString(),
+			imuInterface.toString().c_str(),
 			rotation,
-			sensorInterface,
-			intPin,
+			sensorInterface->toString().c_str(),
+			intPin->toString().c_str(),
 			extraParam,
 			optional
 		);
@@ -178,14 +179,14 @@ public:
 				m_Manager->m_Logger.error(
 					"Mandatory sensor %d not found at address %s",
 					sensorID + 1,
-					imuInterface.toString()
+					imuInterface.toString().c_str()
 				);
 				return std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
 			} else {
 				m_Manager->m_Logger.debug(
 					"Optional sensor %d not found at address %s",
 					sensorID + 1,
-					imuInterface.toString()
+					imuInterface.toString().c_str()
 				);
 				return std::make_unique<EmptySensor>(sensorID);
 			}
@@ -194,7 +195,7 @@ public:
 		m_Manager->m_Logger.trace(
 			"Sensor %d found at address %s",
 			sensorID + 1,
-			imuInterface.toString()
+			imuInterface.toString().c_str()
 		);
 
 		sensor = std::make_unique<ImuType>(

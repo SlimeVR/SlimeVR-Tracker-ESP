@@ -49,6 +49,12 @@ public:
 	void swapIn() override final { swapI2C(_sclPin, _sdaPin); }
 	void disconnect() { disconnectI2C(); }
 
+	[[nodiscard]] std::string toString() const final {
+		using namespace std::string_literals;
+		return "Wire("s + std::to_string(_sclPin) + ": " + std::to_string(_sdaPin)
+			 + ")"s;
+	}
+
 protected:
 	uint8_t _sdaPin;
 	uint8_t _sclPin;
