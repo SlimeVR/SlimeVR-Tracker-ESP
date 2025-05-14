@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,38 +20,14 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMEVR_GLOBALS_H_
-#define SLIMEVR_GLOBALS_H_
 
-#include <Arduino.h>
+#include "defines_helpers.h"
 
 #include "consts.h"
-#include "debug.h"
-#include "defines.h"
 
-// clang-format off
-#include "board_default.h"
-// clang-format on
-
-#ifndef SECOND_IMU
-#define SECOND_IMU IMU
+#ifndef LED_BUILTIN
+#define LED_BUILTIN LED_OFF
 #endif
 
-#ifndef SECOND_IMU_ROTATION
-#define SECOND_IMU_ROTATION IMU_ROTATION
-#endif
-
-#ifndef BATTERY_MONITOR
-#define BATTERY_MONITOR BAT_INTERNAL
-#endif
-
-#ifndef SENSOR_INFO_LIST
-#define SENSOR_INFO_LIST
-#endif
-
-// Experimental features
-#ifndef EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION
-#define EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION true
-#endif
-
-#endif  // SLIMEVR_GLOBALS_H_
+extern const uint8_t __attribute__((weak)) LED_PIN = LED_BUILTIN;
+extern const bool __attribute__((weak)) LED_INVERTED = true;
