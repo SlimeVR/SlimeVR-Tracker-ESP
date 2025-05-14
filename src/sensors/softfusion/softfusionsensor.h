@@ -78,6 +78,7 @@ class SoftFusionSensor : public Sensor {
 			= m_sensor.m_RegisterInterface.readReg(SensorType::Regs::WhoAmI::reg);
 		if (SensorType::Regs::WhoAmI::value != value) {
 			m_Logger.error(
+				Logs::SensorNotDetected,
 				"Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
 				SensorType::Regs::WhoAmI::reg,
 				SensorType::Regs::WhoAmI::value,
@@ -164,7 +165,11 @@ class SoftFusionSensor : public Sensor {
 #endif
 			auto currentSecondsRemaining = (targetDelay - millis()) / 1000;
 			if (currentSecondsRemaining != lastSecondsRemaining) {
-				m_Logger.info("%ld...", currentSecondsRemaining + 1);
+				m_Logger.info(
+					Logs::SecondsRemaining,
+					"%ld...",
+					currentSecondsRemaining + 1
+				);
 				lastSecondsRemaining = currentSecondsRemaining;
 			}
 			m_sensor.bulkRead(
@@ -242,6 +247,7 @@ public:
 		working = false;
 		m_status = SensorStatus::SENSOR_ERROR;
 		m_Logger.error(
+			Logs::SensorTimeout,
 			"Sensor timeout I2C Address 0x%02x delaytime: %d ms",
 			addr,
 			now - m_lastRotationUpdateMillis
@@ -341,16 +347,18 @@ public:
 			calibrator.assignCalibration(sensorCalibration);
 		} else if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::NONE) {
 			m_Logger.warn(
+				Logs::NoCalibrationData,
 				"No calibration data found for sensor %d, ignoring...",
 				sensorId
 			);
-			m_Logger.info("Calibration is advised");
+			m_Logger.info(Logs::NoCalibrationData, "Calibration is advised");
 		} else {
 			m_Logger.warn(
+				Logs::IncompatibleCalibrationData,
 				"Incompatible calibration data found for sensor %d, ignoring...",
 				sensorId
 			);
-			m_Logger.info("Please recalibrate");
+			m_Logger.info(Logs::IncompatibleCalibrationData, "Please recalibrate");
 		}
 
 		calibrator.begin();
@@ -370,7 +378,7 @@ public:
 		}
 
 		if (!initResult) {
-			m_Logger.error("Sensor failed to initialize!");
+			m_Logger.error(Logs::FailedToInitialize, "Sensor failed to initialize!");
 			m_status = SensorStatus::SENSOR_ERROR;
 			return;
 		}
@@ -383,21 +391,31 @@ public:
 				AScale * static_cast<sensor_real_t>(std::get<0>(lastRawSample)[2])
 			);
 			m_Logger.info(
+				Logs::CalibrationInstructions,
 				"Gravity read: %.1f (need < -7.5 to start calibration)",
 				gravity
 			);
 			if (gravity < -7.5f) {
 				ledManager.on();
-				m_Logger.info("Flip front in 5 seconds to start calibration");
+				m_Logger.info(
+					Logs::CalibrationInstructions,
+					"Flip front in 5 seconds to start calibration"
+				);
 				lastRawSample = eatSamplesReturnLast(5000);
 				gravity = static_cast<sensor_real_t>(
 					AScale * static_cast<sensor_real_t>(std::get<0>(lastRawSample)[2])
 				);
 				if (gravity > 7.5f) {
-					m_Logger.debug("Starting calibration...");
+					m_Logger.debug(
+						Logs::CalibrationInstructions,
+						"Starting calibration..."
+					);
 					startCalibration(0);
 				} else {
-					m_Logger.info("Flip not detected. Skipping calibration.");
+					m_Logger.info(
+						Logs::CalibrationInstructions,
+						"Flip not detected. Skipping calibration."
+					);
 				}
 
 				ledManager.off();
@@ -426,7 +444,6 @@ public:
 		m_fusion,
 		m_sensor,
 		sensorId,
-		m_Logger,
 		getDefaultTempTs(),
 		AScale,
 		GScale,

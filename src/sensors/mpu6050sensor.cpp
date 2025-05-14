@@ -45,6 +45,7 @@ void MPU6050Sensor::motionSetup() {
 	imu.initialize(addr);
 	if (!imu.testConnection()) {
 		m_Logger.fatal(
+			Logs::SensorNotDetected,
 			"Can't connect to %s (reported device ID 0x%02x) at address 0x%02x",
 			getIMUNameByType(sensorType),
 			imu.getDeviceID(),
@@ -54,6 +55,7 @@ void MPU6050Sensor::motionSetup() {
 	}
 
 	m_Logger.info(
+		Logs::SensorDetected,
 		"Connected to %s (reported device ID 0x%02x) at address 0x%02x",
 		getIMUNameByType(sensorType),
 		imu.getDeviceID(),
@@ -74,18 +76,23 @@ void MPU6050Sensor::motionSetup() {
 
 			case SlimeVR::Configuration::SensorConfigType::NONE:
 				m_Logger.warn(
+					Logs::NoCalibrationData,
 					"No calibration data found for sensor %d, ignoring...",
 					sensorId
 				);
-				m_Logger.info("Calibration is advised");
+				m_Logger.info(Logs::NoCalibrationData, "Calibration is advised");
 				break;
 
 			default:
 				m_Logger.warn(
+					Logs::IncompatibleCalibrationData,
 					"Incompatible calibration data found for sensor %d, ignoring...",
 					sensorId
 				);
-				m_Logger.info("Calibration is advised");
+				m_Logger.info(
+					Logs::IncompatibleCalibrationData,
+					"Calibration is advised"
+				);
 		}
 	}
 #endif
@@ -98,7 +105,10 @@ void MPU6050Sensor::motionSetup() {
 		// calibration
 #else  // IMU_MPU6050_RUNTIME_CALIBRATION
 
-		m_Logger.debug("Performing startup calibration of accel and gyro...");
+		m_Logger.debug(
+			Logs::CalibrationInstructions,
+			"Performing startup calibration of accel and gyro..."
+		);
 		// Do a quick and dirty calibration. As the imu warms up the offsets will change
 		// a bit, but this will be good-enough
 		delay(1000);  // A small sleep to give the users a chance to stop it from moving
@@ -111,14 +121,17 @@ void MPU6050Sensor::motionSetup() {
 		ledManager.pattern(50, 50, 5);
 
 		// turn on the DMP, now that it's ready
-		m_Logger.debug("Enabling DMP...");
+		m_Logger.debug(Logs::SensorInitialization, "Enabling DMP...");
 		imu.setDMPEnabled(true);
 
 		// TODO: Add interrupt support
 		// mpuIntStatus = imu.getIntStatus();
 
 		// set our DMP Ready flag so the main loop() function knows it's okay to use it
-		m_Logger.debug("DMP ready! Waiting for first interrupt...");
+		m_Logger.debug(
+			Logs::SensorInitialization,
+			"DMP ready! Waiting for first interrupt..."
+		);
 		dmpReady = true;
 
 		// get expected DMP packet size for later comparison
@@ -130,7 +143,11 @@ void MPU6050Sensor::motionSetup() {
 		// 1 = initial memory load failed
 		// 2 = DMP configuration updates failed
 		// (if it's going to break, usually the code will be 1)
-		m_Logger.error("DMP Initialization failed (code %d)", devStatus);
+		m_Logger.error(
+			Logs::FailedToInitialize,
+			"DMP Initialization failed (code %d)",
+			devStatus
+		);
 	}
 	m_tpsCounter.reset();
 	m_dataCounter.reset();
@@ -196,11 +213,15 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
 
 #ifdef IMU_MPU6050_RUNTIME_CALIBRATION
 	m_Logger.info(
+		Logs::CalibrationInstructions,
 		"MPU is using automatic runtime calibration. Place down the device and it "
 		"should automatically calibrate after a few seconds"
 	);
 #else  //! IMU_MPU6050_RUNTIME_CALIBRATION
-	m_Logger.info("Put down the device and wait for baseline gyro reading calibration");
+	m_Logger.info(
+		Logs::CalibrationInstructions,
+		"Put down the device and wait for baseline gyro reading calibration"
+	);
 	delay(2000);
 
 	imu.setDMPEnabled(false);
@@ -208,8 +229,8 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
 	imu.CalibrateAccel(6);
 	imu.setDMPEnabled(true);
 
-	m_Logger.debug("Gathered baseline gyro reading");
-	m_Logger.debug("Starting offset finder");
+	m_Logger.debug(Logs::CalibrationInstructions, "Gathered baseline gyro reading");
+	m_Logger.debug(Logs::CalibrationInstructions, "Starting offset finder");
 	switch (calibrationType) {
 		case CALIBRATION_TYPE_INTERNAL_ACCEL:
 			imu.CalibrateAccel(10);
@@ -231,7 +252,7 @@ void MPU6050Sensor::startCalibration(int calibrationType) {
 	configuration.setCalibration(sensorId, calibration);
 	configuration.save();
 
-	m_Logger.info("Calibration finished");
+	m_Logger.info(Logs::CalibrationInstructions, "Calibration finished");
 #endif  // !IMU_MPU6050_RUNTIME_CALIBRATION
 
 	ledManager.off();

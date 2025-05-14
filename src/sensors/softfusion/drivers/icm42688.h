@@ -27,6 +27,7 @@
 #include <array>
 #include <cstdint>
 
+#include "sensors/sensor.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -66,10 +67,11 @@ struct ICM42688 {
 	};
 
 	RegisterInterface& m_RegisterInterface;
-	SlimeVR::Logging::Logger& m_Logger;
-	ICM42688(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
-		: m_RegisterInterface(registerInterface)
-		, m_Logger(logger) {}
+	ICM42688(
+		RegisterInterface& registerInterface,
+		SlimeVR::Logging::Logger<Sensor::Logs>& logger
+	)
+		: m_RegisterInterface(registerInterface) {}
 
 	struct Regs {
 		struct WhoAmI {

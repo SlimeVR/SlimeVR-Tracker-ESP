@@ -154,6 +154,7 @@ public:
 		int extraParam = 0
 	) {
 		m_Manager->m_Logger.trace(
+			SensorManager::Logs::BuildingSensor,
 			"Building IMU with: id=%d,\n\
 						address=%s, rotation=%f,\n\
 						interface=%s, int=%s, extraParam=%d, optional=%d",
@@ -176,6 +177,7 @@ public:
 		if (!imuInterface.hasSensorOnBus()) {
 			if (!optional) {
 				m_Manager->m_Logger.error(
+					SensorManager::Logs::MandatoryNotFound,
 					"Mandatory sensor %d not found at address %s",
 					sensorID + 1,
 					imuInterface.toString().c_str()
@@ -183,6 +185,7 @@ public:
 				return std::make_unique<ErroneousSensor>(sensorID, ImuType::TypeID);
 			} else {
 				m_Manager->m_Logger.debug(
+					SensorManager::Logs::OptionalNotFound,
 					"Optional sensor %d not found at address %s",
 					sensorID + 1,
 					imuInterface.toString().c_str()
@@ -192,6 +195,7 @@ public:
 		}
 
 		m_Manager->m_Logger.trace(
+			SensorManager::Logs::SensorNotFound,
 			"Sensor %d found at address %s",
 			sensorID + 1,
 			imuInterface.toString().c_str()

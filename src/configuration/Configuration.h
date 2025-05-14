@@ -70,7 +70,29 @@ private:
 	std::vector<SensorConfig> m_Sensors;
 	std::vector<SensorToggleState> m_SensorToggles;
 
-	Logging::Logger m_Logger = Logging::Logger("Configuration");
+	enum class Logs {
+		CouldNotMountFS = 0,
+		CouldNotFormatFS = 1,
+		FoundConfigFile = 2,
+		ConfigOutdated = 3,
+		FailedToMigrateConfig = 4,
+		FoundUpToDate = 5,
+		NoConfigFile = 6,
+		LoadedConfig = 7,
+		SavingSensorConfig = 8,
+		SavingSensorToggle = 9,
+		SavedConfig = 10,
+		ResetConfig = 11,
+		FoundSensorCalibration = 12,
+		FoundSensorToggle = 13,
+		FoundIncompatibleTempCal = 14,
+		FoundSensorTempCal = 15,
+		SavingTempCal = 16,
+		SavedTempCal = 17,
+		ConfigInfo = 18,
+	};
+
+	Logging::Logger<Logs> m_Logger{"Configuration", "config"};
 };
 }  // namespace Configuration
 }  // namespace SlimeVR

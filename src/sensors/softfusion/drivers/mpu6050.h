@@ -30,6 +30,7 @@
 #include <cstdint>
 
 #include "../../../sensorinterface/RegisterInterface.h"
+#include "sensors/sensor.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -78,8 +79,8 @@ struct MPU6050 {
 	};
 
 	RegisterInterface& m_RegisterInterface;
-	SlimeVR::Logging::Logger& m_Logger;
-	MPU6050(RegisterInterface& i2c, SlimeVR::Logging::Logger& logger)
+	SlimeVR::Logging::Logger<Sensor::Logs>& m_Logger;
+	MPU6050(RegisterInterface& i2c, SlimeVR::Logging::Logger<Sensor::Logs>& logger)
 		: m_RegisterInterface(i2c)
 		, m_Logger(logger) {}
 
@@ -192,7 +193,7 @@ struct MPU6050 {
 		if (status & (1 << MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) {
 			// Overflows make it so we lose track of which packet is which
 			// This necessitates a reset
-			m_Logger.debug("Fifo overrun, resetting...");
+			m_Logger.debug(Sensor::Logs::FifoOverrun, "Fifo overrun, resetting...");
 			resetFIFO();
 			return;
 		}

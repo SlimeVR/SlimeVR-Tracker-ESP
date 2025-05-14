@@ -89,8 +89,6 @@ private:
 	unsigned long m_LastUpdate = millis();
 
 	uint8_t m_Pin;
-
-	Logging::Logger m_Logger = Logging::Logger("LEDManager");
 };
 }  // namespace SlimeVR
 

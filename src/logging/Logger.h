@@ -3,84 +3,130 @@
 
 #include <Arduino.h>
 
+#include <optional>
+#include <string>
+
 #include "Level.h"
 #include "debug.h"
 
-namespace SlimeVR {
-namespace Logging {
+namespace SlimeVR::Logging {
+
+template <typename IDType>
 class Logger {
 public:
-	Logger(const char* prefix)
+	explicit Logger(const char* prefix, const char* identifier)
 		: m_Prefix(prefix)
-		, m_Tag(nullptr){};
-	Logger(const char* prefix, const char* tag)
+		, m_Identifier(identifier){};
+	Logger(const char* prefix, const char* identifier, const char* tag)
 		: m_Prefix(prefix)
-		, m_Tag(nullptr) {
-		setTag(tag);
-	};
+		, m_Identifier(identifier)
+		, m_Tag(tag){};
 
-	~Logger() {
-		if (m_Tag != nullptr) {
-			free(m_Tag);
-		}
+	void setTag(const char* tag) { m_Tag = tag; }
+
+	void trace(IDType id, const char* format, ...) const
+		__attribute__((format(printf, 3, 4))) {
+		va_list args;
+		va_start(args, format);
+		log(id, TRACE, format, args);
+		va_end(args);
 	}
 
-	void setTag(const char* tag);
+	void debug(IDType id, const char* format, ...) const
+		__attribute__((format(printf, 3, 4))) {
+		va_list args;
+		va_start(args, format);
+		log(id, DEBUG, format, args);
+		va_end(args);
+	}
 
-	void trace(const char* str, ...) const __attribute__((format(printf, 2, 3)));
-	void debug(const char* str, ...) const __attribute__((format(printf, 2, 3)));
-	void info(const char* str, ...) const __attribute__((format(printf, 2, 3)));
-	void warn(const char* str, ...) const __attribute__((format(printf, 2, 3)));
-	void error(const char* str, ...) const __attribute__((format(printf, 2, 3)));
-	void fatal(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void info(IDType id, const char* format, ...) const
+		__attribute__((format(printf, 3, 4))) {
+		va_list args;
+		va_start(args, format);
+		log(id, INFO, format, args);
+		va_end(args);
+	}
 
-	template <typename T>
-	inline void traceArray(const char* str, const T* array, size_t size) const {
-		logArray(TRACE, str, array, size);
+	void warn(IDType id, const char* format, ...) const
+		__attribute__((format(printf, 3, 4))) {
+		va_list args;
+		va_start(args, format);
+		log(id, WARN, format, args);
+		va_end(args);
+	}
+
+	void error(IDType id, const char* format, ...) const
+		__attribute__((format(printf, 3, 4))) {
+		va_list args;
+		va_start(args, format);
+		log(id, ERROR, format, args);
+		va_end(args);
+	}
+
+	void fatal(IDType id, const char* format, ...) const
+		__attribute__((format(printf, 3, 4))) {
+		va_list args;
+		va_start(args, format);
+		log(id, FATAL, format, args);
+		va_end(args);
 	}
 
 	template <typename T>
-	inline void debugArray(const char* str, const T* array, size_t size) const {
-		logArray(DEBUG, str, array, size);
+	inline void traceArray(IDType id, const char* str, const T* array, size_t size)
+		const {
+		logArray(id, Level::TRACE, str, array, size);
 	}
 
 	template <typename T>
-	inline void infoArray(const char* str, const T* array, size_t size) const {
-		logArray(INFO, str, array, size);
+	inline void debugArray(IDType id, const char* str, const T* array, size_t size)
+		const {
+		logArray(id, DEBUG, str, array, size);
 	}
 
 	template <typename T>
-	inline void warnArray(const char* str, const T* array, size_t size) const {
-		logArray(WARN, str, array, size);
+	inline void infoArray(IDType id, const char* str, const T* array, size_t size)
+		const {
+		logArray(id, INFO, str, array, size);
 	}
 
 	template <typename T>
-	inline void errorArray(const char* str, const T* array, size_t size) const {
-		logArray(ERROR, str, array, size);
+	inline void warnArray(IDType id, const char* str, const T* array, size_t size)
+		const {
+		logArray(id, WARN, str, array, size);
 	}
 
 	template <typename T>
-	inline void fatalArray(const char* str, const T* array, size_t size) const {
-		logArray(FATAL, str, array, size);
+	inline void errorArray(IDType id, const char* str, const T* array, size_t size)
+		const {
+		logArray(id, ERROR, str, array, size);
+	}
+
+	template <typename T>
+	inline void fatalArray(IDType id, const char* str, const T* array, size_t size)
+		const {
+		logArray(id, FATAL, str, array, size);
 	}
 
 private:
-	void log(Level level, const char* str, va_list args) const;
-
-	template <typename T>
-	void logArray(Level level, const char* str, const T* array, size_t size) const {
+	void log(IDType id, Level level, const char* format, va_list args) const {
 		if (level < LOG_LEVEL) {
 			return;
 		}
 
-		char buf[strlen(m_Prefix) + (m_Tag == nullptr ? 0 : strlen(m_Tag)) + 2];
-		strcpy(buf, m_Prefix);
-		if (m_Tag != nullptr) {
-			strcat(buf, ":");
-			strcat(buf, m_Tag);
+		printPrefix(id, level);
+		vprintf(format, args);
+	}
+
+	template <typename T>
+	void logArray(IDType id, Level level, const char* str, const T* array, size_t size)
+		const {
+		if (level < LOG_LEVEL) {
+			return;
 		}
 
-		Serial.printf("[%-5s] [%s] %s", levelToString(level), buf, str);
+		printPrefix(id, level);
+		Serial.print(str);
 
 		for (size_t i = 0; i < size; i++) {
 			Serial.print(array[i]);
@@ -89,10 +135,26 @@ private:
 		Serial.println();
 	}
 
+	void printPrefix(IDType id, Level level) const {
+		Serial.printf(
+			"{%s-%d} [%-5s] [%s",
+			m_Identifier,
+			static_cast<uint32_t>(id),
+			levelToString(level),
+			m_Prefix
+		);
+
+		if (m_Tag) {
+			Serial.printf(":%s", m_Tag->c_str());
+		}
+
+		Serial.printf("] ");
+	}
+
 	const char* const m_Prefix;
-	char* m_Tag;
+	const char* const m_Identifier;
+	std::optional<std::string> m_Tag;
 };
-}  // namespace Logging
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Logging
 
 #endif

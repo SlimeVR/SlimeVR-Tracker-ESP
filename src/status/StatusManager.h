@@ -15,7 +15,11 @@ public:
 private:
 	uint32_t m_Status;
 
-	Logging::Logger m_Logger = Logging::Logger("StatusManager");
+	enum class Logs {
+		AddedStatus = 0,
+		RemovedStatus = 1,
+	};
+	Logging::Logger<Logs> m_Logger{"StatusManager", "status"};
 };
 }  // namespace Status
 }  // namespace SlimeVR

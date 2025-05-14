@@ -28,19 +28,20 @@
 #include <cstdint>
 
 #include "../../../sensorinterface/RegisterInterface.h"
+#include "sensors/sensor.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 struct LSM6DSOutputHandler {
 	LSM6DSOutputHandler(
 		RegisterInterface& registerInterface,
-		SlimeVR::Logging::Logger& logger
+		SlimeVR::Logging::Logger<Sensor::Logs>& logger
 	)
 		: m_RegisterInterface(registerInterface)
 		, m_Logger(logger) {}
 
 	RegisterInterface& m_RegisterInterface;
-	SlimeVR::Logging::Logger& m_Logger;
+	SlimeVR::Logging::Logger<Sensor::Logs>& m_Logger;
 
 #pragma pack(push, 1)
 	struct FifoEntryAligned {
@@ -71,6 +72,7 @@ struct LSM6DSOutputHandler {
 		if (fifo_status & FIFO_OVERRUN_LATCHED_MASK) {
 			// FIFO overrun is expected to happen during startup and calibration
 			m_Logger.error(
+				Sensor::Logs::FifoOverrun,
 				"FIFO OVERRUN! This occuring during normal usage is an issue."
 			);
 		}

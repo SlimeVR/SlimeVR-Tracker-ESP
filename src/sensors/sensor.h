@@ -65,7 +65,7 @@ public:
 		, sensorId(id)
 		, sensorType(type)
 		, sensorOffset({Quat(Vector3(0, 0, 1), rotation)})
-		, m_Logger(SlimeVR::Logging::Logger(sensorName)) {
+		, m_Logger(sensorName, "sensor") {
 		char buf[4];
 		sprintf(buf, "%u", id);
 		m_Logger.setTag(buf);
@@ -137,7 +137,36 @@ protected:
 
 	void markRestCalibrationComplete(bool completed = true);
 
-	mutable SlimeVR::Logging::Logger m_Logger;
+public:
+	enum class Logs {
+		DebugQuat = 0,
+		TempCalNotSupported = 1,
+		RestCalCompleted = 2,
+		SensorNotDetected = 3,
+		SecondsRemaining = 4,
+		SensorTimeout = 5,
+		NoCalibrationData = 6,
+		IncompatibleCalibrationData = 7,
+		FailedToInitialize = 8,
+		CalibrationInstructions = 9,
+		TempCalReset = 10,
+		CRTFailed = 11,
+		CRTFinished = 12,
+		SensorInitialized = 13,
+		FifoOverrun = 14,
+		DebugStatus = 15,
+		SensorInitialization = 16,
+		SavingCalibration = 17,
+		CalibrationState = 18,
+		SensorDetected = 19,
+		CustomSensitivityOffsetEnabled = 20,
+		TempCalState = 21,
+		SavedCalibration = 22,
+		SensorError = 23,
+	};
+
+protected:
+	mutable SlimeVR::Logging::Logger<Logs> m_Logger;
 
 private:
 	void printTemperatureCalibrationUnsupported();
