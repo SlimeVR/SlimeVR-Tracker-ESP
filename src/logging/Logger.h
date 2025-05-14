@@ -27,12 +27,12 @@ public:
 
 	void setTag(const char* tag);
 
-	void trace(const char* str, ...) const;
-	void debug(const char* str, ...) const;
-	void info(const char* str, ...) const;
-	void warn(const char* str, ...) const;
-	void error(const char* str, ...) const;
-	void fatal(const char* str, ...) const;
+	void trace(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void debug(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void info(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void warn(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void error(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void fatal(const char* str, ...) const __attribute__((format(printf, 2, 3)));
 
 	template <typename T>
 	inline void traceArray(const char* str, const T* array, size_t size) const {
