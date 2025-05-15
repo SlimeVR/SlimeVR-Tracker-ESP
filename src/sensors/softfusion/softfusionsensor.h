@@ -462,7 +462,7 @@ public:
 		I2Cdev::readTimeout = 100;
 		auto value = imuInterface.readReg(SensorType::Regs::WhoAmI::reg);
 		I2Cdev::readTimeout = I2CDEV_DEFAULT_READ_TIMEOUT;
-		if constexpr (requires { SensorType::Regs::WhoAmi::values.size(); }) {
+		if constexpr (requires { SensorType::Regs::WhoAmI::values.size(); }) {
 			for (auto possible : SensorType::Regs::WhoAmI::values) {
 				if (value == possible) {
 					return true;
