@@ -186,17 +186,21 @@ public:
 		SensorInterface* interface,
 		AccessInterface access
 	) {
-		if constexpr (std::is_convertible_v<AccessInterface, uint8_t>) {
-			return interfaceManager.i2cImpl().get(access);
-		} else if constexpr (std::is_convertible_v<AccessInterface, bool>) {
-			uint8_t addressIncrement = access ? 1 : 0;
-			return interfaceManager.i2cImpl().get(Sensor::Address + addressIncrement);
-		} else {
+		if constexpr (std::is_base_of_v<
+						  PinInterface,
+						  std::remove_pointer_t<AccessInterface>>) {
 			return interfaceManager.spiImpl().get(
 				static_cast<DirectSPIInterface*>(interface),
 				access
 			);
+		} else if constexpr (std::is_same_v<AccessInterface, bool>) {
+			uint8_t addressIncrement = access ? 1 : 0;
+			return interfaceManager.i2cImpl().get(Sensor::Address + addressIncrement);
+		} else if constexpr (std::is_integral_v<AccessInterface>) {
+			return interfaceManager.i2cImpl().get(access);
 		}
+
+		return &EmptyRegisterInterface::instance;
 	}
 
 	template <typename AccessInterface>
