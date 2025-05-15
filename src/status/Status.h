@@ -1,8 +1,7 @@
 #ifndef STATUS_STATUS_H
 #define STATUS_STATUS_H
 
-namespace SlimeVR {
-namespace Status {
+namespace SlimeVR::Status {
 enum Status {
 	LOADING = 1 << 0,
 	LOW_BATTERY = 1 << 1,
@@ -12,7 +11,6 @@ enum Status {
 };
 
 const char* statusToString(Status status);
-}  // namespace Status
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Status
 
 #endif

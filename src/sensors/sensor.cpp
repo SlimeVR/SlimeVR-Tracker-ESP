@@ -92,8 +92,6 @@ void Sensor::resetTemperatureCalibrationState() {
 };
 
 SlimeVR::Configuration::SensorConfigBits Sensor::getSensorConfigData() {
-	SlimeVR::Configuration::SensorConfig sensorConfig
-		= configuration.getSensor(sensorId);
 	return SlimeVR::Configuration::SensorConfigBits{
 		.magEnabled = toggles.getToggle(SensorToggles::MagEnabled),
 		.magSupported = isFlagSupported(SensorToggles::MagEnabled),
@@ -142,6 +140,8 @@ const char* getIMUNameByType(SensorTypeID imuType) {
 			return "ICM45686";
 		case SensorTypeID::ICM45605:
 			return "ICM45605";
+		case SensorTypeID::ADC_RESISTANCE:
+			return "ADC Resistance";
 		case SensorTypeID::Unknown:
 		case SensorTypeID::Empty:
 			return "UNKNOWN";

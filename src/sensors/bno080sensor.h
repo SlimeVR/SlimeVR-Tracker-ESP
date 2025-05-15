@@ -28,6 +28,7 @@
 #include <i2cscan.h>
 
 #include "sensor.h"
+#include "sensorinterface/RegisterInterface.h"
 
 #define FLAG_SENSOR_BNO0XX_MAG_ENABLED 1
 
@@ -65,27 +66,10 @@ public:
 	void sendTempIfNeeded();
 
 	static SensorTypeID checkPresent(
-		uint8_t sensorID,
-		SlimeVR::SensorInterface* sensorInterface,
-		PinInterface* intPin
+		SlimeVR::Sensors::RegisterInterface& registerInterface
 	) {
-		// Lazy check for if BNO is present, we only check if I2C has an address here
-		if (I2CSCAN::hasDevOnBus(Address + sensorID)) {
-			return SensorTypeID::BNO085;  // Assume it's 085, more precise diff will
-										  // require talking to it
-		}
-		return SensorTypeID::Unknown;
-	}
-
-	static SensorTypeID
-	checkPresent(uint8_t sensorID, uint8_t imuAddress, PinInterface* intPin) {
-		uint8_t address = imuAddress > 0 ? imuAddress : Address + sensorID;
-		// Lazy check for if BNO is present, we only check if I2C has an address here
-		if (I2CSCAN::hasDevOnBus(address)) {
-			return SensorTypeID::BNO085;  // Assume it's 085, more precise diff will
-										  // require talking to it
-		}
-		return SensorTypeID::Unknown;
+		// For BNO, just assume it's there if the sensorOnBus check succeeded
+		return SensorTypeID::BNO085;
 	}
 
 protected:

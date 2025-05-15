@@ -1,7 +1,6 @@
 #include "Logger.h"
 
-namespace SlimeVR {
-namespace Logging {
+namespace SlimeVR::Logging {
 void Logger::setTag(const char* tag) {
 	m_Tag = (char*)malloc(strlen(tag) + 1);
 	strcpy(m_Tag, tag);
@@ -66,5 +65,4 @@ void Logger::log(Level level, const char* format, va_list args) const {
 
 	Serial.printf("[%-5s] [%s] %s\n", levelToString(level), buf, buffer);
 }
-}  // namespace Logging
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Logging

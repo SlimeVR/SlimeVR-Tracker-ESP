@@ -25,8 +25,7 @@
 
 #include "GlobalVars.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 void ErroneousSensor::motionSetup() {
 	m_Logger.error(
 		"IMU of type %s failed to initialize",
@@ -37,5 +36,4 @@ void ErroneousSensor::motionSetup() {
 }
 
 SensorStatus ErroneousSensor::getSensorState() { return SensorStatus::SENSOR_ERROR; };
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors

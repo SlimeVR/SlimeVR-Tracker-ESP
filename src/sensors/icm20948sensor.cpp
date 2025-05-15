@@ -328,7 +328,7 @@ void ICM20948Sensor::checkSensorTimeout() {
 	if (lastData + 2000 < currenttime) {
 		working = false;
 		m_Logger.error(
-			"Sensor timeout I2C Address 0x%02x delaytime: %d ms",
+			"Sensor timeout I2C Address 0x%02x delaytime: %ld ms",
 			addr,
 			currenttime - lastData
 		);

@@ -1,7 +1,6 @@
 #include "SensorFusionRestDetect.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 #if !SENSOR_FUSION_WITH_RESTDETECT
 void SensorFusionRestDetect::updateAcc(
 	const sensor_real_t Axyz[3],
@@ -33,5 +32,4 @@ bool SensorFusionRestDetect::getRestDetected() {
 	return vqf.getRestDetected();
 #endif
 }
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors

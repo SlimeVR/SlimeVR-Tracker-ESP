@@ -24,8 +24,7 @@
 #pragma once
 #include <memory>
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 class ImuAddress {
 public:
 	ImuAddress(bool isPrimary)
@@ -49,5 +48,4 @@ public:
 		return imuDefaultAddress + 1;
 	}
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors

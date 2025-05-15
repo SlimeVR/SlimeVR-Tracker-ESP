@@ -28,8 +28,7 @@
 
 #include "consts.h"
 
-namespace SlimeVR {
-namespace Configuration {
+namespace SlimeVR::Configuration {
 struct BMI160SensorConfig {
 	// accelerometer offsets and correction matrix
 	float A_B[3];
@@ -196,7 +195,6 @@ struct SensorConfigBits {
 // If this fails, you forgot to do the above
 static_assert(sizeof(SensorConfigBits) == 2);
 
-}  // namespace Configuration
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Configuration
 
 #endif

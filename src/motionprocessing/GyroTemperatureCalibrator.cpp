@@ -227,7 +227,7 @@ bool GyroTemperatureCalibrator::loadConfig(float newSensitivity) {
 bool GyroTemperatureCalibrator::saveConfig() {
 	if (configuration.saveTemperatureCalibration(sensorId, config)) {
 		m_Logger.info(
-			"Saved temperature calibration config (%0.1f%) for sensorId:%i",
+			"Saved temperature calibration config (%0.1f%%) for sensorId:%i",
 			config.getCalibrationDonePercent(),
 			sensorId
 		);
