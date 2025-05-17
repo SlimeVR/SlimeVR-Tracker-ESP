@@ -148,17 +148,21 @@ struct ICM45Base {
 			BaseRegs::PwrMgmt0::reg,
 			BaseRegs::PwrMgmt0::value
 		);
+
+		read_buffer.resize(FullFifoEntrySize * MaxReadings);
+
 		delay(1);
 
 		return true;
 	}
 
-	// Allocate statically so that it does not take up stack space, which
-	// can result in stack overflow and panic
 	static constexpr size_t MaxReadings = 8;
-	std::array<uint8_t, FullFifoEntrySize * MaxReadings> read_buffer;
+	std::vector<uint8_t> read_buffer;
 
 	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
+		// Allocate statically so that it does not take up stack space, which
+		// can result in stack overflow and panic
+
 		constexpr int16_t InvalidReading = -32768;
 
 		size_t fifo_packets = m_RegisterInterface.readReg16(BaseRegs::FifoCount);
