@@ -53,7 +53,11 @@ public:
 			rotation,
 			sensorInterface
 		)
-		, m_IntPin(intPin){};
+		, m_IntPin(intPin) {
+		// TODO: Probably handle bno mag enabling-disabling more dynamically
+		toggles.onToggleChange([&](SensorToggles toggle, bool value) { motionSetup(); }
+		);
+	};
 	~BNO080Sensor(){};
 	void motionSetup() override final;
 	void postSetup() override { lastData = millis(); }

@@ -23,28 +23,39 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
-#include <functional>
-#include <vector>
+#include <type_traits>
 
-#include "../debug.h"
+#include "../../motionprocessing/types.h"
+#include "drivers/callbacks.h"
 
-enum class SensorToggles : uint16_t {
-	MagEnabled = 1,
-	CalibrationEnabled = 2,
-	TempGradientCalibrationEnabled = 3,
-};
+template <typename IMU>
+struct IMUConsts {
+	static constexpr bool Uses32BitSensorData
+		= requires(IMU& i, DriverCallbacks<int32_t> callbacks) {
+			  i.bulkRead(std::move(callbacks));
+		  };
 
-class SensorToggleState {
-public:
-	void setToggle(SensorToggles toggle, bool state);
-	[[nodiscard]] bool getToggle(SensorToggles toggle) const;
-	void onToggleChange(std::function<void(SensorToggles, bool)>&& callback);
+	static constexpr bool DirectTempReadOnly = requires(IMU& i) { i.getDirectTemp(); };
 
-private:
-	bool magEnabled = !USE_6_AXIS;
-	bool calibrationEnabled = true;
-	bool tempGradientCalibrationEnabled = true;
+	using RawSensorT =
+		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
+	using RawVectorT = std::array<RawSensorT, 3>;
 
-	std::vector<std::function<void(SensorToggles, bool)>> onToggleChangeCallbacks;
+	static constexpr float GScale
+		= ((32768. / IMU::GyroSensitivity) / 32768.) * (PI / 180.0);
+	static constexpr float AScale = CONST_EARTH_GRAVITY / IMU::AccelSensitivity;
+
+	static constexpr float DirectTempReadFreq = 15;
+	static constexpr float DirectTempReadTs = 1.0f / DirectTempReadFreq;
+	static constexpr sensor_real_t getDefaultTempTs() {
+		if constexpr (DirectTempReadOnly) {
+			return DirectTempReadTs;
+		} else {
+			return IMU::TempTs;
+		}
+	}
+
+	static constexpr bool SupportsMag = requires(IMU& i) { i.readAux(0); };
 };
