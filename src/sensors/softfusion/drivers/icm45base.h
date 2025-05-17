@@ -211,45 +211,43 @@ struct ICM45Base {
 			);
 		}
 
+		read_buffer.resize(FullFifoEntrySize * MaxReadings);
+
 		delay(1);
 
 		return true;
 	}
 
-	// Allocate statically so that it does not take up stack space, which
-	// can result in stack overflow and panic
 	static constexpr size_t MaxReadings = 8;
-	std::array<uint8_t, FullFifoEntrySize * MaxReadings> read_buffer;
+	// Allocate on heap so that it does not take up stack space, which can result in
+	// stack overflow and panic
+	std::vector<uint8_t> read_buffer;
 
 	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		constexpr int16_t InvalidReading = -32768;
 
 		size_t fifo_packets = m_RegisterInterface.readReg16(BaseRegs::FifoCount);
 
-		if (fifo_packets >= 1) {
-			//
-			// AN-000364
-			// 2.16 FIFO EMPTY EVENT IN STREAMING MODE CAN CORRUPT FIFO DATA
-			//
-			// Description: When in FIFO streaming mode, a FIFO empty event
-			// (caused by host reading the last byte of the last FIFO frame) can
-			// cause FIFO data corruption in the first FIFO frame that arrives
-			// after the FIFO empty condition. Once the issue is triggered, the
-			// FIFO state is compromised and cannot recover. FIFO must be set in
-			// bypass mode to flush out the wrong state
-			//
-			// When operating in FIFO streaming mode, if FIFO threshold
-			// interrupt is triggered with M number of FIFO frames accumulated
-			// in the FIFO buffer, the host should only read the first M-1
-			// number of FIFO frames. This prevents the FIFO empty event, that
-			// can cause FIFO data corruption, from happening.
-			//
-			--fifo_packets;
-		}
-
-		if (fifo_packets == 0) {
+		if (fifo_packets <= 1) {
 			return;
 		}
+
+		// AN-000364
+		// 2.16 FIFO EMPTY EVENT IN STREAMING MODE CAN CORRUPT FIFO DATA
+		//
+		// Description: When in FIFO streaming mode, a FIFO empty event
+		// (caused by host reading the last byte of the last FIFO frame) can
+		// cause FIFO data corruption in the first FIFO frame that arrives
+		// after the FIFO empty condition. Once the issue is triggered, the
+		// FIFO state is compromised and cannot recover. FIFO must be set in
+		// bypass mode to flush out the wrong state
+		//
+		// When operating in FIFO streaming mode, if FIFO threshold
+		// interrupt is triggered with M number of FIFO frames accumulated
+		// in the FIFO buffer, the host should only read the first M-1
+		// number of FIFO frames. This prevents the FIFO empty event, that
+		// can cause FIFO data corruption, from happening.
+		--fifo_packets;
 
 		fifo_packets = std::min(fifo_packets, MaxReadings);
 
