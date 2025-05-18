@@ -122,6 +122,10 @@ protected:
 	bool working = false;
 	bool hadData = false;
 	uint8_t calibrationAccuracy = 0;
+	/**
+	 * Apply sensor offset to align it with tracker's axises
+	 * (Y to top of the tracker, Z to front, X to left)
+	 */
 	Quat sensorOffset;
 
 	bool newFusedRotation = false;

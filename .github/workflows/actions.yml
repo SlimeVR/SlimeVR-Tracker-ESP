@@ -71,3 +71,4 @@ jobs:
           generate_release_notes: true
           files: |
             ./build/BOARD_SLIMEVR-firmware.bin
+            ./build/BOARD_SLIMEVR_V1_2-firmware.bin
