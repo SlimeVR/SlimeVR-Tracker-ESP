@@ -1,6 +1,8 @@
 #ifndef SLIMEVR_SENSORFUSIONDMP_H
 #define SLIMEVR_SENSORFUSIONDMP_H
 
+#include <helper_3dmath.h>
+
 #include "SensorFusion.h"
 #include "dmpmag.h"
 

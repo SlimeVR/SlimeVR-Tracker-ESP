@@ -23,9 +23,11 @@
 
 #include "RestCalibrationDetector.h"
 
+#include "sensors/SensorFusion.h"
+
 namespace SlimeVR::Sensors {
 
-bool RestCalibrationDetector::update(SensorFusionRestDetect& fusion) {
+bool RestCalibrationDetector::update(SensorFusion& fusion) {
 	if (state == CalibrationState::Done) {
 		return false;
 	}
