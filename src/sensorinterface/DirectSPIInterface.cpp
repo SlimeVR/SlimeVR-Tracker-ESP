@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,34 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORINTERFACE_H
-#define SENSORINTERFACE_H
+#include "DirectSPIInterface.h"
 
-#include <string>
+#include <Arduino.h>
+#include <PinInterface.h>
 
 namespace SlimeVR {
-class SensorInterface {
-public:
-	virtual bool init() = 0;
-	virtual void swapIn() = 0;
-	[[nodiscard]] virtual std::string toString() const;
-};
 
-class EmptySensorInterface : public SensorInterface {
-public:
-	EmptySensorInterface(){};
-	bool init() override final { return true; };
-	void swapIn() override final{};
-	[[nodiscard]] std::string toString() const final { return "None"; }
+DirectSPIInterface::DirectSPIInterface(SPIClass& spiClass, SPISettings spiSettings)
+	: m_spiClass{spiClass}
+	, m_spiSettings{spiSettings} {}
 
-	static EmptySensorInterface instance;
-};
+bool DirectSPIInterface::init() {
+	m_spiClass.begin();
+	return true;
+}
+
+void DirectSPIInterface::swapIn() {}
+
+void DirectSPIInterface::beginTransaction(PinInterface* csPin) {
+	m_spiClass.beginTransaction(m_spiSettings);
+	csPin->digitalWrite(LOW);
+}
+
+void DirectSPIInterface::endTransaction(PinInterface* csPin) {
+	csPin->digitalWrite(HIGH);
+	m_spiClass.endTransaction();
+}
+
+const SPISettings& DirectSPIInterface::getSpiSettings() { return m_spiSettings; }
+
 }  // namespace SlimeVR
-
-#endif  // SENSORINTERFACE_H

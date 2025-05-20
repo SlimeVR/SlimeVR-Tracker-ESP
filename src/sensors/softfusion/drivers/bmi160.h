@@ -76,7 +76,8 @@ struct BMI160 {
 	struct Regs {
 		struct WhoAmI {
 			static constexpr uint8_t reg = 0x00;
-			static constexpr uint8_t value = 0xD1;
+			static constexpr std::array<uint8_t, 2> values
+				= {0xD1, 0xD3};  // 0xD3 for rev3 (thanks bosch)
 		};
 		static constexpr uint8_t TempData = 0x20;
 
