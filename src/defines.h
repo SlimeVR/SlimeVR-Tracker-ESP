@@ -49,6 +49,11 @@
 #define SECONDARY_IMU_OPTIONAL true
 #endif
 
+// Set I2C address here or directly in IMU_DESC_ENTRY for each IMU used
+// If not set, default address is used based on the IMU and Sensor ID
+// #define PRIMARY_IMU_ADDRESS_ONE 0x4a
+// #define SECONDARY_IMU_ADDRESS_TWO 0x4b
+
 #ifndef BATTERY_MONITOR
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin,

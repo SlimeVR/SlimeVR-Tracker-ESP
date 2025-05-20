@@ -185,10 +185,6 @@ BATTERY_R2(40.2)
 #ifndef TRACKER_TYPE
 #define TRACKER_TYPE TrackerType::TRACKER_TYPE_SVR_ROTATION
 #endif
-// Set I2C address here or directly in IMU_DESC_ENTRY for each IMU used
-// If not set, default address is used based on the IMU and Sensor ID
-// #define PRIMARY_IMU_ADDRESS_ONE 0x4a
-// #define SECONDARY_IMU_ADDRESS_TWO 0x4b
 
 // Axis mapping example
 /*
@@ -245,7 +241,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 #endif
 #else
 
-// efaunlt definitions for the GLOVE
+// default definitions for the GLOVE
 #ifndef MAX_SENSORS_COUNT
 #define MAX_SENSORS_COUNT 10
 #endif
