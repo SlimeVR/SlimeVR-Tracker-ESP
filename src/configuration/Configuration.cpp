@@ -33,8 +33,7 @@
 #define DIR_TEMPERATURE_CALIBRATIONS "/tempcalibrations"
 #define DIR_TOGGLES "/toggles"
 
-namespace SlimeVR {
-namespace Configuration {
+namespace SlimeVR::Configuration {
 void Configuration::setup() {
 	if (m_Loaded) {
 		return;
@@ -442,5 +441,4 @@ void Configuration::print() {
 		}
 	}
 }
-}  // namespace Configuration
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Configuration

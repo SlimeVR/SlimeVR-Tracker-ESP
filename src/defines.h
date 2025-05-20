@@ -55,24 +55,24 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 
 #ifndef SENSOR_DESC_LIST
 #if BOARD == BOARD_SLIMEVR_V1_2
-#define SENSOR_DESC_LIST                                             \
-	SENSOR_DESC_ENTRY(                                               \
-		IMU,                                                         \
-		DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3, DIRECT_PIN(15)), \
-		IMU_ROTATION,                                                \
-		NO_WIRE,                                                     \
-		PRIMARY_IMU_OPTIONAL,                                        \
-		DIRECT_PIN(PIN_IMU_INT),                                     \
-		0                                                            \
-	)                                                                \
-	SENSOR_DESC_ENTRY(                                               \
-		SECOND_IMU,                                                  \
-		SECONDARY_IMU_ADDRESS_TWO,                                   \
-		SECOND_IMU_ROTATION,                                         \
-		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),                       \
-		SECONDARY_IMU_OPTIONAL,                                      \
-		DIRECT_PIN(PIN_IMU_INT_2),                                   \
-		0                                                            \
+#define SENSOR_DESC_LIST                             \
+	SENSOR_DESC_ENTRY(                               \
+		IMU,                                         \
+		DIRECT_PIN(15),                              \
+		IMU_ROTATION,                                \
+		DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3), \
+		PRIMARY_IMU_OPTIONAL,                        \
+		DIRECT_PIN(PIN_IMU_INT),                     \
+		0                                            \
+	)                                                \
+	SENSOR_DESC_ENTRY(                               \
+		SECOND_IMU,                                  \
+		SECONDARY_IMU_ADDRESS_TWO,                   \
+		SECOND_IMU_ROTATION,                         \
+		DIRECT_WIRE(PIN_IMU_SCL, PIN_IMU_SDA),       \
+		SECONDARY_IMU_OPTIONAL,                      \
+		DIRECT_PIN(PIN_IMU_INT_2),                   \
+		0                                            \
 	)
 #else
 #define SENSOR_DESC_LIST                       \
@@ -210,7 +210,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 	SENSOR_INFO_ENTRY(7, SensorPosition::POSITION_LEFT_INDEX_DISTAL)        \
 	SENSOR_INFO_ENTRY(8, SensorPosition::POSITION_LEFT_THUMB_PROXIMAL)      \
 	SENSOR_INFO_ENTRY(9, SensorPosition::POSITION_LEFT_THUMB_DISTAL)
-#elif GLOVE_SDIE == GLOVE_RIGHT
+#elif GLOVE_SIDE == GLOVE_RIGHT
 #define SENSOR_INFO_LIST                                                     \
 	SENSOR_INFO_ENTRY(0, SensorPosition::POSITION_RIGHT_HAND)                \
 	SENSOR_INFO_ENTRY(1, SensorPosition::POSITION_RIGHT_LITTLE_INTERMEDIATE) \
@@ -222,9 +222,9 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 	SENSOR_INFO_ENTRY(7, SensorPosition::POSITION_RIGHT_INDEX_DISTAL)        \
 	SENSOR_INFO_ENTRY(8, SensorPosition::POSITION_RIGHT_THUMB_PROXIMAL)      \
 	SENSOR_INFO_ENTRY(9, SensorPosition::POSITION_RIGHT_THUMB_DISTAL)
-#else  // GLOVE_SDIE
+#else  // GLOVE_SIDE
 #error "Glove side not defined"
-#endif  // GLOVE_SDIE
+#endif  // GLOVE_SIDE
 
 #endif  // SENSOR_DESC_LIST
 #endif  // BOARD != BOARD_GLOVE_IMU_SLIMEVR_DEV
