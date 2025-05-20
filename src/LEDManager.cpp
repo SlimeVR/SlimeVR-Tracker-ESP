@@ -131,13 +131,28 @@ void LEDManager::update() {
 				length = SERVER_CONNECTING_INTERVAL;
 				break;
 		}
-	} else {
+	} else if (statusManager.hasStatus(Status::SERVER_SEARCHING)) {
+            count = SERVER_SEARCHING_COUNT;
+            switch (m_CurrentStage)
+            {
+            case ON:
+            case OFF:
+                length = SERVER_SEARCHING_LENGTH;
+                break;
+            case GAP:
+                length = DEFAULT_GAP;
+                break;
+            case INTERVAL:
+                length = SERVER_SEARCHING_INTERVAL;
+                break;
+            }
+		} else {
 #if defined(LED_INTERVAL_STANDBY) && LED_INTERVAL_STANDBY > 0
 		count = 1;
 		switch (m_CurrentStage) {
 			case ON:
 			case OFF:
-				length = STANDBUY_LENGTH;
+				length = STANDBY_LENGTH;
 				break;
 			case GAP:
 				length = DEFAULT_GAP;
