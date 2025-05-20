@@ -32,6 +32,9 @@ SensorBuilder::SensorBuilder(SensorManager* sensorManager)
 	activeSensorCount += sensorDescEntry<ImuType>(sensorID, __VA_ARGS__) ? 1 : 0; \
 	sensorID++;
 
+#define SENSOR_INFO_ENTRY(ImuID, SensorPosition) \
+	m_Manager->m_Sensors[ImuID]->setSensorInfo(SensorPosition);
+
 uint8_t SensorBuilder::buildAllSensors() {
 	uint8_t sensorID = 0;
 	uint8_t activeSensorCount = 0;
@@ -59,15 +62,10 @@ uint8_t SensorBuilder::buildAllSensors() {
 		  };
 
 	// Apply descriptor list and expand to entries
-	SENSOR_DESC_LIST;
+	SENSOR_DESC_LIST
 
-	[[maybe_unused]] const auto SENSOR_INFO_ENTRY
-		= [&](uint8_t ImuID, SensorPosition position) {
-			  m_Manager->m_Sensors[ImuID]->setSensorInfo(position);
-		  };
-
-	// Apply sensor info list
-	SENSOR_INFO_LIST;
+	// Apply sensor info list and expand to entries
+	SENSOR_INFO_LIST
 
 	return activeSensorCount;
 }
