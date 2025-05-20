@@ -239,7 +239,7 @@ PIN_IMU_SDA, PRIMARY_IMU_OPTIONAL, BMI160_QMC_REMAP) \
 	)
 #endif
 #endif
-#else // BOARD == BOARD_GLOVE_IMU_SLIMEVR_DEV
+#else  // BOARD == BOARD_GLOVE_IMU_SLIMEVR_DEV
 
 #include "glove_default.h"
 
