@@ -95,7 +95,7 @@ def build() -> int:
         status = build_for_device(device)
 
         if not status:
-            failed_builds.append(device.platformio_board)
+            failed_builds.append(device.board)
 
     if len(failed_builds) > 0:
         print(f"  🡢 {COLOR_RED}Failed!{COLOR_RESET}")
