@@ -269,7 +269,7 @@ public:
 				}
 			);
 		} else {
-			auto& regInterface = getRegisterInterface<SensorType>(
+			auto& regInterface = *getRegisterInterface<SensorType>(
 				sensorID,
 				sensorInterface,
 				accessInterface
@@ -303,7 +303,7 @@ public:
 			sensorDef.imuInterface.toString().c_str(),
 			sensorDef.rotation,
 			sensorDef.sensorInterface->toString().c_str(),
-			sensorDef.intPin->toString().c_str(),
+			sensorDef.intPin ? sensorDef.intPin->toString().c_str() : "None",
 			sensorDef.extraParam,
 			sensorDef.optional
 		);
