@@ -173,6 +173,18 @@ BATTERY_SHIELD_R(0)
 BATTERY_R1(10)
 BATTERY_R2(40.2)
 
+#elif BOARD == BOARD_ESP32S3_SUPERMINI
+
+SDA(7)
+SCL(6)
+INT(5)
+INT2(4)
+BATTERY(A2) // IO3
+BATTERY_SHIELD_R(0)
+BATTERY_R1(10)
+BATTERY_R2(40.2)
+LED(LED_BUILTIN)
+
 #endif
 
 // Default IMU pinouts and definitions for default tracker types
