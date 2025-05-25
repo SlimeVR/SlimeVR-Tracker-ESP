@@ -78,7 +78,7 @@
 #define SFCALIBRATOR SlimeVR::Sensor::SoftfusionCalibrator
 #endif
 
-#if ESP32
+#ifdef ESP32
 #include "driver/i2c.h"
 #endif
 
