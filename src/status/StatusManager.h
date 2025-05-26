@@ -4,8 +4,7 @@
 #include "Status.h"
 #include "logging/Logger.h"
 
-namespace SlimeVR {
-namespace Status {
+namespace SlimeVR::Status {
 class StatusManager {
 public:
 	void setStatus(Status status, bool value);
@@ -17,7 +16,6 @@ private:
 
 	Logging::Logger m_Logger = Logging::Logger("StatusManager");
 };
-}  // namespace Status
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Status
 
 #endif

@@ -63,7 +63,9 @@
 #define LED(pin)
 #endif
 
-extern const bool __attribute__((weak)) LED_INVERTED;
+#ifndef LED_PIN
+extern const uint8_t __attribute__((weak)) LED_PIN;
+#endif
 
 #ifndef BATTERY_SHIELD_RESISTANCE
 #define BATTERY_SHIELD_R(value) constexpr float BATTERY_SHIELD_RESISTANCE = value;
@@ -89,4 +91,6 @@ extern const bool __attribute__((weak)) LED_INVERTED;
 #define INVERTED_LED(value)
 #endif
 
-extern const uint8_t __attribute__((weak)) LED_PIN;
+#ifndef LED_INVERTED
+extern const bool __attribute__((weak)) LED_INVERTED;
+#endif

@@ -20,8 +20,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMEVR_GLOBALS_H_
-#define SLIMEVR_GLOBALS_H_
+#pragma once
 
 #include <Arduino.h>
 
@@ -30,7 +29,7 @@
 #include "defines.h"
 
 // clang-format off
-#include "board_default.h"
+#include "boards/boards_default.h"
 // clang-format on
 
 #ifndef SECOND_IMU
@@ -53,5 +52,3 @@
 #ifndef EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION
 #define EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION true
 #endif
-
-#endif  // SLIMEVR_GLOBALS_H_

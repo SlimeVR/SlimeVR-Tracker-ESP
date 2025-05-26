@@ -214,6 +214,7 @@ public:
 	uint8_t getQuatAccuracy();
 
 	void getAccel(float &x, float &y, float &z, uint8_t &accuracy);
+	bool getNewAccel(float &x, float &y, float &z, uint8_t &accuracy);
 	float getAccelX();
 	float getAccelY();
 	float getAccelZ();

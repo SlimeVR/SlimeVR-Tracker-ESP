@@ -1,7 +1,6 @@
 #include "Level.h"
 
-namespace SlimeVR {
-namespace Logging {
+namespace SlimeVR::Logging {
 const char* levelToString(Level level) {
 	switch (level) {
 		case TRACE:
@@ -20,5 +19,4 @@ const char* levelToString(Level level) {
 			return "UNKNOWN";
 	}
 }
-}  // namespace Logging
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Logging

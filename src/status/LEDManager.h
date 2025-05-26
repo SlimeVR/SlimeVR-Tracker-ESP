@@ -25,8 +25,8 @@
 
 #include <Arduino.h>
 
-#include "globals.h"
-#include "logging/Logger.h"
+#include "../globals.h"
+#include "../logging/Logger.h"
 
 #define DEFAULT_LENGTH 300
 #define DEFAULT_GAP 500
