@@ -73,7 +73,8 @@ struct LSM6DS3TRC {
 	struct Regs {
 		struct WhoAmI {
 			static constexpr uint8_t reg = 0x0f;
-			static constexpr uint8_t value = 0x6a;
+			static constexpr std::array<uint8_t, 2> values
+				= {0x6a, 0x69};  // 0x6a for LSM6DS3TR-C, 0x69 for LSM6DS3
 		};
 		struct Ctrl1XL {
 			static constexpr uint8_t reg = 0x10;

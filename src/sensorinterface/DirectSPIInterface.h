@@ -21,13 +21,36 @@
 	THE SOFTWARE.
 */
 
-#include "defines_helpers.h"
+#pragma once
 
-#include "consts.h"
+#include <PinInterface.h>
+#include <SPI.h>
 
-#ifndef LED_BUILTIN
-#define LED_BUILTIN LED_OFF
-#endif
+#include "SensorInterface.h"
 
-extern const uint8_t __attribute__((weak)) LED_PIN = LED_BUILTIN;
-extern const bool __attribute__((weak)) LED_INVERTED = true;
+namespace SlimeVR {
+
+class DirectSPIInterface : public SensorInterface {
+public:
+	DirectSPIInterface(SPIClass& spiClass, SPISettings spiSettings);
+	bool init() final;
+	void swapIn() final;
+
+	void beginTransaction(PinInterface* csPin);
+	void endTransaction(PinInterface* csPin);
+
+	[[nodiscard]] std::string toString() const final { return std::string{"SPI"}; }
+
+	template <typename... Args>
+	auto transfer(Args... args) {
+		return m_spiClass.transfer(args...);
+	}
+
+	const SPISettings& getSpiSettings();
+
+private:
+	SPIClass& m_spiClass;
+	SPISettings m_spiSettings;
+};
+
+}  // namespace SlimeVR

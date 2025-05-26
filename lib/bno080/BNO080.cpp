@@ -12,7 +12,6 @@
 
   This library handles the initialization of the BNO080 and is able to query the sensor
   for different readings.
-
   https://github.com/sparkfun/SparkFun_BNO080_Arduino_Library
 
   Development environment specifics:
@@ -686,6 +685,16 @@ void BNO080::getAccel(float &x, float &y, float &z, uint8_t &accuracy)
 	z = qToFloat(rawAccelZ, accelerometer_Q1);
 	accuracy = accelAccuracy;
 	hasNewAccel_ = false;
+}
+
+bool BNO080::getNewAccel(float &x, float &y, float &z, uint8_t &accuracy)
+{
+	if (hasNewAccel_)
+	{
+		getAccel(x, y, z, accuracy);
+		return true;
+	}
+	return false;
 }
 
 //Return the acceleration component
