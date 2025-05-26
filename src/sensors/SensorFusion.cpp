@@ -1,7 +1,6 @@
 #include "SensorFusion.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 
 void SensorFusion::update6D(
 	sensor_real_t Axyz[3],
@@ -132,5 +131,4 @@ void SensorFusion::updateBiasForgettingTime(float biasForgettingTime) {
 
 bool SensorFusion::getRestDetected() const { return vqf.getRestDetected(); }
 
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors

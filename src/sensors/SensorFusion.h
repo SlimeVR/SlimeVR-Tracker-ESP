@@ -12,8 +12,7 @@
 
 #include "../motionprocessing/types.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 constexpr VQFParams DefaultVQFParams = VQFParams{
 	.tauAcc = 2.0f,
 	.restMinT = 2.0f,
@@ -103,7 +102,6 @@ protected:
 	sensor_real_t linAccel_guard;  // Temporary patch for some weird ESP32 bug
 #endif
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors
 
 #endif  // SLIMEVR_SENSORFUSION_H

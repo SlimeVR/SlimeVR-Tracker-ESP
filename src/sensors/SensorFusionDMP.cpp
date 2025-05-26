@@ -1,7 +1,6 @@
 #include "SensorFusionDMP.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 void SensorFusionDMP::updateAcc(sensor_real_t Axyz[3]) {
 	std::copy(Axyz, Axyz + 3, bAxyz);
 }
@@ -96,5 +95,4 @@ Vector3 SensorFusionDMP::getLinearAccVec() {
 	getLinearAcc();
 	return Vector3(linAccel[0], linAccel[1], linAccel[2]);
 }
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors
