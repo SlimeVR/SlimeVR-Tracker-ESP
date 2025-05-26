@@ -10,8 +10,7 @@
 #define SENSOR_FUSION_WITH_RESTDETECT 0
 #endif
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 #if !SENSOR_FUSION_WITH_RESTDETECT
 struct SensorRestDetectionParams : RestDetectionParams {
 	SensorRestDetectionParams()
@@ -60,7 +59,6 @@ protected:
 	RestDetection restDetection;
 #endif
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors
 
 #endif  // SLIMEVR_SENSORFUSIONRESTDETECT_H_

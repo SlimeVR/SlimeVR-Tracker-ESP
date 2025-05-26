@@ -32,6 +32,7 @@
 #include "../SensorFusionRestDetect.h"
 #include "../sensor.h"
 #include "GlobalVars.h"
+#include "PinInterface.h"
 #include "motionprocessing/types.h"
 #include "sensors/softfusion/TempGradientCalculator.h"
 
@@ -76,7 +77,26 @@ class SoftFusionSensor : public Sensor {
 	bool detected() const {
 		const auto value
 			= m_sensor.m_RegisterInterface.readReg(SensorType::Regs::WhoAmI::reg);
-		if (SensorType::Regs::WhoAmI::value != value) {
+		if constexpr (requires { SensorType::Regs::WhoAmI::values.size(); }) {
+			for (auto possible : SensorType::Regs::WhoAmI::values) {
+				if (value == possible) {
+					return true;
+				}
+			}
+			// this assumes there are only 2 values in the array
+			m_Logger.error(
+				"Sensor not detected, expected reg 0x%02x = [0x%02x, 0x%02x] but got "
+				"0x%02x",
+				SensorType::Regs::WhoAmI::reg,
+				SensorType::Regs::WhoAmI::values[0],
+				SensorType::Regs::WhoAmI::values[1],
+				value
+			);
+			return false;
+		} else {
+			if (value == SensorType::Regs::WhoAmI::value) {
+				return true;
+			}
 			m_Logger.error(
 				"Sensor not detected, expected reg 0x%02x = 0x%02x but got 0x%02x",
 				SensorType::Regs::WhoAmI::reg,
@@ -85,8 +105,6 @@ class SoftFusionSensor : public Sensor {
 			);
 			return false;
 		}
-
-		return true;
 	}
 
 	void sendData() {
@@ -441,24 +459,23 @@ public:
 
 	RestCalibrationDetector calibrationDetector;
 
-	static bool checkPresent(uint8_t sensorID, const RegisterInterface& imuInterface) {
+	static bool checkPresent(const RegisterInterface& imuInterface) {
 		I2Cdev::readTimeout = 100;
 		auto value = imuInterface.readReg(SensorType::Regs::WhoAmI::reg);
 		I2Cdev::readTimeout = I2CDEV_DEFAULT_READ_TIMEOUT;
-		if (SensorType::Regs::WhoAmI::value == value) {
-			return true;
-		}
-		return false;
-	}
-
-	static bool checkPresent(uint8_t sensorID, uint8_t imuAddress) {
-		uint8_t address = imuAddress > 0 ? imuAddress : Address + sensorID;
-		// Ask twice, because we're nice like this
-		if (!I2CSCAN::hasDevOnBus(address) && !I2CSCAN::hasDevOnBus(address)) {
+		if constexpr (requires { SensorType::Regs::WhoAmI::values.size(); }) {
+			for (auto possible : SensorType::Regs::WhoAmI::values) {
+				if (value == possible) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			if (value == SensorType::Regs::WhoAmI::value) {
+				return true;
+			}
 			return false;
 		}
-		const I2CImpl& i2c = I2CImpl(address);
-		return checkPresent(sensorID, i2c);
 	}
 };
 

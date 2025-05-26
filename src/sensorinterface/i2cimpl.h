@@ -74,12 +74,17 @@ struct I2CImpl : public RegisterInterface {
 		I2Cdev::writeBytes(m_devAddr, regAddr, size, buffer);
 	}
 
-	bool hasSensorOnBus() { return I2CSCAN::hasDevOnBus(m_devAddr); }
+	bool hasSensorOnBus() {
+		// Ask twice, because we're nice like this
+		return I2CSCAN::hasDevOnBus(m_devAddr) || I2CSCAN::hasDevOnBus(m_devAddr);
+	}
 
 	uint8_t getAddress() const override { return m_devAddr; }
 
 	std::string toString() const {
-		return std::string("I2C(") + std::to_string(m_devAddr) + std::string(")");
+		char buf[16];
+		std::snprintf(buf, sizeof(buf), "I2C(0x%02x)", m_devAddr);
+		return std::string(buf);
 	}
 
 private:

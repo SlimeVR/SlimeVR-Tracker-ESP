@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,26 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORINTERFACE_H
-#define SENSORINTERFACE_H
+#include "SensorInterfaceManager.h"
 
-#include <string>
+template <typename T>
+bool byteCompare(const T& lhs, const T& rhs) {
+	const auto* lhsBytes = reinterpret_cast<const uint8_t*>(&lhs);
+	const auto* rhsBytes = reinterpret_cast<const uint8_t*>(&rhs);
 
-namespace SlimeVR {
-class SensorInterface {
-public:
-	virtual bool init() = 0;
-	virtual void swapIn() = 0;
-	[[nodiscard]] virtual std::string toString() const;
-};
+	for (size_t i = 0; i < sizeof(T); i++) {
+		if (lhsBytes[i] < rhsBytes[i]) {
+			return true;
+		}
+	}
 
-class EmptySensorInterface : public SensorInterface {
-public:
-	EmptySensorInterface(){};
-	bool init() override final { return true; };
-	void swapIn() override final{};
-	[[nodiscard]] std::string toString() const final { return "None"; }
+	return false;
+}
 
-	static EmptySensorInterface instance;
-};
-}  // namespace SlimeVR
+bool operator<(const SPISettings& lhs, const SPISettings& rhs) {
+	return byteCompare(lhs, rhs);
+}
 
-#endif  // SENSORINTERFACE_H
+bool operator<(const SPIClass& lhs, const SPIClass& rhs) {
+	return byteCompare(lhs, rhs);
+}
