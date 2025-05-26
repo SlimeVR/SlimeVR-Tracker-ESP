@@ -27,6 +27,7 @@
 #include <array>
 #include <cstdint>
 
+#include "callbacks.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -49,8 +50,6 @@ struct ICM42688 {
 
 	static constexpr float GyroSensitivity = 32.8f;
 	static constexpr float AccelSensitivity = 4096.0f;
-
-	static constexpr bool Uses32BitSensorData = true;
 
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 2.07f;
@@ -159,12 +158,7 @@ struct ICM42688 {
 		return true;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTemperatureSample
-	) {
+	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
@@ -188,7 +182,7 @@ struct ICM42688 {
 				static_cast<int32_t>(entry.part.gyro[1]) << 4 | (entry.part.ylsb & 0xf),
 				static_cast<int32_t>(entry.part.gyro[2]) << 4 | (entry.part.zlsb & 0xf),
 			};
-			processGyroSample(gyroData, GyrTs);
+			callbacks.processGyroSample(gyroData, GyrTs);
 
 			if (entry.part.accel[0] != -32768) {
 				const int32_t accelData[3]{
@@ -199,11 +193,14 @@ struct ICM42688 {
 					static_cast<int32_t>(entry.part.accel[2]) << 4
 						| (static_cast<int32_t>(entry.part.zlsb) & 0xf0 >> 4),
 				};
-				processAccelSample(accelData, AccTs);
+				callbacks.processAccelSample(accelData, AccTs);
 			}
 
 			if (entry.part.temp != 0x8000) {
-				processTemperatureSample(static_cast<int16_t>(entry.part.temp), TempTs);
+				callbacks.processTempSample(
+					static_cast<int16_t>(entry.part.temp),
+					TempTs
+				);
 			}
 		}
 	}

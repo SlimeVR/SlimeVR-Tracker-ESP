@@ -25,6 +25,7 @@
 #include <cstdint>
 
 #include "../../../sensorinterface/RegisterInterface.h"
+#include "callbacks.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -51,8 +52,6 @@ struct ICM45Base {
 	static constexpr float TemperatureSensitivity = 128.0f;
 
 	static constexpr float TemperatureZROChange = 20.0f;
-
-	static constexpr bool Uses32BitSensorData = true;
 
 	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
@@ -149,50 +148,44 @@ struct ICM45Base {
 			BaseRegs::PwrMgmt0::reg,
 			BaseRegs::PwrMgmt0::value
 		);
+
+		read_buffer.resize(FullFifoEntrySize * MaxReadings);
+
 		delay(1);
 
 		return true;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTemperatureSample
-	) {
-		// Allocate statically so that it does not take up stack space, which
-		// can result in stack overflow and panic
-		constexpr size_t MaxReadings = 8;
-		static std::array<uint8_t, FullFifoEntrySize * MaxReadings> read_buffer;
+	static constexpr size_t MaxReadings = 8;
+	// Allocate on heap so that it does not take up stack space, which can result in
+	// stack overflow and panic
+	std::vector<uint8_t> read_buffer;
 
+	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		constexpr int16_t InvalidReading = -32768;
 
 		size_t fifo_packets = m_RegisterInterface.readReg16(BaseRegs::FifoCount);
 
-		if (fifo_packets >= 1) {
-			//
-			// AN-000364
-			// 2.16 FIFO EMPTY EVENT IN STREAMING MODE CAN CORRUPT FIFO DATA
-			//
-			// Description: When in FIFO streaming mode, a FIFO empty event
-			// (caused by host reading the last byte of the last FIFO frame) can
-			// cause FIFO data corruption in the first FIFO frame that arrives
-			// after the FIFO empty condition. Once the issue is triggered, the
-			// FIFO state is compromised and cannot recover. FIFO must be set in
-			// bypass mode to flush out the wrong state
-			//
-			// When operating in FIFO streaming mode, if FIFO threshold
-			// interrupt is triggered with M number of FIFO frames accumulated
-			// in the FIFO buffer, the host should only read the first M-1
-			// number of FIFO frames. This prevents the FIFO empty event, that
-			// can cause FIFO data corruption, from happening.
-			//
-			--fifo_packets;
-		}
-
-		if (fifo_packets == 0) {
+		if (fifo_packets <= 1) {
 			return;
 		}
+
+		// AN-000364
+		// 2.16 FIFO EMPTY EVENT IN STREAMING MODE CAN CORRUPT FIFO DATA
+		//
+		// Description: When in FIFO streaming mode, a FIFO empty event
+		// (caused by host reading the last byte of the last FIFO frame) can
+		// cause FIFO data corruption in the first FIFO frame that arrives
+		// after the FIFO empty condition. Once the issue is triggered, the
+		// FIFO state is compromised and cannot recover. FIFO must be set in
+		// bypass mode to flush out the wrong state
+		//
+		// When operating in FIFO streaming mode, if FIFO threshold
+		// interrupt is triggered with M number of FIFO frames accumulated
+		// in the FIFO buffer, the host should only read the first M-1
+		// number of FIFO frames. This prevents the FIFO empty event, that
+		// can cause FIFO data corruption, from happening.
+		--fifo_packets;
 
 		fifo_packets = std::min(fifo_packets, MaxReadings);
 
@@ -218,7 +211,7 @@ struct ICM45Base {
 					static_cast<int32_t>(entry.gyro[1]) << 4 | (entry.lsb[1] & 0xf),
 					static_cast<int32_t>(entry.gyro[2]) << 4 | (entry.lsb[2] & 0xf),
 				};
-				processGyroSample(gyroData, GyrTs);
+				callbacks.processGyroSample(gyroData, GyrTs);
 			}
 
 			if (has_accel && entry.accel[0] != InvalidReading) {
@@ -230,11 +223,11 @@ struct ICM45Base {
 					static_cast<int32_t>(entry.accel[2]) << 4
 						| (static_cast<int32_t>((entry.lsb[2]) & 0xf0) >> 4),
 				};
-				processAccelSample(accelData, AccTs);
+				callbacks.processAccelSample(accelData, AccTs);
 			}
 
 			if (entry.temp != 0x8000) {
-				processTemperatureSample(static_cast<int16_t>(entry.temp), TempTs);
+				callbacks.processTempSample(static_cast<int16_t>(entry.temp), TempTs);
 			}
 		}
 	}
