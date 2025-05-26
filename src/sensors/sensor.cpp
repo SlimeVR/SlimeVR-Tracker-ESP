@@ -166,3 +166,30 @@ void Sensor::setFlag(SensorToggles toggle, bool state) {
 
 	motionSetup();
 }
+
+bool Sensor::isStateUpdated() {
+	if (sensorType == SensorTypeID::Unknown) {
+		// Shouldn't be possible, but better safe than sorry
+		return false;
+	}
+
+	return ackedState != getSensorState()
+		|| ackedCalibration != hasCompletedRestCalibration()
+		|| ackedConfig != getSensorConfigData();
+}
+
+void Sensor::signalAckedStateUpdate(
+	SensorStatus ackedState,
+	bool ackedCalibration,
+	SlimeVR::Configuration::SensorConfigBits ackedConfig
+) {
+	this->ackedState = ackedState;
+	this->ackedCalibration = ackedCalibration;
+	this->ackedConfig = ackedConfig;
+}
+
+void Sensor::resetAckedState() {
+	this->ackedState = SensorStatus::SENSOR_OFFLINE;
+	this->ackedCalibration = false;
+	this->ackedConfig = {};
+}
