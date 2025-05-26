@@ -20,18 +20,16 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-
-#ifndef GLOBALVARS_H
-#define GLOBALVARS_H
+#pragma once
 
 #include <arduino-timer.h>
 
-#include "LEDManager.h"
 #include "batterymonitor.h"
 #include "configuration/Configuration.h"
 #include "network/connection.h"
 #include "network/manager.h"
 #include "sensors/SensorManager.h"
+#include "status/LEDManager.h"
 #include "status/StatusManager.h"
 
 extern Timer<> globalTimer;
@@ -42,5 +40,3 @@ extern SlimeVR::Sensors::SensorManager sensorManager;
 extern SlimeVR::Network::Manager networkManager;
 extern SlimeVR::Network::Connection networkConnection;
 extern BatteryMonitor battery;
-
-#endif

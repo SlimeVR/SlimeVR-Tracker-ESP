@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR Contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,13 @@
 	THE SOFTWARE.
 */
 
-#ifndef SENSORINTERFACE_H
-#define SENSORINTERFACE_H
+#include "defines_helpers.h"
 
-#include <string>
+#include "../consts.h"
 
-namespace SlimeVR {
-class SensorInterface {
-public:
-	virtual bool init() = 0;
-	virtual void swapIn() = 0;
-	[[nodiscard]] virtual std::string toString() const;
-};
+#ifndef LED_BUILTIN
+#define LED_BUILTIN LED_OFF
+#endif
 
-class EmptySensorInterface : public SensorInterface {
-public:
-	EmptySensorInterface(){};
-	bool init() override final { return true; };
-	void swapIn() override final{};
-	[[nodiscard]] std::string toString() const final { return "None"; }
-
-	static EmptySensorInterface instance;
-};
-}  // namespace SlimeVR
-
-#endif  // SENSORINTERFACE_H
+extern const uint8_t __attribute__((weak)) LED_PIN = LED_BUILTIN;
+extern const bool __attribute__((weak)) LED_INVERTED = true;
