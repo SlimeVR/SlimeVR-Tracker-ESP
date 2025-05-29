@@ -23,39 +23,47 @@
 
 #pragma once
 
-#include <array>
-#include <cstdint>
-#include <type_traits>
+#include <functional>
+#include <optional>
 
-#include "../../motionprocessing/types.h"
-#include "drivers/callbacks.h"
+#include "logging/Logger.h"
+#include "sensorinterface/RegisterInterface.h"
 
-template <typename IMU>
-struct IMUConsts {
-	static constexpr bool Uses32BitSensorData
-		= requires(IMU& i, DriverCallbacks<int32_t> callbacks) {
-			  i.bulkRead(std::move(callbacks));
-		  };
+namespace SlimeVR::Sensors::SoftFusion {
 
-	static constexpr bool DirectTempReadOnly = requires(IMU& i) { i.getDirectTemp(); };
-
-	using RawSensorT =
-		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
-	using RawVectorT = std::array<RawSensorT, 3>;
-
-	static constexpr float GScale
-		= ((32768. / IMU::GyroSensitivity) / 32768.) * (PI / 180.0);
-	static constexpr float AScale = CONST_EARTH_GRAVITY / IMU::AccelSensitivity;
-
-	static constexpr float DirectTempReadFreq = 15;
-	static constexpr float DirectTempReadTs = 1.0f / DirectTempReadFreq;
-	static constexpr sensor_real_t getDefaultTempTs() {
-		if constexpr (DirectTempReadOnly) {
-			return DirectTempReadTs;
-		} else {
-			return IMU::TempTs;
-		}
-	}
-
-	static constexpr bool SupportsMags = requires(IMU& i) { i.readAux(0x00); };
+enum class MagDataWidth {
+	SixByte,
+	NineByte,
 };
+
+struct MagInterface {
+	std::function<uint8_t(uint8_t)> readByte;
+	std::function<void(uint8_t, uint8_t)> writeByte;
+	std::function<void(uint8_t)> setDeviceId;
+	std::function<void(uint8_t, MagDataWidth)> startPolling;
+	std::function<void()> stopPolling;
+};
+
+struct MagDefinition {
+	const char* name;
+
+	uint8_t deviceId;
+
+	uint8_t whoAmIReg;
+	uint8_t expectedWhoAmI;
+};
+
+class MagDriver {
+public:
+	bool init(MagInterface&& interface);
+
+private:
+	std::optional<MagDefinition> detectedMag;
+	MagInterface interface;
+
+	static std::vector<MagDefinition> supportedMags;
+
+	Logging::Logger logger{"MagDriver"};
+};
+
+}  // namespace SlimeVR::Sensors::SoftFusion

@@ -21,41 +21,53 @@
 	THE SOFTWARE.
 */
 
-#pragma once
+#include "magdriver.h"
 
-#include <array>
-#include <cstdint>
-#include <type_traits>
+namespace SlimeVR::Sensors::SoftFusion {
 
-#include "../../motionprocessing/types.h"
-#include "drivers/callbacks.h"
+std::vector<MagDefinition> MagDriver::supportedMags{
+	MagDefinition{
+		.name = "QMC6309",
 
-template <typename IMU>
-struct IMUConsts {
-	static constexpr bool Uses32BitSensorData
-		= requires(IMU& i, DriverCallbacks<int32_t> callbacks) {
-			  i.bulkRead(std::move(callbacks));
-		  };
+		.deviceId = 0x7c,
 
-	static constexpr bool DirectTempReadOnly = requires(IMU& i) { i.getDirectTemp(); };
+		.whoAmIReg = 0x00,
+		.expectedWhoAmI = 0x90,
+	},
+	MagDefinition{
+		.name = "IST8306",
 
-	using RawSensorT =
-		typename std::conditional<Uses32BitSensorData, int32_t, int16_t>::type;
-	using RawVectorT = std::array<RawSensorT, 3>;
+		.deviceId = 0x19,
 
-	static constexpr float GScale
-		= ((32768. / IMU::GyroSensitivity) / 32768.) * (PI / 180.0);
-	static constexpr float AScale = CONST_EARTH_GRAVITY / IMU::AccelSensitivity;
+		.whoAmIReg = 0x00,
+		.expectedWhoAmI = 0x06,
+	},
+};
 
-	static constexpr float DirectTempReadFreq = 15;
-	static constexpr float DirectTempReadTs = 1.0f / DirectTempReadFreq;
-	static constexpr sensor_real_t getDefaultTempTs() {
-		if constexpr (DirectTempReadOnly) {
-			return DirectTempReadTs;
-		} else {
-			return IMU::TempTs;
+bool MagDriver::init(MagInterface&& interface) {
+	for (auto& mag : supportedMags) {
+		interface.setDeviceId(mag.deviceId);
+
+		logger.info("Trying mag %s!", mag.name);
+
+		uint8_t whoAmI = interface.readByte(mag.whoAmIReg);
+		if (whoAmI != mag.expectedWhoAmI) {
+			continue;
 		}
+
+		// TODO: check mag compatibility
+
+		detectedMag = mag;
+
+		logger.info("Found mag %s! Initializing", mag.name);
+		// TODO: initialize mag
+
+		break;
 	}
 
-	static constexpr bool SupportsMags = requires(IMU& i) { i.readAux(0x00); };
-};
+	this->interface = interface;
+
+	return detectedMag.has_value();
+}
+
+}  // namespace SlimeVR::Sensors::SoftFusion
