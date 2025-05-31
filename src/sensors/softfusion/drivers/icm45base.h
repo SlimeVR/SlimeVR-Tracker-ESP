@@ -26,6 +26,7 @@
 
 #include "../../../sensorinterface/RegisterInterface.h"
 #include "callbacks.h"
+#include "sensors/softfusion/magdriver.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -366,8 +367,6 @@ struct ICM45Base {
 	uint8_t readAux(uint8_t address) {
 		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
 
-		m_Logger.debug("Reading address %02x", address);
-
 		writeBankRegister<typename BaseRegs::I2CMCommand0>(
 			(0b1 << 7)  // Last transaction
 			| (0b0 << 6)  // Channel 0
@@ -380,19 +379,58 @@ struct ICM45Base {
 			| (0b1 << 0)  // Start transaction
 		);
 
-		while (readBankRegister<typename BaseRegs::I2CMStatus>()
+		uint8_t lastStatus;
+		while ((lastStatus = readBankRegister<typename BaseRegs::I2CMStatus>())
 			   & BaseRegs::I2CMStatus::Busy)
 			;
 
-		m_Logger.debug(
-			"Read result status: %02x",
-			readBankRegister<typename BaseRegs::I2CMStatus>()
+		if (lastStatus != BaseRegs::I2CMStatus::Done) {
+			m_Logger.error(
+				"Aux read from address 0x%02x returned status 0x%02x",
+				address,
+				lastStatus
+			);
+		}
+
+		return readBankRegister<typename BaseRegs::I2CMRdData0>();
+	}
+
+	void writeAux(uint8 address, uint8 value) {
+		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
+		writeBankRegister<typename BaseRegs::I2CMWrData0>(value);
+		writeBankRegister<typename BaseRegs::I2CMCommand0>(
+			(0b1 << 7)  // Last transaction
+			| (0b0 << 6)  // Channel 0
+			| (0b01 << 4)  // Read with register
+			| (0b0001 << 0)  // Read 1 byte
+		);
+		writeBankRegister<typename BaseRegs::I2CMControl>(
+			(0b0 << 6)  // No restarts
+			| (0b0 << 3)  // Fast mode
+			| (0b1 << 0)  // Start transaction
 		);
 
-		uint8_t result = readBankRegister<typename BaseRegs::I2CMRdData0>();
-		m_Logger.debug("Read result: %02x", result);
+		uint8_t lastStatus;
+		while ((lastStatus = readBankRegister<typename BaseRegs::I2CMStatus>())
+			   & BaseRegs::I2CMStatus::Busy)
+			;
 
-		return result;
+		if (lastStatus != BaseRegs::I2CMStatus::Done) {
+			m_Logger.error(
+				"Aux write to address 0x%02x with value 0x%02x returned status 0x%02x",
+				address,
+				value,
+				lastStatus
+			);
+		}
+	}
+
+	void startAuxPolling(uint8_t dataReg, MagDataWidth dataWidth) {
+		// TODO:
+	}
+
+	void stopAuxPolling() {
+		// TODO:
 	}
 };
 

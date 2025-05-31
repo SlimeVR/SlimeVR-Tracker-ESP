@@ -24,6 +24,8 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
+#include <optional>
 
 #include "../debug.h"
 
@@ -38,7 +40,14 @@ public:
 	void setToggle(SensorToggles toggle, bool state);
 	[[nodiscard]] bool getToggle(SensorToggles toggle) const;
 
+	void onToggleChange(std::function<void(SensorToggles, bool)>&& callback);
+
+	static const char* toggleToString(SensorToggles toggle);
+
 private:
+	std::optional<std::function<void(SensorToggles, bool)>> callback;
+	void emitToggleChange(SensorToggles toggle, bool state) const;
+
 	bool magEnabled = !USE_6_AXIS;
 	bool calibrationEnabled = true;
 	bool tempGradientCalibrationEnabled = true;

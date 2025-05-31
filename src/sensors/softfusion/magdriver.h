@@ -51,11 +51,18 @@ struct MagDefinition {
 
 	uint8_t whoAmIReg;
 	uint8_t expectedWhoAmI;
+
+	MagDataWidth dataWidth;
+	uint8 dataReg;
+
+	std::function<bool(MagInterface& interface)> setup;
 };
 
 class MagDriver {
 public:
-	bool init(MagInterface&& interface);
+	bool init(MagInterface&& interface, bool supports9ByteMags);
+	void startPolling() const;
+	void stopPolling() const;
 
 private:
 	std::optional<MagDefinition> detectedMag;

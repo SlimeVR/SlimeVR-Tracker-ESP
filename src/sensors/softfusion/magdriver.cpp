@@ -33,6 +33,22 @@ std::vector<MagDefinition> MagDriver::supportedMags{
 
 		.whoAmIReg = 0x00,
 		.expectedWhoAmI = 0x90,
+
+		.dataWidth = MagDataWidth::SixByte,
+		.dataReg = 0x01,
+
+		.setup =
+			[](MagInterface& interface) {
+				interface.writeByte(0x0b, 0x80);
+				interface.writeByte(0x0b, 0x00);  // Soft reset
+				delay(10);
+				interface.writeByte(0x0b, 0x48);  // Set/reset on, 8g full range, 200Hz
+				interface.writeByte(
+					0x0a,
+					0x21
+				);  // LP filter 2, 8x Oversampling, normal mode
+				return true;
+			},
 	},
 	MagDefinition{
 		.name = "IST8306",
@@ -41,10 +57,23 @@ std::vector<MagDefinition> MagDriver::supportedMags{
 
 		.whoAmIReg = 0x00,
 		.expectedWhoAmI = 0x06,
+
+		.dataWidth = MagDataWidth::SixByte,
+		.dataReg = 0x11,
+
+		.setup =
+			[](MagInterface& interface) {
+				interface.writeByte(0x32, 0x01);  // Soft reset
+				delay(50);
+				interface.writeByte(0x30, 0x20);  // Noise suppression: low
+				interface.writeByte(0x41, 0x2d);  // Oversampling: 32X
+				interface.writeByte(0x31, 0x02);  // Continuous measurement @ 10Hz
+				return true;
+			},
 	},
 };
 
-bool MagDriver::init(MagInterface&& interface) {
+bool MagDriver::init(MagInterface&& interface, bool supports9ByteMags) {
 	for (auto& mag : supportedMags) {
 		interface.setDeviceId(mag.deviceId);
 
@@ -55,19 +84,41 @@ bool MagDriver::init(MagInterface&& interface) {
 			continue;
 		}
 
-		// TODO: check mag compatibility
-
-		detectedMag = mag;
+		if (!supports9ByteMags && mag.dataWidth == MagDataWidth::NineByte) {
+			logger.error("The sensor doesn't support this mag!");
+			return false;
+		}
 
 		logger.info("Found mag %s! Initializing", mag.name);
-		// TODO: initialize mag
+
+		if (!mag.setup(interface)) {
+			logger.error("Mag %s failed to initialize!", mag.name);
+			return false;
+		}
+
+		detectedMag = mag;
 
 		break;
 	}
 
 	this->interface = interface;
-
 	return detectedMag.has_value();
+}
+
+void MagDriver::startPolling() const {
+	if (!detectedMag) {
+		return;
+	}
+
+	interface.startPolling(detectedMag->dataReg, detectedMag->dataWidth);
+}
+
+void MagDriver::stopPolling() const {
+	if (!detectedMag) {
+		return;
+	}
+
+	interface.stopPolling();
 }
 
 }  // namespace SlimeVR::Sensors::SoftFusion

@@ -334,15 +334,35 @@ public:
 		calibrator.checkStartupCalibration();
 
 		if constexpr (Consts::SupportsMags) {
-			magDriver.init(SoftFusion::MagInterface{
-				.readByte = [&](uint8_t address) { return m_sensor.readAux(address); },
-				.writeByte = [&](uint8_t address, uint8_t value) {},
-				.setDeviceId = [&](uint8_t deviceId) { m_sensor.setAuxId(deviceId); },
-				.startPolling
-				= [&](uint8_t dataReg, SoftFusion::MagDataWidth dataWidth) {},
-				.stopPolling = [&]() {},
-			});
+			magDriver.init(
+				SoftFusion::MagInterface{
+					.readByte
+					= [&](uint8_t address) { return m_sensor.readAux(address); },
+					.writeByte = [&](uint8_t address, uint8_t value) {},
+					.setDeviceId
+					= [&](uint8_t deviceId) { m_sensor.setAuxId(deviceId); },
+					.startPolling
+					= [&](uint8_t dataReg, SoftFusion::MagDataWidth dataWidth
+					  ) { m_sensor.startAuxPolling(dataReg, dataWidth); },
+					.stopPolling = [&]() { m_sensor.stopAuxPolling(); },
+				},
+				Consts::Supports9ByteMag
+			);
+
+			if (toggles.getToggle(SensorToggles::MagEnabled)) {
+				magDriver.startPolling();
+			}
 		}
+
+		toggles.onToggleChange([&](SensorToggles toggle, bool value) {
+			if (toggle == SensorToggles::MagEnabled) {
+				if (value) {
+					magDriver.startPolling();
+				} else {
+					magDriver.stopPolling();
+				}
+			}
+		});
 	}
 
 	void startCalibration(int calibrationType) final {
