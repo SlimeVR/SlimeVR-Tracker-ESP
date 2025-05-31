@@ -29,7 +29,7 @@
 
 #include "configuration/SensorConfig.h"
 #include "motionprocessing/types.h"
-#include "sensors/SensorFusionRestDetect.h"
+#include "sensors/SensorFusion.h"
 
 namespace SlimeVR::Sensor {
 
@@ -37,7 +37,7 @@ template <typename IMU, typename RawSensorT, typename RawVectorT>
 class CalibrationBase {
 public:
 	CalibrationBase(
-		SlimeVR::Sensors::SensorFusionRestDetect& fusion,
+		SlimeVR::Sensors::SensorFusion& fusion,
 		IMU& sensor,
 		uint8_t sensorId,
 		SlimeVR::Logging::Logger& logger,
@@ -104,7 +104,7 @@ public:
 
 protected:
 	void recalcFusion() {
-		fusion = Sensors::SensorFusionRestDetect(
+		fusion = Sensors::SensorFusion(
 			IMU::SensorVQFParams,
 			getGyroTimestep(),
 			getAccelTimestep(),
@@ -112,7 +112,7 @@ protected:
 		);
 	}
 
-	Sensors::SensorFusionRestDetect& fusion;
+	Sensors::SensorFusion& fusion;
 	IMU& sensor;
 	uint8_t sensorId;
 	SlimeVR::Logging::Logger& logger;
