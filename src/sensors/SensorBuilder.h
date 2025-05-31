@@ -285,11 +285,15 @@ public:
 				extraParam,
 			});
 		}
-		if (sensor->isWorking()) {
-			m_Manager->m_Logger.info("Sensor %d configured", sensorID);
-		}
+
+		bool working = sensor->isWorking();
 		m_Manager->m_Sensors.push_back(std::move(sensor));
 
+		if (!working) {
+			return false;
+		}
+
+		m_Manager->m_Logger.info("Sensor %d configured", sensorID);
 		return true;
 	}
 
