@@ -25,7 +25,7 @@
 
 #include <optional>
 
-#if ESP32
+#ifdef ESP32
 #include "driver/i2c.h"
 #endif
 
@@ -37,7 +37,7 @@ namespace SlimeVR {
 void swapI2C(uint8_t sclPin, uint8_t sdaPin) {
 	if (sclPin != activeSCLPin || sdaPin != activeSDAPin || !isI2CActive) {
 		Wire.flush();
-#if ESP32
+#ifdef ESP32
 		if (!isI2CActive) {
 			// Reset HWI2C to avoid being affected by I2CBUS reset
 			Wire.end();
@@ -68,7 +68,7 @@ void swapI2C(uint8_t sclPin, uint8_t sdaPin) {
 void disconnectI2C() {
 	Wire.flush();
 	isI2CActive = false;
-#if ESP32
+#ifdef ESP32
 	Wire.end();
 #endif
 }
