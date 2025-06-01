@@ -31,7 +31,7 @@ class SensorInterface {
 public:
 	virtual bool init() = 0;
 	virtual void swapIn() = 0;
-	[[nodiscard]] virtual std::string toString() const;
+	[[nodiscard]] virtual std::string toString() const = 0;
 };
 
 class EmptySensorInterface : public SensorInterface {

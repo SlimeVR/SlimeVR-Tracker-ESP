@@ -25,13 +25,13 @@
 
 #include <cstdint>
 
-#include "SensorFusionRestDetect.h"
+#include "sensors/SensorFusion.h"
 
 namespace SlimeVR::Sensors {
 
 class RestCalibrationDetector {
 public:
-	bool update(SensorFusionRestDetect& fusion);
+	bool update(SensorFusion& fusion);
 
 private:
 	static constexpr float restCalibrationSeconds = 3.0f;
