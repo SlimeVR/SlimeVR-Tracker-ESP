@@ -165,8 +165,7 @@ public:
 		saveCalibration();
 	}
 
-	bool calibrationMatches(
-		const Configuration::SensorConfig& sensorCalibration
+	bool calibrationMatches(const Configuration::SensorConfig& sensorCalibration
 	) final {
 		return sensorCalibration.type
 				== SlimeVR::Configuration::SensorConfigType::SFUSION
