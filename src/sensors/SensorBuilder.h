@@ -72,10 +72,10 @@
 
 #if USE_RUNTIME_CALIBRATION
 #include "sensors/softfusion/runtimecalibration/RuntimeCalibration.h"
-#define SFCALIBRATOR SlimeVR::Sensors::RuntimeCalibration::RuntimeCalibrator
+#define SFCALIBRATOR RuntimeCalibration::RuntimeCalibrator
 #else
 #include "sensors/softfusion/SoftfusionCalibration.h"
-#define SFCALIBRATOR SlimeVR::Sensor::SoftfusionCalibrator
+#define SFCALIBRATOR SoftfusionCalibrator
 #endif
 
 #ifdef ESP32

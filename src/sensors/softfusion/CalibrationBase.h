@@ -28,12 +28,13 @@
 #include <functional>
 
 #include "configuration/SensorConfig.h"
+#include "imuconsts.h"
 #include "motionprocessing/types.h"
 #include "sensors/SensorFusion.h"
 
-namespace SlimeVR::Sensor {
+namespace SlimeVR::Sensors {
 
-template <typename IMU, typename RawSensorT, typename RawVectorT>
+template <typename IMU>
 class CalibrationBase {
 public:
 	CalibrationBase(
@@ -41,19 +42,16 @@ public:
 		IMU& sensor,
 		uint8_t sensorId,
 		SlimeVR::Logging::Logger& logger,
-		float TempTs,
-		float AScale,
-		float GScale,
 		SensorToggleState& toggles
 	)
 		: fusion{fusion}
 		, sensor{sensor}
 		, sensorId{sensorId}
 		, logger{logger}
-		, TempTs{TempTs}
-		, AScale{AScale}
-		, GScale{GScale}
 		, toggles{toggles} {}
+
+	using Consts = IMUConsts<IMU>;
+	using RawSensorT = typename Consts::RawSensorT;
 
 	static constexpr bool HasMotionlessCalib
 		= requires(IMU& i) { typename IMU::MotionlessCalibrationData; };
@@ -65,15 +63,8 @@ public:
 		}
 	}
 
-	using EatSamplesFn = std::function<void(const uint32_t)>;
-	using ReturnLastFn
-		= std::function<std::tuple<RawVectorT, RawVectorT, int16_t>(const uint32_t)>;
-
-	virtual void startCalibration(
-		int calibrationType,
-		const EatSamplesFn& eatSamplesForSeconds,
-		const ReturnLastFn& eatSamplesReturnLast
-	){};
+	virtual void checkStartupCalibration() {}
+	virtual void startCalibration(int calibrationType){};
 
 	virtual bool calibrationMatches(
 		const SlimeVR::Configuration::SensorConfig& sensorCalibration
@@ -116,10 +107,7 @@ protected:
 	IMU& sensor;
 	uint8_t sensorId;
 	SlimeVR::Logging::Logger& logger;
-	float TempTs;
-	float AScale;
-	float GScale;
 	SensorToggleState& toggles;
 };
 
-}  // namespace SlimeVR::Sensor
+}  // namespace SlimeVR::Sensors
