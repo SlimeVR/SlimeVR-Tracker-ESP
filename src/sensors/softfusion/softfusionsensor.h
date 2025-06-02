@@ -26,18 +26,13 @@
 #include <PinInterface.h>
 
 #include <cstdint>
-#include <cstdlib>
 #include <cstring>
-#include <functional>
-#include <tuple>
 
 #include "../../GlobalVars.h"
 #include "../../sensorinterface/SensorInterface.h"
-#include "../../sensorinterface/i2cimpl.h"
 #include "../RestCalibrationDetector.h"
 #include "../sensor.h"
 #include "TempGradientCalculator.h"
-#include "drivers/callbacks.h"
 #include "imuconsts.h"
 #include "motionprocessing/types.h"
 #include "sensors/SensorFusion.h"
@@ -168,13 +163,13 @@ public:
 		uint8_t = 0
 	)
 		: Sensor(
-			  SensorType::Name,
-			  SensorType::Type,
-			  id,
-			  registerInterface,
-			  rotation,
-			  sensorInterface
-		  )
+			SensorType::Name,
+			SensorType::Type,
+			id,
+			registerInterface,
+			rotation,
+			sensorInterface
+		)
 		, m_fusion(
 			  SensorType::SensorVQFParams,
 			  SensorType::GyrTs,
@@ -292,8 +287,7 @@ public:
 		// zero-ed out
 		if (calibrator.calibrationMatches(sensorCalibration)) {
 			calibrator.assignCalibration(sensorCalibration);
-		} else if (sensorCalibration.type
-				   == SlimeVR::Configuration::SensorConfigType::NONE) {
+		} else if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::NONE) {
 			m_Logger.warn(
 				"No calibration data found for sensor %d, ignoring...",
 				sensorId
