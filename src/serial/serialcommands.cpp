@@ -31,7 +31,7 @@
 #include "logging/Logger.h"
 #include "utils.h"
 
-#if ESP32
+#ifdef ESP32
 #include "nvs_flash.h"
 #endif
 
@@ -172,7 +172,7 @@ void printState() {
 	);
 }
 
-#if ESP32
+#ifdef ESP32
 String getEncryptionTypeName(wifi_auth_mode_t type) {
 	switch (type) {
 		case WIFI_AUTH_OPEN:
@@ -346,7 +346,7 @@ void cmdFactoryReset(CmdParser* parser) {
 	WiFi.disconnect(true);  // Clear WiFi credentials
 #if ESP8266
 	ESP.eraseConfig();  // Clear ESP config
-#elif ESP32
+#elif defined(ESP32)
 	nvs_flash_erase();
 #else
 #warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED

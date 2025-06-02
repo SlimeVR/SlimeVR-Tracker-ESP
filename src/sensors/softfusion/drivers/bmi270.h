@@ -259,6 +259,7 @@ struct BMI270 {
 			Regs::InitCtrl::reg,
 			Regs::InitCtrl::valueStartInit
 		);
+		auto* firmware_buffer = new uint8_t[RegisterInterface::MaxTransactionLength];
 		for (uint16_t pos = 0; pos < sizeof(bmi270_firmware);) {
 			// tell the device current position
 
@@ -274,13 +275,11 @@ struct BMI270 {
 				static_cast<size_t>(sizeof(bmi270_firmware) - pos),
 				RegisterInterface::MaxTransactionLength
 			);
-			m_RegisterInterface.writeBytes(
-				Regs::InitData,
-				burstWrite,
-				const_cast<uint8_t*>(bmi270_firmware + pos)
-			);
+			memcpy_P(firmware_buffer, bmi270_firmware + pos, burstWrite);
+			m_RegisterInterface.writeBytes(Regs::InitData, burstWrite, firmware_buffer);
 			pos += burstWrite;
 		}
+		delete[] firmware_buffer;
 		m_RegisterInterface.writeReg(Regs::InitCtrl::reg, Regs::InitCtrl::valueEndInit);
 		delay(140);
 

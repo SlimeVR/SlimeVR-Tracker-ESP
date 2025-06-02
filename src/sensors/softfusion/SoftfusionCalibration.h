@@ -27,7 +27,6 @@
 #include <cstring>
 #include <vector>
 
-#include "../SensorFusionRestDetect.h"
 #include "CalibrationBase.h"
 #include "GlobalVars.h"
 #include "configuration/SensorConfig.h"
@@ -48,7 +47,7 @@ public:
 	using RawVectorT = typename Consts::RawVectorT;
 
 	SoftfusionCalibrator(
-		Sensors::SensorFusionRestDetect& fusion,
+		Sensors::SensorFusion& fusion,
 		IMU& sensor,
 		uint8_t sensorId,
 		SlimeVR::Logging::Logger& logger,
@@ -166,7 +165,8 @@ public:
 		saveCalibration();
 	}
 
-	bool calibrationMatches(const Configuration::SensorConfig& sensorCalibration
+	bool calibrationMatches(
+		const Configuration::SensorConfig& sensorCalibration
 	) final {
 		return sensorCalibration.type
 				== SlimeVR::Configuration::SensorConfigType::SFUSION
