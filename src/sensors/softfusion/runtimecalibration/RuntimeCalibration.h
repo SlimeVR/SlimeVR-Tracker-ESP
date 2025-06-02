@@ -29,8 +29,6 @@
 
 #include "../../../GlobalVars.h"
 #include "../../../configuration/Configuration.h"
-#include "../../SensorFusionRestDetect.h"
-#include "../CalibrationBase.h"
 #include "AccelBiasCalibrationStep.h"
 #include "GyroBiasCalibrationStep.h"
 #include "MotionlessCalibrationStep.h"
@@ -38,6 +36,8 @@
 #include "SampleRateCalibrationStep.h"
 #include "configuration/SensorConfig.h"
 #include "logging/Logger.h"
+#include "sensors/SensorFusion.h"
+#include "sensors/softfusion/CalibrationBase.h"
 
 namespace SlimeVR::Sensors::RuntimeCalibration {
 
@@ -53,7 +53,7 @@ public:
 	using RawVectorT = typename Consts::RawVectorT;
 
 	RuntimeCalibrator(
-		SensorFusionRestDetect& fusion,
+		SensorFusion& fusion,
 		IMU& imu,
 		uint8_t sensorId,
 		Logging::Logger& logger,
@@ -64,7 +64,8 @@ public:
 		activeCalibration.T_Ts = Consts::getDefaultTempTs();
 	}
 
-	bool calibrationMatches(const Configuration::SensorConfig& sensorCalibration
+	bool calibrationMatches(
+		const Configuration::SensorConfig& sensorCalibration
 	) final {
 		return sensorCalibration.type
 				== SlimeVR::Configuration::SensorConfigType::RUNTIME_CALIBRATION

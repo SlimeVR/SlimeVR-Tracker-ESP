@@ -4,3 +4,4 @@ build/
 venv/
 cache/
 .idea/
+compile_commands.json
