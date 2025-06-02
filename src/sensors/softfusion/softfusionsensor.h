@@ -26,18 +26,13 @@
 #include <PinInterface.h>
 
 #include <cstdint>
-#include <cstdlib>
 #include <cstring>
-#include <functional>
-#include <tuple>
 
 #include "../../GlobalVars.h"
 #include "../../sensorinterface/SensorInterface.h"
-#include "../../sensorinterface/i2cimpl.h"
 #include "../RestCalibrationDetector.h"
 #include "../sensor.h"
 #include "TempGradientCalculator.h"
-#include "drivers/callbacks.h"
 #include "imuconsts.h"
 #include "motionprocessing/types.h"
 #include "sensors/SensorFusion.h"
