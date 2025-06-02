@@ -85,6 +85,11 @@ public:
 	virtual void printDebugTemperatureCalibrationState();
 	virtual void resetTemperatureCalibrationState();
 	virtual void saveTemperatureCalibration();
+	// TODO: currently only for softfusionsensor, bmi160 and others should get
+	// an overload too
+	virtual const char* getAttachedMagnetometer() const;
+	// TODO: realistically each sensor should print its own state instead of
+	// having 15 getters for things only the serial commands use
 	bool isWorking() { return working; };
 	bool getHadData() const { return hadData; };
 	bool isValid() { return m_hwInterface != nullptr; };

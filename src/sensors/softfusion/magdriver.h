@@ -23,32 +23,55 @@
 
 #pragma once
 
-#include <cstdint>
 #include <functional>
 #include <optional>
 
-#include "../debug.h"
+#include "logging/Logger.h"
+#include "sensorinterface/RegisterInterface.h"
 
-enum class SensorToggles : uint16_t {
-	MagEnabled = 1,
-	CalibrationEnabled = 2,
-	TempGradientCalibrationEnabled = 3,
+namespace SlimeVR::Sensors::SoftFusion {
+
+enum class MagDataWidth {
+	SixByte,
+	NineByte,
 };
 
-class SensorToggleState {
+struct MagInterface {
+	std::function<uint8_t(uint8_t)> readByte;
+	std::function<void(uint8_t, uint8_t)> writeByte;
+	std::function<void(uint8_t)> setDeviceId;
+	std::function<void(uint8_t, MagDataWidth)> startPolling;
+	std::function<void()> stopPolling;
+};
+
+struct MagDefinition {
+	const char* name;
+
+	uint8_t deviceId;
+
+	uint8_t whoAmIReg;
+	uint8_t expectedWhoAmI;
+
+	MagDataWidth dataWidth;
+	uint8_t dataReg;
+
+	std::function<bool(MagInterface& interface)> setup;
+};
+
+class MagDriver {
 public:
-	void setToggle(SensorToggles toggle, bool state);
-	[[nodiscard]] bool getToggle(SensorToggles toggle) const;
-
-	void onToggleChange(std::function<void(SensorToggles, bool)>&& callback);
-
-	static const char* toggleToString(SensorToggles toggle);
+	bool init(MagInterface&& interface, bool supports9ByteMags);
+	void startPolling() const;
+	void stopPolling() const;
+	[[nodiscard]] const char* getAttachedMagName() const;
 
 private:
-	std::optional<std::function<void(SensorToggles, bool)>> callback;
-	void emitToggleChange(SensorToggles toggle, bool state) const;
+	std::optional<MagDefinition> detectedMag;
+	MagInterface interface;
 
-	bool magEnabled = !USE_6_AXIS;
-	bool calibrationEnabled = true;
-	bool tempGradientCalibrationEnabled = true;
+	static std::vector<MagDefinition> supportedMags;
+
+	Logging::Logger logger{"MagDriver"};
 };
+
+}  // namespace SlimeVR::Sensors::SoftFusion

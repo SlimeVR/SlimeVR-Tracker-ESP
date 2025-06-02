@@ -91,6 +91,8 @@ void Sensor::resetTemperatureCalibrationState() {
 	printTemperatureCalibrationUnsupported();
 };
 
+const char* Sensor::getAttachedMagnetometer() const { return nullptr; }
+
 SlimeVR::Configuration::SensorConfigBits Sensor::getSensorConfigData() {
 	return SlimeVR::Configuration::SensorConfigBits{
 		.magEnabled = toggles.getToggle(SensorToggles::MagEnabled),
@@ -157,12 +159,16 @@ void Sensor::markRestCalibrationComplete(bool completed) {
 }
 
 void Sensor::setFlag(SensorToggles toggle, bool state) {
-	assert(isFlagSupported(toggle));
+	if (!isFlagSupported(toggle)) {
+		m_Logger.error(
+			"Toggle %s isn't supported by this sensor!",
+			SensorToggleState::toggleToString(toggle)
+		);
+		return;
+	}
 
 	toggles.setToggle(toggle, state);
 
 	configuration.setSensorToggles(sensorId, toggles);
 	configuration.save();
-
-	motionSetup();
 }
