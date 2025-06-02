@@ -33,6 +33,7 @@
 #include "logging/Logger.h"
 #include "motionprocessing/RestDetection.h"
 #include "motionprocessing/types.h"
+#include "sensors/SensorFusion.h"
 
 namespace SlimeVR::Sensors {
 
@@ -165,7 +166,8 @@ public:
 		saveCalibration();
 	}
 
-	bool calibrationMatches(const Configuration::SensorConfig& sensorCalibration
+	bool calibrationMatches(
+		const Configuration::SensorConfig& sensorCalibration
 	) final {
 		return sensorCalibration.type
 				== SlimeVR::Configuration::SensorConfigType::SFUSION
