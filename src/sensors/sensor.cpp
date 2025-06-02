@@ -91,6 +91,8 @@ void Sensor::resetTemperatureCalibrationState() {
 	printTemperatureCalibrationUnsupported();
 };
 
+const char* Sensor::getAttachedMagnetometer() const { return nullptr; }
+
 SlimeVR::Configuration::SensorConfigBits Sensor::getSensorConfigData() {
 	return SlimeVR::Configuration::SensorConfigBits{
 		.magEnabled = toggles.getToggle(SensorToggles::MagEnabled),

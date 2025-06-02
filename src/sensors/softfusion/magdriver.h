@@ -63,6 +63,7 @@ public:
 	bool init(MagInterface&& interface, bool supports9ByteMags);
 	void startPolling() const;
 	void stopPolling() const;
+	[[nodiscard]] const char* getAttachedMagName() const;
 
 private:
 	std::optional<MagDefinition> detectedMag;

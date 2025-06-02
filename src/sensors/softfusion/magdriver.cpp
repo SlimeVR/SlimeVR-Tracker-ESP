@@ -61,15 +61,14 @@ std::vector<MagDefinition> MagDriver::supportedMags{
 		.dataWidth = MagDataWidth::SixByte,
 		.dataReg = 0x11,
 
-		.setup =
-			[](MagInterface& interface) {
-				interface.writeByte(0x32, 0x01);  // Soft reset
-				delay(50);
-				interface.writeByte(0x30, 0x20);  // Noise suppression: low
-				interface.writeByte(0x41, 0x2d);  // Oversampling: 32X
-				interface.writeByte(0x31, 0x02);  // Continuous measurement @ 10Hz
-				return true;
-			},
+		.setup = [](MagInterface& interface) {
+			interface.writeByte(0x32, 0x01);  // Soft reset
+			delay(50);
+			interface.writeByte(0x30, 0x20);  // Noise suppression: low
+			interface.writeByte(0x41, 0x2d);  // Oversampling: 32X
+			interface.writeByte(0x31, 0x02);  // Continuous measurement @ 10Hz
+			return true;
+		},
 	},
 };
 
@@ -119,6 +118,14 @@ void MagDriver::stopPolling() const {
 	}
 
 	interface.stopPolling();
+}
+
+const char* MagDriver::getAttachedMagName() const {
+	if (!detectedMag) {
+		return nullptr;
+	}
+
+	return detectedMag->name;
 }
 
 }  // namespace SlimeVR::Sensors::SoftFusion

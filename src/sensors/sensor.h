@@ -72,19 +72,24 @@ public:
 		addr = registerInterface.getAddress();
 	}
 
-	virtual ~Sensor(){};
-	virtual void motionSetup(){};
-	virtual void postSetup(){};
-	virtual void motionLoop(){};
+	virtual ~Sensor() {};
+	virtual void motionSetup() {};
+	virtual void postSetup() {};
+	virtual void motionLoop() {};
 	virtual void sendData();
 	virtual void setAcceleration(Vector3 a);
 	virtual void setFusedRotation(Quat r);
-	virtual void startCalibration(int calibrationType){};
+	virtual void startCalibration(int calibrationType) {};
 	virtual SensorStatus getSensorState();
 	virtual void printTemperatureCalibrationState();
 	virtual void printDebugTemperatureCalibrationState();
 	virtual void resetTemperatureCalibrationState();
 	virtual void saveTemperatureCalibration();
+	// TODO: currently only for softfusionsensor, bmi160 and others should get
+	// an overload too
+	virtual const char* getAttachedMagnetometer() const;
+	// TODO: realistically each sensor should print its own state instead of
+	// having 15 getters for things only the serial commands use
 	bool isWorking() { return working; };
 	bool getHadData() const { return hadData; };
 	bool isValid() { return m_hwInterface != nullptr; };

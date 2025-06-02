@@ -409,6 +409,10 @@ public:
 			return false;
 		}
 	}
+
+	const char* getAttachedMagnetometer() const final {
+		return magDriver.getAttachedMagName();
+	}
 };
 
 }  // namespace SlimeVR::Sensors
