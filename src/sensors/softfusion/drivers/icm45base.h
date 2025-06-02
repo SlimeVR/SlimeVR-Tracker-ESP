@@ -125,35 +125,35 @@ struct ICM45Base {
 
 		struct IOCPadScenarioAuxOvrd {
 			static constexpr uint8_t reg = 0x30;
-			static constexpr uint8 value = (0b1 << 4)  // Enable AUX1 override
-										 | (0b01 << 2)  // Enable I2CM master
-										 | (0b1 << 1)  // Enable AUX1 enable override
-										 | (0b1 << 0);  // Enable AUX1
+			static constexpr uint8_t value = (0b1 << 4)  // Enable AUX1 override
+										   | (0b01 << 2)  // Enable I2CM master
+										   | (0b1 << 1)  // Enable AUX1 enable override
+										   | (0b1 << 0);  // Enable AUX1
 		};
 
 		struct I2CMCommand0 {
 			static constexpr Bank bank = Bank::IPregTop1;
-			static constexpr uint8 reg = 0x06;
+			static constexpr uint8_t reg = 0x06;
 		};
 
 		struct I2CMDevProfile0 {
 			static constexpr Bank bank = Bank::IPregTop1;
-			static constexpr uint8 reg = 0x0e;
+			static constexpr uint8_t reg = 0x0e;
 		};
 
 		struct I2CMDevProfile1 {
 			static constexpr Bank bank = Bank::IPregTop1;
-			static constexpr uint8 reg = 0x0f;
+			static constexpr uint8_t reg = 0x0f;
 		};
 
 		struct I2CMWrData0 {
 			static constexpr Bank bank = Bank::IPregTop1;
-			static constexpr uint8 reg = 0x33;
+			static constexpr uint8_t reg = 0x33;
 		};
 
 		struct I2CMRdData0 {
 			static constexpr Bank bank = Bank::IPregTop1;
-			static constexpr uint8 reg = 0x1b;
+			static constexpr uint8_t reg = 0x1b;
 		};
 
 		struct DmpExtSenOdrCfg {
@@ -162,12 +162,12 @@ struct ICM45Base {
 
 		struct I2CMControl {
 			static constexpr Bank bank = Bank::IPregTop1;
-			static constexpr uint8 reg = 0x16;
+			static constexpr uint8_t reg = 0x16;
 		};
 
 		struct I2CMStatus {
 			static constexpr Bank bank = Bank::IPregTop1;
-			static constexpr uint8 reg = 0x18;
+			static constexpr uint8_t reg = 0x18;
 
 			static constexpr uint8_t SDAErr = 0b1 << 5;
 			static constexpr uint8_t SCLErr = 0b1 << 4;
@@ -395,7 +395,7 @@ struct ICM45Base {
 		return readBankRegister<typename BaseRegs::I2CMRdData0>();
 	}
 
-	void writeAux(uint8 address, uint8 value) {
+	void writeAux(uint8_t address, uint8_t value) {
 		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
 		writeBankRegister<typename BaseRegs::I2CMWrData0>(value);
 		writeBankRegister<typename BaseRegs::I2CMCommand0>(

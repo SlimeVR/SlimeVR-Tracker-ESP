@@ -53,7 +53,7 @@ struct MagDefinition {
 	uint8_t expectedWhoAmI;
 
 	MagDataWidth dataWidth;
-	uint8 dataReg;
+	uint8_t dataReg;
 
 	std::function<bool(MagInterface& interface)> setup;
 };
