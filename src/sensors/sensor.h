@@ -72,14 +72,14 @@ public:
 		addr = registerInterface.getAddress();
 	}
 
-	virtual ~Sensor() {};
-	virtual void motionSetup() {};
-	virtual void postSetup() {};
-	virtual void motionLoop() {};
+	virtual ~Sensor(){};
+	virtual void motionSetup(){};
+	virtual void postSetup(){};
+	virtual void motionLoop(){};
 	virtual void sendData();
 	virtual void setAcceleration(Vector3 a);
 	virtual void setFusedRotation(Quat r);
-	virtual void startCalibration(int calibrationType) {};
+	virtual void startCalibration(int calibrationType){};
 	virtual SensorStatus getSensorState();
 	virtual void printTemperatureCalibrationState();
 	virtual void printDebugTemperatureCalibrationState();

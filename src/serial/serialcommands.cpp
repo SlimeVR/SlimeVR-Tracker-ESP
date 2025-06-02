@@ -407,8 +407,7 @@ void cmdTemperatureCalibration(CmdParser* parser) {
 		"  TCAL RESET: reset current temperature calibration in RAM (does not delete "
 		"already saved)"
 	);
-	logger.info(
-		"  TCAL SAVE: save current temperature calibration to persistent flash"
+	logger.info("  TCAL SAVE: save current temperature calibration to persistent flash"
 	);
 	logger.info("Note:");
 	logger.info(
