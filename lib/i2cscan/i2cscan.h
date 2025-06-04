@@ -11,7 +11,7 @@ namespace I2CSCAN {
     bool hasDevOnBus(uint8_t addr);
     uint8_t pickDevice(uint8_t addr1, uint8_t addr2, bool scanIfNotFound);
     int clearBus(uint8_t SDA, uint8_t SCL);
-    boolean inArray(uint8_t value, uint8_t* arr, size_t arrSize);
+    bool inArray(uint8_t value, const uint8_t *array, size_t arraySize);
 }
 
 #endif // _I2CSCAN_H_

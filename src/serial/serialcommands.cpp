@@ -35,10 +35,19 @@
 #include "nvs_flash.h"
 #endif
 
+#ifdef EXT_SERIAL_COMMANDS
+#define CALLBACK_SIZE 8 // Increase callback size to allow for debug commands
+#include "i2cscan.h"
+#endif
+
+#ifndef CALLBACK_SIZE
+#define CALLBACK_SIZE 6 // Default callback size
+#endif
+
 namespace SerialCommands {
 SlimeVR::Logging::Logger logger("SerialCommands");
 
-CmdCallback<6> cmdCallbacks;
+CmdCallback<CALLBACK_SIZE> cmdCallbacks;
 CmdParser cmdParser;
 CmdBuffer<256> cmdBuffer;
 
@@ -412,6 +421,17 @@ void cmdDeleteCalibration(CmdParser* parser) {
 	configuration.eraseSensors();
 }
 
+#if EXT_SERIAL_COMMANDS
+void cmdScanI2C(CmdParser* parser) {
+	logger.info("Forcing I2C scan...");
+	I2CSCAN::scani2cports();
+}
+
+void cmdPing(CmdParser* parser) {
+	logger.info("PONG!");
+}
+#endif
+
 void setUp() {
 	cmdCallbacks.addCmd("SET", &cmdSet);
 	cmdCallbacks.addCmd("GET", &cmdGet);
@@ -419,6 +439,10 @@ void setUp() {
 	cmdCallbacks.addCmd("REBOOT", &cmdReboot);
 	cmdCallbacks.addCmd("DELCAL", &cmdDeleteCalibration);
 	cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
+#if EXT_SERIAL_COMMANDS
+	cmdCallbacks.addCmd("PING", &cmdPing);
+	cmdCallbacks.addCmd("SCANI2C", &cmdScanI2C);
+#endif
 }
 
 void update() { cmdCallbacks.updateCmdProcessing(&cmdParser, &cmdBuffer, &Serial); }
