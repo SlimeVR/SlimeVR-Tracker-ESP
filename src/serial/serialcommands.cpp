@@ -36,12 +36,12 @@
 #endif
 
 #ifdef EXT_SERIAL_COMMANDS
-#define CALLBACK_SIZE 8 // Increase callback size to allow for debug commands
+#define CALLBACK_SIZE 8  // Increase callback size to allow for debug commands
 #include "i2cscan.h"
 #endif
 
 #ifndef CALLBACK_SIZE
-#define CALLBACK_SIZE 6 // Default callback size
+#define CALLBACK_SIZE 6  // Default callback size
 #endif
 
 namespace SerialCommands {
@@ -406,7 +406,8 @@ void cmdTemperatureCalibration(CmdParser* parser) {
 		"  TCAL RESET: reset current temperature calibration in RAM (does not delete "
 		"already saved)"
 	);
-	logger.info("  TCAL SAVE: save current temperature calibration to persistent flash"
+	logger.info(
+		"  TCAL SAVE: save current temperature calibration to persistent flash"
 	);
 	logger.info("Note:");
 	logger.info(
@@ -427,9 +428,7 @@ void cmdScanI2C(CmdParser* parser) {
 	I2CSCAN::scani2cports();
 }
 
-void cmdPing(CmdParser* parser) {
-	logger.info("PONG!");
-}
+void cmdPing(CmdParser* parser) { logger.info("PONG!"); }
 #endif
 
 void setUp() {

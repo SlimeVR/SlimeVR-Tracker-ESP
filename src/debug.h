@@ -39,7 +39,7 @@
 		   // disable if problems. Server does nothing with value so disabled atm
 #define SEND_ACCELERATION true  // send linear acceleration to the server
 
-#define EXT_SERIAL_COMMANDS false // Set to true to enable extra serial debug commands
+#define EXT_SERIAL_COMMANDS false  // Set to true to enable extra serial debug commands
 
 // Debug information
 
