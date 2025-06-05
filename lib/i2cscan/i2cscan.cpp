@@ -34,7 +34,7 @@ namespace I2CSCAN {
 #elif defined(ESP32C6)
 		std::array<uint8_t, 20> portArray = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 18, 19, 20, 21, 22, 23};
 		std::array<std::string, 20> portMap = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "14", "15", "18", "19", "20", "21", "22", "23"};
-		std::array<uint8_t, 4> portExclude = {12, 13, 16, 17, LED_PIN};
+		std::array<uint8_t, 5> portExclude = {12, 13, 16, 17, LED_PIN};
 #elif defined(ESP32)
 		std::array<uint8_t, 16> portArray = {4, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
 		std::array<std::string, 16> portMap = {"4", "13", "14", "15", "16", "17", "18", "19", "21", "22", "23", "25", "26", "27", "32", "33"};
