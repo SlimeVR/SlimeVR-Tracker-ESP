@@ -1,31 +1,11 @@
 #include "i2cscan.h"
 
 #include <array>
-#include <cstddef>
 #include <cstdint>
 #include <string>
 
 #include "../../src/globals.h"
-
-namespace {
-#ifdef ESP8266
-	std::array<uint8_t, 7> portArray = {16, 5, 4, 2, 14, 12, 13};
-	std::array<std::string, 7> portMap = {"D0", "D1", "D2", "D4", "D5", "D6", "D7"};
-	std::array<uint8_t, 1> portExclude = {LED_PIN};
-#elif defined(ESP32C3)
-	std::array<uint8_t, 9> portArray = {2, 3, 4, 5, 6, 7, 8, 9, 10};
-	std::array<std::string, 9> portMap = {"2", "3", "4", "5", "6", "7", "8", "9", "10"};
-	std::array<uint8_t, 5> portExclude = {18, 19, 20, 21, LED_PIN};
-#elif defined(ESP32C6)
-	std::array<uint8_t, 20> portArray = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 18, 19, 20, 21, 22, 23};
-	std::array<std::string, 20> portMap = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "14", "15", "18", "19", "20", "21", "22", "23"};
-	std::array<uint8_t, 4> portExclude = {12, 13, 16, 17, LED_PIN};
-#elif defined(ESP32)
-	std::array<uint8_t, 16> portArray = {4, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
-	std::array<std::string, 16> portMap = {"4", "13", "14", "15", "16", "17", "18", "19", "21", "22", "23", "25", "26", "27", "32", "33"};
-	std::array<uint8_t, 1> portExclude = {LED_PIN};
-#endif
-}
+#include "../../src/consts.h"
 
 namespace I2CSCAN {
     enum class ScanState : uint8_t {
@@ -40,10 +20,28 @@ namespace I2CSCAN {
     	uint8_t currentSCL = 0;
     	uint8_t currentAddress = 1;
     	bool found = false;
-		uint8_t busyHits = 0;
+		uint8_t txFails = 0;
     	std::vector<uint8_t> validPorts;
 
-		auto selectNextPort() -> bool {
+#ifdef ESP8266
+		std::array<uint8_t, 7> portArray = {16, 5, 4, 2, 14, 12, 13};
+		std::array<std::string, 7> portMap = {"D0", "D1", "D2", "D4", "D5", "D6", "D7"};
+		std::array<uint8_t, 1> portExclude = {LED_PIN};
+#elif defined(ESP32C3)
+		std::array<uint8_t, 9> portArray = {2, 3, 4, 5, 6, 7, 8, 9, 10};
+		std::array<std::string, 9> portMap = {"2", "3", "4", "5", "6", "7", "8", "9", "10"};
+		std::array<uint8_t, 5> portExclude = {18, 19, 20, 21, LED_PIN};
+#elif defined(ESP32C6)
+		std::array<uint8_t, 20> portArray = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 18, 19, 20, 21, 22, 23};
+		std::array<std::string, 20> portMap = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "14", "15", "18", "19", "20", "21", "22", "23"};
+		std::array<uint8_t, 4> portExclude = {12, 13, 16, 17, LED_PIN};
+#elif defined(ESP32)
+		std::array<uint8_t, 16> portArray = {4, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
+		std::array<std::string, 16> portMap = {"4", "13", "14", "15", "16", "17", "18", "19", "21", "22", "23", "25", "26", "27", "32", "33"};
+		std::array<uint8_t, 1> portExclude = {LED_PIN};
+#endif
+
+		bool selectNextPort() {
 			currentSCL++;
 
 			if(validPorts[currentSCL] == validPorts[currentSDA]) currentSCL++;
@@ -58,7 +56,7 @@ namespace I2CSCAN {
 
 			if (currentSDA >= validPorts.size()) {
 				if (!found) {
-					Serial.println("[ERR] I2C: No I2C devices found"); //NOLINT
+					Serial.println("[ERROR] I2C: No I2C devices found"); //NOLINT
 				}
 	#ifdef ESP32
 				Wire.end();
@@ -71,12 +69,28 @@ namespace I2CSCAN {
 			Wire.begin((int)validPorts[currentSDA], (int)validPorts[currentSCL]);
 			return true;
 		}
-	}
+		template <uint8_t size1, uint8_t size2>
+		uint8_t countCommonElements(
+			const std::array<uint8_t, size1>& array1,
+			const std::array<uint8_t, size2>& array2) {
+
+			uint8_t count = 0;
+			for (const auto& elem1 : array1) {
+				for (const auto& elem2 : array2) {
+					if (elem1 == elem2) {
+						count++;
+					}
+				}
+			}
+
+			return count;
+		}
+	}  // anonymous namespace
 
     void scani2cports() {
         if (scanState != ScanState::IDLE) {
 			if (scanState == ScanState::DONE) {
-				Serial.println("[DBG] I2C scan finished previously, resetting and scanning again..."); //NOLINT
+				Serial.println("[DEBUG] I2C scan finished previously, resetting and scanning again..."); //NOLINT
 			} else {
 				return; // Already scanning, do not start again
 			}
@@ -84,20 +98,11 @@ namespace I2CSCAN {
 
         // Filter out excluded ports
 		validPorts.clear();
-		validPorts.reserve(portArray.size() - portExclude.size()); // Reserve space to avoid reallocations
+		uint8_t excludes = countCommonElements<portArray.size(), portExclude.size()>(portArray, portExclude);
+		validPorts.reserve(portArray.size() - excludes); // Reserve space to avoid reallocations
 
 		for (const auto& port : portArray) {
-			bool isExcluded = false;
-
-			// Check if the port is in the excluded list
-			for (const auto& excluded : portExclude) {
-				if (port == excluded) {
-					isExcluded = true; // Port is excluded, break out of the loop
-					break;
-				}
-			}
-
-			if (!isExcluded) {
+			if (std::find(portExclude.begin(), portExclude.end(), port) == portExclude.end()) {
 				validPorts.push_back(port); // Port is valid, add it to the list
 			}
 		}
@@ -107,6 +112,7 @@ namespace I2CSCAN {
         currentSDA = 0;
         currentSCL = 1;
         currentAddress = 1;
+		txFails = 0;
         scanState = ScanState::SCANNING;
 	}
 
@@ -125,20 +131,24 @@ namespace I2CSCAN {
         const uint8_t error = Wire.endTransmission();
 
         if (error == 0) {
-            Serial.printf("[DBG] I2C (@ %s(%d) : %s(%d)): I2C device found at address 0x%02x  !\n",
+            Serial.printf("[INFO ] I2C (@ %s(%d) : %s(%d)): I2C device found at address 0x%02x!\n",
                             portMap[currentSDA].c_str(), validPorts[currentSDA], portMap[currentSCL].c_str(), validPorts[currentSCL], currentAddress);
             found = true;
-        } else if (error == 4) { // Address was busy, log and warn
-            Serial.printf("[WARN] I2C (@ %s(%d) : %s(%d)): Busy at address 0x%02x, skipping !\n",
+        } else if (error == 4) { // Unable to start transaction, log and warn
+            Serial.printf("[WARN ] I2C (@ %s(%d) : %s(%d)): Unable to start transaction at address 0x%02x!\n",
                             portMap[currentSDA].c_str(), validPorts[currentSDA], portMap[currentSCL].c_str(), validPorts[currentSCL], currentAddress);
-            busyHits++;
+            txFails++;
         }
 
         currentAddress++;
 
         if (currentAddress <= 127) {
-			if (busyHits > 10) {
-				Serial.printf("[ERR] I2C: Too many busy hits (%d), power down tracker and check connections !\n", busyHits);
+			if (txFails > 5) {
+#if BOARD == BOARD_SLIMEVR_LEGACY || BOARD == BOARD_SLIMEVR_DEV || BOARD == BOARD_SLIMEVR || BOARD == BOARD_SLIMEVR_V1_2
+				Serial.printf("[ERROR] I2C: Too many transaction errors (%d), please power off the tracker and contact SlimeVR support!\n", txFails);
+#else
+				Serial.printf("[ERROR] I2C: Too many transaction errors (%d), please power off the tracker and check the IMU connections!\n", txFails);
+#endif
 			}
 
             return;
@@ -148,17 +158,7 @@ namespace I2CSCAN {
         selectNextPort();
     }
 
-    auto inArray(uint8_t value, const uint8_t *array, size_t arraySize) -> bool {
-        for (size_t i = 0; i < arraySize; i++) {
-            if (value == array[i]) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    auto hasDevOnBus(uint8_t addr) -> bool {
+    bool hasDevOnBus(uint8_t addr) {
         byte error;
 #if ESP32C3
         int retries = 2;
@@ -191,7 +191,7 @@ namespace I2CSCAN {
      * This code may be freely used for both private and commerical use
      */
 
-    auto clearBus(uint8_t SDA, uint8_t SCL) -> int {
+    int clearBus(uint8_t SDA, uint8_t SCL) {
 #if defined(TWCR) && defined(TWEN)
         TWCR &= ~(_BV(TWEN)); // Disable the Atmel 2-Wire interface so we can control the SDA and SCL pins directly
 #endif

@@ -36,7 +36,7 @@
 #endif
 
 #ifdef EXT_SERIAL_COMMANDS
-#define CALLBACK_SIZE 8  // Increase callback size to allow for debug commands
+#define CALLBACK_SIZE 7  // Increase callback size to allow for debug commands
 #include "i2cscan.h"
 #endif
 
@@ -427,8 +427,6 @@ void cmdScanI2C(CmdParser* parser) {
 	logger.info("Forcing I2C scan...");
 	I2CSCAN::scani2cports();
 }
-
-void cmdPing(CmdParser* parser) { logger.info("PONG!"); }
 #endif
 
 void setUp() {
@@ -439,7 +437,6 @@ void setUp() {
 	cmdCallbacks.addCmd("DELCAL", &cmdDeleteCalibration);
 	cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
 #if EXT_SERIAL_COMMANDS
-	cmdCallbacks.addCmd("PING", &cmdPing);
 	cmdCallbacks.addCmd("SCANI2C", &cmdScanI2C);
 #endif
 }
