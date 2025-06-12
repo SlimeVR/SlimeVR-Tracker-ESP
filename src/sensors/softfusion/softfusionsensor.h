@@ -36,6 +36,7 @@
 #include "imuconsts.h"
 #include "motionprocessing/types.h"
 #include "sensors/SensorFusion.h"
+#include "sensors/softfusion/magdriver.h"
 
 namespace SlimeVR::Sensors {
 
@@ -326,6 +327,37 @@ public:
 		working = true;
 
 		calibrator.checkStartupCalibration();
+
+		if constexpr (Consts::SupportsMags) {
+			magDriver.init(
+				SoftFusion::MagInterface{
+					.readByte
+					= [&](uint8_t address) { return m_sensor.readAux(address); },
+					.writeByte = [&](uint8_t address, uint8_t value) {},
+					.setDeviceId
+					= [&](uint8_t deviceId) { m_sensor.setAuxId(deviceId); },
+					.startPolling
+					= [&](uint8_t dataReg, SoftFusion::MagDataWidth dataWidth
+					  ) { m_sensor.startAuxPolling(dataReg, dataWidth); },
+					.stopPolling = [&]() { m_sensor.stopAuxPolling(); },
+				},
+				Consts::Supports9ByteMag
+			);
+
+			if (toggles.getToggle(SensorToggles::MagEnabled)) {
+				magDriver.startPolling();
+			}
+		}
+
+		toggles.onToggleChange([&](SensorToggles toggle, bool value) {
+			if (toggle == SensorToggles::MagEnabled) {
+				if (value) {
+					magDriver.startPolling();
+				} else {
+					magDriver.stopPolling();
+				}
+			}
+		});
 	}
 
 	void startCalibration(int calibrationType) final {
@@ -351,6 +383,8 @@ public:
 
 	RestCalibrationDetector calibrationDetector;
 
+	SoftFusion::MagDriver magDriver;
+
 	static bool checkPresent(const RegisterInterface& imuInterface) {
 		I2Cdev::readTimeout = 100;
 		auto value = imuInterface.readReg(SensorType::Regs::WhoAmI::reg);
@@ -368,6 +402,10 @@ public:
 			}
 			return false;
 		}
+	}
+
+	const char* getAttachedMagnetometer() const final {
+		return magDriver.getAttachedMagName();
 	}
 };
 

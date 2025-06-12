@@ -164,6 +164,10 @@ void printState() {
 			sensor->isWorking() ? "true" : "false",
 			sensor->getHadData() ? "true" : "false"
 		);
+		const char* mag = sensor->getAttachedMagnetometer();
+		if (mag) {
+			logger.info("Sensor[%d] magnetometer: %s", sensor->getSensorId(), mag);
+		}
 	}
 	logger.info(
 		"Battery voltage: %.3f, level: %.1f%%",
@@ -288,6 +292,12 @@ void cmdGet(CmdParser* parser) {
 			sensor0->isWorking() ? "true" : "false",
 			sensor0->getHadData() ? "true" : "false"
 		);
+
+		const char* mag = sensor0->getAttachedMagnetometer();
+		if (mag) {
+			logger.info("[TEST] Sensor[0] magnetometer: %s", mag);
+		}
+
 		if (!sensor0->getHadData()) {
 			logger.error("[TEST] Sensor[0] didn't send any data yet!");
 		} else {
