@@ -31,6 +31,7 @@
 
 #include "../../../sensorinterface/RegisterInterface.h"
 #include "bmi270fw.h"
+#include "callbacks.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -433,12 +434,7 @@ struct BMI270 {
 		return to_ret;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTempSample
-	) {
+	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		const auto bytes_to_read = std::min(
@@ -480,7 +476,7 @@ struct BMI270 {
 						static_cast<int32_t>(ShortLimit::min()),
 						static_cast<int32_t>(ShortLimit::max())
 					);
-					processGyroSample(gyro, GyrTs);
+					callbacks.processGyroSample(gyro, GyrTs);
 				}
 
 				if (header & Fifo::AccelDataBit) {
@@ -488,7 +484,7 @@ struct BMI270 {
 					accel[0] = getFromFifo<uint16_t>(i, read_buffer);
 					accel[1] = getFromFifo<uint16_t>(i, read_buffer);
 					accel[2] = getFromFifo<uint16_t>(i, read_buffer);
-					processAccelSample(accel, AccTs);
+					callbacks.processAccelSample(accel, AccTs);
 				}
 			}
 		}
