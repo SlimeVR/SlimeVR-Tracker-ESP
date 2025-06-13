@@ -23,12 +23,64 @@
 #ifndef SLIMEVR_WIFIPROVISIONING_H_
 #define SLIMEVR_WIFIPROVISIONING_H_
 
-namespace WiFiNetwork {
-void upkeepProvisioning();
-void startProvisioning();
-void stopProvisioning();
-bool isProvisioning();
-void provideNeighbours();
-}  // namespace WiFiNetwork
+#include "logging/Logger.h"
+
+#if ESP32
+#include <esp_now.h>
+#endif
+
+namespace SlimeVR {
+
+class WiFiProvisioning {
+public:
+	bool startProvisioning();
+	void stopProvisioning();
+
+	bool startSearchForProvisioner();
+	void stopSearchForProvisioner();
+
+	void tick();
+
+	[[nodiscard]] bool isSearching() const;
+
+private:
+	bool initEspnow();
+	void handleMessage(uint8_t* macAddress, const uint8_t* data, uint8_t length);
+	void handleSearchMessage(uint8_t* macAddress, const uint8_t* data, uint8_t length);
+	void handleReplyMessage(uint8_t* macAddress, const uint8_t* data, uint8_t length);
+
+	static uint8_t addPeer(uint8_t* macAddress);
+	static void delPeer(uint8_t* macAddress);
+
+	uint8_t BroadcastMacAddress[6]{0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+	static constexpr float SearchIntervalSeconds = 0.1f;
+	static constexpr float SearchTimeoutSeconds = 120.0f;
+	static constexpr float ProvisioningTimeoutSeconds = 60.0f;
+
+	enum class ProvisioningStatus { Idle, Provisioning, Searching };
+
+	enum class ProvisioningMessage : uint8_t {
+		Search = 0,
+		Reply = 1,
+	};
+
+	ProvisioningStatus status = ProvisioningStatus::Idle;
+	SlimeVR::Logging::Logger logger{"WiFiProvisioning"};
+	uint32_t startMillis = 0;
+	uint32_t lastSearchSentMillis = 0;
+	uint8_t nextSearchChannel = 1;
+
+#if ESP8266
+	friend void espnowReceiveCallback(uint8_t*, uint8_t*, uint8_t);
+#elif ESP32
+	friend void espnowReceiveCallback(
+		const esp_now_recv_info_t* senderInfo,
+		const uint8_t* data,
+		int dataLen
+	);
+#endif
+};
+
+}  // namespace SlimeVR
 
 #endif  // SLIMEVR_WIFIPROVISIONING_H_
