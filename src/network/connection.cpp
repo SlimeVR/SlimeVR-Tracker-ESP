@@ -373,6 +373,11 @@ void Connection::sendTrackerDiscovery() {
 			// Tracker type to hint the server if it's a glove or normal tracker or
 			// something else
 			MUST_TRANSFER_BOOL(sendByte(static_cast<uint8_t>(TRACKER_TYPE)));
+			MUST_TRANSFER_BOOL(sendShortString(VENDOR_NAME));
+			MUST_TRANSFER_BOOL(sendShortString(VENDOR_URL));
+			MUST_TRANSFER_BOOL(sendShortString(PRODUCT_NAME));
+			MUST_TRANSFER_BOOL(sendShortString(UPDATE_ADDRESS));
+			MUST_TRANSFER_BOOL(sendShortString(UPDATE_NAME));
 			return true;
 		},
 		0

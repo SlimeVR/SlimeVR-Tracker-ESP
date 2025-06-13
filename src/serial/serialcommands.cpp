@@ -296,6 +296,8 @@ void cmdGet(CmdParser* parser) {
 		const char* mag = sensor0->getAttachedMagnetometer();
 		if (mag) {
 			logger.info("[TEST] Sensor[0] magnetometer: %s", mag);
+		} else {
+			logger.info("[TEST] Sensor[0] has no magnetometer attached");
 		}
 
 		if (!sensor0->getHadData()) {

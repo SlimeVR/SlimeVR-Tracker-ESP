@@ -52,3 +52,23 @@
 #ifndef EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION
 #define EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION true
 #endif
+
+#ifndef VENDOR_NAME
+#define VENDOR_NAME "Unknown"
+#endif
+
+#ifndef VENDOR_URL
+#define VENDOR_URL ""
+#endif
+
+#ifndef PRODUCT_NAME
+#define PRODUCT_NAME "SlimeVR Tracker"
+#endif
+
+#ifndef UPDATE_ADDRESS
+#define UPDATE_ADDRESS ""
+#endif
+
+#ifndef UPDATE_NAME
+#define UPDATE_NAME ""
+#endif
