@@ -165,11 +165,11 @@ bool Connection::sendPacketNumber() {
 }
 
 bool Connection::sendShortString(const char* str) {
-	uint8_t size = strlen(str);
+	size_t size = strlen(str);
 
 	assert(size <= 255);
 
-	MUST_TRANSFER_BOOL(sendByte(size));
+	MUST_TRANSFER_BOOL(sendByte(static_cast<uint8_t>(size)));
 	if (size > 0) {
 		MUST_TRANSFER_BOOL(sendBytes((const uint8_t*)str, size));
 	}
@@ -767,7 +767,8 @@ void Connection::update() {
 				auto& sensors = sensorManager.getSensors();
 
 				if (sensorId >= sensors.size()) {
-					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id"
+					m_Logger.warn(
+						"Invalid sensor config flag packet: invalid sensor id"
 					);
 					break;
 				}
