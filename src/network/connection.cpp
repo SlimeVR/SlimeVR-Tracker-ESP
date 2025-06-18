@@ -23,6 +23,8 @@
 
 #include "connection.h"
 
+#include <string_view>
+
 #include "GlobalVars.h"
 #include "logging/Logger.h"
 #include "packets.h"
@@ -165,8 +167,12 @@ bool Connection::sendPacketNumber() {
 bool Connection::sendShortString(const char* str) {
 	uint8_t size = strlen(str);
 
+	assert(size <= 255);
+
 	MUST_TRANSFER_BOOL(sendByte(size));
-	MUST_TRANSFER_BOOL(sendBytes((const uint8_t*)str, size));
+	if (size > 0) {
+		MUST_TRANSFER_BOOL(sendBytes((const uint8_t*)str, size));
+	}
 
 	return true;
 }
@@ -373,10 +379,15 @@ void Connection::sendTrackerDiscovery() {
 			// Tracker type to hint the server if it's a glove or normal tracker or
 			// something else
 			MUST_TRANSFER_BOOL(sendByte(static_cast<uint8_t>(TRACKER_TYPE)));
+			static_assert(std::string_view{VENDOR_NAME}.size() <= 255);
 			MUST_TRANSFER_BOOL(sendShortString(VENDOR_NAME));
+			static_assert(std::string_view{VENDOR_URL}.size() <= 255);
 			MUST_TRANSFER_BOOL(sendShortString(VENDOR_URL));
+			static_assert(std::string_view{PRODUCT_NAME}.size() <= 255);
 			MUST_TRANSFER_BOOL(sendShortString(PRODUCT_NAME));
+			static_assert(std::string_view{UPDATE_ADDRESS}.size() <= 255);
 			MUST_TRANSFER_BOOL(sendShortString(UPDATE_ADDRESS));
+			static_assert(std::string_view{UPDATE_NAME}.size() <= 255);
 			MUST_TRANSFER_BOOL(sendShortString(UPDATE_NAME));
 			return true;
 		},
@@ -756,7 +767,8 @@ void Connection::update() {
 				auto& sensors = sensorManager.getSensors();
 
 				if (sensorId >= sensors.size()) {
-					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id"
+					m_Logger.warn(
+						"Invalid sensor config flag packet: invalid sensor id"
 					);
 					break;
 				}
