@@ -767,8 +767,7 @@ void Connection::update() {
 				auto& sensors = sensorManager.getSensors();
 
 				if (sensorId >= sensors.size()) {
-					m_Logger.warn(
-						"Invalid sensor config flag packet: invalid sensor id"
+					m_Logger.warn("Invalid sensor config flag packet: invalid sensor id"
 					);
 					break;
 				}
