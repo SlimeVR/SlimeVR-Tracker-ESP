@@ -50,5 +50,5 @@ private:
 
 	bool magEnabled = !USE_6_AXIS;
 	bool calibrationEnabled = true;
-	bool tempGradientCalibrationEnabled = true;
+	bool tempGradientCalibrationEnabled = false; // disable by default, it is not clear that it really helps
 };
