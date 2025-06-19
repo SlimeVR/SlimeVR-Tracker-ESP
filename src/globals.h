@@ -62,7 +62,7 @@
 #endif
 
 #ifndef PRODUCT_NAME
-#define PRODUCT_NAME "SlimeVR Tracker"
+#define PRODUCT_NAME "DIY SlimeVR Tracker"
 #endif
 
 #ifndef UPDATE_ADDRESS
