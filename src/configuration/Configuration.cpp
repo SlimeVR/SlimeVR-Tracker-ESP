@@ -31,9 +31,9 @@
 
 #define DIR_CALIBRATIONS "/calibrations"
 #define DIR_TEMPERATURE_CALIBRATIONS "/tempcalibrations"
+#define DIR_TOGGLES "/toggles"
 
-namespace SlimeVR {
-namespace Configuration {
+namespace SlimeVR::Configuration {
 void Configuration::setup() {
 	if (m_Loaded) {
 		return;
@@ -110,12 +110,20 @@ void Configuration::save() {
 		}
 
 		char path[17];
-		sprintf(path, DIR_CALIBRATIONS "/%d", i);
+		sprintf(path, DIR_CALIBRATIONS "/%zu", i);
 
 		m_Logger.trace("Saving sensor config data for %d", i);
 
 		File file = LittleFS.open(path, "w");
 		file.write((uint8_t*)&config, sizeof(SensorConfig));
+		file.close();
+
+		sprintf(path, DIR_TOGGLES "/%zu", i);
+
+		m_Logger.trace("Saving sensor toggle state for %d", i);
+
+		file = LittleFS.open(path, "w");
+		file.write((uint8_t*)&m_SensorToggles[i], sizeof(SensorToggleState));
 		file.close();
 	}
 
@@ -132,6 +140,7 @@ void Configuration::reset() {
 	LittleFS.format();
 
 	m_Sensors.clear();
+	m_SensorToggles.clear();
 	m_Config.version = 1;
 	save();
 
@@ -160,6 +169,39 @@ void Configuration::setSensor(size_t sensorID, const SensorConfig& config) {
 	m_Sensors[sensorID] = config;
 }
 
+SensorToggleState Configuration::getSensorToggles(size_t sensorId) const {
+	if (sensorId >= m_SensorToggles.size()) {
+		return {};
+	}
+
+	return m_SensorToggles.at(sensorId);
+}
+
+void Configuration::setSensorToggles(size_t sensorId, SensorToggleState state) {
+	size_t currentSensors = m_SensorToggles.size();
+
+	if (sensorId >= currentSensors) {
+		m_SensorToggles.resize(sensorId + 1);
+	}
+
+	m_SensorToggles[sensorId] = state;
+}
+
+void Configuration::eraseSensors() {
+	m_Sensors.clear();
+
+	SlimeVR::Utils::forEachFile(DIR_CALIBRATIONS, [&](SlimeVR::Utils::File f) {
+		char path[17];
+		sprintf(path, DIR_CALIBRATIONS "/%s", f.name());
+
+		f.close();
+
+		LittleFS.remove(path);
+	});
+
+	save();
+}
+
 void Configuration::loadSensors() {
 	SlimeVR::Utils::forEachFile(DIR_CALIBRATIONS, [&](SlimeVR::Utils::File f) {
 		SensorConfig sensorConfig;
@@ -172,7 +214,26 @@ void Configuration::loadSensors() {
 			sensorId
 		);
 
+		if (sensorConfig.type == SensorConfigType::BNO0XX) {
+			SensorToggleState toggles;
+			toggles.setToggle(
+				SensorToggles::MagEnabled,
+				sensorConfig.data.bno0XX.magEnabled
+			);
+			setSensorToggles(sensorId, toggles);
+		}
+
 		setSensor(sensorId, sensorConfig);
+	});
+
+	SlimeVR::Utils::forEachFile(DIR_TOGGLES, [&](SlimeVR::Utils::File f) {
+		SensorToggleState sensorToggleState;
+		f.read((uint8_t*)&sensorToggleState, sizeof(SensorToggleState));
+
+		uint8_t sensorId = strtoul(f.name(), nullptr, 10);
+		m_Logger.debug("Found sensor toggle state at index %d", sensorId);
+
+		setSensorToggles(sensorId, sensorToggleState);
 	});
 }
 
@@ -380,5 +441,4 @@ void Configuration::print() {
 		}
 	}
 }
-}  // namespace Configuration
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Configuration

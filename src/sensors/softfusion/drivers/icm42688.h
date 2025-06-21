@@ -27,6 +27,9 @@
 #include <array>
 #include <cstdint>
 
+#include "callbacks.h"
+#include "vqf.h"
+
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 8g
@@ -34,7 +37,6 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // Gyroscope ODR = 500Hz, accel ODR = 100Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
-template <typename I2CImpl>
 struct ICM42688 {
 	static constexpr uint8_t Address = 0x68;
 	static constexpr auto Name = "ICM-42688";
@@ -42,24 +44,37 @@ struct ICM42688 {
 
 	static constexpr float GyrTs = 1.0 / 500.0;
 	static constexpr float AccTs = 1.0 / 100.0;
+	static constexpr float TempTs = 1.0 / 500.0;
 
 	static constexpr float MagTs = 1.0 / 100;
 
 	static constexpr float GyroSensitivity = 32.8f;
 	static constexpr float AccelSensitivity = 4096.0f;
 
-	I2CImpl i2c;
-	SlimeVR::Logging::Logger& logger;
-	ICM42688(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: i2c(i2c)
-		, logger(logger) {}
+	static constexpr float TemperatureBias = 25.0f;
+	static constexpr float TemperatureSensitivity = 2.07f;
+
+	static constexpr float TemperatureZROChange = 20.0f;
+
+	static constexpr VQFParams SensorVQFParams{
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 0.5f,
+		.biasClip = 1.0f,
+		.restThGyr = 0.5f,
+		.restThAcc = 0.196f,
+	};
+
+	RegisterInterface& m_RegisterInterface;
+	SlimeVR::Logging::Logger& m_Logger;
+	ICM42688(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+		: m_RegisterInterface(registerInterface)
+		, m_Logger(logger) {}
 
 	struct Regs {
 		struct WhoAmI {
 			static constexpr uint8_t reg = 0x75;
 			static constexpr uint8_t value = 0x47;
 		};
-		static constexpr uint8_t TempData = 0x1d;
 
 		struct DeviceConfig {
 			static constexpr uint8_t reg = 0x11;
@@ -78,8 +93,8 @@ struct ICM42688 {
 		struct FifoConfig1 {
 			static constexpr uint8_t reg = 0x5f;
 			static constexpr uint8_t value
-				= 0b1 | (0b1 << 1)
-				| (0b0 << 2);  // fifo accel en=1, gyro=1, temp=0 todo: fsync, hires
+				= 0b1 | (0b1 << 1) | (0b1 << 2)
+				| (0b0 << 4);  // fifo accel en=1, gyro=1, temp=1, hires=1
 		};
 		struct GyroConfig {
 			static constexpr uint8_t reg = 0x4f;
@@ -111,41 +126,40 @@ struct ICM42688 {
 			struct {
 				int16_t accel[3];
 				int16_t gyro[3];
-				uint8_t temp;
-				uint8_t timestamp[2];  // cannot do uint16_t because it's unaligned
+				uint16_t temp;
+				uint16_t timestamp;
+				uint8_t xlsb;
+				uint8_t ylsb;
+				uint8_t zlsb;
 			} part;
-			uint8_t raw[15];
+			uint8_t raw[19];
 		};
 	};
 #pragma pack(pop)
 
-	static constexpr size_t FullFifoEntrySize = 16;
+	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
 	bool initialize() {
 		// perform initialization step
-		i2c.writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
+		m_RegisterInterface.writeReg(
+			Regs::DeviceConfig::reg,
+			Regs::DeviceConfig::valueSwReset
+		);
 		delay(20);
 
-		i2c.writeReg(Regs::IntfConfig0::reg, Regs::IntfConfig0::value);
-		i2c.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
-		i2c.writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
-		i2c.writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
-		i2c.writeReg(Regs::FifoConfig1::reg, Regs::FifoConfig1::value);
-		i2c.writeReg(Regs::PwrMgmt::reg, Regs::PwrMgmt::value);
+		m_RegisterInterface.writeReg(Regs::IntfConfig0::reg, Regs::IntfConfig0::value);
+		m_RegisterInterface.writeReg(Regs::GyroConfig::reg, Regs::GyroConfig::value);
+		m_RegisterInterface.writeReg(Regs::AccelConfig::reg, Regs::AccelConfig::value);
+		m_RegisterInterface.writeReg(Regs::FifoConfig0::reg, Regs::FifoConfig0::value);
+		m_RegisterInterface.writeReg(Regs::FifoConfig1::reg, Regs::FifoConfig1::value);
+		m_RegisterInterface.writeReg(Regs::PwrMgmt::reg, Regs::PwrMgmt::value);
 		delay(1);
 
 		return true;
 	}
 
-	float getDirectTemp() const {
-		const auto value = static_cast<int16_t>(i2c.readReg16(Regs::TempData));
-		float result = ((float)value / 132.48f) + 25.0f;
-		return result;
-	}
-
-	template <typename AccelCall, typename GyroCall>
-	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
-		const auto fifo_bytes = i2c.readReg16(Regs::FifoCount);
+	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
+		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
 		const auto bytes_to_read = std::min(
@@ -153,7 +167,8 @@ struct ICM42688 {
 									   static_cast<size_t>(fifo_bytes)
 								   )
 								 / FullFifoEntrySize * FullFifoEntrySize;
-		i2c.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
+		m_RegisterInterface
+			.readBytes(Regs::FifoData, bytes_to_read, read_buffer.data());
 		for (auto i = 0u; i < bytes_to_read; i += FullFifoEntrySize) {
 			FifoEntryAligned entry;
 			memcpy(
@@ -161,16 +176,40 @@ struct ICM42688 {
 				&read_buffer[i + 0x1],
 				sizeof(FifoEntryAligned)
 			);  // skip fifo header
-			processGyroSample(entry.part.gyro, GyrTs);
+
+			const int32_t gyroData[3]{
+				static_cast<int32_t>(entry.part.gyro[0]) << 4 | (entry.part.xlsb & 0xf),
+				static_cast<int32_t>(entry.part.gyro[1]) << 4 | (entry.part.ylsb & 0xf),
+				static_cast<int32_t>(entry.part.gyro[2]) << 4 | (entry.part.zlsb & 0xf),
+			};
+			callbacks.processGyroSample(gyroData, GyrTs);
 
 			if (entry.part.accel[0] != -32768) {
-				processAccelSample(entry.part.accel, AccTs);
+				const int32_t accelData[3]{
+					static_cast<int32_t>(entry.part.accel[0]) << 4
+						| (static_cast<int32_t>(entry.part.xlsb) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.part.accel[1]) << 4
+						| (static_cast<int32_t>(entry.part.ylsb) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.part.accel[2]) << 4
+						| (static_cast<int32_t>(entry.part.zlsb) & 0xf0 >> 4),
+				};
+				callbacks.processAccelSample(accelData, AccTs);
+			}
+
+			if (entry.part.temp != 0x8000) {
+				callbacks.processTempSample(
+					static_cast<int16_t>(entry.part.temp),
+					TempTs
+				);
 			}
 		}
 	}
 
 	void deinit() {
-		i2c.writeReg(Regs::DeviceConfig::reg, Regs::DeviceConfig::valueSwReset);
+		m_RegisterInterface.writeReg(
+			Regs::DeviceConfig::reg,
+			Regs::DeviceConfig::valueSwReset
+		);
 	}
 };
 

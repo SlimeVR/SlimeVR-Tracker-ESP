@@ -24,6 +24,7 @@
 #pragma once
 
 #include "icm45base.h"
+#include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
@@ -31,16 +32,29 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 4000dps
 // using high resolution mode
 // Uses 32.768kHz clock
-// Gyroscope ODR = 409.6Hz, accel ODR = 204.8Hz
+// Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
-template <typename I2CImpl>
-struct ICM45686 : public ICM45Base<I2CImpl> {
+struct ICM45686 : public ICM45Base {
 	static constexpr auto Name = "ICM-45686";
 	static constexpr auto Type = SensorTypeID::ICM45686;
 
-	ICM45686(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: ICM45Base<I2CImpl>{i2c, logger} {}
+	static constexpr VQFParams SensorVQFParams{
+		.tauAcc = 7.171490,
+		.biasSigmaInit = 0.337976,
+		.biasForgettingTime = 352.235500,
+		.biasClip = 5.0,
+		.biasSigmaMotion = 0.985346,
+		.biasVerticalForgettingFactor = 0.007959,
+		.biasSigmaRest = 0.028897,
+		.restMinT = 4.648680,
+		.restFilterTau = 1.900166,
+		.restThGyr = 2.620598,
+		.restThAcc = 2.142593,
+	};
+
+	ICM45686(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+		: ICM45Base{registerInterface, logger} {}
 
 	struct Regs {
 		struct WhoAmI {
@@ -59,15 +73,11 @@ struct ICM45686 : public ICM45Base<I2CImpl> {
 		};
 	};
 
-	float getDirectTemp() const { return ICM45Base<I2CImpl>::getDirectTemp(); }
-
-	using ICM45Base<I2CImpl>::i2c;
-
 	bool initialize() {
-		ICM45Base<I2CImpl>::softResetIMU();
-		i2c.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
-		i2c.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
-		return ICM45Base<I2CImpl>::initializeBase();
+		ICM45Base::softResetIMU();
+		m_RegisterInterface.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
+		m_RegisterInterface.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
+		return ICM45Base::initializeBase();
 	}
 };
 

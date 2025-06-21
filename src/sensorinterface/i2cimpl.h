@@ -23,25 +23,26 @@
 
 #pragma once
 
+#include <i2cscan.h>
+
 #include <cstdint>
 
 #include "I2Cdev.h"
+#include "RegisterInterface.h"
 
-namespace SlimeVR::Sensors::SoftFusion {
+namespace SlimeVR::Sensors {
 
-struct I2CImpl {
-	static constexpr size_t MaxTransactionLength = I2C_BUFFER_LENGTH - 2;
-
+struct I2CImpl : public RegisterInterface {
 	I2CImpl(uint8_t devAddr)
 		: m_devAddr(devAddr) {}
 
-	uint8_t readReg(uint8_t regAddr) const {
+	uint8_t readReg(uint8_t regAddr) const override {
 		uint8_t buffer = 0;
 		I2Cdev::readByte(m_devAddr, regAddr, &buffer);
 		return buffer;
 	}
 
-	uint16_t readReg16(uint8_t regAddr) const {
+	uint16_t readReg16(uint8_t regAddr) const override {
 		uint16_t buffer = 0;
 		I2Cdev::readBytes(
 			m_devAddr,
@@ -52,11 +53,11 @@ struct I2CImpl {
 		return buffer;
 	}
 
-	void writeReg(uint8_t regAddr, uint8_t value) const {
+	void writeReg(uint8_t regAddr, uint8_t value) const override {
 		I2Cdev::writeByte(m_devAddr, regAddr, value);
 	}
 
-	void writeReg16(uint8_t regAddr, uint16_t value) const {
+	void writeReg16(uint8_t regAddr, uint16_t value) const override {
 		I2Cdev::writeBytes(
 			m_devAddr,
 			regAddr,
@@ -65,16 +66,29 @@ struct I2CImpl {
 		);
 	}
 
-	void readBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const {
+	void readBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const override {
 		I2Cdev::readBytes(m_devAddr, regAddr, size, buffer);
 	}
 
-	void writeBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const {
+	void writeBytes(uint8_t regAddr, uint8_t size, uint8_t* buffer) const override {
 		I2Cdev::writeBytes(m_devAddr, regAddr, size, buffer);
+	}
+
+	bool hasSensorOnBus() {
+		// Ask twice, because we're nice like this
+		return I2CSCAN::hasDevOnBus(m_devAddr) || I2CSCAN::hasDevOnBus(m_devAddr);
+	}
+
+	uint8_t getAddress() const override { return m_devAddr; }
+
+	std::string toString() const {
+		char buf[16];
+		std::snprintf(buf, sizeof(buf), "I2C(0x%02x)", m_devAddr);
+		return std::string(buf);
 	}
 
 private:
 	uint8_t m_devAddr;
 };
 
-}  // namespace SlimeVR::Sensors::SoftFusion
+}  // namespace SlimeVR::Sensors

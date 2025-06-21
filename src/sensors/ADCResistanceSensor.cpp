@@ -24,12 +24,13 @@
 
 #include "GlobalVars.h"
 
+namespace SlimeVR::Sensors {
 void ADCResistanceSensor::motionLoop() {
 #if ESP8266
 	float voltage = ((float)analogRead(m_Pin)) * ADCVoltageMax / ADCResolution;
 	m_Data = m_ResistanceDivider
 		   * (ADCVoltageMax / voltage - 1.0f);  // Convert voltage to resistance
-#elif ESP32
+#elif defined(ESP32)
 	float voltage = ((float)analogReadMilliVolts(m_Pin)) / 1000;
 	m_Data = m_ResistanceDivider
 		   * (m_VCC / voltage - 1.0f);  // Convert voltage to resistance
@@ -39,3 +40,5 @@ void ADCResistanceSensor::motionLoop() {
 void ADCResistanceSensor::sendData() {
 	networkConnection.sendFlexData(sensorId, m_Data);
 }
+
+}  // namespace SlimeVR::Sensors

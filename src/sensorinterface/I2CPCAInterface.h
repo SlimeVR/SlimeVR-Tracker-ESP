@@ -43,8 +43,13 @@ public:
 		, m_Channel(channel){};
 	~I2CPCASensorInterface(){};
 
-	void init() override final;
+	bool init() override final;
 	void swapIn() override final;
+
+	[[nodiscard]] std::string toString() const final {
+		using namespace std::string_literals;
+		return "PCAWire("s + std::to_string(m_Channel) + ")";
+	}
 
 protected:
 	I2CWireSensorInterface m_Wire;

@@ -35,8 +35,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 1000dps
 // Gyroscope ODR = 416Hz, accel ODR = 104Hz
 
-template <typename I2CImpl>
-struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
+struct LSM6DSR : LSM6DSOutputHandler {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DSR";
 	static constexpr auto Type = SensorTypeID::LSM6DSR;
@@ -44,22 +43,34 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 	static constexpr float GyrFreq = 416;
 	static constexpr float AccFreq = 104;
 	static constexpr float MagFreq = 120;
+	static constexpr float TempFreq = 52;
 
 	static constexpr float GyrTs = 1.0 / GyrFreq;
 	static constexpr float AccTs = 1.0 / AccFreq;
 	static constexpr float MagTs = 1.0 / MagFreq;
+	static constexpr float TempTs = 1.0 / TempFreq;
 
 	static constexpr float GyroSensitivity = 1000 / 35.0f;
 	static constexpr float AccelSensitivity = 1000 / 0.244f;
 
-	using LSM6DSOutputHandler<I2CImpl>::i2c;
+	static constexpr float TemperatureBias = 25.0f;
+	static constexpr float TemperatureSensitivity = 256.0f;
+
+	static constexpr float TemperatureZROChange = 20.0f;
+
+	static constexpr VQFParams SensorVQFParams{
+		.motionBiasEstEnabled = true,
+		.biasSigmaInit = 1.0f,
+		.biasClip = 2.0f,
+		.restThGyr = 1.0f,
+		.restThAcc = 0.192f,
+	};
 
 	struct Regs {
 		struct WhoAmI {
 			static constexpr uint8_t reg = 0x0f;
 			static constexpr uint8_t value = 0x6b;
 		};
-		static constexpr uint8_t OutTemp = 0x20;
 		struct Ctrl1XL {
 			static constexpr uint8_t reg = 0x10;
 			static constexpr uint8_t value = (0b01001100);  // XL at 104 Hz, 8g FS
@@ -81,43 +92,47 @@ struct LSM6DSR : LSM6DSOutputHandler<I2CImpl> {
 		};
 		struct FifoCtrl4Mode {
 			static constexpr uint8_t reg = 0x0a;
-			static constexpr uint8_t value = (0b110);  // continuous mode
+			static constexpr uint8_t value = (0b110110);  // continuous mode,
+														  // temperature at 52Hz
 		};
 
 		static constexpr uint8_t FifoStatus = 0x3a;
 		static constexpr uint8_t FifoData = 0x78;
 	};
 
-	LSM6DSR(I2CImpl i2c, SlimeVR::Logging::Logger& logger)
-		: LSM6DSOutputHandler<I2CImpl>(i2c, logger) {}
+	LSM6DSR(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
+		: LSM6DSOutputHandler(registerInterface, logger) {}
 
 	bool initialize() {
 		// perform initialization step
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
 		delay(20);
-		i2c.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
-		i2c.writeReg(Regs::Ctrl2GY::reg, Regs::Ctrl2GY::value);
-		i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
-		i2c.writeReg(Regs::FifoCtrl3BDR::reg, Regs::FifoCtrl3BDR::value);
-		i2c.writeReg(Regs::FifoCtrl4Mode::reg, Regs::FifoCtrl4Mode::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl1XL::reg, Regs::Ctrl1XL::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl2GY::reg, Regs::Ctrl2GY::value);
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::value);
+		m_RegisterInterface.writeReg(
+			Regs::FifoCtrl3BDR::reg,
+			Regs::FifoCtrl3BDR::value
+		);
+		m_RegisterInterface.writeReg(
+			Regs::FifoCtrl4Mode::reg,
+			Regs::FifoCtrl4Mode::value
+		);
 		return true;
 	}
 
-	float getDirectTemp() const {
-		return LSM6DSOutputHandler<I2CImpl>::template getDirectTemp<Regs>();
-	}
-
-	template <typename AccelCall, typename GyroCall>
-	void bulkRead(AccelCall&& processAccelSample, GyroCall&& processGyroSample) {
-		LSM6DSOutputHandler<I2CImpl>::template bulkRead<AccelCall, GyroCall, Regs>(
-			processAccelSample,
-			processGyroSample,
+	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+		LSM6DSOutputHandler::template bulkRead<Regs>(
+			std::move(callbacks),
 			GyrTs,
-			AccTs
+			AccTs,
+			TempTs
 		);
 	}
 
-	void deinit() { i2c.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset); }
+	void deinit() {
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+	}
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers

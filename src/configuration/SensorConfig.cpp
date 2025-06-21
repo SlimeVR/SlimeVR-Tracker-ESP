@@ -23,8 +23,7 @@
 
 #include "SensorConfig.h"
 
-namespace SlimeVR {
-namespace Configuration {
+namespace SlimeVR::Configuration {
 const char* calibrationConfigTypeToString(SensorConfigType type) {
 	switch (type) {
 		case SensorConfigType::NONE:
@@ -41,27 +40,23 @@ const char* calibrationConfigTypeToString(SensorConfigType type) {
 			return "SoftFusion (common)";
 		case SensorConfigType::BNO0XX:
 			return "BNO0XX";
+		case SensorConfigType::RUNTIME_CALIBRATION:
+			return "SoftFusion (runtime calibration)";
 		default:
 			return "UNKNOWN";
 	}
 }
 
-// 1st bit specifies if magnetometer is enabled or disabled
-// 2nd bit specifies if magnetometer is supported
-uint16_t configDataToNumber(SensorConfig* sensorConfig, bool magSupported) {
-	uint16_t data = 0;
-	data += magSupported << 1;
-	switch (sensorConfig->type) {
-		case SensorConfigType::BNO0XX: {
-			auto config = &sensorConfig->data.bno0XX;
-			data += config->magEnabled;
-			break;
-		}
-		case SensorConfigType::NONE:
-		default:
-			break;
-	}
-	return data;
+bool SensorConfigBits::operator==(const SensorConfigBits& rhs) const {
+	return magEnabled == rhs.magEnabled && magSupported == rhs.magSupported
+		&& calibrationEnabled == rhs.calibrationEnabled
+		&& calibrationSupported == rhs.calibrationSupported
+		&& tempGradientCalibrationEnabled == rhs.tempGradientCalibrationEnabled
+		&& tempGradientCalibrationSupported == rhs.tempGradientCalibrationSupported;
 }
-}  // namespace Configuration
-}  // namespace SlimeVR
+
+bool SensorConfigBits::operator!=(const SensorConfigBits& rhs) const {
+	return !(*this == rhs);
+}
+
+}  // namespace SlimeVR::Configuration

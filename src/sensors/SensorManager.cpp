@@ -23,126 +23,18 @@
 
 #include "SensorManager.h"
 
-#include <map>
+#include "SensorBuilder.h"
 
-#include "bmi160sensor.h"
-#include "bno055sensor.h"
-#include "bno080sensor.h"
-#include "icm20948sensor.h"
-#include "mpu6050sensor.h"
-#include "mpu9250sensor.h"
-#include "sensorinterface/I2CPCAInterface.h"
-#include "sensorinterface/MCP23X17PinInterface.h"
-#include "softfusion/drivers/bmi270.h"
-#include "softfusion/drivers/icm42688.h"
-#include "softfusion/drivers/icm45605.h"
-#include "softfusion/drivers/icm45686.h"
-#include "softfusion/drivers/lsm6ds3trc.h"
-#include "softfusion/drivers/lsm6dso.h"
-#include "softfusion/drivers/lsm6dsr.h"
-#include "softfusion/drivers/lsm6dsv.h"
-#include "softfusion/drivers/mpu6050.h"
-#include "softfusion/i2cimpl.h"
-#include "softfusion/softfusionsensor.h"
-
-#if ESP32
-#include "driver/i2c.h"
-#endif
-
-namespace SlimeVR {
-namespace Sensors {
-using SoftFusionLSM6DS3TRC
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DS3TRC, SoftFusion::I2CImpl>;
-using SoftFusionICM42688
-	= SoftFusionSensor<SoftFusion::Drivers::ICM42688, SoftFusion::I2CImpl>;
-using SoftFusionBMI270
-	= SoftFusionSensor<SoftFusion::Drivers::BMI270, SoftFusion::I2CImpl>;
-using SoftFusionLSM6DSV
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSV, SoftFusion::I2CImpl>;
-using SoftFusionLSM6DSO
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSO, SoftFusion::I2CImpl>;
-using SoftFusionLSM6DSR
-	= SoftFusionSensor<SoftFusion::Drivers::LSM6DSR, SoftFusion::I2CImpl>;
-using SoftFusionMPU6050
-	= SoftFusionSensor<SoftFusion::Drivers::MPU6050, SoftFusion::I2CImpl>;
-using SoftFusionICM45686
-	= SoftFusionSensor<SoftFusion::Drivers::ICM45686, SoftFusion::I2CImpl>;
-using SoftFusionICM45605
-	= SoftFusionSensor<SoftFusion::Drivers::ICM45605, SoftFusion::I2CImpl>;
+namespace SlimeVR::Sensors {
 
 void SensorManager::setup() {
-	std::map<int, DirectPinInterface*> directPinInterfaces;
-	std::map<int, MCP23X17PinInterface*> mcpPinInterfaces;
-	std::map<std::tuple<int, int>, I2CWireSensorInterface*> i2cWireInterfaces;
-	std::map<std::tuple<int, int, int, int>, I2CPCASensorInterface*> pcaWireInterfaces;
-
-	auto directPin = [&](int pin) {
-		if (!directPinInterfaces.contains(pin)) {
-			auto ptr = new DirectPinInterface(pin);
-			directPinInterfaces[pin] = ptr;
-		}
-		return directPinInterfaces[pin];
-	};
-
-	auto mcpPin = [&](int pin) {
-		if (!mcpPinInterfaces.contains(pin)) {
-			auto ptr = new MCP23X17PinInterface(&m_MCP, pin);
-			mcpPinInterfaces[pin] = ptr;
-		}
-		return mcpPinInterfaces[pin];
-	};
-
-	auto directWire = [&](int scl, int sda) {
-		auto pair = std::make_tuple(scl, sda);
-		if (!i2cWireInterfaces.contains(pair)) {
-			auto ptr = new I2CWireSensorInterface(scl, sda);
-			i2cWireInterfaces[pair] = ptr;
-		}
-		return i2cWireInterfaces[pair];
-	};
-
-	auto pcaWire = [&](int scl, int sda, int addr, int ch) {
-		auto pair = std::make_tuple(scl, sda, addr, ch);
-		if (!pcaWireInterfaces.contains(pair)) {
-			auto ptr = new I2CPCASensorInterface(scl, sda, addr, ch);
-			pcaWireInterfaces[pair] = ptr;
-		}
-		return pcaWireInterfaces[pair];
-	};
-	uint8_t sensorID = 0;
-	uint8_t activeSensorCount = 0;
 	if (m_MCP.begin_I2C()) {
 		m_Logger.info("MCP initialized");
 	}
 
-#define NO_PIN nullptr
-#define DIRECT_PIN(pin) directPin(pin)
-#define DIRECT_WIRE(scl, sda) directWire(scl, sda)
-#define MCP_PIN(pin) mcpPin(pin)
-#define PCA_WIRE(scl, sda, addr, ch) pcaWire(scl, sda, addr, ch)
+	SensorBuilder sensorBuilder = SensorBuilder(this);
+	uint8_t activeSensorCount = sensorBuilder.buildAllSensors();
 
-#define SENSOR_DESC_ENTRY(ImuType, ...)                            \
-	{                                                              \
-		auto sensor = buildSensor<ImuType>(sensorID, __VA_ARGS__); \
-		if (sensor->isWorking()) {                                 \
-			m_Logger.info("Sensor %d configured", sensorID + 1);   \
-			activeSensorCount++;                                   \
-		}                                                          \
-		m_Sensors.push_back(std::move(sensor));                    \
-		sensorID++;                                                \
-	}
-
-	// Apply descriptor list and expand to entries
-	SENSOR_DESC_LIST;
-
-#define SENSOR_INFO_ENTRY(ImuID, ...) \
-	{ m_Sensors[SensorTypeID]->setSensorInfo(__VA_ARGS__); }
-	SENSOR_INFO_LIST;
-
-#undef SENSOR_DESC_ENTRY
-#undef NO_PIN
-#undef DIRECT_PIN
-#undef DIRECT_WIRE
 	m_Logger.info("%d sensor(s) configured", activeSensorCount);
 	// Check and scan i2c if no sensors active
 	if (activeSensorCount == 0) {
@@ -228,5 +120,5 @@ void SensorManager::update() {
 	networkConnection.endBundle();
 #endif
 }
-}  // namespace Sensors
-}  // namespace SlimeVR
+
+}  // namespace SlimeVR::Sensors

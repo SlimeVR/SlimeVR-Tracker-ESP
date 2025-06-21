@@ -6,8 +6,7 @@
 #include "Level.h"
 #include "debug.h"
 
-namespace SlimeVR {
-namespace Logging {
+namespace SlimeVR::Logging {
 class Logger {
 public:
 	Logger(const char* prefix)
@@ -27,48 +26,48 @@ public:
 
 	void setTag(const char* tag);
 
-	void trace(const char* str, ...);
-	void debug(const char* str, ...);
-	void info(const char* str, ...);
-	void warn(const char* str, ...);
-	void error(const char* str, ...);
-	void fatal(const char* str, ...);
+	void trace(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void debug(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void info(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void warn(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void error(const char* str, ...) const __attribute__((format(printf, 2, 3)));
+	void fatal(const char* str, ...) const __attribute__((format(printf, 2, 3)));
 
 	template <typename T>
-	inline void traceArray(const char* str, const T* array, size_t size) {
+	inline void traceArray(const char* str, const T* array, size_t size) const {
 		logArray(TRACE, str, array, size);
 	}
 
 	template <typename T>
-	inline void debugArray(const char* str, const T* array, size_t size) {
+	inline void debugArray(const char* str, const T* array, size_t size) const {
 		logArray(DEBUG, str, array, size);
 	}
 
 	template <typename T>
-	inline void infoArray(const char* str, const T* array, size_t size) {
+	inline void infoArray(const char* str, const T* array, size_t size) const {
 		logArray(INFO, str, array, size);
 	}
 
 	template <typename T>
-	inline void warnArray(const char* str, const T* array, size_t size) {
+	inline void warnArray(const char* str, const T* array, size_t size) const {
 		logArray(WARN, str, array, size);
 	}
 
 	template <typename T>
-	inline void errorArray(const char* str, const T* array, size_t size) {
+	inline void errorArray(const char* str, const T* array, size_t size) const {
 		logArray(ERROR, str, array, size);
 	}
 
 	template <typename T>
-	inline void fatalArray(const char* str, const T* array, size_t size) {
+	inline void fatalArray(const char* str, const T* array, size_t size) const {
 		logArray(FATAL, str, array, size);
 	}
 
 private:
-	void log(Level level, const char* str, va_list args);
+	void log(Level level, const char* str, va_list args) const;
 
 	template <typename T>
-	void logArray(Level level, const char* str, const T* array, size_t size) {
+	void logArray(Level level, const char* str, const T* array, size_t size) const {
 		if (level < LOG_LEVEL) {
 			return;
 		}
@@ -92,7 +91,6 @@ private:
 	const char* const m_Prefix;
 	char* m_Tag;
 };
-}  // namespace Logging
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Logging
 
 #endif

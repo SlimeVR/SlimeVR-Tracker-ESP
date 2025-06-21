@@ -7,8 +7,7 @@
 #define LOG_LEVEL_ERROR 4
 #define LOG_LEVEL_FATAL 5
 
-namespace SlimeVR {
-namespace Logging {
+namespace SlimeVR::Logging {
 enum Level {
 	TRACE = LOG_LEVEL_TRACE,
 	DEBUG = LOG_LEVEL_DEBUG,
@@ -19,8 +18,7 @@ enum Level {
 };
 
 const char* levelToString(Level level);
-}  // namespace Logging
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Logging
 
 #define LOGGING_LEVEL_H
 #endif

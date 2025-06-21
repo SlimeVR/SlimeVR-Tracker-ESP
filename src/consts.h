@@ -25,7 +25,8 @@
 
 // List of constants used in other places
 
-enum class SensorTypeID {
+#include <cstdint>
+enum class SensorTypeID : uint8_t {
 	Unknown = 0,
 	MPU9250,
 	MPU6500,
@@ -48,6 +49,7 @@ enum class SensorTypeID {
 	Empty = 255
 };
 
+#define IMU_AUTO SensorAuto
 #define IMU_UNKNOWN ErroneousSensor
 #define IMU_MPU9250 MPU9250Sensor
 #define IMU_MPU6500 MPU6050Sensor
@@ -56,7 +58,7 @@ enum class SensorTypeID {
 #define IMU_BNO055 BNO055Sensor
 #define IMU_MPU6050 MPU6050Sensor
 #define IMU_BNO086 BNO086Sensor
-#define IMU_BMI160 BMI160Sensor
+#define IMU_BMI160 SoftFusionBMI160
 #define IMU_ICM20948 ICM20948Sensor
 #define IMU_ICM42688 SoftFusionICM42688
 #define IMU_BMI270 SoftFusionBMI270
@@ -71,26 +73,29 @@ enum class SensorTypeID {
 #define IMU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 #define BOARD_UNKNOWN 0
-#define BOARD_SLIMEVR_LEGACY 1
-#define BOARD_SLIMEVR_DEV 2
+#define BOARD_SLIMEVR_LEGACY 1  // More ancient development version of SlimeVR
+#define BOARD_SLIMEVR_DEV 2  // Ancient development version of SlimeVR
 #define BOARD_NODEMCU 3
 #define BOARD_CUSTOM 4
 #define BOARD_WROOM32 5
 #define BOARD_WEMOSD1MINI 6
 #define BOARD_TTGO_TBASE 7
 #define BOARD_ESP01 8
-#define BOARD_SLIMEVR 9
+#define BOARD_SLIMEVR 9  // SlimeVR v1.0 & v1.1
 #define BOARD_LOLIN_C3_MINI 10
 #define BOARD_BEETLE32C3 11
-#define BOARD_ES32C3DEVKITM1 12
+#define BOARD_ESP32C3DEVKITM1 12
 #define BOARD_OWOTRACK 13  // Only used by owoTrack mobile app
 #define BOARD_WRANGLER 14  // Only used by wrangler app
 #define BOARD_MOCOPI 15  // Used by mocopi/moslime
 #define BOARD_WEMOSWROOM02 16
 #define BOARD_XIAO_ESP32C3 17
 #define BOARD_HARITORA 18  // Used by Haritora/SlimeTora
-#define BOARD_ES32C6DEVKITC1 19
+#define BOARD_ESP32C6DEVKITC1 19
 #define BOARD_GLOVE_IMU_SLIMEVR_DEV 20  // IMU Glove
+#define BOARD_GESTURES 21  // Used by Gestures
+#define BOARD_SLIMEVR_V1_2 22  // SlimeVR v1.2
+#define BOARD_ESP32S3_SUPERMINI 23
 #define BOARD_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 #define BAT_EXTERNAL 1
@@ -149,13 +154,13 @@ enum class SensorTypeID {
 #define MCU_HARITORA 8  // Used by Haritora/SlimeTora
 #define MCU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
-enum class SensorDataType {
+enum class SensorDataType : uint8_t {
 	SENSOR_DATATYPE_ROTATION = 0,
 	SENSOR_DATATYPE_FLEX_RESISTANCE,
 	SENSOR_DATATYPE_FLEX_ANGLE
 };
 
-enum class TrackerType {
+enum class TrackerType : uint8_t {
 	TRACKER_TYPE_SVR_ROTATION = 0,
 	TRACKER_TYPE_SVR_GLOVE_LEFT,
 	TRACKER_TYPE_SVR_GLOVE_RIGHT

@@ -35,7 +35,7 @@ public:
 
 	ICM20948Sensor(
 		uint8_t id,
-		uint8_t i2cAddress,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface*,
@@ -45,7 +45,7 @@ public:
 			"ICM20948Sensor",
 			SensorTypeID::ICM20948,
 			id,
-			i2cAddress,
+			registerInterface,
 			rotation,
 			sensorInterface
 		) {}

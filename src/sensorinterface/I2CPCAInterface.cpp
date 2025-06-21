@@ -22,14 +22,17 @@
 */
 #include "I2CPCAInterface.h"
 
-void SlimeVR::I2CPCASensorInterface::init() { m_Wire.init(); }
+bool SlimeVR::I2CPCASensorInterface::init() {
+	m_Wire.init();
+	return true;
+}
 
 void SlimeVR::I2CPCASensorInterface::swapIn() {
 	m_Wire.swapIn();
 	Wire.beginTransmission(m_Address);
 	Wire.write(1 << m_Channel);
 	Wire.endTransmission();
-#if ESP32
+#ifdef ESP32
 	// On ESP32 we need to reconnect to I2C bus for some reason
 	m_Wire.disconnect();
 	m_Wire.swapIn();

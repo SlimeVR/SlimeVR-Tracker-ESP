@@ -35,7 +35,7 @@ public:
 
 	BNO055Sensor(
 		uint8_t id,
-		uint8_t i2cAddress,
+		SlimeVR::Sensors::RegisterInterface& registerInterface,
 		float rotation,
 		SlimeVR::SensorInterface* sensorInterface,
 		PinInterface*,
@@ -45,7 +45,7 @@ public:
 			"BNO055Sensor",
 			SensorTypeID::BNO055,
 			id,
-			i2cAddress,
+			registerInterface,
 			rotation,
 			sensorInterface
 		){};

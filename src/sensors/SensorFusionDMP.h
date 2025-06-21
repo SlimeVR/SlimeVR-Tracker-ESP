@@ -1,11 +1,12 @@
 #ifndef SLIMEVR_SENSORFUSIONDMP_H
 #define SLIMEVR_SENSORFUSIONDMP_H
 
+#include <helper_3dmath.h>
+
 #include "SensorFusion.h"
 #include "dmpmag.h"
 
-namespace SlimeVR {
-namespace Sensors {
+namespace SlimeVR::Sensors {
 class SensorFusionDMP {
 public:
 	void updateQuaternion(sensor_real_t nqwxyz[4]);
@@ -37,11 +38,10 @@ protected:
 	sensor_real_t vecGravity[3]{0.0f, 0.0f, 0.0f};
 	bool linaccelReady = false;
 	sensor_real_t linAccel[3]{0.0f, 0.0f, 0.0f};
-#if ESP32
+#ifdef ESP32
 	sensor_real_t linAccel_guard;  // Temporary patch for some weird ESP32 bug
 #endif
 };
-}  // namespace Sensors
-}  // namespace SlimeVR
+}  // namespace SlimeVR::Sensors
 
 #endif  // SLIMEVR_SENSORFUSIONDMP_H

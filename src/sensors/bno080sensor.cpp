@@ -58,24 +58,9 @@ void BNO080Sensor::motionSetup() {
 
 	this->imu.enableLinearAccelerometer(10);
 
-	SlimeVR::Configuration::SensorConfig sensorConfig
-		= configuration.getSensor(sensorId);
-	// If no compatible calibration data is found, the calibration data will just be
-	// zero-ed out
-	switch (sensorConfig.type) {
-		case SlimeVR::Configuration::SensorConfigType::BNO0XX:
-			m_Config = sensorConfig.data.bno0XX;
-			magStatus = m_Config.magEnabled ? MagnetometerStatus::MAG_ENABLED
-											: MagnetometerStatus::MAG_DISABLED;
-			break;
-		default:
-			// Ignore lack of config for BNO, by default use from FW build
-			magStatus = USE_6_AXIS ? MagnetometerStatus::MAG_DISABLED
-								   : MagnetometerStatus::MAG_ENABLED;
-			break;
-	}
+	toggles = configuration.getSensorToggles(sensorId);
 
-	if (!isMagEnabled()) {
+	if (!toggles.getToggle(SensorToggles::MagEnabled)) {
 		if ((sensorType == SensorTypeID::BNO085 || sensorType == SensorTypeID::BNO086)
 			&& BNO_USE_ARVR_STABILIZATION) {
 			imu.enableARVRStabilizedGameRotationVector(10);
@@ -100,6 +85,8 @@ void BNO080Sensor::motionSetup() {
 	// EXPERIMENTAL Enable periodic calibration save to permanent memory
 	imu.saveCalibrationPeriodically(true);
 	imu.requestCalibrationStatus();
+
+#if EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION
 	// EXPERIMENTAL Disable accelerometer calibration after 1 minute to prevent
 	// "stomping" bug WARNING : Executing IMU commands outside of the update loop is not
 	// allowed since the address might have changed when the timer is executed!
@@ -134,10 +121,13 @@ void BNO080Sensor::motionSetup() {
 			&imu
 		);
 	}
+#endif
 	// imu.sendCalibrateCommand(SH2_CAL_ACCEL | SH2_CAL_GYRO_IN_HAND | SH2_CAL_MAG |
 	// SH2_CAL_ON_TABLE | SH2_CAL_PLANAR);
 
 	imu.enableStabilityClassifier(500);
+	// enableRawGyro only for reading the Temperature every 1 second (0.5°C steps)
+	imu.enableRawGyro(1000);
 
 #ifdef BUTTON_AUTO_SLEEP_TIME_SECONDS
 	imu.enableStabilityClassifier(500);
@@ -149,6 +139,13 @@ void BNO080Sensor::motionSetup() {
 	configured = true;
 	m_tpsCounter.reset();
 	m_dataCounter.reset();
+
+	toggles.onToggleChange([&](SensorToggles toggle, bool) {
+		if (toggle == SensorToggles::MagEnabled) {
+			// TODO: maybe handle this more gracefully, I'm sure it's possible
+			motionSetup();
+		}
+	});
 }
 
 void BNO080Sensor::motionLoop() {
@@ -156,45 +153,48 @@ void BNO080Sensor::motionLoop() {
 	// Look for reports from the IMU
 	while (imu.dataAvailable()) {
 		hadData = true;
-#if ENABLE_INSPECTION
-		{
-			int16_t rX = imu.getRawGyroX();
-			int16_t rY = imu.getRawGyroY();
-			int16_t rZ = imu.getRawGyroZ();
-			uint8_t rA = imu.getGyroAccuracy();
-
-			int16_t aX = imu.getRawAccelX();
-			int16_t aY = imu.getRawAccelY();
-			int16_t aZ = imu.getRawAccelZ();
-			uint8_t aA = imu.getAccelAccuracy();
-
-			int16_t mX = imu.getRawMagX();
-			int16_t mY = imu.getRawMagY();
-			int16_t mZ = imu.getRawMagZ();
-			uint8_t mA = imu.getMagAccuracy();
-
-			networkConnection.sendInspectionRawIMUData(
-				sensorId,
-				rX,
-				rY,
-				rZ,
-				rA,
-				aX,
-				aY,
-				aZ,
-				aA,
-				mX,
-				mY,
-				mZ,
-				mA
-			);
-		}
-#endif
-
 		lastReset = 0;
 		lastData = millis();
 
-		if (!isMagEnabled()) {
+#if ENABLE_INSPECTION
+		{
+			if (imu.hasNewRawAccel() && imu.hasNewRawGyro() && imu.hasNewRawMag()) {
+				int16_t aX, aY, aZ, rX, rY, rZ, mX, mY, mZ;
+				uint32_t aTs, gTs, mTs;
+				// Accuracy estimates are not send by RAW Values
+				uint8_t rA = 0, aA = 0, mA = 0;
+
+				imu.getRawAccel(aX, aY, aZ, aTs);
+				imu.getRawGyro(rX, rY, rZ, gTs);
+				imu.getRawMag(mX, mY, mZ, mTs);
+
+				// only send Data when we have a set of new data
+
+				networkConnection.sendInspectionRawIMUData(
+					sensorId,
+					rX,
+					rY,
+					rZ,
+					rA,
+					aX,
+					aY,
+					aZ,
+					aA,
+					mX,
+					mY,
+					mZ,
+					mA
+				);
+			}
+		}
+#endif
+
+		if (imu.hasNewRawGyro()) {
+			lastReadTemperature = imu.getGyroTemp();
+			imu.resetNewRawGyro();
+		}
+
+		if (!toggles.getToggle(SensorToggles::MagEnabled)) {
 			if (imu.hasNewGameQuat())  // New quaternion if context
 			{
 				Quat nRotation;
@@ -207,6 +207,7 @@ void BNO080Sensor::motionLoop() {
 				);
 
 				setFusedRotation(nRotation);
+				continue;
 				// Leave new quaternion if context open, it's closed later
 			}
 		} else {
@@ -223,7 +224,7 @@ void BNO080Sensor::motionLoop() {
 				);
 
 				setFusedRotation(nRotation);
-
+				continue;
 				// Leave new quaternion if context open, it's closed later
 			}  // Closing new quaternion if context
 		}
@@ -233,14 +234,19 @@ void BNO080Sensor::motionLoop() {
 		{
 			uint8_t acc;
 			Vector3 nAccel;
-			imu.getLinAccel(nAccel.x, nAccel.y, nAccel.z, acc);
-			setAcceleration(nAccel);
+			// only send Accel if we have new data
+			if (imu.getNewLinAccel(nAccel.x, nAccel.y, nAccel.z, acc)) {
+				setAcceleration(nAccel);
+				continue;
+			}
 		}
 #endif  // SEND_ACCELERATION
 
 		if (imu.getTapDetected()) {
 			tap = imu.getTapDetector();
+			continue;
 		}
+
 		if (imu.hasNewCalibrationStatus()) {
 			uint8_t calibrationResponseStatus;
 			uint8_t accelCalEnabled;
@@ -269,7 +275,9 @@ void BNO080Sensor::motionLoop() {
 			// Default calibration flags for BNO085:
 			// Accel: 1, Gyro: 0, Mag: 1, Planar: 0, OnTable: 0 (OnTable can't be
 			// disabled)
+			continue;
 		}
+
 		if (m_IntPin == nullptr || imu.I2CTimedOut()) {
 			break;
 		}
@@ -323,9 +331,9 @@ void BNO080Sensor::motionLoop() {
 }
 
 SensorStatus BNO080Sensor::getSensorState() {
-	return lastReset > 0 ? SensorStatus::SENSOR_ERROR
-		 : isWorking()   ? SensorStatus::SENSOR_OK
-						 : SensorStatus::SENSOR_OFFLINE;
+	return ((lastReset > 0) || (!isWorking() && hadData)) ? SensorStatus::SENSOR_ERROR
+		 : isWorking()                                    ? SensorStatus::SENSOR_OK
+					   : SensorStatus::SENSOR_OFFLINE;
 }
 
 void BNO080Sensor::sendData() {
@@ -353,25 +361,22 @@ void BNO080Sensor::sendData() {
 #endif
 	}
 
+	sendTempIfNeeded();
+
 	if (tap != 0) {
 		networkConnection.sendSensorTap(sensorId, tap);
 		tap = 0;
 	}
 }
 
-void BNO080Sensor::setFlag(uint16_t flagId, bool state) {
-	if (flagId == FLAG_SENSOR_BNO0XX_MAG_ENABLED) {
-		m_Config.magEnabled = state;
-		magStatus = state ? MagnetometerStatus::MAG_ENABLED
-						  : MagnetometerStatus::MAG_DISABLED;
-
-		SlimeVR::Configuration::SensorConfig config;
-		config.type = SlimeVR::Configuration::SensorConfigType::BNO0XX;
-		config.data.bno0XX = m_Config;
-		configuration.setSensor(sensorId, config);
-
-		// Reinitialize the sensor
-		motionSetup();
+void BNO080Sensor::sendTempIfNeeded() {
+	uint32_t now = micros();
+	constexpr float maxSendRateHz = 2.0f;
+	constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6;
+	uint32_t elapsed = now - m_lastTemperaturePacketSent;
+	if (elapsed >= sendInterval) {
+		m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
+		networkConnection.sendTemperature(sensorId, lastReadTemperature);
 	}
 }
 
@@ -384,3 +389,7 @@ void BNO080Sensor::startCalibration(int calibrationType) {
 void BNO080Sensor::deinit() { imu.softReset(); }
 
 bool BNO080Sensor::isAtRest() { return imu.getStabilityClassifier() == 1; }
+
+bool BNO080Sensor::isFlagSupported(SensorToggles toggle) const {
+	return toggle == SensorToggles::MagEnabled;
+}
