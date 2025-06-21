@@ -25,3 +25,27 @@ bool SensorToggleState::getToggle(SensorToggles toggle) const {
 	}
 	return false;
 }
+
+void SensorToggleState::onToggleChange(
+	std::function<void(SensorToggles, bool)>&& callback
+) {
+	this->callback = callback;
+}
+
+void SensorToggleState::emitToggleChange(SensorToggles toggle, bool state) const {
+	if (callback) {
+		(*callback)(toggle, state);
+	}
+}
+
+const char* SensorToggleState::toggleToString(SensorToggles toggle) {
+	switch (toggle) {
+		case SensorToggles::MagEnabled:
+			return "MagEnabled";
+		case SensorToggles::CalibrationEnabled:
+			return "CalibrationEnabled";
+		case SensorToggles::TempGradientCalibrationEnabled:
+			return "TempGradientCalibrationEnabled";
+	}
+	return "Unknown";
+}

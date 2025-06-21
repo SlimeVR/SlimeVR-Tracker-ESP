@@ -31,6 +31,7 @@
 
 #include "../../../sensorinterface/RegisterInterface.h"
 #include "bmi270fw.h"
+#include "callbacks.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -258,6 +259,7 @@ struct BMI270 {
 			Regs::InitCtrl::reg,
 			Regs::InitCtrl::valueStartInit
 		);
+		auto* firmware_buffer = new uint8_t[RegisterInterface::MaxTransactionLength];
 		for (uint16_t pos = 0; pos < sizeof(bmi270_firmware);) {
 			// tell the device current position
 
@@ -273,13 +275,11 @@ struct BMI270 {
 				static_cast<size_t>(sizeof(bmi270_firmware) - pos),
 				RegisterInterface::MaxTransactionLength
 			);
-			m_RegisterInterface.writeBytes(
-				Regs::InitData,
-				burstWrite,
-				const_cast<uint8_t*>(bmi270_firmware + pos)
-			);
+			memcpy_P(firmware_buffer, bmi270_firmware + pos, burstWrite);
+			m_RegisterInterface.writeBytes(Regs::InitData, burstWrite, firmware_buffer);
 			pos += burstWrite;
 		}
+		delete[] firmware_buffer;
 		m_RegisterInterface.writeReg(Regs::InitCtrl::reg, Regs::InitCtrl::valueEndInit);
 		delay(140);
 
@@ -434,12 +434,7 @@ struct BMI270 {
 		return to_ret;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTempSample
-	) {
+	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		const auto bytes_to_read = std::min(
@@ -481,7 +476,7 @@ struct BMI270 {
 						static_cast<int32_t>(ShortLimit::min()),
 						static_cast<int32_t>(ShortLimit::max())
 					);
-					processGyroSample(gyro, GyrTs);
+					callbacks.processGyroSample(gyro, GyrTs);
 				}
 
 				if (header & Fifo::AccelDataBit) {
@@ -489,7 +484,7 @@ struct BMI270 {
 					accel[0] = getFromFifo<uint16_t>(i, read_buffer);
 					accel[1] = getFromFifo<uint16_t>(i, read_buffer);
 					accel[2] = getFromFifo<uint16_t>(i, read_buffer);
-					processAccelSample(accel, AccTs);
+					callbacks.processAccelSample(accel, AccTs);
 				}
 			}
 		}

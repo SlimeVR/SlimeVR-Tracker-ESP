@@ -135,6 +135,13 @@ void BNO080Sensor::motionSetup() {
 	configured = true;
 	m_tpsCounter.reset();
 	m_dataCounter.reset();
+
+	toggles.onToggleChange([&](SensorToggles toggle, bool) {
+		if (toggle == SensorToggles::MagEnabled) {
+			// TODO: maybe handle this more gracefully, I'm sure it's possible
+			motionSetup();
+		}
+	});
 }
 
 void BNO080Sensor::motionLoop() {

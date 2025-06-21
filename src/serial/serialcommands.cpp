@@ -31,7 +31,7 @@
 #include "logging/Logger.h"
 #include "utils.h"
 
-#if ESP32
+#ifdef ESP32
 #include "nvs_flash.h"
 #endif
 
@@ -164,6 +164,10 @@ void printState() {
 			sensor->isWorking() ? "true" : "false",
 			sensor->getHadData() ? "true" : "false"
 		);
+		const char* mag = sensor->getAttachedMagnetometer();
+		if (mag) {
+			logger.info("Sensor[%d] magnetometer: %s", sensor->getSensorId(), mag);
+		}
 	}
 	logger.info(
 		"Battery voltage: %.3f, level: %.1f%%",
@@ -172,7 +176,7 @@ void printState() {
 	);
 }
 
-#if ESP32
+#ifdef ESP32
 String getEncryptionTypeName(wifi_auth_mode_t type) {
 	switch (type) {
 		case WIFI_AUTH_OPEN:
@@ -288,6 +292,12 @@ void cmdGet(CmdParser* parser) {
 			sensor0->isWorking() ? "true" : "false",
 			sensor0->getHadData() ? "true" : "false"
 		);
+
+		const char* mag = sensor0->getAttachedMagnetometer();
+		if (mag) {
+			logger.info("[TEST] Sensor[0] magnetometer: %s", mag);
+		}
+
 		if (!sensor0->getHadData()) {
 			logger.error("[TEST] Sensor[0] didn't send any data yet!");
 		} else {
@@ -346,7 +356,7 @@ void cmdFactoryReset(CmdParser* parser) {
 	WiFi.disconnect(true);  // Clear WiFi credentials
 #if ESP8266
 	ESP.eraseConfig();  // Clear ESP config
-#elif ESP32
+#elif defined(ESP32)
 	nvs_flash_erase();
 #else
 #warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED

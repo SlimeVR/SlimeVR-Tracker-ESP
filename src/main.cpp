@@ -85,7 +85,7 @@ void setup() {
 
 	// join I2C bus
 
-#if ESP32
+#ifdef ESP32
 	// For some unknown reason the I2C seem to be open on ESP32-C3 by default. Let's
 	// just close it before opening it again. (The ESP32-C3 only has 1 I2C.)
 	Wire.end();

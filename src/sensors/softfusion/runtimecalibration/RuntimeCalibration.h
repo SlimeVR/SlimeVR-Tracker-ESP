@@ -29,7 +29,6 @@
 
 #include "../../../GlobalVars.h"
 #include "../../../configuration/Configuration.h"
-#include "../../SensorFusionRestDetect.h"
 #include "AccelBiasCalibrationStep.h"
 #include "GyroBiasCalibrationStep.h"
 #include "MotionlessCalibrationStep.h"
@@ -37,31 +36,32 @@
 #include "SampleRateCalibrationStep.h"
 #include "configuration/SensorConfig.h"
 #include "logging/Logger.h"
+#include "sensors/SensorFusion.h"
 #include "sensors/softfusion/CalibrationBase.h"
 
 namespace SlimeVR::Sensors::RuntimeCalibration {
 
-template <typename IMU, typename RawSensorT, typename RawVectorT>
-class RuntimeCalibrator : public Sensor::CalibrationBase<IMU, RawSensorT, RawVectorT> {
+template <typename IMU>
+class RuntimeCalibrator : public Sensors::CalibrationBase<IMU> {
 public:
 	static constexpr bool HasUpsideDownCalibration = false;
 
-	using Base = Sensor::CalibrationBase<IMU, RawSensorT, RawVectorT>;
-	using Self = RuntimeCalibrator<IMU, RawSensorT, RawVectorT>;
+	using Base = Sensors::CalibrationBase<IMU>;
+	using Self = RuntimeCalibrator<IMU>;
+	using Consts = typename Base::Consts;
+	using RawSensorT = typename Consts::RawSensorT;
+	using RawVectorT = typename Consts::RawVectorT;
 
 	RuntimeCalibrator(
-		SensorFusionRestDetect& fusion,
+		SensorFusion& fusion,
 		IMU& imu,
 		uint8_t sensorId,
 		Logging::Logger& logger,
-		float TempTs,
-		float AScale,
-		float GScale,
 		SensorToggleState& toggles
 	)
-		: Base{fusion, imu, sensorId, logger, TempTs, AScale, GScale, toggles} {
-		calibration.T_Ts = TempTs;
-		activeCalibration.T_Ts = TempTs;
+		: Base{fusion, imu, sensorId, logger, toggles} {
+		calibration.T_Ts = Consts::getDefaultTempTs();
+		activeCalibration.T_Ts = Consts::getDefaultTempTs();
 	}
 
 	bool calibrationMatches(const Configuration::SensorConfig& sensorCalibration
@@ -152,22 +152,22 @@ public:
 	}
 
 	void scaleAccelSample(sensor_real_t accelSample[3]) final {
-		accelSample[0] = accelSample[0] * AScale - activeCalibration.A_off[0];
-		accelSample[1] = accelSample[1] * AScale - activeCalibration.A_off[1];
-		accelSample[2] = accelSample[2] * AScale - activeCalibration.A_off[2];
+		accelSample[0] = accelSample[0] * Consts::AScale - activeCalibration.A_off[0];
+		accelSample[1] = accelSample[1] * Consts::AScale - activeCalibration.A_off[1];
+		accelSample[2] = accelSample[2] * Consts::AScale - activeCalibration.A_off[2];
 	}
 
 	float getAccelTimestep() final { return activeCalibration.A_Ts; }
 
 	void scaleGyroSample(sensor_real_t gyroSample[3]) final {
 		gyroSample[0] = static_cast<sensor_real_t>(
-			GScale * (gyroSample[0] - activeCalibration.G_off1[0])
+			Consts::GScale * (gyroSample[0] - activeCalibration.G_off1[0])
 		);
 		gyroSample[1] = static_cast<sensor_real_t>(
-			GScale * (gyroSample[1] - activeCalibration.G_off1[1])
+			Consts::GScale * (gyroSample[1] - activeCalibration.G_off1[1])
 		);
 		gyroSample[2] = static_cast<sensor_real_t>(
-			GScale * (gyroSample[2] - activeCalibration.G_off1[2])
+			Consts::GScale * (gyroSample[2] - activeCalibration.G_off1[2])
 		);
 	}
 
@@ -202,12 +202,12 @@ public:
 			activeZROChange = IMU::TemperatureZROChange;
 		}
 
-		float diffX
-			= (activeCalibration.G_off2[0] - activeCalibration.G_off1[0]) * GScale;
-		float diffY
-			= (activeCalibration.G_off2[1] - activeCalibration.G_off1[1]) * GScale;
-		float diffZ
-			= (activeCalibration.G_off2[2] - activeCalibration.G_off1[2]) * GScale;
+		float diffX = (activeCalibration.G_off2[0] - activeCalibration.G_off1[0])
+					* Consts::GScale;
+		float diffY = (activeCalibration.G_off2[1] - activeCalibration.G_off1[1])
+					* Consts::GScale;
+		float diffZ = (activeCalibration.G_off2[2] - activeCalibration.G_off1[2])
+					* Consts::GScale;
 
 		float maxDiff
 			= std::max(std::max(std::abs(diffX), std::abs(diffY)), std::abs(diffZ));
@@ -402,7 +402,7 @@ private:
 	GyroBiasCalibrationStep<RawSensorT> gyroBiasCalibrationStep{calibration};
 	AccelBiasCalibrationStep<RawSensorT> accelBiasCalibrationStep{
 		calibration,
-		static_cast<float>(Base::AScale)
+		static_cast<float>(Consts::AScale)
 	};
 	NullCalibrationStep<RawSensorT> nullCalibrationStep{calibration};
 
@@ -440,9 +440,7 @@ private:
 
 	Configuration::RuntimeCalibrationSensorConfig activeCalibration = calibration;
 
-	using Base::AScale;
 	using Base::fusion;
-	using Base::GScale;
 	using Base::logger;
 	using Base::sensor;
 	using Base::sensorId;

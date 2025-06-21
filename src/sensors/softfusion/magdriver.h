@@ -21,35 +21,57 @@
 	THE SOFTWARE.
 */
 
-#include "RestCalibrationDetector.h"
+#pragma once
 
-#include "sensors/SensorFusion.h"
+#include <functional>
+#include <optional>
 
-namespace SlimeVR::Sensors {
+#include "logging/Logger.h"
+#include "sensorinterface/RegisterInterface.h"
 
-bool RestCalibrationDetector::update(SensorFusion& fusion) {
-	if (state == CalibrationState::Done) {
-		return false;
-	}
+namespace SlimeVR::Sensors::SoftFusion {
 
-	if (!fusion.getRestDetected()) {
-		state = CalibrationState::NoRest;
-		return false;
-	}
+enum class MagDataWidth {
+	SixByte,
+	NineByte,
+};
 
-	if (state == CalibrationState::NoRest) {
-		state = CalibrationState::Calibrating;
-		lastRestStartedMillis = millis();
-		return false;
-	}
+struct MagInterface {
+	std::function<uint8_t(uint8_t)> readByte;
+	std::function<void(uint8_t, uint8_t)> writeByte;
+	std::function<void(uint8_t)> setDeviceId;
+	std::function<void(uint8_t, MagDataWidth)> startPolling;
+	std::function<void()> stopPolling;
+};
 
-	uint32_t elapsed = millis() - lastRestStartedMillis;
-	if (elapsed < static_cast<uint32_t>(restCalibrationSeconds * 1e3)) {
-		return false;
-	}
+struct MagDefinition {
+	const char* name;
 
-	state = CalibrationState::Done;
-	return true;
-}
+	uint8_t deviceId;
 
-}  // namespace SlimeVR::Sensors
+	uint8_t whoAmIReg;
+	uint8_t expectedWhoAmI;
+
+	MagDataWidth dataWidth;
+	uint8_t dataReg;
+
+	std::function<bool(MagInterface& interface)> setup;
+};
+
+class MagDriver {
+public:
+	bool init(MagInterface&& interface, bool supports9ByteMags);
+	void startPolling() const;
+	void stopPolling() const;
+	[[nodiscard]] const char* getAttachedMagName() const;
+
+private:
+	std::optional<MagDefinition> detectedMag;
+	MagInterface interface;
+
+	static std::vector<MagDefinition> supportedMags;
+
+	Logging::Logger logger{"MagDriver"};
+};
+
+}  // namespace SlimeVR::Sensors::SoftFusion

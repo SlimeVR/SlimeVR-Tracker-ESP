@@ -21,35 +21,14 @@
 	THE SOFTWARE.
 */
 
-#include "RestCalibrationDetector.h"
+#pragma once
 
-#include "sensors/SensorFusion.h"
+#include <cstdint>
+#include <functional>
 
-namespace SlimeVR::Sensors {
-
-bool RestCalibrationDetector::update(SensorFusion& fusion) {
-	if (state == CalibrationState::Done) {
-		return false;
-	}
-
-	if (!fusion.getRestDetected()) {
-		state = CalibrationState::NoRest;
-		return false;
-	}
-
-	if (state == CalibrationState::NoRest) {
-		state = CalibrationState::Calibrating;
-		lastRestStartedMillis = millis();
-		return false;
-	}
-
-	uint32_t elapsed = millis() - lastRestStartedMillis;
-	if (elapsed < static_cast<uint32_t>(restCalibrationSeconds * 1e3)) {
-		return false;
-	}
-
-	state = CalibrationState::Done;
-	return true;
-}
-
-}  // namespace SlimeVR::Sensors
+template <typename SampleType>
+struct DriverCallbacks {
+	std::function<void(const SampleType sample[3], float AccTs)> processAccelSample;
+	std::function<void(const SampleType sample[3], float GyrTs)> processGyroSample;
+	std::function<void(int16_t sample, float TempTs)> processTempSample;
+};
