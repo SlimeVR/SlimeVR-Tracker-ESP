@@ -60,6 +60,7 @@ private:
 	std::vector<std::function<void()>> callbacks;
 	bool batteryBad = false;
 	uint64_t batteryBadSinceMillis = 0;
+	bool wasReleasedInitially = false;
 
 	uint64_t lastActivityMillis = 0;
 

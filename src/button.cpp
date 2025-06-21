@@ -79,6 +79,12 @@ void OnOffButton::tick() {
 	}
 #endif
 
+	if (!wasReleasedInitially && !getButton()) {
+		return;
+
+	}
+	wasReleasedInitially = true;
+
 	if (!buttonPressed) {
 		return;
 	}
