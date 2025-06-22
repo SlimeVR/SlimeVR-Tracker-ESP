@@ -163,13 +163,13 @@ public:
 		uint8_t = 0
 	)
 		: Sensor(
-			  SensorType::Name,
-			  SensorType::Type,
-			  id,
-			  registerInterface,
-			  rotation,
-			  sensorInterface
-		  )
+			SensorType::Name,
+			SensorType::Type,
+			id,
+			registerInterface,
+			rotation,
+			sensorInterface
+		)
 		, m_fusion(
 			  SensorType::SensorVQFParams,
 			  SensorType::GyrTs,
@@ -287,8 +287,7 @@ public:
 		// zero-ed out
 		if (calibrator.calibrationMatches(sensorCalibration)) {
 			calibrator.assignCalibration(sensorCalibration);
-		} else if (sensorCalibration.type
-				   == SlimeVR::Configuration::SensorConfigType::NONE) {
+		} else if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::NONE) {
 			m_Logger.warn(
 				"No calibration data found for sensor %d, ignoring...",
 				sensorId
