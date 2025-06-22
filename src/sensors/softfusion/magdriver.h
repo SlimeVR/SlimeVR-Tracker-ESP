@@ -56,11 +56,13 @@ struct MagDefinition {
 	uint8_t dataReg;
 
 	std::function<bool(MagInterface& interface)> setup;
+	std::function<void(MagInterface& interface)> deinit;
 };
 
 class MagDriver {
 public:
 	bool init(MagInterface&& interface, bool supports9ByteMags);
+	void deinit();
 	void startPolling() const;
 	void stopPolling() const;
 	[[nodiscard]] const char* getAttachedMagName() const;
