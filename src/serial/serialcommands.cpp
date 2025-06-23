@@ -155,6 +155,39 @@ void printState() {
 		statusManager.getStatus(),
 		WiFiNetwork::getWiFiState()
 	);
+
+	char vendorBuffer[512];
+	size_t writtenLength;
+
+	if (strlen(VENDOR_URL) == 0) {
+		sprintf(
+			vendorBuffer,
+			"Vendor: %s, product: %s%n",
+			VENDOR_NAME,
+			PRODUCT_NAME,
+			&writtenLength
+		);
+	} else {
+		sprintf(
+			vendorBuffer,
+			"Vendor: %s (%s), product: %s%n",
+			VENDOR_NAME,
+			VENDOR_URL,
+			PRODUCT_NAME,
+			&writtenLength
+		);
+	}
+
+	if (strlen(UPDATE_ADDRESS) > 0 && strlen(UPDATE_NAME) > 0) {
+		sprintf(
+			vendorBuffer + writtenLength,
+			", firmware update url: %s, name: %s",
+			UPDATE_ADDRESS,
+			UPDATE_NAME
+		);
+	}
+	logger.info("%s", vendorBuffer);
+
 	for (auto& sensor : sensorManager.getSensors()) {
 		logger.info(
 			"Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
@@ -409,7 +442,8 @@ void cmdTemperatureCalibration(CmdParser* parser) {
 		"  TCAL RESET: reset current temperature calibration in RAM (does not delete "
 		"already saved)"
 	);
-	logger.info("  TCAL SAVE: save current temperature calibration to persistent flash"
+	logger.info(
+		"  TCAL SAVE: save current temperature calibration to persistent flash"
 	);
 	logger.info("Note:");
 	logger.info(
