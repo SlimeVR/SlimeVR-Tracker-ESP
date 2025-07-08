@@ -33,7 +33,6 @@ SensorStatus Sensor::getSensorState() {
 
 void Sensor::setAcceleration(Vector3 a) {
 	acceleration = a;
-	sensorOffset.sandwich(acceleration);
 	newAcceleration = true;
 }
 
