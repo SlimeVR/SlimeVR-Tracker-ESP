@@ -75,8 +75,10 @@ struct ICM45686 : public ICM45Base {
 
 	bool initialize() {
 		ICM45Base::softResetIMU();
+#if IMU_USE_EXTERNAL_CLOCK
 		m_RegisterInterface.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
 		m_RegisterInterface.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
+#endif
 		return ICM45Base::initializeBase();
 	}
 };
