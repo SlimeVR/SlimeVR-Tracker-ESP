@@ -53,6 +53,10 @@
 #define EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION true
 #endif
 
+#ifndef IMU_USE_EXTERNAL_CLOCK
+#define IMU_USE_EXTERNAL_CLOCK true  // Use external clock for IMU (ICM-45686 only)
+#endif
+
 #ifndef VENDOR_NAME
 #define VENDOR_NAME "Unknown"
 #endif
