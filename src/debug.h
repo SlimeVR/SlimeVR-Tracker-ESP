@@ -39,10 +39,6 @@
 		   // disable if problems. Server does nothing with value so disabled atm
 #define SEND_ACCELERATION true  // send linear acceleration to the server
 
-#ifndef IMU_USE_EXTERNAL_CLOCK
-#define IMU_USE_EXTERNAL_CLOCK true  // Use external clock for IMU (ICM-45686 only)
-#endif
-
 // Debug information
 
 #define LOG_LEVEL LOG_LEVEL_DEBUG
