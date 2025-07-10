@@ -68,6 +68,7 @@ enum class ReceivePacketType : uint8_t {
 	SensorInfo = 15,
 	FeatureFlags = 22,
 	SetConfigFlag = 25,
+	WiFiProvisioning = 27,
 };
 
 enum class InspectionPacketType : uint8_t {
@@ -228,6 +229,10 @@ struct SetConfigFlagPacket {
 	uint8_t sensorId{};
 	BigEndian<SensorToggles> flag;
 	bool newState{};
+};
+
+struct WiFiProvisioningPacket {
+	bool start;
 };
 
 #pragma pack(pop)
