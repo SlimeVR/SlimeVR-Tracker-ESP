@@ -145,6 +145,10 @@ struct LSM6DSV : LSM6DSOutputHandler {
 			TempTs
 		);
 	}
+
+	void deinit() {
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+	}
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers
