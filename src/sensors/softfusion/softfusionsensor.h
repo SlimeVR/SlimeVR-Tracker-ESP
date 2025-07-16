@@ -150,6 +150,12 @@ class SoftFusionSensor : public Sensor {
 		}
 	}
 
+	void processMagSample(const uint8_t *sample, const sensor_real_t timeDelta) {
+		float scaledSample[3];
+		magDriver.scaleMagSample(sample, scaledSample);
+		m_fusion.updateMag(scaledSample);
+	}
+
 public:
 	static constexpr auto TypeID = SensorType::Type;
 	static constexpr uint8_t Address = SensorType::Address;
@@ -163,13 +169,13 @@ public:
 		uint8_t = 0
 	)
 		: Sensor(
-			SensorType::Name,
-			SensorType::Type,
-			id,
-			registerInterface,
-			rotation,
-			sensorInterface
-		)
+			  SensorType::Name,
+			  SensorType::Type,
+			  id,
+			  registerInterface,
+			  rotation,
+			  sensorInterface
+		  )
 		, m_fusion(
 			  SensorType::SensorVQFParams,
 			  SensorType::GyrTs,
@@ -251,6 +257,9 @@ public:
 				[&](int16_t sample, float TempTs) {
 					processTempSample(sample, TempTs);
 				},
+				[&](uint8_t *sample, float MagTs) {
+					processMagSample(sample, MagTs);
+				},
 			});
 			if (!m_fusion.isUpdated()) {
 				checkSensorTimeout();
@@ -287,7 +296,8 @@ public:
 		// zero-ed out
 		if (calibrator.calibrationMatches(sensorCalibration)) {
 			calibrator.assignCalibration(sensorCalibration);
-		} else if (sensorCalibration.type == SlimeVR::Configuration::SensorConfigType::NONE) {
+		} else if (sensorCalibration.type
+				   == SlimeVR::Configuration::SensorConfigType::NONE) {
 			m_Logger.warn(
 				"No calibration data found for sensor %d, ignoring...",
 				sensorId
@@ -333,7 +343,7 @@ public:
 				SoftFusion::MagInterface{
 					.readByte
 					= [&](uint8_t address) { return m_sensor.readAux(address); },
-					.writeByte = [&](uint8_t address, uint8_t value) {},
+					.writeByte = [&](uint8_t address, uint8_t value) { m_sensor.writeAux(address, value); },
 					.setDeviceId
 					= [&](uint8_t deviceId) { m_sensor.setAuxId(deviceId); },
 					.startPolling
@@ -365,6 +375,10 @@ public:
 	}
 
 	[[nodiscard]] bool isFlagSupported(SensorToggles toggle) const final {
+		if (toggle == SensorToggles::MagEnabled) {
+			return magDriver.isMagAttached();
+		}
+
 		return toggle == SensorToggles::CalibrationEnabled
 			|| toggle == SensorToggles::TempGradientCalibrationEnabled;
 	}
