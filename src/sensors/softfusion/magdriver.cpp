@@ -63,14 +63,15 @@ std::vector<MagDefinition> MagDriver::supportedMags{
 		.dataWidth = MagDataWidth::SixByte,
 		.dataReg = 0x11,
 
-		.setup = [](MagInterface& interface) {
-			interface.writeByte(0x32, 0x01);  // Soft reset
-			delay(50);
-			interface.writeByte(0x30, 0x20);  // Noise suppression: low
-			interface.writeByte(0x41, 0x2d);  // Oversampling: 32X
-			interface.writeByte(0x31, 0x02);  // Continuous measurement @ 10Hz
-			return true;
-		},
+		.setup =
+			[](MagInterface& interface) {
+				interface.writeByte(0x32, 0x01);  // Soft reset
+				delay(50);
+				interface.writeByte(0x30, 0x20);  // Noise suppression: low
+				interface.writeByte(0x41, 0x2d);  // Oversampling: 32X
+				interface.writeByte(0x31, 0x02);  // Continuous measurement @ 10Hz
+				return true;
+			},
 
 		.resolution = 0.3,
 	},
@@ -155,9 +156,7 @@ void MagDriver::scaleMagSample(const uint8_t* magSample, float* scaled) const {
 	}
 }
 
-
-	const char*
-	MagDriver::getAttachedMagName() const {
+const char* MagDriver::getAttachedMagName() const {
 	if (!detectedMag) {
 		return nullptr;
 	}

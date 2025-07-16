@@ -28,8 +28,12 @@
 
 template <typename SampleType>
 struct DriverCallbacks {
-	std::function<void(const SampleType sample[3], float AccTs)> processAccelSample = [](SampleType *, float){};
-	std::function<void(const SampleType sample[3], float GyrTs)> processGyroSample = [](SampleType *, float){};
-	std::function<void(int16_t sample, float TempTs)> processTempSample = [](int16_t, float){};
-	std::function<void(uint8_t *sample, float Magts)> processMagSample = [](uint8_t *, float){};
+	std::function<void(const SampleType sample[3], float AccTs)> processAccelSample
+		= [](SampleType*, float) {};
+	std::function<void(const SampleType sample[3], float GyrTs)> processGyroSample
+		= [](SampleType*, float) {};
+	std::function<void(int16_t sample, float TempTs)> processTempSample
+		= [](int16_t, float) {};
+	std::function<void(uint8_t* sample, float Magts)> processMagSample
+		= [](uint8_t*, float) {};
 };
