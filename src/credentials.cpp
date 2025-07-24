@@ -1,6 +1,5 @@
-/*
-	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2022 TheDevMinerTV
+/* SlimeVR Code is placed under the MIT license
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,27 +19,10 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#pragma once
 
-#include <arduino-timer.h>
+const char* otaPassword
+	= "SlimeVR-OTA";  // YOUR OTA PASSWORD HERE, LEAVE EMPTY TO DISABLE OTA UPDATES
 
-#include "batterymonitor.h"
-#include "configuration/Configuration.h"
-#include "network/connection.h"
-#include "network/manager.h"
-#include "network/wifihandler.h"
-#include "network/wifiprovisioning.h"
-#include "sensors/SensorManager.h"
-#include "status/LEDManager.h"
-#include "status/StatusManager.h"
-
-extern Timer<> globalTimer;
-extern SlimeVR::LEDManager ledManager;
-extern SlimeVR::Status::StatusManager statusManager;
-extern SlimeVR::Configuration::Configuration configuration;
-extern SlimeVR::Sensors::SensorManager sensorManager;
-extern SlimeVR::Network::Manager networkManager;
-extern SlimeVR::Network::Connection networkConnection;
-extern BatteryMonitor battery;
-extern SlimeVR::WiFiNetwork wifiNetwork;
-extern SlimeVR::WiFiProvisioning wifiProvisioning;
+const char* provisioningPassword
+	= "SlimeVR-Provisioning";  // YOUR PROVISIONING PASSWORD HERE, LEAVE EMPTY TO
+							   // DISABLE PROVISIONING
