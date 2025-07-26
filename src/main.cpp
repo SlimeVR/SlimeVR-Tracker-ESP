@@ -68,6 +68,38 @@ void setup() {
 
 	logger.info("SlimeVR v" FIRMWARE_VERSION " starting up...");
 
+	char vendorBuffer[512];
+	size_t writtenLength;
+
+	if (strlen(VENDOR_URL) == 0) {
+		sprintf(
+			vendorBuffer,
+			"Vendor: %s, product: %s%n",
+			VENDOR_NAME,
+			PRODUCT_NAME,
+			&writtenLength
+		);
+	} else {
+		sprintf(
+			vendorBuffer,
+			"Vendor: %s (%s), product: %s%n",
+			VENDOR_NAME,
+			VENDOR_URL,
+			PRODUCT_NAME,
+			&writtenLength
+		);
+	}
+
+	if (strlen(UPDATE_ADDRESS) > 0 && strlen(UPDATE_NAME) > 0) {
+		sprintf(
+			vendorBuffer + writtenLength,
+			", firmware update url: %s, name: %s",
+			UPDATE_ADDRESS,
+			UPDATE_NAME
+		);
+	}
+	logger.info("%s", vendorBuffer);
+
 	statusManager.setStatus(SlimeVR::Status::LOADING, true);
 
 	ledManager.setup();

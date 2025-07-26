@@ -155,6 +155,39 @@ void printState() {
 		statusManager.getStatus(),
 		wifiNetwork.getWiFiState()
 	);
+
+	char vendorBuffer[512];
+	size_t writtenLength;
+
+	if (strlen(VENDOR_URL) == 0) {
+		sprintf(
+			vendorBuffer,
+			"Vendor: %s, product: %s%n",
+			VENDOR_NAME,
+			PRODUCT_NAME,
+			&writtenLength
+		);
+	} else {
+		sprintf(
+			vendorBuffer,
+			"Vendor: %s (%s), product: %s%n",
+			VENDOR_NAME,
+			VENDOR_URL,
+			PRODUCT_NAME,
+			&writtenLength
+		);
+	}
+
+	if (strlen(UPDATE_ADDRESS) > 0 && strlen(UPDATE_NAME) > 0) {
+		sprintf(
+			vendorBuffer + writtenLength,
+			", firmware update url: %s, name: %s",
+			UPDATE_ADDRESS,
+			UPDATE_NAME
+		);
+	}
+	logger.info("%s", vendorBuffer);
+
 	for (auto& sensor : sensorManager.getSensors()) {
 		logger.info(
 			"Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
@@ -296,6 +329,8 @@ void cmdGet(CmdParser* parser) {
 		const char* mag = sensor0->getAttachedMagnetometer();
 		if (mag) {
 			logger.info("[TEST] Sensor[0] magnetometer: %s", mag);
+		} else {
+			logger.info("[TEST] Sensor[0] has no magnetometer attached");
 		}
 
 		if (!sensor0->getHadData()) {
