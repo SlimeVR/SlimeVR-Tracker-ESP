@@ -99,7 +99,7 @@ struct ICM42688 {
 		struct GyroConfig {
 			static constexpr uint8_t reg = 0x4f;
 			static constexpr uint8_t value
-				= (0b001 << 5) | 0b0111;  // 1000dps, odr=500Hz
+				= (0b001 << 5) | 0b0111;  // 1000dps, odr=200Hz
 		};
 		struct AccelConfig {
 			static constexpr uint8_t reg = 0x50;
