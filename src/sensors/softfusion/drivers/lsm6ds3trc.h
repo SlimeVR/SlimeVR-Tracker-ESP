@@ -45,7 +45,8 @@ struct LSM6DS3TRC {
 	static constexpr float GyrFreq = 208.0f;
 	static constexpr float AccFreq = 104.0f;
 	static constexpr float MagFreq = 100.0f;
-	static constexpr float TempFreq = 416.0f; // I guess it's just output at the FIFO ODR?
+	static constexpr float TempFreq
+		= 416.0f;  // I guess it's just output at the FIFO ODR?
 
 	static constexpr float GyrTs = 1.0 / GyrFreq;
 	static constexpr float AccTs = 1.0 / AccFreq;

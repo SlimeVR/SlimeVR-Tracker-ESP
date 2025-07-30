@@ -88,7 +88,7 @@ struct LSM6DSR : LSM6DSOutputHandler {
 		struct FifoCtrl3BDR {
 			static constexpr uint8_t reg = 0x09;
 			static constexpr uint8_t value
-				= 0b01010100;  // Gyroscope batched into FIFO at 208Hz, Accel at 104Hz	
+				= 0b01010100;  // Gyroscope batched into FIFO at 208Hz, Accel at 104Hz
 		};
 		struct FifoCtrl4Mode {
 			static constexpr uint8_t reg = 0x0a;
