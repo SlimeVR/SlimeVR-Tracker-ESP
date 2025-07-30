@@ -32,7 +32,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 4000dps
 // using high resolution mode
 // Uses 32.768kHz clock
-// Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
+// Gyroscope ODR = 204.8Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 struct ICM45686 : public ICM45Base {
