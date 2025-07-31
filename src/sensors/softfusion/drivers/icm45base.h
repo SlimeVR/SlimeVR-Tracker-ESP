@@ -309,6 +309,8 @@ struct ICM45Base {
 		}
 	}
 
+	void deinit() { softResetIMU(); }
+
 	template <typename Reg>
 	uint8_t readBankRegister() {
 		uint8_t buffer;
