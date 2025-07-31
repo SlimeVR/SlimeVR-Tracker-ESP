@@ -203,9 +203,10 @@ void printState() {
 		}
 	}
 	logger.info(
-		"Battery voltage: %.3f, level: %.1f%%",
+		"Battery voltage: %.3f, level: %.1f%%, %s",
 		battery.getVoltage(),
-		battery.getLevel() * 100
+		battery.getLevel() * 100,
+		battery.getExtendedInfo().c_str()
 	);
 }
 

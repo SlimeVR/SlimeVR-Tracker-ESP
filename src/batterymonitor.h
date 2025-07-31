@@ -78,6 +78,8 @@ public:
 	float getVoltage() const { return voltage; }
 	float getLevel() const { return level; }
 
+	String getExtendedInfo();
+
 private:
 	unsigned long last_battery_sample = 0;
 #if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
