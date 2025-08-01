@@ -78,7 +78,7 @@ public:
 	float getVoltage() const { return voltage; }
 	float getLevel() const { return level; }
 
-	String getExtendedInfo();
+	std::string getExtendedInfo();
 
 private:
 	unsigned long last_battery_sample = 0;

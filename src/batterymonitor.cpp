@@ -159,8 +159,8 @@ void BatteryMonitor::Loop() {
 #endif
 }
 
-String BatteryMonitor::getExtendedInfo() {
-	String extended_battery_status = "";
+std::string BatteryMonitor::getExtendedInfo() {
+	std::string extended_battery_status = "";
 #if BATTERY_MONITOR == BAT_BQ27441
 	int current = lipo.current(AVG);
 	unsigned int fullCapacity = lipo.capacity(FULL);
@@ -168,11 +168,11 @@ String BatteryMonitor::getExtendedInfo() {
 	int power = lipo.power();
 	int health = lipo.soh();
 
-	extended_battery_status += "current [mA]: " + String(current);
+	extended_battery_status += ", current [mA]: " + std::to_string(current);
 	extended_battery_status
-		+= ", capacity [mAh]: " + String(capacity) + "/" + String(fullCapacity);
-	extended_battery_status += ", power draw [mW]: " + String(power);
-	extended_battery_status += ", health [perc]: " + String(health);
+		+= ", capacity [mAh]: " + std::to_string(capacity) + "/" + std::to_string(fullCapacity);
+	extended_battery_status += ", power draw [mW]: " + std::to_string(power);
+	extended_battery_status += ", health [perc]: " + std::to_string(health);
 #endif
 	return extended_battery_status;
 }
