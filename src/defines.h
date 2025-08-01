@@ -63,10 +63,6 @@
 #define BATTERY_MONITOR BAT_EXTERNAL
 #endif
 
-#if BATTERY_MONITOR == BAT_BQ27441 && I2C_SPEED > 100000
-#error BQ27441 library supports only 100 kHz I2C speed
-#endif
-
 // --- OVERRIDES FOR DEFAULT PINS
 
 // #define PIN_IMU_SDA 14

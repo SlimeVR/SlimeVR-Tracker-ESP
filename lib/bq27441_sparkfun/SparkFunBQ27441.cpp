@@ -701,6 +701,7 @@ int16_t BQ27441::i2cReadBytes(uint8_t subAddress, uint8_t * dest, uint8_t count)
 	Wire.beginTransmission(_deviceAddress);
 	Wire.write(subAddress);
 	Wire.endTransmission(true);
+	delayMicroseconds(100);
 	
 	Wire.requestFrom(_deviceAddress, count);
 	
@@ -708,6 +709,7 @@ int16_t BQ27441::i2cReadBytes(uint8_t subAddress, uint8_t * dest, uint8_t count)
 	{
 		dest[i] = Wire.read();
 	}
+	delayMicroseconds(100);
 	
 	return timeout;
 }
@@ -715,13 +717,13 @@ int16_t BQ27441::i2cReadBytes(uint8_t subAddress, uint8_t * dest, uint8_t count)
 // Write a specified number of bytes over I2C to a given subAddress
 uint16_t BQ27441::i2cWriteBytes(uint8_t subAddress, uint8_t * src, uint8_t count)
 {
-	Wire.beginTransmission(_deviceAddress);
-	Wire.write(subAddress);
-	for (int i=0; i<count; i++)
-	{
+	for (int i=0; i<count; i++) {
+		Wire.beginTransmission(_deviceAddress);
+		Wire.write(subAddress);
 		Wire.write(src[i]);
-	}	
-	Wire.endTransmission(true);
+		Wire.endTransmission(true);
+		delayMicroseconds(100);
+	}
 	
 	return true;	
 }
