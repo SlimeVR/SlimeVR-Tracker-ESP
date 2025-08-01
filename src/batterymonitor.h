@@ -27,6 +27,8 @@
 #include <I2Cdev.h>
 #include <i2cscan.h>
 
+#include <string>
+
 #include "globals.h"
 #include "logging/Logger.h"
 
@@ -77,6 +79,8 @@ public:
 
 	float getVoltage() const { return voltage; }
 	float getLevel() const { return level; }
+
+	std::string getExtendedInfo();
 
 private:
 	unsigned long last_battery_sample = 0;
