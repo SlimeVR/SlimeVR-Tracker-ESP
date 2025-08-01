@@ -27,6 +27,8 @@
 #include <I2Cdev.h>
 #include <i2cscan.h>
 
+#include <string>
+
 #include "globals.h"
 #include "logging/Logger.h"
 
