@@ -169,8 +169,8 @@ std::string BatteryMonitor::getExtendedInfo() {
 	int health = lipo.soh();
 
 	extended_battery_status += ", current [mA]: " + std::to_string(current);
-	extended_battery_status
-		+= ", capacity [mAh]: " + std::to_string(capacity) + "/" + std::to_string(fullCapacity);
+	extended_battery_status += ", capacity [mAh]: " + std::to_string(capacity) + "/"
+							 + std::to_string(fullCapacity);
 	extended_battery_status += ", power draw [mW]: " + std::to_string(power);
 	extended_battery_status += ", health [perc]: " + std::to_string(health);
 #endif
