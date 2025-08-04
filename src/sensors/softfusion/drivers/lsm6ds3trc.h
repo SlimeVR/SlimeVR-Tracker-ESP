@@ -61,13 +61,7 @@ struct LSM6DS3TRC {
 
 	static constexpr float TemperatureZROChange = 2.0f;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 3.0f,
-		.biasClip = 6.0f,
-		.restThGyr = 3.0f,
-		.restThAcc = 0.392f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger m_Logger;

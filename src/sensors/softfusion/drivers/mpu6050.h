@@ -70,13 +70,7 @@ struct MPU6050 {
 
 	static constexpr float TemperatureZROChange = 1.6f;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 20.0f,
-		.biasClip = 40.0f,
-		.restThGyr = 20.0f,
-		.restThAcc = 0.784f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;

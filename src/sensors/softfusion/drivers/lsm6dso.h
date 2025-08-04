@@ -60,13 +60,7 @@ struct LSM6DSO : LSM6DSOutputHandler {
 
 	static constexpr float TemperatureZROChange = 10.0;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 1.0f,
-		.biasClip = 2.0f,
-		.restThGyr = 1.0f,
-		.restThAcc = 0.192f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	struct Regs {
 		struct WhoAmI {
