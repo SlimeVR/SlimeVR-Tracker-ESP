@@ -779,6 +779,23 @@ void Connection::update() {
 			configuration.save();
 			break;
 		}
+
+		case ReceivePacketType::WiFiProvisioning: {
+			WiFiProvisioningPacket wifiProvisioningPacket{};
+			memcpy(
+				&wifiProvisioningPacket,
+				m_Packet + 12,
+				sizeof(WiFiProvisioningPacket)
+			);
+
+			if (wifiProvisioningPacket.start) {
+				wifiProvisioning.startProvisioning();
+			} else {
+				wifiProvisioning.stopProvisioning();
+			}
+
+			break;
+		}
 	}
 }
 
