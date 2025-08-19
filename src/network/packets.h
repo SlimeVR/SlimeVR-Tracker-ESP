@@ -54,6 +54,7 @@ enum class SendPacketType : uint8_t {
 	// RotationAcceleration = 23,
 	AcknowledgeConfigChange = 24,
 	FlexData = 26,
+	AcknowledgeIdentificiation = 28,
 	Bundle = 100,
 	Inspection = 105,
 };
@@ -68,6 +69,7 @@ enum class ReceivePacketType : uint8_t {
 	SensorInfo = 15,
 	FeatureFlags = 22,
 	SetConfigFlag = 25,
+	Identification = 28,
 };
 
 enum class InspectionPacketType : uint8_t {
@@ -228,6 +230,11 @@ struct SetConfigFlagPacket {
 	uint8_t sensorId{};
 	BigEndian<SensorToggles> flag;
 	bool newState{};
+};
+
+struct IdentificationPacket {
+	uint8_t sensorId{};
+	bool on{};
 };
 
 #pragma pack(pop)
