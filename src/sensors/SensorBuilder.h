@@ -50,6 +50,7 @@
 #include "sensorinterface/SensorInterface.h"
 #include "sensorinterface/SensorInterfaceManager.h"
 #include "sensorinterface/i2cimpl.h"
+#include "sensors/hall/mlx90393.h"
 #include "softfusion/drivers/bmi160.h"
 #include "softfusion/drivers/bmi270.h"
 #include "softfusion/drivers/icm42688.h"
@@ -286,6 +287,28 @@ public:
 			});
 		}
 
+		bool working = sensor->isWorking();
+		m_Manager->m_Sensors.push_back(std::move(sensor));
+
+		if (!working) {
+			return false;
+		}
+
+		m_Manager->m_Logger.info("Sensor %d configured", sensorID);
+		return true;
+	}
+
+	// MLX90939
+	template <typename SensorType>
+	bool sensorDescEntry(
+		uint8_t sensorID,
+		SensorInterface* interface,
+		PinInterface* interrupt,
+		uint8_t address
+	) {
+		auto sensor
+			= std::make_unique<SensorType>(sensorID, interface, interrupt, address);
+		sensor->motionSetup();
 		bool working = sensor->isWorking();
 		m_Manager->m_Sensors.push_back(std::move(sensor));
 
