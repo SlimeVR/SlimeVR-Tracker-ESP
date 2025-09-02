@@ -43,6 +43,7 @@ public:
 	void motionLoop() final;
 	SensorDataType getDataType() final;
 	void sendData() final;
+	bool hasNewDataToSend() final;
 
 private:
 	enum class Command : uint8_t {

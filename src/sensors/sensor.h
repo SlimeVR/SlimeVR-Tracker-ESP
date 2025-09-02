@@ -72,14 +72,14 @@ public:
 		addr = registerInterface.getAddress();
 	}
 
-	virtual ~Sensor(){};
-	virtual void motionSetup(){};
-	virtual void postSetup(){};
-	virtual void motionLoop(){};
+	virtual ~Sensor() {};
+	virtual void motionSetup() {};
+	virtual void postSetup() {};
+	virtual void motionLoop() {};
 	virtual void sendData();
 	virtual void setAcceleration(Vector3 a);
 	virtual void setFusedRotation(Quat r);
-	virtual void startCalibration(int calibrationType){};
+	virtual void startCalibration(int calibrationType) {};
 	virtual SensorStatus getSensorState();
 	virtual void printTemperatureCalibrationState();
 	virtual void printDebugTemperatureCalibrationState();
@@ -97,7 +97,7 @@ public:
 	SensorTypeID getSensorType() { return sensorType; };
 	const Vector3& getAcceleration() { return acceleration; };
 	const Quat& getFusedRotation() { return fusedRotation; };
-	bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
+	virtual bool hasNewDataToSend() { return newFusedRotation || newAcceleration; };
 	inline bool hasCompletedRestCalibration() { return restCalibrationComplete; }
 	void setFlag(SensorToggles toggle, bool state);
 	[[nodiscard]] virtual bool isFlagSupported(SensorToggles toggle) const {

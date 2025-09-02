@@ -97,6 +97,7 @@ void MLX90393::sendData() {
 		);
 
 		networkConnection.sendFlexData(sensorId, strength);
+		newSample = false;
 	}
 
 	auto elapsedMillis = millis() - lastTempSendMillis;
@@ -166,5 +167,7 @@ MLX90393::StatusReply MLX90393::readRegister(uint8_t address, uint16_t& out) {
 
 	return result;
 }
+
+bool MLX90393::hasNewDataToSend() { return newSample; }
 
 }  // namespace SlimeVR::Sensors
