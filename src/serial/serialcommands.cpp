@@ -35,10 +35,19 @@
 #include "nvs_flash.h"
 #endif
 
+#ifdef EXT_SERIAL_COMMANDS
+#define CALLBACK_SIZE 7  // Increase callback size to allow for debug commands
+#include "i2cscan.h"
+#endif
+
+#ifndef CALLBACK_SIZE
+#define CALLBACK_SIZE 6  // Default callback size
+#endif
+
 namespace SerialCommands {
 SlimeVR::Logging::Logger logger("SerialCommands");
 
-CmdCallback<6> cmdCallbacks;
+CmdCallback<CALLBACK_SIZE> cmdCallbacks;
 CmdParser cmdParser;
 CmdBuffer<256> cmdBuffer;
 
@@ -85,7 +94,7 @@ void cmdSet(CmdParser* parser) {
 					return;
 				}
 
-				WiFiNetwork::setWiFiCredentials(sc_ssid, sc_pw);
+				wifiNetwork.setWiFiCredentials(sc_ssid, sc_pw);
 				logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
 			}
 		} else if (parser->equalCmdParam(1, "BWIFI")) {
@@ -131,7 +140,7 @@ void cmdSet(CmdParser* parser) {
 					// set the pointer for pass to null for no password
 					ppass = NULL;
 				}
-				WiFiNetwork::setWiFiCredentials(ssid, ppass);
+				wifiNetwork.setWiFiCredentials(ssid, ppass);
 				logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
 			}
 		} else {
@@ -150,10 +159,10 @@ void printState() {
 		HARDWARE_MCU,
 		PROTOCOL_VERSION,
 		FIRMWARE_VERSION,
-		WiFiNetwork::getAddress().toString().c_str(),
+		wifiNetwork.getAddress().toString().c_str(),
 		WiFi.macAddress().c_str(),
 		statusManager.getStatus(),
-		WiFiNetwork::getWiFiState()
+		wifiNetwork.getWiFiState()
 	);
 
 	char vendorBuffer[512];
@@ -311,10 +320,10 @@ void cmdGet(CmdParser* parser) {
 			HARDWARE_MCU,
 			PROTOCOL_VERSION,
 			FIRMWARE_VERSION,
-			WiFiNetwork::getAddress().toString().c_str(),
+			wifiNetwork.getAddress().toString().c_str(),
 			WiFi.macAddress().c_str(),
 			statusManager.getStatus(),
-			WiFiNetwork::getWiFiState()
+			wifiNetwork.getWiFiState()
 		);
 		auto& sensor0 = sensorManager.getSensors()[0];
 		sensor0->motionLoop();
@@ -347,8 +356,8 @@ void cmdGet(CmdParser* parser) {
 		if (WiFi.status() != WL_CONNECTED) {
 			WiFi.disconnect();
 		}
-		if (WiFiNetwork::isProvisioning()) {
-			WiFiNetwork::stopProvisioning();
+		if (wifiProvisioning.isProvisioning()) {
+			wifiProvisioning.stopProvisioning();
 		}
 
 		WiFi.scanNetworks();
@@ -457,6 +466,13 @@ void cmdDeleteCalibration(CmdParser* parser) {
 	configuration.eraseSensors();
 }
 
+#if EXT_SERIAL_COMMANDS
+void cmdScanI2C(CmdParser* parser) {
+	logger.info("Forcing I2C scan...");
+	I2CSCAN::scani2cports();
+}
+#endif
+
 void setUp() {
 	cmdCallbacks.addCmd("SET", &cmdSet);
 	cmdCallbacks.addCmd("GET", &cmdGet);
@@ -464,6 +480,9 @@ void setUp() {
 	cmdCallbacks.addCmd("REBOOT", &cmdReboot);
 	cmdCallbacks.addCmd("DELCAL", &cmdDeleteCalibration);
 	cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
+#if EXT_SERIAL_COMMANDS
+	cmdCallbacks.addCmd("SCANI2C", &cmdScanI2C);
+#endif
 }
 
 void update() { cmdCallbacks.updateCmdProcessing(&cmdParser, &cmdBuffer, &Serial); }
