@@ -23,57 +23,48 @@
 
 #pragma once
 
+#include <Arduino.h>
+
+#include <cstdint>
 #include <functional>
-#include <optional>
+#include <vector>
 
-#include "logging/Logger.h"
-#include "sensorinterface/RegisterInterface.h"
+#include "GlobalVars.h"
 
-namespace SlimeVR::Sensors::SoftFusion {
+#ifdef ON_OFF_BUTTON_PIN
 
-enum class MagDataWidth {
-	SixByte,
-	NineByte,
-};
-
-struct MagInterface {
-	std::function<uint8_t(uint8_t)> readByte;
-	std::function<void(uint8_t, uint8_t)> writeByte;
-	std::function<void(uint8_t)> setDeviceId;
-	std::function<void(uint8_t, MagDataWidth)> startPolling;
-	std::function<void()> stopPolling;
-};
-
-struct MagDefinition {
-	const char* name;
-
-	uint8_t deviceId;
-
-	uint8_t whoAmIReg;
-	uint8_t expectedWhoAmI;
-
-	MagDataWidth dataWidth;
-	uint8_t dataReg;
-
-	std::function<bool(MagInterface& interface)> setup;
-	std::function<void(MagInterface& interface)> deinit;
-};
-
-class MagDriver {
+class OnOffButton {
 public:
-	bool init(MagInterface&& interface, bool supports9ByteMags);
-	void deinit();
-	void startPolling() const;
-	void stopPolling() const;
-	[[nodiscard]] const char* getAttachedMagName() const;
+	void setup();
+	void tick();
+	void onBeforeSleep(std::function<void()> callback);
+	void signalTrackerMoved();
+
+	static OnOffButton& getInstance();
 
 private:
-	std::optional<MagDefinition> detectedMag;
-	MagInterface interface;
+	OnOffButton() = default;
+	static OnOffButton instance;
 
-	static std::vector<MagDefinition> supportedMags;
+	static constexpr float longPressSeconds = 1.0f;
+	static constexpr float batteryBadTimeoutSeconds = 10.0f;
 
-	Logging::Logger logger{"MagDriver"};
+	bool getButton();
+	void signalPressStart();
+	void emitOnBeforeSleep();
+	void goToSleep();
+
+	bool buttonPressed = false;
+	uint64_t buttonPressStartMillis = 0;
+	uint64_t buttonCircularBuffer = 0;
+	std::vector<std::function<void()>> callbacks;
+	bool batteryBad = false;
+	uint64_t batteryBadSinceMillis = 0;
+	bool wasReleasedInitially = false;
+
+	uint64_t lastActivityMillis = 0;
+
+	friend void IRAM_ATTR buttonInterruptHandler();
 };
 
-}  // namespace SlimeVR::Sensors::SoftFusion
+#endif
