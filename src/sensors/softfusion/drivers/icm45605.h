@@ -32,20 +32,14 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 4000dps
 // using high resolution mode
 // Uses 32.768kHz clock
-// Gyroscope ODR = 409.6Hz, accel ODR = 204.8Hz
+// Gyroscope ODR = 204.8Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 struct ICM45605 : public ICM45Base {
 	static constexpr auto Name = "ICM-45605";
 	static constexpr auto Type = SensorTypeID::ICM45605;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 0.3f,
-		.biasClip = 0.6f,
-		.restThGyr = 0.3f,
-		.restThAcc = 0.0098f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	ICM45605(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
 		: ICM45Base{registerInterface, logger} {}

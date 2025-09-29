@@ -33,21 +33,25 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-// Driver uses acceleration range at 8g
+// Driver uses acceleration range at 4g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 416Hz, accel ODR = 416Hz
+// Gyroscope ODR = 208Hz, accel ODR = 104Hz
 
 struct LSM6DS3TRC {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DS3TR-C";
 	static constexpr auto Type = SensorTypeID::LSM6DS3TRC;
 
-	static constexpr float Freq = 416;
+	static constexpr float GyrFreq = 208.0f;
+	static constexpr float AccFreq = 104.0f;
+	static constexpr float MagFreq = 100.0f;
+	static constexpr float TempFreq
+		= 416.0f;  // I guess it's just output at the FIFO ODR?
 
-	static constexpr float GyrTs = 1.0 / Freq;
-	static constexpr float AccTs = 1.0 / Freq;
-	static constexpr float MagTs = 1.0 / Freq;
-	static constexpr float TempTs = 1.0 / Freq;
+	static constexpr float GyrTs = 1.0 / GyrFreq;
+	static constexpr float AccTs = 1.0 / AccFreq;
+	static constexpr float MagTs = 1.0 / MagFreq;
+	static constexpr float TempTs = 1.0 / TempFreq;
 
 	static constexpr float GyroSensitivity = 28.571428571f;
 	static constexpr float AccelSensitivity = 4098.360655738f;
@@ -57,13 +61,7 @@ struct LSM6DS3TRC {
 
 	static constexpr float TemperatureZROChange = 2.0f;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 3.0f,
-		.biasClip = 6.0f,
-		.restThGyr = 3.0f,
-		.restThAcc = 0.392f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger m_Logger;
@@ -79,12 +77,12 @@ struct LSM6DS3TRC {
 		};
 		struct Ctrl1XL {
 			static constexpr uint8_t reg = 0x10;
-			static constexpr uint8_t value = (0b11 << 2) | (0b0110 << 4);  // 8g, 416Hz
+			static constexpr uint8_t value = (0b10 << 2) | (0b0100 << 4);  // 4g, 104Hz
 		};
 		struct Ctrl2G {
 			static constexpr uint8_t reg = 0x11;
 			static constexpr uint8_t value
-				= (0b10 << 2) | (0b0110 << 4);  // 1000dps, 416Hz
+				= (0b10 << 2) | (0b0101 << 4);  // 1000dps, 208Hz
 		};
 		struct Ctrl3C {
 			static constexpr uint8_t reg = 0x12;
@@ -104,7 +102,7 @@ struct LSM6DS3TRC {
 		struct FifoCtrl5 {
 			static constexpr uint8_t reg = 0x0a;
 			static constexpr uint8_t value
-				= 0b110 | (0b0111 << 3);  // continuous mode, odr = 833Hz
+				= 0b110 | (0b0110 << 3);  // continuous mode, odr = 416Hz
 		};
 
 		static constexpr uint8_t FifoStatus = 0x3a;

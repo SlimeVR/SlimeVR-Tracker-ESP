@@ -34,7 +34,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 8g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 500Hz, accel ODR = 100Hz
+// Gyroscope ODR = 200Hz, accel ODR = 100Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 struct ICM42688 {
@@ -42,7 +42,7 @@ struct ICM42688 {
 	static constexpr auto Name = "ICM-42688";
 	static constexpr auto Type = SensorTypeID::ICM42688;
 
-	static constexpr float GyrTs = 1.0 / 500.0;
+	static constexpr float GyrTs = 1.0 / 200.0;
 	static constexpr float AccTs = 1.0 / 100.0;
 	static constexpr float TempTs = 1.0 / 500.0;
 
@@ -56,13 +56,7 @@ struct ICM42688 {
 
 	static constexpr float TemperatureZROChange = 20.0f;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 0.5f,
-		.biasClip = 1.0f,
-		.restThGyr = 0.5f,
-		.restThAcc = 0.196f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
@@ -99,7 +93,7 @@ struct ICM42688 {
 		struct GyroConfig {
 			static constexpr uint8_t reg = 0x4f;
 			static constexpr uint8_t value
-				= (0b001 << 5) | 0b1111;  // 1000dps, odr=500Hz
+				= (0b001 << 5) | 0b0111;  // 1000dps, odr=200Hz
 		};
 		struct AccelConfig {
 			static constexpr uint8_t reg = 0x50;

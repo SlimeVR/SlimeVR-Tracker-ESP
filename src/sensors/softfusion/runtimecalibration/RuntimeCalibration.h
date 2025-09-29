@@ -99,7 +99,10 @@ public:
 
 		gyroBiasCalibrationStep.swapCalibrationIfNecessary();
 
-		computeNextCalibrationStep();
+		currentStep = &sampleRateCalibrationStep;
+		currentStep->start();
+		nextCalibrationStep = CalibrationStepEnum::SAMPLING_RATE;
+
 		calculateZROChange();
 
 		printCalibration();
@@ -229,10 +232,7 @@ private:
 	};
 
 	void computeNextCalibrationStep() {
-		if (!calibration.sensorTimestepsCalibrated) {
-			nextCalibrationStep = CalibrationStepEnum::SAMPLING_RATE;
-			currentStep = &sampleRateCalibrationStep;
-		} else if (!calibration.motionlessCalibrated && Base::HasMotionlessCalib) {
+		if (!calibration.motionlessCalibrated && Base::HasMotionlessCalib) {
 			nextCalibrationStep = CalibrationStepEnum::MOTIONLESS;
 			currentStep = &motionlessCalibrationStep;
 		} else if (calibration.gyroPointsCalibrated == 0) {
@@ -323,12 +323,12 @@ private:
 
 	void printCalibration(CalibrationPrintFlags toPrint = PrintAllCalibration) {
 		if (any(toPrint & CalibrationPrintFlags::TIMESTEPS)) {
-			if (calibration.sensorTimestepsCalibrated) {
+			if (activeCalibration.sensorTimestepsCalibrated) {
 				logger.info(
 					"Calibrated timesteps: Accel %f, Gyro %f, Temperature %f",
-					calibration.A_Ts,
-					calibration.G_Ts,
-					calibration.T_Ts
+					activeCalibration.A_Ts,
+					activeCalibration.G_Ts,
+					activeCalibration.T_Ts
 				);
 			} else {
 				logger.info("Sensor timesteps not calibrated");
@@ -389,12 +389,12 @@ private:
 		}
 	}
 
-	CalibrationStepEnum nextCalibrationStep = CalibrationStepEnum::MOTIONLESS;
+	CalibrationStepEnum nextCalibrationStep = CalibrationStepEnum::SAMPLING_RATE;
 
 	static constexpr float initialStartupDelaySeconds = 5;
 	uint64_t startupMillis = millis();
 
-	SampleRateCalibrationStep<RawSensorT> sampleRateCalibrationStep{calibration};
+	SampleRateCalibrationStep<RawSensorT> sampleRateCalibrationStep{activeCalibration};
 	MotionlessCalibrationStep<IMU, RawSensorT> motionlessCalibrationStep{
 		calibration,
 		sensor

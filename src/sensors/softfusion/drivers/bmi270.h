@@ -38,7 +38,7 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 16g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 400Hz, accel ODR = 100Hz
+// Gyroscope ODR = 200Hz, accel ODR = 100Hz
 // Timestamps reading are not used
 
 struct BMI270 {
@@ -46,7 +46,7 @@ struct BMI270 {
 	static constexpr auto Name = "BMI270";
 	static constexpr auto Type = SensorTypeID::BMI270;
 
-	static constexpr float GyrTs = 1.0 / 400.0;
+	static constexpr float GyrTs = 1.0 / 200.0;
 	static constexpr float AccTs = 1.0 / 100.0;
 
 	static constexpr float MagTs = 1.0 / 100;
@@ -56,13 +56,7 @@ struct BMI270 {
 
 	static constexpr float TemperatureZROChange = 6.667f;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 0.5f,
-		.biasClip = 1.0f,
-		.restThGyr = 0.5f,
-		.restThAcc = 0.196f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	struct MotionlessCalibrationData {
 		bool valid;
@@ -138,7 +132,7 @@ struct BMI270 {
 			static constexpr uint8_t filterHighPerfMode = 1 << 7;
 
 			static constexpr uint8_t value
-				= rate400Hz | DLPFModeNorm | noisePerfMode | filterHighPerfMode;
+				= rate200Hz | DLPFModeNorm | noisePerfMode | filterHighPerfMode;
 		};
 
 		struct GyrRange {

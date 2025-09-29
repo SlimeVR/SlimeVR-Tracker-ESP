@@ -32,16 +32,16 @@
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
-// Driver uses acceleration range at 8g
+// Driver uses acceleration range at 4g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 480Hz, accel ODR = 120Hz
+// Gyroscope ODR = 240Hz, accel ODR = 120Hz
 
 struct LSM6DSV : LSM6DSOutputHandler {
 	static constexpr uint8_t Address = 0x6a;
 	static constexpr auto Name = "LSM6DSV";
 	static constexpr auto Type = SensorTypeID::LSM6DSV;
 
-	static constexpr float GyrFreq = 480;
+	static constexpr float GyrFreq = 240;
 	static constexpr float AccFreq = 120;
 	static constexpr float MagFreq = 120;
 	static constexpr float TempFreq = 60;
@@ -59,13 +59,7 @@ struct LSM6DSV : LSM6DSOutputHandler {
 
 	static constexpr float TemperatureZROChange = 16.667f;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 1.0f,
-		.biasClip = 2.0f,
-		.restThGyr = 1.0f,
-		.restThAcc = 0.192f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	struct Regs {
 		struct WhoAmI {
@@ -82,7 +76,7 @@ struct LSM6DSV : LSM6DSOutputHandler {
 		};
 		struct Ctrl2GODR {
 			static constexpr uint8_t reg = 0x11;
-			static constexpr uint8_t value = (0b0011000);  // 480Hz, HAODR
+			static constexpr uint8_t value = (0b0010111);  // 240Hz, HAODR
 		};
 		struct Ctrl3C {
 			static constexpr uint8_t reg = 0x12;
@@ -96,12 +90,12 @@ struct LSM6DSV : LSM6DSOutputHandler {
 		};
 		struct Ctrl8XLFS {
 			static constexpr uint8_t reg = 0x17;
-			static constexpr uint8_t value = (0b10);  // 8g
+			static constexpr uint8_t value = (0b01);  // 4g
 		};
 		struct FifoCtrl3BDR {
 			static constexpr uint8_t reg = 0x09;
 			static constexpr uint8_t value
-				= (0b1000) | (0b1000 << 4);  // gyro and accel batched at 480Hz
+				= 0b01110110;  // Gyroscope batched into FIFO at 240Hz, Accel at 120Hz
 		};
 		struct FifoCtrl4Mode {
 			static constexpr uint8_t reg = 0x0a;
