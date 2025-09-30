@@ -64,7 +64,6 @@ void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
 IPAddress WiFiNetwork::getAddress() { return WiFi.localIP(); }
 
 void WiFiNetwork::setUp() {
-	// Don't need to save the already saved credentials or the hardcoded ones
 	wifiHandlerLogger.info("Setting up WiFi");
 	WiFi.mode(WIFI_STA);
 	WiFi.hostname("SlimeVR FBT Tracker");
@@ -321,6 +320,7 @@ bool WiFiNetwork::tryHardcodedCredentials() {
 
 		retriedOnG = true;
 		wifiHandlerLogger.debug("Trying hardcoded credentials with PHY Mode G...");
+		// Don't need to save hardcoded credentials
 		WiFi.persistent(false);
 		auto result =  tryConnecting(true, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
 		WiFi.persistent(true);
@@ -330,6 +330,7 @@ bool WiFiNetwork::tryHardcodedCredentials() {
 	retriedOnG = false;
 
 	wifiState = WiFiReconnectionStatus::HardcodeAttempt;
+  	// Don't need to save hardcoded credentials
 	WiFi.persistent(false);
 	auto result = tryConnecting(false, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
 	WiFi.persistent(true);
