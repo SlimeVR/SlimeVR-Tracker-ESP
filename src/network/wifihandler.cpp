@@ -20,9 +20,10 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#include "network/wifihandler.h"
+
 #include "GlobalVars.h"
 #include "globals.h"
-#include "network/wifihandler.h"
 #if !ESP8266
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
@@ -320,7 +321,7 @@ bool WiFiNetwork::tryHardcodedCredentials() {
 		wifiHandlerLogger.debug("Trying hardcoded credentials with PHY Mode G...");
 		// Don't need to save hardcoded credentials
 		WiFi.persistent(false);
-		auto result =  tryConnecting(true, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
+		auto result = tryConnecting(true, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
 		WiFi.persistent(true);
 		return result;
 	}
@@ -328,7 +329,7 @@ bool WiFiNetwork::tryHardcodedCredentials() {
 	retriedOnG = false;
 
 	wifiState = WiFiReconnectionStatus::HardcodeAttempt;
-  	// Don't need to save hardcoded credentials
+	// Don't need to save hardcoded credentials
 	WiFi.persistent(false);
 	auto result = tryConnecting(false, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
 	WiFi.persistent(true);
