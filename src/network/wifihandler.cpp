@@ -322,16 +322,18 @@ bool WiFiNetwork::tryHardcodedCredentials() {
 		retriedOnG = true;
 		wifiHandlerLogger.debug("Trying hardcoded credentials with PHY Mode G...");
 		WiFi.persistent(false);
-		return tryConnecting(true, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
+		auto result =  tryConnecting(true, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
 		WiFi.persistent(true);
+		return result;
 	}
 
 	retriedOnG = false;
 
 	wifiState = WiFiReconnectionStatus::HardcodeAttempt;
 	WiFi.persistent(false);
-	return tryConnecting(false, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
+	auto result = tryConnecting(false, WIFI_CREDS_SSID, WIFI_CREDS_PASSWD);
 	WiFi.persistent(true);
+	return result;
 #else
 	wifiState = WiFiReconnectionStatus::HardcodeAttempt;
 	return false;
