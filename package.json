@@ -1,0 +1,26 @@
+{
+	"name": "slimevr-tracker-esp",
+	"private": true,
+	"version": "1.0.0",
+	"description": "",
+	"type": "commonjs",
+	"scripts": {
+		"postinstall": "pnpm build",
+		"build": "tsc -p tsconfig.json",
+		"gh:ci": "node dist/index.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.12.4",
+	"dependencies": {
+		"@cfworker/json-schema": "^4.1.1",
+		"@exodus/schemasafe": "^1.3.0",
+		"ajv": "^8.17.1",
+		"commander": "^14.0.1",
+		"typescript": "^5.9.3"
+	},
+	"devDependencies": {
+		"@types/node": "^24.6.2"
+	}
+}

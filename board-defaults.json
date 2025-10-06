@@ -1,0 +1,55 @@
+{
+	"$schema": "board-defaults.schema.json",
+	"toolchain": "platformio",
+	"defaults": {
+		"BOARD_SLIMEVR": {
+			"values": {
+				"BOARD": "BOARD_SLIMEVR",
+				"SENSORS": [
+					{
+						"protocol": "SPI",
+						"imu": "IMU_AUTO",
+						"rotation": "DEG_0",
+						"int": "2"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "16",
+						"rotation": "DEG_0",
+						"scl": "5",
+						"sda": "4"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 0,
+					"r2": 1,
+					"shieldR": 12.2,
+					"pin": "17"
+				},
+				"LED_PIN": "2",
+				"LED_INVERTED": true
+			},
+			"editable": [],
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": true,
+				"needManualReboot": true,
+				"shouldOnlyUseDefaults": true
+			}
+		},
+		"BOARD_WEMOSD1MINI": {
+			"values": {
+				"BOARD": "BOARD_WEMOSD1MINI"
+			},
+			"editable": ["BOARD"],
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": true,
+				"needManualReboot": true,
+				"shouldOnlyUseDefaults": true
+			}
+		}
+	}
+}

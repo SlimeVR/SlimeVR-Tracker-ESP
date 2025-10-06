@@ -1,0 +1,238 @@
+{
+	"$id": "board-defaults.schema.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+
+	"$defs": {
+		"pin": {
+			"type": "string",
+			"pattern": "^[AD]?[1-9]\\d*$"
+		},
+
+		"IMU_TYPE": {
+			"type": "string",
+			"enum": [
+				"IMU_AUTO",
+				"IMU_UNKNOWN",
+				"IMU_MPU9250",
+				"IMU_MPU6500",
+				"IMU_BNO080",
+				"IMU_BNO085",
+				"IMU_BNO055",
+				"IMU_MPU6050",
+				"IMU_BNO086",
+				"IMU_BMI160",
+				"IMU_ICM20948",
+				"IMU_ICM42688",
+				"IMU_LSM6DS3TRC",
+				"IMU_LSM6DSV",
+				"IMU_LSM6DSO",
+				"IMU_LSM6DSR",
+				"IMU_MPU6050_SF",
+				"IMU_ICM45686",
+				"IMU_ICM45605"
+			],
+			"description": "Imu Type"
+		},
+
+		"PROTOCOL": {
+			"type": "string",
+			"enum": ["I2C", "SPI"],
+			"description": "Protocol"
+		},
+
+		"IMU_ROTATION": {
+			"type": "string",
+			"enum": ["DEG_0", "DEG_90", "DEG_180", "DEG_270"],
+			"description": "Protocol"
+		},
+
+		"I2C_IMU": {
+			"type": "object",
+			"properties": {
+				"protocol": { "const": "I2C" },
+				"imu": { "$ref": "#/$defs/IMU_TYPE" },
+				"sda": { "$ref": "#/$defs/pin", "description": "SDA Pin" },
+				"scl": { "$ref": "#/$defs/pin", "description": "SCL Pin" },
+				"int": { "$ref": "#/$defs/pin", "description": "INT Pin" },
+				"address": {
+					"type": "number",
+					"description": "IMU Address"
+				},
+				"rotation": {
+					"$ref": "#/$defs/IMU_ROTATION",
+					"description": "IMU Rotation"
+				}
+			},
+			"required": ["protocol", "imu", "sda", "scl"]
+		},
+
+		"SPI_IMU": {
+			"type": "object",
+			"properties": {
+				"protocol": { "const": "SPI" },
+				"imu": { "$ref": "#/$defs/IMU_TYPE" },
+				"int": { "$ref": "#/$defs/pin", "description": "INT Pin" },
+				"rotation": {
+					"$ref": "#/$defs/IMU_ROTATION",
+					"description": "IMU Rotation"
+				}
+			},
+			"required": ["protocol", "imu"]
+		},
+
+		"IMU": {
+			"type": "object",
+			"discriminator": {
+				"propertyName": "protocol"
+			},
+			"oneOf": [
+				{ "$ref": "#/$defs/I2C_IMU" },
+				{ "$ref": "#/$defs/SPI_IMU" }
+			],
+			"required": ["protocol"]
+		},
+
+		"BOARD_TYPES": {
+			"type": "string",
+			"enum": [
+				"BOARD_UNKNOWN",
+				"BOARD_CUSTOM",
+				"BOARD_WROOM32",
+				"BOARD_WEMOSD1MINI",
+				"BOARD_TTGO_TBASE",
+				"BOARD_ESP01",
+				"BOARD_LOLIN_C3_MINI",
+				"BOARD_BEETLE32C3",
+				"BOARD_ESP32C3DEVKITM1",
+				"BOARD_OWOTRACK",
+				"BOARD_WRANGLER",
+				"BOARD_MOCOPI",
+				"BOARD_WEMOSWROOM02",
+				"BOARD_XIAO_ESP32C3",
+				"BOARD_HARITORA",
+				"BOARD_ESP32C6DEVKITC1",
+				"BOARD_GLOVE_IMU_SLIMEVR_DEV",
+				"BOARD_GESTURES",
+				"BOARD_ESP32S3_SUPERMINI",
+				"BOARD_DEV_RESERVED",
+				"BOARD_SLIMEVR",
+				"BOARD_SLIMEVR_V1_2"
+			],
+			"description": "Board Type"
+		},
+
+		"BATTERY": {
+			"type": "object",
+			"discriminator": {
+				"propertyName": "type"
+			},
+			"oneOf": [
+				{
+					"type": "object",
+					"properties": {
+						"type": { "const": "BAT_EXTERNAL" },
+						"shieldR": {
+							"type": "number",
+							"description": "Battery Shield Resistor (Ohms)"
+						},
+						"r1": { "type": "number", "description": "R1 (Ohms)" },
+						"r2": { "type": "number", "description": "R2 (Ohms)" },
+						"pin": {
+							"$ref": "#/$defs/pin",
+							"description": "Battery Pin"
+						}
+					}
+				},
+				{
+					"type": "object",
+					"properties": {
+						"type": { "const": "BAT_INTERNAL" }
+					}
+				},
+				{
+					"type": "object",
+					"properties": {
+						"type": { "const": "BAT_MCP3021" }
+					}
+				},
+				{
+					"type": "object",
+					"properties": {
+						"type": { "const": "BAT_INTERNAL_MCP3021" }
+					}
+				}
+			],
+			"required": ["type"]
+		},
+
+		"BASIC_IMU_BOARD_CONFIG": {
+			"type": "object",
+			"properties": {
+				"BOARD": {
+					"$ref": "#/$defs/BOARD_TYPES"
+				},
+				"SENSORS": {
+					"type": "array",
+					"items": { "$ref": "#/$defs/IMU" },
+					"maxItems": 2,
+					"minItems": 1
+				},
+				"LED_PIN": {
+					"$ref": "#/$defs/pin",
+					"description": "Led pin"
+				},
+				"LED_INVERTED": {
+					"type": "boolean",
+					"description": "Led inverted"
+				},
+				"BATTERY": { "$ref": "#/$defs/BATTERY" }
+			},
+			"required": ["BOARD"]
+		},
+
+		"BoardConfig": {
+			"type": "object",
+			"properties": {
+				"values": {
+					"$ref": "#/$defs/BASIC_IMU_BOARD_CONFIG"
+				},
+				"editable": {
+					"type": "array",
+					"items": { "type": "string" }
+				},
+				"flashingRules": {
+					"type": "object",
+					"properties": {
+						"needBootPress": { "type": "boolean" },
+						"needManualReboot": { "type": "boolean" },
+						"shouldOnlyUseDefaults": { "type": "boolean" },
+						"applicationOffset": { "type": "integer" }
+					},
+					"required": [
+						"needBootPress",
+						"needManualReboot",
+						"shouldOnlyUseDefaults",
+						"applicationOffset"
+					]
+				}
+			},
+			"required": ["values", "editable", "flashingRules"]
+		}
+	},
+
+	"type": "object",
+	"properties": {
+		"toolchain": {
+			"type": "string",
+			"enum": ["platformio"]
+		},
+		"defaults": {
+			"type": "object",
+			"propertyNames": {
+				"$ref": "#/$defs/BOARD_TYPES"
+			},
+			"additionalProperties": { "$ref": "#/$defs/BoardConfig" }
+		}
+	},
+	"required": ["toolchain", "defaults"]
+}
