@@ -5,7 +5,7 @@
 	"$defs": {
 		"pin": {
 			"type": "string",
-			"pattern": "^[AD]?[1-9]\\d*$"
+			"pattern": "^[AD]?[0-9]\\d*$"
 		},
 
 		"IMU_TYPE": {
@@ -95,8 +95,6 @@
 		"BOARD_TYPES": {
 			"type": "string",
 			"enum": [
-				"BOARD_UNKNOWN",
-				"BOARD_CUSTOM",
 				"BOARD_WROOM32",
 				"BOARD_WEMOSD1MINI",
 				"BOARD_TTGO_TBASE",
@@ -111,7 +109,6 @@
 				"BOARD_XIAO_ESP32C3",
 				"BOARD_HARITORA",
 				"BOARD_ESP32C6DEVKITC1",
-				"BOARD_GLOVE_IMU_SLIMEVR_DEV",
 				"BOARD_GESTURES",
 				"BOARD_ESP32S3_SUPERMINI",
 				"BOARD_DEV_RESERVED",
@@ -168,9 +165,6 @@
 		"BASIC_IMU_BOARD_CONFIG": {
 			"type": "object",
 			"properties": {
-				"BOARD": {
-					"$ref": "#/$defs/BOARD_TYPES"
-				},
 				"SENSORS": {
 					"type": "array",
 					"items": { "$ref": "#/$defs/IMU" },
@@ -186,8 +180,7 @@
 					"description": "Led inverted"
 				},
 				"BATTERY": { "$ref": "#/$defs/BATTERY" }
-			},
-			"required": ["BOARD"]
+			}
 		},
 
 		"BoardConfig": {
@@ -214,6 +207,9 @@
 						"shouldOnlyUseDefaults",
 						"applicationOffset"
 					]
+				},
+				"ignored": {
+					"type": "boolean"
 				}
 			},
 			"required": ["values", "editable", "flashingRules"]

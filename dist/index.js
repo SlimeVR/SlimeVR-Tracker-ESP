@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const commander_1 = require("commander");
@@ -10,8 +9,6 @@ const ajv = new _2020_1.Ajv2020({
     discriminator: true,
     verbose: true,
 });
-const platformioIniFile = (0, path_1.resolve)((0, path_1.join)(__dirname, "../", "./platformio.ini"));
-const platformioToolsIniFile = (0, path_1.resolve)((0, path_1.join)(__dirname, "../", "./platformio-tools.ini"));
 const buildBoard = async (defaults, boardName) => {
     const boardDefaults = defaults.defaults[boardName];
     if (!defaults.defaults[boardName])
@@ -21,7 +18,9 @@ const buildBoard = async (defaults, boardName) => {
         if (value !== undefined)
             args.set(key, { value, type });
     };
-    add("BOARD", boardDefaults.values.BOARD, "raw");
+    add("BOARD", boardName, "raw");
+    add("LED_PIN", boardDefaults.values.LED_PIN, "pin");
+    add("LED_INVERTED", boardDefaults.values.LED_INVERTED, "raw");
     if (boardDefaults.values.SENSORS) {
         boardDefaults.values.SENSORS.forEach((sensor, index) => {
             if (index === 0) {

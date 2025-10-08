@@ -23,5 +23,5 @@
 		"resolveJsonModule": true,
 		"plugins": []
 	},
-	"include": ["./ci/src/**/*"]
+	"include": ["scripts/preprocessor/**/*"]
 }

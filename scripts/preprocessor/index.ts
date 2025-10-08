@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { Command } from "commander";
 import { Ajv2020 } from "ajv/dist/2020";
 import { readFile } from "fs/promises";
@@ -74,9 +72,9 @@ const buildBoard = async (defaults: Defaults, boardName: string) => {
 		if (value !== undefined) args.set(key, { value, type });
 	};
 
-	// add("LED_PIN", boardDefaults.values.LED_PIN, "pin");
-	add("BOARD", boardDefaults.values.BOARD, "raw");
-	// add("LED_INVERTED", boardDefaults.values.LED_INVERTED, "raw");
+	add("BOARD", boardName, "raw");
+	add("LED_PIN", boardDefaults.values.LED_PIN, "pin");
+	add("LED_INVERTED", boardDefaults.values.LED_INVERTED, "raw");
 
 	if (boardDefaults.values.SENSORS) {
 		boardDefaults.values.SENSORS.forEach((sensor, index) => {
@@ -108,7 +106,7 @@ const buildBoard = async (defaults: Defaults, boardName: string) => {
 	if (battery) {
 		add("BATTERY_MONITOR", battery.type, "raw");
 		if (battery.type === "BAT_EXTERNAL") {
-			// add("PIN_BATTERY_LEVEL", battery.pin, "pin");
+			add("PIN_BATTERY_LEVEL", battery.pin, "pin");
 			add("BATTERY_SHIELD_RESISTANCE", battery.shieldR, "number");
 			add("BATTERY_SHIELD_R1", battery.r1, "number");
 			add("BATTERY_SHIELD_R2", battery.r2, "number");

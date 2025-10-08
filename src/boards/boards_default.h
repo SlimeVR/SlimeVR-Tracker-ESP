@@ -27,8 +27,6 @@
 
 #include "defines_helpers.h"
 
-LED(2)
-INVERTED_LED(true)
 
 // Default IMU pinouts and definitions for default tracker types
 

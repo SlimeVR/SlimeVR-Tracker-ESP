@@ -5,9 +5,9 @@
 	"description": "",
 	"type": "commonjs",
 	"scripts": {
-		"postinstall": "pnpm build",
+		"prepare": "pnpm build",
 		"build": "tsc -p tsconfig.json",
-		"gh:ci": "node dist/index.js"
+		"preprocessor": "node dist/index.js"
 	},
 	"keywords": [],
 	"author": "",

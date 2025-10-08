@@ -4,28 +4,57 @@
 	"defaults": {
 		"BOARD_SLIMEVR": {
 			"values": {
-				"BOARD": "BOARD_SLIMEVR",
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "16",
+						"rotation": "DEG_270",
+						"scl": "12",
+						"sda": "14"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 10,
+					"r2": 40.2,
+					"shieldR": 0,
+					"pin": "17"
+				},
+				"LED_PIN": "2",
+				"LED_INVERTED": false
+			},
+			"editable": [],
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": true,
+				"needManualReboot": true,
+				"shouldOnlyUseDefaults": true
+			}
+		},
+		"BOARD_SLIMEVR_V1_2": {
+			"values": {
 				"SENSORS": [
 					{
 						"protocol": "SPI",
 						"imu": "IMU_AUTO",
-						"rotation": "DEG_0",
-						"int": "2"
+						"int": "2",
+						"rotation": "DEG_270"
 					},
 					{
 						"protocol": "I2C",
 						"imu": "IMU_AUTO",
 						"int": "16",
-						"rotation": "DEG_0",
+						"rotation": "DEG_270",
 						"scl": "5",
 						"sda": "4"
 					}
 				],
 				"BATTERY": {
 					"type": "BAT_EXTERNAL",
-					"r1": 0,
-					"r2": 1,
-					"shieldR": 12.2,
+					"r1": 10,
+					"r2": 40.2,
+					"shieldR": 0,
 					"pin": "17"
 				},
 				"LED_PIN": "2",
@@ -41,14 +70,41 @@
 		},
 		"BOARD_WEMOSD1MINI": {
 			"values": {
-				"BOARD": "BOARD_WEMOSD1MINI"
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "D5",
+						"rotation": "DEG_270",
+						"scl": "D1",
+						"sda": "D2"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "D6",
+						"rotation": "DEG_270",
+						"scl": "D1",
+						"sda": "D2"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "A0"
+				},
+				"LED_PIN": "2",
+				"LED_INVERTED": true
 			},
-			"editable": ["BOARD"],
+			"editable": ["SENSORS", "BATTERY", "LED_PIN", "LED_INVERTED"],
+			"ignored": true,
 			"flashingRules": {
 				"applicationOffset": 0,
-				"needBootPress": true,
-				"needManualReboot": true,
-				"shouldOnlyUseDefaults": true
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
 			}
 		}
 	}
