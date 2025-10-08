@@ -20,10 +20,9 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "network/wifihandler.h"
-
 #include "GlobalVars.h"
 #include "globals.h"
+#include "network/wifihandler.h"
 #if !ESP8266
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
@@ -63,6 +62,8 @@ void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
 IPAddress WiFiNetwork::getAddress() { return WiFi.localIP(); }
 
 void WiFiNetwork::setUp() {
+	// Don't need to save the already saved credentials or the hardcoded ones
+	WiFi.persistent(false);
 	wifiHandlerLogger.info("Setting up WiFi");
 	WiFi.mode(WIFI_STA);
 	WiFi.hostname("SlimeVR FBT Tracker");
