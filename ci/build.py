@@ -34,10 +34,11 @@ def get_matrix() -> List[DeviceConfiguration]:
     config = configparser.ConfigParser()
     config.read("./platformio.ini")
     for section in config.sections():
-        if section == "env":
+		split = section.split(":")
+        if len(split) !== 2 or split[0] != 'env':
             continue
 
-        board = section.split(":")[1]
+        board = split[1]
         platform = config[section]["platform"]
         platformio_board = config[section]["board"]
 
