@@ -20,8 +20,9 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "logging/Logger.h"
 #include "provisioning-party.h"
+
+#include "logging/Logger.h"
 
 namespace SlimeVR::Network {
 
