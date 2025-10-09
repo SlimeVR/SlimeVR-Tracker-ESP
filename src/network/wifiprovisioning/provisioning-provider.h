@@ -14,7 +14,6 @@ public:
 	bool tick() final;
 	void handleMessage(uint8_t macAddress[6], const uint8_t* data, uint8_t length)
 		final;
-	void stop() final;
 
 private:
 	static constexpr float ProvisioningTimeoutSeconds = 60.0f;

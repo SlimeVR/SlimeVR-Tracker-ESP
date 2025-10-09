@@ -21,6 +21,7 @@
 	THE SOFTWARE.
 */
 
+#include <cstdint>
 #include <memory>
 
 #include "network/wifiprovisioning/provisioning-provider.h"
@@ -43,6 +44,10 @@ namespace SlimeVR::Network {
 #if ESP8266
 void espnowReceiveCallback(uint8_t* macAddress, uint8_t* data, uint8_t length) {
 	wifiProvisioning.handleMessage(macAddress, data, length);
+}
+
+void espnowSendCallback(uint8_t* macAddress, uint8_t status) {
+	wifiProvisioning.handleSendResult(status == 0);
 }
 #elif ESP32
 void espnowReceiveCallback(
@@ -139,6 +144,8 @@ void WiFiProvisioning::tick() {
 
 	if (!role->tick()) {
 		role.reset();
+		esp_now_deinit();
+		esp_now_unregister_recv_cb();
 	}
 }
 
@@ -162,10 +169,12 @@ bool WiFiProvisioning::initEspnow() {
 
 	result = esp_now_register_recv_cb(espnowReceiveCallback);
 	if (result != 0) {
-		logger.error("Couldn't register ESP-Now receive callback! Error: %d", result);
+		logger.error("Couldn't register ESP-Now receiver callback! Error: %d", result);
 		esp_now_deinit();
 		return false;
 	}
+
+	esp_now_register_send_cb(espnowSendCallback);
 
 	return true;
 }
@@ -176,6 +185,10 @@ void WiFiProvisioning::handleMessage(
 	uint8_t length
 ) {
 	role->handleMessage(macAddress, data, length);
+}
+
+void WiFiProvisioning::handleSendResult(bool success) {
+	role->handleSendResult(success);
 }
 
 }  // namespace SlimeVR::Network

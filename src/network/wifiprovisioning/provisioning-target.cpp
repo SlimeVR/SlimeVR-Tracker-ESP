@@ -3,9 +3,13 @@
 
 #include <cstdint>
 #include <cstring>
+#include <type_traits>
 
+#include "GlobalVars.h"
 #include "credentials.h"
+#include "espnow.h"
 #include "logging/Logger.h"
+#include "network/wifihandler.h"
 #include "network/wifiprovisioning/provisioning-packets.h"
 #include "network/wifiprovisioning/provisioning-party.h"
 #include "provisioning-target.h"
@@ -20,6 +24,7 @@ void ProvisioningTarget::init() {
 	searchTimeout.reset();
 	channelSwitchTimeout.reset();
 	switchChannel(1);
+	addPeer(BroadcastMacAddress);
 }
 
 bool ProvisioningTarget::tick() {
@@ -36,19 +41,58 @@ bool ProvisioningTarget::tick() {
 				} else {
 					switchChannel(currentChannel + 1);
 				}
+				channelSwitchTimeout.reset();
 			}
-			channelSwitchTimeout.reset();
 			break;
 		}
-		case Status::Authenticating: {
+		case Status::ConnectionStarted: {
+			sendAndWaitForAck(ProvisioningPackets::ProvisioningStatus{
+				.status = ProvisioningPackets::ConnectionStatus::Connecting,
+			});
 			break;
 		}
 		case Status::Connecting: {
+			if (WiFi.isConnected()) {
+				sendAndWaitForAck(ProvisioningPackets::ProvisioningStatus{
+					.status = ProvisioningPackets::ConnectionStatus::Connected
+				});
+				break;
+			}
+
+			if (wifiNetwork.getWiFiState()
+				== WiFiNetwork::WiFiReconnectionStatus::Failed) {
+				sendAndWaitForAck(ProvisioningPackets::ProvisioningFailed{
+					.error = ProvisioningPackets::ConnectionError::ConnectionFailed,
+				});
+				break;
+			}
+
 			break;
 		}
 		case Status::SearchingForServer: {
+			if (!searchingForServer) {
+				serverSearchTimeout.reset();
+				searchingForServer = true;
+			}
+
+			if (networkConnection.isConnected()) {
+				sendAndWaitForAck(ProvisioningPackets::ProvisioningStatus{
+					.status = ProvisioningPackets::ConnectionStatus::ServerFound,
+				});
+				break;
+			}
+
+			if (serverSearchTimeout.elapsed()) {
+				sendAndWaitForAck(ProvisioningPackets::ProvisioningFailed{
+					.error = ProvisioningPackets::ConnectionError::ServerNotFound,
+				});
+				break;
+			}
 			break;
 		}
+		case Status::Done:
+			printf("Finished\n");
+			return false;
 	}
 
 	return true;
@@ -78,33 +122,58 @@ void ProvisioningTarget::handleMessage(
 			startConnection(packet.wifiName, packet.wifiPassword);
 			break;
 		}
+		case ProvisioningPackets::ProvisioningPacketId::ProvisioningStatusAck: {
+			status = static_cast<Status>(static_cast<int>(status) + 1);
+			waitingForAck = false;
+			retryTimeout.reset();
+			break;
+		}
+		case ProvisioningPackets::ProvisioningPacketId::ProvisioningFailedAck: {
+			status = Status::Done;
+			break;
+		}
 		default:
 			break;
 	}
 }
 
-void ProvisioningTarget::stop() {}
-
 void ProvisioningTarget::switchChannel(uint8_t channel) {
 	logger.info("Switching to channel %d...", channel);
 	wifi_set_channel(channel);
 	currentChannel = channel;
+
+	esp_now_set_peer_channel(BroadcastMacAddress, channel);
 }
 
 void ProvisioningTarget::handleProvisioningOffer(uint8_t macAddress[6]) {
+	if (status != Status::WaitingForProvider) {
+		return;
+	}
 	logger.info("Received provisioning offer from " MACSTR, MAC2STR(macAddress));
-	status = Status::Authenticating;
 	addPeer(macAddress);
 	memcpy(providerMac, macAddress, sizeof(providerMac));
 
 	ProvisioningPackets::ProvisioningRequest packet;
 	strcpy(packet.provisioningPassword, provisioningPassword);
-	sendMessage(providerMac, reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
+	sendMessage(providerMac, packet);
 }
 
 void ProvisioningTarget::startConnection(const char* ssid, const char* password) {
-	// TODO:
-	logger.info("Received wifi credentials SSID: %s, password: %s!", ssid, password);
+	logger.info(
+		"Received WiFi credentials SSID %s and password length %zu! Connecting...",
+		ssid,
+		strlen(password)
+	);
+
+	wifiNetwork.setProvisionedWiFiCredentials(ssid, password);
+	status = Status::ConnectionStarted;
+	resetLastSendResult();
+	sendMessage(
+		providerMac,
+		ProvisioningPackets::ProvisioningStatus{
+			.status = ProvisioningPackets::ConnectionStatus::Connecting,
+		}
+	);
 }
 
 }  // namespace SlimeVR::Network

@@ -53,19 +53,21 @@ bool WiFiNetwork::isConnected() const {
 void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
 	wifiProvisioning.stopSearchForProvider();
 	wifiProvisioning.stopProvisioning();
-	WiFi.persistent(true);
 	tryConnecting(false, SSID, pass);
 	retriedOnG = false;
-	// Reset state, will get back into provisioning if can't connect
-	hadWifi = false;
 	wifiState = WiFiReconnectionStatus::ServerCredAttempt;
+}
+
+void WiFiNetwork::setProvisionedWiFiCredentials(const char* SSID, const char* pass) {
+	tryConnecting(false, SSID, pass);
+	retriedOnG = false;
+	wifiState = WiFiReconnectionStatus::ProvisionedAttempt;
 }
 
 IPAddress WiFiNetwork::getAddress() { return WiFi.localIP(); }
 
 void WiFiNetwork::setUp() {
-	// Don't need to save the already saved credentials or the hardcoded ones
-	WiFi.persistent(false);
+	WiFi.persistent(true);
 	wifiHandlerLogger.info("Setting up WiFi");
 	WiFi.mode(WIFI_AP_STA);
 	WiFi.hostname("SlimeVR FBT Tracker");
@@ -109,7 +111,6 @@ void WiFiNetwork::setUp() {
 
 void WiFiNetwork::onConnected() {
 	wifiState = WiFiReconnectionStatus::Success;
-	wifiProvisioning.stopProvisioning();
 	statusManager.setStatus(SlimeVR::Status::WIFI_CONNECTING, false);
 	hadWifi = true;
 	wifiHandlerLogger.info(
@@ -201,6 +202,12 @@ void WiFiNetwork::upkeep() {
 				wifiState = WiFiReconnectionStatus::Failed;
 			}
 			return;
+		case WiFiReconnectionStatus::ProvisionedAttempt:  // Couldn't connect with
+														  // credentials received from
+														  // provisioning
+			if (!tryProvisionedCredentials()) {
+				wifiState = WiFiReconnectionStatus::Failed;
+			}
 		case WiFiReconnectionStatus::Failed:  // Couldn't connect with second set of
 											  // credentials or server credentials
 			if (startedProvisioning) {
@@ -334,6 +341,20 @@ bool WiFiNetwork::tryHardcodedCredentials() {
 }
 
 bool WiFiNetwork::tryServerCredentials() {
+	if (WiFi.status() != WL_DISCONNECTED) {
+		return false;
+	}
+
+	if (retriedOnG) {
+		return false;
+	}
+
+	retriedOnG = true;
+
+	return tryConnecting(true);
+}
+
+bool WiFiNetwork::tryProvisionedCredentials() {
 	if (WiFi.status() != WL_DISCONNECTED) {
 		return false;
 	}

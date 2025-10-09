@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "GlobalVars.h"
 #include "credentials.h"
 #include "logging/Logger.h"
 #include "network/wifiprovisioning/provisioning-packets.h"
@@ -31,12 +32,7 @@ bool ProvisioningProvider::tick() {
 	}
 
 	if (messageTimeout.elapsed()) {
-		ProvisioningPackets::ProvisioningAvailable packet{};
-		sendMessage(
-			BroadcastMacAddress,
-			reinterpret_cast<uint8_t*>(&packet),
-			sizeof(packet)
-		);
+		sendMessage(BroadcastMacAddress, ProvisioningPackets::ProvisioningAvailable{});
 		messageTimeout.reset();
 	}
 
@@ -60,19 +56,42 @@ void ProvisioningProvider::handleMessage(
 			handleProvisioningRequest(macAddress, packet.provisioningPassword);
 			break;
 		}
-		case ProvisioningPackets::ProvisioningPacketId::ProvisioningStarted: {
-			break;
-		}
 		case ProvisioningPackets::ProvisioningPacketId::ProvisioningStatus: {
+			auto packet
+				= *reinterpret_cast<const ProvisioningPackets::ProvisioningStatus*>(data
+				);
+			addPeer(macAddress);
+			sendMessage(macAddress, ProvisioningPackets::ProvisioningStatusAck{});
+			removePeer(macAddress);
+			networkConnection.sendProvisioningStatus(macAddress, packet.status);
+			logger.info(
+				"Tracker with mac address " MACSTR " reported status %d, %s",
+				MAC2STR(macAddress),
+				static_cast<uint8_t>(packet.status),
+				ProvisioningPackets::statusToCstr(packet.status)
+			);
 			break;
 		}
 		case ProvisioningPackets::ProvisioningPacketId::ProvisioningFailed: {
+			auto packet
+				= *reinterpret_cast<const ProvisioningPackets::ProvisioningFailed*>(data
+				);
+			addPeer(macAddress);
+			sendMessage(macAddress, ProvisioningPackets::ProvisioningFailedAck{});
+			removePeer(macAddress);
+			networkConnection.sendProvisioningFailed(macAddress, packet.error);
+			logger.error(
+				"Tracker with mac address " MACSTR " reported error %d, %s",
+				MAC2STR(macAddress),
+				static_cast<uint8_t>(packet.error),
+				ProvisioningPackets::errorToCstr(packet.error)
+			);
 			break;
 		}
+		default:
+			break;
 	}
 }
-
-void ProvisioningProvider::stop() {}
 
 void ProvisioningProvider::handleProvisioningRequest(
 	uint8_t macAddress[6],
@@ -83,11 +102,16 @@ void ProvisioningProvider::handleProvisioningRequest(
 	}
 	ProvisioningPackets::ProvisioningStart packet{};
 	// TODO: swap with the getSSID/getPassword function once that gets merged in
-	strcpy(packet.wifiName, WiFi.SSID().c_str());
-	strcpy(packet.wifiPassword, WiFi.psk().c_str());
+	strcpy(packet.wifiName, wifiNetwork.getSSID().c_str());
+	strcpy(packet.wifiPassword, wifiNetwork.getPassword().c_str());
 	addPeer(macAddress);
-	sendMessage(macAddress, reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
+	sendMessage(macAddress, packet);
 	removePeer(macAddress);
+	networkConnection.sendProvisioningNewTracker(macAddress);
+	logger.info(
+		"Provisioning tracker with mac address " MACSTR "...",
+		MAC2STR(macAddress)
+	);
 }
 
 }  // namespace SlimeVR::Network

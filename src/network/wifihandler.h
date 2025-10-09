@@ -38,6 +38,7 @@ public:
 		SavedAttempt,
 		HardcodeAttempt,
 		ServerCredAttempt,
+		ProvisionedAttempt,
 		Failed,
 		Success
 	};
@@ -53,9 +54,13 @@ public:
 	void setUp();
 	void upkeep();
 	void setWiFiCredentials(const char* SSID, const char* pass);
+	void setProvisionedWiFiCredentials(const char* SSID, const char* pass);
 	static IPAddress getAddress();
 	WiFiReconnectionStatus getWiFiState();
 	bool startedProvisioning = false;
+
+	static String getSSID();
+	static String getPassword();
 
 private:
 	static constexpr float WiFiTimeoutSeconds = 11;
@@ -64,12 +69,10 @@ private:
 	void setStaticIPIfDefined();
 	void onConnected();
 
-	static String getSSID();
-	static String getPassword();
-
 	bool trySavedCredentials();
 	bool tryHardcodedCredentials();
 	bool tryServerCredentials();
+	bool tryProvisionedCredentials();
 	bool tryConnecting(
 		bool phyModeG = false,
 		const char* SSID = nullptr,

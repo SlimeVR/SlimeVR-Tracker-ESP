@@ -5,12 +5,13 @@
 namespace SlimeVR::Network::ProvisioningPackets {
 
 enum class ProvisioningPacketId : uint8_t {
-	ProvisioningAvailable = 0,
-	ProvisioningRequest = 1,
-	ProvisioningStart = 2,
-	ProvisioningStarted = 3,
-	ProvisioningStatus = 4,
-	ProvisioningFailed = 5,
+	ProvisioningAvailable,
+	ProvisioningRequest,
+	ProvisioningStart,
+	ProvisioningStatus,
+	ProvisioningStatusAck,
+	ProvisioningFailed,
+	ProvisioningFailedAck,
 };
 
 #pragma pack(push, 1)
@@ -26,10 +27,14 @@ enum class ConnectionStatus : uint8_t {
 	ServerFound,
 };
 
+const char* statusToCstr(ConnectionStatus status);
+
 enum class ConnectionError : uint8_t {
 	ConnectionFailed,
 	ServerNotFound,
 };
+
+const char* errorToCstr(ConnectionError error);
 
 struct ProvisioningAvailable
 	: ProvisioningPacket<ProvisioningPacketId::ProvisioningAvailable> {};
@@ -46,18 +51,21 @@ struct ProvisioningStart : ProvisioningPacket<ProvisioningPacketId::Provisioning
 	char wifiPassword[64] = "";
 };
 
-struct ProvisioningStarted
-	: ProvisioningPacket<ProvisioningPacketId::ProvisioningStarted> {};
-
 struct ProvisioningStatus
 	: ProvisioningPacket<ProvisioningPacketId::ProvisioningStatus> {
 	ConnectionStatus status = ConnectionStatus::Connecting;
 };
 
+struct ProvisioningStatusAck
+	: ProvisioningPacket<ProvisioningPacketId::ProvisioningStatusAck> {};
+
 struct ProvisioningFailed
 	: ProvisioningPacket<ProvisioningPacketId::ProvisioningFailed> {
 	ConnectionError error = ConnectionError::ConnectionFailed;
 };
+
+struct ProvisioningFailedAck
+	: ProvisioningPacket<ProvisioningPacketId::ProvisioningFailedAck> {};
 
 #pragma pack(pop)
 

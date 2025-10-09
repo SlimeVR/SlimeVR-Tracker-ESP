@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <optional>
 
 #include "logging/Logger.h"
 #include "provisioning-party.h"
@@ -7,6 +8,16 @@ namespace SlimeVR::Network {
 
 ProvisioningParty::ProvisioningParty(SlimeVR::Logging::Logger& logger) noexcept
 	: logger{logger} {}
+
+void ProvisioningParty::handleSendResult(bool success) { lastPacketSuccess = success; }
+
+void ProvisioningParty::resetLastSendResult() { lastPacketSuccess.reset(); }
+
+std::optional<bool> ProvisioningParty::getLastSendResult() {
+	auto result = lastPacketSuccess;
+	lastPacketSuccess.reset();
+	return result;
+}
 
 void ProvisioningParty::addPeer(uint8_t macAddress[6]) const {
 #if ESP8266
@@ -23,14 +34,6 @@ void ProvisioningParty::addPeer(uint8_t macAddress[6]) const {
 
 void ProvisioningParty::removePeer(uint8_t macAddress[6]) const {
 	esp_now_del_peer(macAddress);
-}
-
-void ProvisioningParty::sendMessage(
-	uint8_t receiverMac[6],
-	const uint8_t* data,
-	uint8_t length
-) const {
-	// TODO:
 }
 
 }  // namespace SlimeVR::Network

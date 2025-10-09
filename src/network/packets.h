@@ -56,9 +56,9 @@ enum class SendPacketType : uint8_t {
 	AcknowledgeConfigChange = 24,
 	FlexData = 26,
 	// PositionData = 27,
-	ProvisioningNewTracker = 28,
-	ProvisioningStatus = 29,
-	ProvisioningFailed = 30,
+	ProvisioningNewTracker = 29,
+	ProvisioningStatus = 30,
+	ProvisioningFailed = 31,
 	Bundle = 100,
 	Inspection = 105,
 };
@@ -73,7 +73,7 @@ enum class ReceivePacketType : uint8_t {
 	SensorInfo = 15,
 	FeatureFlags = 22,
 	SetConfigFlag = 25,
-	StartWiFiProvisioning = 27,
+	StartWiFiProvisioning = 28,
 };
 
 enum class InspectionPacketType : uint8_t {
@@ -240,16 +240,16 @@ struct StartWiFiProvisioningPacket {
 	bool start;
 };
 
-struct ProvisioningNewTracker {
+struct ProvisioningNewTrackerPacket {
 	uint8_t mac[6];
 };
 
-struct ProvisioningStatus {
+struct ProvisioningStatusPacket {
 	uint8_t mac[6];
 	SlimeVR::Network::ProvisioningPackets::ConnectionStatus status;
 };
 
-struct ProvisioningFailed {
+struct ProvisioningFailedPacket {
 	uint8_t mac[6];
 	SlimeVR::Network::ProvisioningPackets::ConnectionError error;
 };

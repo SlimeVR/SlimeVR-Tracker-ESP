@@ -21,6 +21,8 @@
 	THE SOFTWARE.
 */
 
+#include <cstdint>
+#include <cstring>
 #include <string_view>
 
 #include "GlobalVars.h"
@@ -404,6 +406,38 @@ void Connection::sendFlexData(uint8_t sensorId, float flexLevel) {
 			.flexLevel = flexLevel,
 		}
 	));
+}
+
+// PACKET_PROVISIONING_NEW_TRACER 29
+void Connection::sendProvisioningNewTracker(uint8_t mac[6]) {
+	MUST(m_Connected);
+	ProvisioningNewTrackerPacket packet{};
+	memcpy(packet.mac, mac, sizeof(packet.mac));
+	MUST(sendPacket(SendPacketType::ProvisioningNewTracker, packet));
+}
+
+// PACKET_PROVISIONING_STATUS 30
+void Connection::sendProvisioningStatus(
+	uint8_t mac[6],
+	ProvisioningPackets::ConnectionStatus status
+) {
+	MUST(m_Connected);
+	ProvisioningStatusPacket packet{
+		.status = status,
+	};
+	memcpy(packet.mac, mac, sizeof(packet.mac));
+	MUST(sendPacket(SendPacketType::ProvisioningStatus, packet));
+}
+
+// PACKET_PROVISIONING_FAILED 31
+void Connection::sendProvisioningFailed(
+	uint8_t mac[6],
+	ProvisioningPackets::ConnectionError error
+) {
+	MUST(m_Connected);
+	ProvisioningFailedPacket packet{.error = error};
+	memcpy(packet.mac, mac, sizeof(packet.mac));
+	MUST(sendPacket(SendPacketType::ProvisioningFailed, packet));
 }
 
 #if ENABLE_INSPECTION

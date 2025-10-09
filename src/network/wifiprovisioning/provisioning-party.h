@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 
 #if ESP8266
 #include <espnow.h>
@@ -28,16 +29,31 @@ public:
 	virtual void
 	handleMessage(uint8_t macAddress[6], const uint8_t* data, uint8_t length)
 		= 0;
-	virtual void stop() = 0;
+
+	void handleSendResult(bool success);
 
 protected:
 	uint8_t BroadcastMacAddress[6]{0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 	void addPeer(uint8_t macAddress[6]) const;
 	void removePeer(uint8_t macAddress[6]) const;
-	void sendMessage(uint8_t receiverMac[6], const uint8_t* data, uint8_t length) const;
+	void resetLastSendResult();
+	std::optional<bool> getLastSendResult();
+
+	template <typename Packet>
+	bool sendMessage(uint8_t receiverMac[6], Packet data) const {
+		return esp_now_send(
+				   receiverMac,
+				   reinterpret_cast<uint8_t*>(&data),
+				   sizeof(Packet)
+			   )
+			== 0;
+	}
 
 	SlimeVR::Logging::Logger& logger;
+
+private:
+	std::optional<bool> lastPacketSuccess;
 };
 
 }  // namespace SlimeVR::Network
