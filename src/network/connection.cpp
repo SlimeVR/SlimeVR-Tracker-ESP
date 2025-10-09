@@ -21,12 +21,13 @@
 	THE SOFTWARE.
 */
 
+#include "connection.h"
+
 #include <cstdint>
 #include <cstring>
 #include <string_view>
 
 #include "GlobalVars.h"
-#include "connection.h"
 #include "logging/Logger.h"
 #include "packets.h"
 

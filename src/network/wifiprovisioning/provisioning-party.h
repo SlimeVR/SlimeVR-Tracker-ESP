@@ -1,8 +1,9 @@
 #pragma once
 
+#include <Arduino.h>
+
 #include <cstdint>
 #include <optional>
-
 #if ESP8266
 #include <espnow.h>
 #elif ESP32

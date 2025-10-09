@@ -1,3 +1,5 @@
+#include "provisioning-target.h"
+
 #include <Arduino.h>
 
 #include <cstdint>
@@ -9,7 +11,6 @@
 #include "network/wifihandler.h"
 #include "network/wifiprovisioning/provisioning-packets.h"
 #include "network/wifiprovisioning/provisioning-party.h"
-#include "provisioning-target.h"
 
 #if ESP8266
 #include <espnow.h>

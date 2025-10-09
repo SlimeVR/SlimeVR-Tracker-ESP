@@ -1,3 +1,5 @@
+#include "provisioning-provider.h"
+
 #include <cstdint>
 #include <cstring>
 
@@ -6,7 +8,6 @@
 #include "logging/Logger.h"
 #include "network/wifiprovisioning/provisioning-packets.h"
 #include "network/wifiprovisioning/provisioning-party.h"
-#include "provisioning-provider.h"
 
 #if ESP8266
 #include <ESP8266WiFi.h>

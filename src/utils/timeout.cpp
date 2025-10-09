@@ -1,6 +1,6 @@
-#include <Arduino.h>
-
 #include "timeout.h"
+
+#include <Arduino.h>
 
 namespace SlimeVR {
 

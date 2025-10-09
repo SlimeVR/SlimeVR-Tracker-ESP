@@ -20,15 +20,14 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMEVR_WIFIPROVISIONING_H_
-#define SLIMEVR_WIFIPROVISIONING_H_
+#pragma once
 
 #include <cstdint>
 #include <memory>
 #include <optional>
 
 #include "logging/Logger.h"
-#include "network/wifiprovisioning/provisioning-party.h"
+#include "provisioning-party.h"
 
 #if ESP32
 #include <esp_now.h>
@@ -65,5 +64,3 @@ private:
 };
 
 }  // namespace SlimeVR::Network
-
-#endif  // SLIMEVR_WIFIPROVISIONING_H_

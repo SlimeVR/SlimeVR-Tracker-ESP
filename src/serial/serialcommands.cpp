@@ -21,13 +21,14 @@
 	THE SOFTWARE.
 */
 
+#include "serialcommands.h"
+
 #include <CmdCallback.hpp>
 
 #include "GlobalVars.h"
 #include "base64.hpp"
 #include "batterymonitor.h"
 #include "logging/Logger.h"
-#include "serialcommands.h"
 #include "utils.h"
 
 #ifdef ESP32
