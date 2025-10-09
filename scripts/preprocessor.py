@@ -1,12 +1,14 @@
 import json
 import re
-import pkg_resources
+import os
 from pathlib import Path
 from typing import Union, Optional, Dict, Any, List
 
 Import("env")
 
-if "jsonschema" not in {pkg.key for pkg in pkg_resources.working_set}:
+try:
+	import jsonschema
+except:
     env.Execute(
         env.VerboseAction(
             '$PYTHONEXE -m pip install "jsonschema==4.22.0"',
@@ -30,7 +32,7 @@ def _load_json(maybe_path_or_dict: Union[str, Path, dict]) -> dict:
 
 
 def _format_raw_value(value: Any) -> str:
-    """Format booleans like JS, otherwise str(value)."""
+    """Format booleans for c/cpp, otherwise str(value)."""
     if isinstance(value, bool):
         return "true" if value else "false"
     return str(value)
@@ -104,17 +106,14 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
 
 
 def build_boards(
-    schema: Union[str, Path, dict],
-    defaults: Union[str, Path, dict],
+    schema_obj,
+    defaults_obj,
     board_name: Optional[str] = None,
 ) -> Dict[str, List[str]]:
     """
     Validate defaults.json against board-defaults.schema.json using jsonschema,
     and return { board_name: [list of -D flags] }.
     """
-    schema_obj = _load_json(schema)
-    defaults_obj = _load_json(defaults)
-
     validator = Draft202012Validator(schema_obj)
     errors = sorted(validator.iter_errors(defaults_obj), key=lambda e: e.path)
 
@@ -138,11 +137,17 @@ def build_boards(
 
     return out
 
-
+schema_obj = _load_json("./board-defaults.schema.json")
+defaults_obj = _load_json("./board-defaults.json")
 slime_board = env.GetProjectOption("custom_slime_board") or "BOARD_CUSTOM"
+
+if 'SLIMEVR_OVERRIDE_DEFAULTS' in os.environ:
+	print(">>> OVERIDING BOARD DEFAULTS ", os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
+	defaults_obj[slime_board] = json.loads(os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
+
 output_flags = build_boards(
-	"./board-defaults.schema.json",
-	"./board-defaults.json",
+	schema_obj,
+	defaults_obj,
 	slime_board,
 )
 output_flags = output_flags.get(slime_board, []) if isinstance(output_flags, dict) else []
