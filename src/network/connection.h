@@ -31,7 +31,6 @@
 #include <optional>
 
 #include "../configuration/SensorConfig.h"
-#include "c_types.h"
 #include "featureflags.h"
 #include "globals.h"
 #include "network/wifiprovisioning/provisioning-packets.h"

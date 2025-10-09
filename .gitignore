@@ -3,5 +3,6 @@
 build/
 venv/
 cache/
+.cache/
 .idea/
 compile_commands.json
