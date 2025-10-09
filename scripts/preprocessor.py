@@ -141,9 +141,9 @@ schema_obj = _load_json("./board-defaults.schema.json")
 defaults_obj = _load_json("./board-defaults.json")
 slime_board = env.GetProjectOption("custom_slime_board") or "BOARD_CUSTOM"
 
-if 'SLIMEVR_OVERRIDE_DEFAULTS' in os.environ:
+if 'SLIMEVR_OVERRIDE_DEFAULTS' in os.environ and slime_board in defaults_obj.defaults:
 	print(">>> OVERIDING BOARD DEFAULTS ", os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
-	defaults_obj[slime_board] = json.loads(os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
+	defaults_obj.defaults[slime_board].values = json.loads(os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
 
 output_flags = build_boards(
 	schema_obj,
