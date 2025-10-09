@@ -1,12 +1,11 @@
 #include <Arduino.h>
 
-#include "c_types.h"
 #include "timeout.h"
 
 namespace SlimeVR {
 
 TimeOut::TimeOut(float lengthSeconds)
-	: lengthMillis{static_cast<uint64>(lengthSeconds * 1000)} {}
+	: lengthMillis{static_cast<uint64_t>(lengthSeconds * 1000)} {}
 
 void TimeOut::reset() { startMillis = millis(); }
 

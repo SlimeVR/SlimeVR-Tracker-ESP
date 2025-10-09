@@ -6,7 +6,7 @@
 #if ESP8266
 #include <espnow.h>
 #elif ESP32
-#include <esp-now.h>
+#include <esp_now.h>
 #endif
 
 #ifndef MACSTR
@@ -30,15 +30,11 @@ public:
 	handleMessage(uint8_t macAddress[6], const uint8_t* data, uint8_t length)
 		= 0;
 
-	void handleSendResult(bool success);
-
 protected:
 	uint8_t BroadcastMacAddress[6]{0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 	void addPeer(uint8_t macAddress[6]) const;
 	void removePeer(uint8_t macAddress[6]) const;
-	void resetLastSendResult();
-	std::optional<bool> getLastSendResult();
 
 	template <typename Packet>
 	bool sendMessage(uint8_t receiverMac[6], Packet data) const {
@@ -51,9 +47,6 @@ protected:
 	}
 
 	SlimeVR::Logging::Logger& logger;
-
-private:
-	std::optional<bool> lastPacketSuccess;
 };
 
 }  // namespace SlimeVR::Network

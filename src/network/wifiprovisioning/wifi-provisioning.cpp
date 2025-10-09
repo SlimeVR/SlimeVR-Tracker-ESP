@@ -45,10 +45,6 @@ namespace SlimeVR::Network {
 void espnowReceiveCallback(uint8_t* macAddress, uint8_t* data, uint8_t length) {
 	wifiProvisioning.handleMessage(macAddress, data, length);
 }
-
-void espnowSendCallback(uint8_t* macAddress, uint8_t status) {
-	wifiProvisioning.handleSendResult(status == 0);
-}
 #elif ESP32
 void espnowReceiveCallback(
 	const esp_now_recv_info_t* senderInfo,
@@ -174,8 +170,6 @@ bool WiFiProvisioning::initEspnow() {
 		return false;
 	}
 
-	esp_now_register_send_cb(espnowSendCallback);
-
 	return true;
 }
 
@@ -185,10 +179,6 @@ void WiFiProvisioning::handleMessage(
 	uint8_t length
 ) {
 	role->handleMessage(macAddress, data, length);
-}
-
-void WiFiProvisioning::handleSendResult(bool success) {
-	role->handleSendResult(success);
 }
 
 }  // namespace SlimeVR::Network

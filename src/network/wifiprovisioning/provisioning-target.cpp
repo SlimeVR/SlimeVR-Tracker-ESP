@@ -1,19 +1,22 @@
 #include <Arduino.h>
-#include <core_esp8266_features.h>
 
 #include <cstdint>
 #include <cstring>
-#include <type_traits>
 
 #include "GlobalVars.h"
 #include "credentials.h"
-#include "espnow.h"
 #include "logging/Logger.h"
 #include "network/wifihandler.h"
 #include "network/wifiprovisioning/provisioning-packets.h"
 #include "network/wifiprovisioning/provisioning-party.h"
 #include "provisioning-target.h"
-#include "user_interface.h"
+
+#if ESP8266
+#include <espnow.h>
+#elif ESP32
+#include <esp_now.h>
+#include <esp_wifi.h>
+#endif
 
 namespace SlimeVR::Network {
 
@@ -139,10 +142,21 @@ void ProvisioningTarget::handleMessage(
 
 void ProvisioningTarget::switchChannel(uint8_t channel) {
 	logger.info("Switching to channel %d...", channel);
+
+#if ESP8266
 	wifi_set_channel(channel);
-	currentChannel = channel;
 
 	esp_now_set_peer_channel(BroadcastMacAddress, channel);
+#elif ESP32
+	esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+
+	esp_now_peer_info_t peer;
+	esp_now_get_peer(BroadcastMacAddress, &peer);
+	peer.channel = channel;
+	esp_now_mod_peer(&peer);
+#endif
+
+	currentChannel = channel;
 }
 
 void ProvisioningTarget::handleProvisioningOffer(uint8_t macAddress[6]) {
@@ -167,7 +181,6 @@ void ProvisioningTarget::startConnection(const char* ssid, const char* password)
 
 	wifiNetwork.setProvisionedWiFiCredentials(ssid, password);
 	status = Status::ConnectionStarted;
-	resetLastSendResult();
 	sendMessage(
 		providerMac,
 		ProvisioningPackets::ProvisioningStatus{

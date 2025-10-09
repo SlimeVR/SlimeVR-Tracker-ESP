@@ -49,14 +49,12 @@ public:
 private:
 	bool initEspnow();
 	void handleMessage(uint8_t* macAddress, const uint8_t* data, uint8_t length);
-	void handleSendResult(bool success);
 
 	std::unique_ptr<ProvisioningParty> role;
 	SlimeVR::Logging::Logger logger{"WiFiProvisioning"};
 
 #if ESP8266
 	friend void espnowReceiveCallback(uint8_t*, uint8_t*, uint8_t);
-	friend void espnowSendCallback(uint8_t*, uint8_t);
 #elif ESP32
 	friend void espnowReceiveCallback(
 		const esp_now_recv_info_t* senderInfo,

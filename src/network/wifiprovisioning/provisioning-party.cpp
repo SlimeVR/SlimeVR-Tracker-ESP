@@ -9,16 +9,6 @@ namespace SlimeVR::Network {
 ProvisioningParty::ProvisioningParty(SlimeVR::Logging::Logger& logger) noexcept
 	: logger{logger} {}
 
-void ProvisioningParty::handleSendResult(bool success) { lastPacketSuccess = success; }
-
-void ProvisioningParty::resetLastSendResult() { lastPacketSuccess.reset(); }
-
-std::optional<bool> ProvisioningParty::getLastSendResult() {
-	auto result = lastPacketSuccess;
-	lastPacketSuccess.reset();
-	return result;
-}
-
 void ProvisioningParty::addPeer(uint8_t macAddress[6]) const {
 #if ESP8266
 	esp_now_add_peer(macAddress, ESP_NOW_ROLE_COMBO, 0, nullptr, 0);
@@ -28,7 +18,7 @@ void ProvisioningParty::addPeer(uint8_t macAddress[6]) const {
 	peer.channel = 0;
 	peer.ifidx = WIFI_IF_STA;
 	peer.encrypt = false;
-	return esp_now_add_peer(&peer);
+	esp_now_add_peer(&peer);
 #endif
 }
 

@@ -1,17 +1,18 @@
 #pragma once
 
-#include "c_types.h"
+#include <cstdint>
+
 namespace SlimeVR {
 
 class TimeOut {
 public:
 	TimeOut(float lengthSeconds);
 	void reset();
-	bool elapsed() const;
+	[[nodiscard]] bool elapsed() const;
 
 private:
-	uint64 lengthMillis;
-	uint64 startMillis = 0;
+	uint64_t lengthMillis;
+	uint64_t startMillis = 0;
 };
 
 }  // namespace SlimeVR
