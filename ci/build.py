@@ -35,7 +35,7 @@ def get_matrix() -> List[DeviceConfiguration]:
     config.read("./platformio.ini")
     for section in config.sections():
         split = section.split(":")
-        if len(split) !== 2 or split[0] != 'env':
+        if len(split) != 2 or split[0] != 'env':
             continue
 
         board = split[1]
