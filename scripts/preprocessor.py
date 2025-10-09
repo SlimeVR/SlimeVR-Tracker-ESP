@@ -9,7 +9,7 @@ Import("env")
 if "jsonschema" not in {pkg.key for pkg in pkg_resources.working_set}:
     env.Execute(
         env.VerboseAction(
-            '$PYTHONEXE -m pip install "jsonschema>=4.22.0"',
+            '$PYTHONEXE -m pip install "jsonschema==4.22.0"',
             "Installing jsonschema for validation",
         )
     )
