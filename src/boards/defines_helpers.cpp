@@ -29,5 +29,10 @@
 #define LED_BUILTIN LED_OFF
 #endif
 
+#ifndef LED_PIN
 extern const uint8_t __attribute__((weak)) LED_PIN = LED_BUILTIN;
+#endif
+
+#ifndef LED_INVERTED
 extern const bool __attribute__((weak)) LED_INVERTED = true;
+#endif
