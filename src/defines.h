@@ -59,6 +59,7 @@
 //   BAT_EXTERNAL for ADC pin,
 //   BAT_INTERNAL for internal - can detect only low battery,
 //   BAT_MCP3021 for external ADC connected over I2C
+//   BAT_BQ27441 for external BQ27441 battery gauge IC
 #define BATTERY_MONITOR BAT_EXTERNAL
 #endif
 
