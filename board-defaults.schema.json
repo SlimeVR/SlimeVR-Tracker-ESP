@@ -48,6 +48,7 @@
 
 		"I2C_IMU": {
 			"type": "object",
+			"description": "I2C Imu",
 			"properties": {
 				"protocol": { "const": "I2C" },
 				"imu": { "$ref": "#/$defs/IMU_TYPE" },
@@ -68,6 +69,7 @@
 
 		"SPI_IMU": {
 			"type": "object",
+			"description": "SPI Imu",
 			"properties": {
 				"protocol": { "const": "SPI" },
 				"imu": { "$ref": "#/$defs/IMU_TYPE" },
@@ -123,6 +125,7 @@
 			"discriminator": {
 				"propertyName": "type"
 			},
+			"description": "Battery Settings",
 			"oneOf": [
 				{
 					"type": "object",
@@ -169,7 +172,8 @@
 					"type": "array",
 					"items": { "$ref": "#/$defs/IMU" },
 					"maxItems": 2,
-					"minItems": 1
+					"minItems": 1,
+					"description": "Sensors List"
 				},
 				"LED_PIN": {
 					"$ref": "#/$defs/pin",
