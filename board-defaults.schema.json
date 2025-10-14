@@ -175,13 +175,20 @@
 					"minItems": 1,
 					"description": "Sensors List"
 				},
-				"LED_PIN": {
-					"$ref": "#/$defs/pin",
-					"description": "Led pin"
-				},
-				"LED_INVERTED": {
-					"type": "boolean",
-					"description": "Led inverted"
+				"LED": {
+					"type": "object",
+					"description": "Led Settings",
+					"properties": {
+						"LED_PIN": {
+							"$ref": "#/$defs/pin",
+							"description": "Led pin"
+						},
+						"LED_INVERTED": {
+							"type": "boolean",
+							"description": "Led inverted"
+						}
+					},
+					"required": ["LED_PIN", "LED_INVERTED"]
 				},
 				"BATTERY": { "$ref": "#/$defs/BATTERY" }
 			}

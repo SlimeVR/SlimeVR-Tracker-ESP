@@ -29,8 +29,10 @@
 					"shieldR": 0,
 					"pin": "17"
 				},
-				"LED_PIN": "2",
-				"LED_INVERTED": false
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": false
+				}
 			},
 			"editable": [],
 			"flashingRules": {
@@ -65,8 +67,10 @@
 					"shieldR": 0,
 					"pin": "17"
 				},
-				"LED_PIN": "2",
-				"LED_INVERTED": true
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": false
+				}
 			},
 			"editable": [],
 			"flashingRules": {
@@ -103,8 +107,10 @@
 					"shieldR": 180,
 					"pin": "A0"
 				},
-				"LED_PIN": "2",
-				"LED_INVERTED": true
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": false
+				}
 			},
 			"editable": ["SENSORS", "BATTERY", "LED_PIN", "LED_INVERTED"],
 			"ignored": true,
