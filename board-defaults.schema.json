@@ -191,7 +191,8 @@
 					"required": ["LED_PIN", "LED_INVERTED"]
 				},
 				"BATTERY": { "$ref": "#/$defs/BATTERY" }
-			}
+			},
+			"required": ["SENSORS", "LED", "BATTERY"]
 		},
 
 		"BoardConfig": {

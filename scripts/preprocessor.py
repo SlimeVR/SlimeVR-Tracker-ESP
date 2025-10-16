@@ -55,8 +55,8 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
             args[key] = {"value": value, "type": value_type}
 
     add("BOARD", board_name, "raw")
-    # add("LED_PIN", values.get("LED_PIN"), "pin")
-    # add("LED_INVERTED", values.get("LED_INVERTED"), "raw")
+    add("LED_PIN", values.get("LED").get("LED_PIN"), "pin")
+    add("LED_INVERTED", values.get("LED").get("LED_INVERTED"), "raw")
 
     sensors = values.get("SENSORS")
     if sensors:
