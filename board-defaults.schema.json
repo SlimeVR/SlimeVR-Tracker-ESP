@@ -201,10 +201,6 @@
 				"values": {
 					"$ref": "#/$defs/BASIC_IMU_BOARD_CONFIG"
 				},
-				"editable": {
-					"type": "array",
-					"items": { "type": "string" }
-				},
 				"flashingRules": {
 					"type": "object",
 					"properties": {
@@ -224,7 +220,7 @@
 					"type": "boolean"
 				}
 			},
-			"required": ["values", "editable", "flashingRules"]
+			"required": ["values", "flashingRules"]
 		}
 	},
 

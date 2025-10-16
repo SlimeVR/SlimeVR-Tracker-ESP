@@ -34,7 +34,6 @@
 					"LED_INVERTED": false
 				}
 			},
-			"editable": [],
 			"flashingRules": {
 				"applicationOffset": 0,
 				"needBootPress": true,
@@ -72,7 +71,6 @@
 					"LED_INVERTED": false
 				}
 			},
-			"editable": [],
 			"flashingRules": {
 				"applicationOffset": 0,
 				"needBootPress": true,
@@ -112,7 +110,6 @@
 					"LED_INVERTED": false
 				}
 			},
-			"editable": ["SENSORS", "BATTERY", "LED_PIN", "LED_INVERTED"],
 			"ignored": true,
 			"flashingRules": {
 				"applicationOffset": 0,
