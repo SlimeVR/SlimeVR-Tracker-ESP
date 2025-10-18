@@ -12,6 +12,8 @@ void SensorToggleState::setToggle(SensorToggles toggle, bool state) {
 			tempGradientCalibrationEnabled = state;
 			break;
 	}
+
+	emitToggleChange(toggle, state);
 }
 
 bool SensorToggleState::getToggle(SensorToggles toggle) const {
