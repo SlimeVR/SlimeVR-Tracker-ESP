@@ -27,7 +27,6 @@
 
 #include "defines_helpers.h"
 
-
 // Default IMU pinouts and definitions for default tracker types
 
 #if BOARD != BOARD_GLOVE_IMU_SLIMEVR_DEV
