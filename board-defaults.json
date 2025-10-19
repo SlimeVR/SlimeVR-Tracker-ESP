@@ -161,7 +161,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_BNO085",
 						"int": "D5",
 						"rotation": "DEG_270",
 						"scl": "D1",
@@ -169,7 +169,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_BNO085",
 						"int": "D6",
 						"rotation": "DEG_270",
 						"scl": "D1",
@@ -200,7 +200,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_BNO085",
 						"int": "255",
 						"rotation": "DEG_270",
 						"scl": "0",
@@ -208,7 +208,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_BNO085",
 						"int": "255",
 						"rotation": "DEG_270",
 						"scl": "0",
@@ -239,7 +239,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_BNO085",
 						"int": "14",
 						"rotation": "DEG_270",
 						"scl": "4",
@@ -247,7 +247,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_BNO085",
 						"int": "13",
 						"rotation": "DEG_270",
 						"scl": "4",
@@ -278,7 +278,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_BNO085",
 						"int": "23",
 						"rotation": "DEG_270",
 						"scl": "22",
@@ -286,7 +286,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_BNO085",
 						"int": "25",
 						"rotation": "DEG_270",
 						"scl": "22",
@@ -317,7 +317,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "6",
 						"rotation": "DEG_270",
 						"scl": "4",
@@ -325,7 +325,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "8",
 						"rotation": "DEG_270",
 						"scl": "4",
@@ -356,7 +356,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "6",
 						"rotation": "DEG_270",
 						"scl": "9",
@@ -364,7 +364,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "7",
 						"rotation": "DEG_270",
 						"scl": "9",
@@ -395,7 +395,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "6",
 						"rotation": "DEG_270",
 						"scl": "4",
@@ -403,7 +403,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "7",
 						"rotation": "DEG_270",
 						"scl": "4",
@@ -434,7 +434,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "6",
 						"rotation": "DEG_270",
 						"scl": "4",
@@ -442,7 +442,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "7",
 						"rotation": "DEG_270",
 						"scl": "4",
@@ -473,7 +473,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "0",
 						"rotation": "DEG_270",
 						"scl": "14",
@@ -481,7 +481,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "4",
 						"rotation": "DEG_270",
 						"scl": "14",
@@ -512,7 +512,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "5",
 						"rotation": "DEG_270",
 						"scl": "7",
@@ -520,7 +520,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "10",
 						"rotation": "DEG_270",
 						"scl": "7",
@@ -551,7 +551,7 @@
 				"SENSORS": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "5",
 						"rotation": "DEG_270",
 						"scl": "6",
@@ -559,7 +559,7 @@
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
+						"imu": "IMU_ICM45686",
 						"int": "4",
 						"rotation": "DEG_270",
 						"scl": "6",
