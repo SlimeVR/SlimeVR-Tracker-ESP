@@ -8,6 +8,11 @@
 			"pattern": "^[AD]?[0-9]\\d*$"
 		},
 
+		"LED_PIN": {
+			"type": "string",
+			"pattern": "^([AD]?[0-9]\\d*|LED_BUILTIN)$"
+		},
+
 		"IMU_TYPE": {
 			"type": "string",
 			"enum": [
@@ -176,7 +181,7 @@
 					"description": "Led Settings",
 					"properties": {
 						"LED_PIN": {
-							"$ref": "#/$defs/pin",
+							"$ref": "#/$defs/LED_PIN",
 							"description": "Led pin"
 						},
 						"LED_INVERTED": {

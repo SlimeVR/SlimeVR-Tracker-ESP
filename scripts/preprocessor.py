@@ -81,10 +81,10 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
     battery = values.get("BATTERY")
     if battery:
         add("BATTERY_MONITOR", battery.get("type"), "raw")
-        add("PIN_BATTERY_LEVEL", battery.get("pin"), "pin")
-        add("BATTERY_SHIELD_RESISTANCE", battery.get("shieldR"), "number")
-        add("BATTERY_SHIELD_R1", battery.get("r1"), "number")
-        add("BATTERY_SHIELD_R2", battery.get("r2"), "number")
+        add("PIN_BATTERY_LEVEL", battery.get("pin") or 255, "pin")
+        add("BATTERY_SHIELD_RESISTANCE", battery.get("shieldR") or 180, "number")
+        add("BATTERY_SHIELD_R1", battery.get("r1") or 100, "number")
+        add("BATTERY_SHIELD_R2", battery.get("r2") or 220, "number")
 
     parts: List[str] = []
     for key, meta in args.items():

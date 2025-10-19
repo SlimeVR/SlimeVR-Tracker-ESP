@@ -302,7 +302,7 @@
 				},
 				"LED": {
 					"LED_PIN": "255",
-					"LED_INVERTED": false
+					"LED_INVERTED": true
 				}
 			},
 			"flashingRules": {
@@ -341,7 +341,7 @@
 				},
 				"LED": {
 					"LED_PIN": "7",
-					"LED_INVERTED": false
+					"LED_INVERTED": true
 				}
 			},
 			"flashingRules": {
@@ -418,7 +418,7 @@
 					"pin": "3"
 				},
 				"LED": {
-					"LED_PIN": "255",
+					"LED_PIN": "LED_BUILTIN",
 					"LED_INVERTED": false
 				}
 			},
@@ -457,7 +457,7 @@
 					"pin": "3"
 				},
 				"LED": {
-					"LED_PIN": "255",
+					"LED_PIN": "LED_BUILTIN",
 					"LED_INVERTED": false
 				}
 			},
@@ -523,8 +523,8 @@
 						"imu": "IMU_AUTO",
 						"int": "10",
 						"rotation": "DEG_270",
-						"scl": "14",
-						"sda": "2"
+						"scl": "7",
+						"sda": "6"
 					}
 				],
 				"BATTERY": {
@@ -536,7 +536,7 @@
 				},
 				"LED": {
 					"LED_PIN": "4",
-					"LED_INVERTED": true
+					"LED_INVERTED": false
 				}
 			},
 			"flashingRules": {
@@ -574,7 +574,7 @@
 					"pin": "A2"
 				},
 				"LED": {
-					"LED_PIN": "2",
+					"LED_PIN": "LED_BUILTIN",
 					"LED_INVERTED": true
 				}
 			},
