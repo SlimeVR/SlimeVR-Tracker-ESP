@@ -146,7 +146,7 @@
 				},
 				"LED": {
 					"LED_PIN": "2",
-					"LED_INVERTED": false
+					"LED_INVERTED": true
 				}
 			},
 			"flashingRules": {
@@ -185,7 +185,7 @@
 				},
 				"LED": {
 					"LED_PIN": "2",
-					"LED_INVERTED": false
+					"LED_INVERTED": true
 				}
 			},
 			"flashingRules": {
@@ -211,12 +211,12 @@
 						"imu": "IMU_AUTO",
 						"int": "255",
 						"rotation": "DEG_270",
-						"scl": "D1",
+						"scl": "0",
 						"sda": "2"
 					}
 				],
 				"BATTERY": {
-					"type": "BAT_EXTERNAL",
+					"type": "BAT_INTERNAL",
 					"r1": 100,
 					"r2": 220,
 					"shieldR": 180,
@@ -224,7 +224,7 @@
 				},
 				"LED": {
 					"LED_PIN": "255",
-					"LED_INVERTED": false
+					"LED_INVERTED": true
 				}
 			},
 			"flashingRules": {
@@ -258,12 +258,12 @@
 					"type": "BAT_EXTERNAL",
 					"r1": 100,
 					"r2": 220,
-					"shieldR": 180,
+					"shieldR": 0,
 					"pin": "A0"
 				},
 				"LED": {
-					"LED_PIN": "255",
-					"LED_INVERTED": false
+					"LED_PIN": "2",
+					"LED_INVERTED": true
 				}
 			},
 			"flashingRules": {
