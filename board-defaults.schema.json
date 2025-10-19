@@ -17,7 +17,6 @@
 			"type": "string",
 			"enum": [
 				"IMU_AUTO",
-				"IMU_UNKNOWN",
 				"IMU_MPU9250",
 				"IMU_MPU6500",
 				"IMU_BNO080",
