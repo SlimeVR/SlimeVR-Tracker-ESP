@@ -50,15 +50,6 @@
             echo "  pio run -t upload  - Upload to device"
             echo "  pio device monitor - Open serial monitor"
             echo ""
-
-            # Set up udev rules for device access (may need to be done manually)
-            if [ ! -f /etc/udev/rules.d/99-platformio-udev.rules ]; then
-              echo "Note: For USB device access, you may need to install udev rules:"
-              echo "  curl -fsSL https://raw.githubusercontent.com/platformio/platformio-core/master/scripts/99-platformio-udev.rules | sudo tee /etc/udev/rules.d/99-platformio-udev.rules"
-              echo "  sudo udevadm control --reload-rules"
-              echo "  sudo udevadm trigger"
-              echo ""
-            fi
           '';
         };
       }
