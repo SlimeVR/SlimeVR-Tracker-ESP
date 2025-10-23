@@ -21,6 +21,8 @@
 	THE SOFTWARE.
 */
 
+#include "connection.h"
+
 #include <cstdint>
 #include <cstring>
 #include <ratio>
@@ -28,7 +30,6 @@
 
 #include "GlobalVars.h"
 #include "IPAddress.h"
-#include "connection.h"
 #include "logging/Logger.h"
 #include "lwip/def.h"
 #include "packets.h"
