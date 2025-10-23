@@ -21,12 +21,16 @@
 	THE SOFTWARE.
 */
 
-#include "connection.h"
-
+#include <cstdint>
+#include <cstring>
+#include <ratio>
 #include <string_view>
 
 #include "GlobalVars.h"
+#include "IPAddress.h"
+#include "connection.h"
 #include "logging/Logger.h"
+#include "lwip/def.h"
 #include "packets.h"
 
 #define TIMEOUT 3000UL
@@ -547,6 +551,20 @@ void Connection::searchForServer() {
 		// receive incoming UDP packets
 		[[maybe_unused]] int len = m_UDP.read(m_Packet, sizeof(m_Packet));
 
+		if (mdnsResolver.isPacketMDNS(m_Packet)) {
+			auto mdnsResult = mdnsResolver.parseMDNSPacket(m_Packet);
+			if (!mdnsResult) {
+				continue;
+			}
+
+			m_Logger.info(
+				"Found mDNS record for server with IP %s!",
+				mdnsResult->toString().c_str()
+			);
+			connectTo(*mdnsResult, m_ServerPort);
+			return;
+		}
+
 #ifdef DEBUG_NETWORK
 		m_Logger.trace(
 			"Received %d bytes from %s, port %d",
@@ -566,16 +584,7 @@ void Connection::searchForServer() {
 				continue;
 			}
 
-			m_ServerHost = m_UDP.remoteIP();
-			m_ServerPort = m_UDP.remotePort();
-			m_LastPacketTimestamp = millis();
-			m_Connected = true;
-
-			m_FeatureFlagsRequestAttempts = 0;
-			m_ServerFeatures = ServerFeatures{};
-
-			statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, false);
-			ledManager.off();
+			connectTo(m_UDP.remoteIP(), m_UDP.remotePort());
 
 			m_Logger.debug(
 				"Handshake successful, server is %s:%d",
@@ -598,6 +607,19 @@ void Connection::searchForServer() {
 	} else if (m_LastConnectionAttemptTimestamp + 20 < now) {
 		ledManager.off();
 	}
+}
+
+void Connection::connectTo(const IPAddress& ip, uint16_t port) {
+	m_ServerHost = ip;
+	m_ServerPort = port;
+	m_LastPacketTimestamp = millis();
+	m_Connected = true;
+
+	m_FeatureFlagsRequestAttempts = 0;
+	m_ServerFeatures = ServerFeatures{};
+
+	statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, false);
+	ledManager.off();
 }
 
 void Connection::reset() {
@@ -625,6 +647,7 @@ void Connection::reset() {
 
 void Connection::update() {
 	if (!m_Connected) {
+		mdnsResolver.searchForMDNS();
 		searchForServer();
 		return;
 	}
