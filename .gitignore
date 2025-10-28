@@ -7,3 +7,4 @@ cache/
 compile_commands.json
 node_modules/
 dist/
+.nix-platformio
