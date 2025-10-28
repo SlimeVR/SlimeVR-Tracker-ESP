@@ -138,18 +138,20 @@ def build_boards(
 
 schema_obj = _load_json("./board-defaults.schema.json")
 defaults_obj = _load_json("./board-defaults.json")
-slime_board = env.GetProjectOption("custom_slime_board") or "BOARD_CUSTOM"
+slime_board = env.GetProjectOption("custom_slime_board", None)
+if slime_board:
+	if 'SLIMEVR_OVERRIDE_DEFAULTS' in os.environ and slime_board in defaults_obj['defaults']:
+		print(">>> OVERIDING BOARD DEFAULTS ", os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
+		defaults_obj['defaults'][slime_board]['values'] = json.loads(os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
 
-if 'SLIMEVR_OVERRIDE_DEFAULTS' in os.environ and slime_board in defaults_obj['defaults']:
-	print(">>> OVERIDING BOARD DEFAULTS ", os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
-	defaults_obj['defaults'][slime_board]['values'] = json.loads(os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
+	output_flags = build_boards(
+		schema_obj,
+		defaults_obj,
+		slime_board,
+	)
+	output_flags = output_flags.get(slime_board, []) if isinstance(output_flags, dict) else []
 
-output_flags = build_boards(
-	schema_obj,
-	defaults_obj,
-	slime_board,
-)
-output_flags = output_flags.get(slime_board, []) if isinstance(output_flags, dict) else []
-
-print(">>> Appending build flags:", output_flags)
-env.Append(BUILD_FLAGS=output_flags)
+	print(">>> Appending build flags:", output_flags)
+	env.Append(BUILD_FLAGS=output_flags)
+else:
+	print(">>> custom_slime_board not set - skipping")
