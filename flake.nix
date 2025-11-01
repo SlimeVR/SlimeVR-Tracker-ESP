@@ -18,10 +18,20 @@
             platformio
             platformio-core
 
-            # Python for PlatformIO
+            # Python for PlatformIO with needed packages
             python3
             python3Packages.pip
             python3Packages.virtualenv
+
+            # Pre-install Python packages that need compilation
+            python3Packages.jsonschema
+            python3Packages.rpds-py
+            python3Packages.attrs
+            python3Packages.referencing
+
+            # Rust toolchain (in case compilation is needed)
+            rustc
+            cargo
 
             # Build tools
             gcc
@@ -41,14 +51,27 @@
             # Set PlatformIO core directory to project-local directory
             export PLATFORMIO_CORE_DIR=$PWD/.nix-platformio
 
+            # Create and activate Python virtual environment
+            if [ ! -d .venv ]; then
+              echo "Creating Python virtual environment..."
+              python3 -m venv .venv --system-site-packages
+            fi
+            source .venv/bin/activate
+
+            # Prefer binary wheels over building from source
+            export PIP_PREFER_BINARY=1
+
             echo "PlatformIO development environment loaded"
+            echo "Python virtual environment activated: .venv"
             echo "PlatformIO version: $(pio --version)"
+            echo "Python version: $(python --version)"
             echo ""
             echo "Available commands:"
             echo "  pio init      - Initialize a new PlatformIO project"
             echo "  pio run       - Build the project"
             echo "  pio run -t upload  - Upload to device"
             echo "  pio device monitor - Open serial monitor"
+            echo "  pip install <package>  - Install Python packages in venv"
             echo ""
           '';
         };
