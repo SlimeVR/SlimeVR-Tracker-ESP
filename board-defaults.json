@@ -48,6 +48,7 @@
 						"protocol": "SPI",
 						"imu": "IMU_AUTO",
 						"int": "2",
+						"cs": "15",
 						"rotation": "DEG_270"
 					},
 					{

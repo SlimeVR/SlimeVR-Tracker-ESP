@@ -7,7 +7,7 @@ from typing import Union, Optional, Dict, Any, List
 Import("env")
 
 try:
-	import jsonschema
+    import jsonschema
 except:
     env.Execute(
         env.VerboseAction(
@@ -37,6 +37,19 @@ def _format_raw_value(value: Any) -> str:
         return "true" if value else "false"
     return str(value)
 
+def format_value(val: Any, typ: str) -> str:
+    if typ == "pin":
+        if isinstance(val, str) and re.search(r"[AD]", val):
+            return f'{val}'
+        else:
+            return _format_raw_value(val)
+    elif typ == "string":
+        return f'{val}'
+    elif typ in ("raw", "number"):
+        return _format_raw_value(val)
+    else:
+        raise ValueError(f"Value type is not supported")
+
 
 def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
     """Construct list of -D flags for one board."""
@@ -60,23 +73,45 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
 
     sensors = values.get("SENSORS")
     if sensors:
-        for index, sensor in enumerate(sensors):
-            if index == 0:
-                add("IMU", sensor.get("imu"), "raw")
-                add("PIN_IMU_INT", sensor.get("int"), "pin")
-                add("IMU_ROTATION", sensor.get("rotation"), "raw")
-                if sensor.get("protocol") == "I2C":
-                    add("PRIMARY_IMU_ADDRESS_ONE", sensor.get("address"), "number")
-            if index == 1:
-                add("SECOND_IMU", sensor.get("imu"), "raw")
-                add("PIN_IMU_INT_2", sensor.get("int"), "pin")
-                add("SECOND_IMU_ROTATION", sensor.get("rotation"), "raw")
-                if sensor.get("protocol") == "I2C":
-                    add("SECONDARY_IMU_ADDRESS_TWO", sensor.get("address"), "number")
+        sensor_list = []
 
+        add("PIN_IMU_SDA", 255, "pin") # FIXME fix the I2C Scanner so it use the sensor list and not be called when no I2C sensor
+        add("PIN_IMU_SCL", 255, "pin")
+        add("PIN_IMU_INT_2", 255, "pin") # FIXME: fix the CONFIG serial command so it use the sensor list
+
+        for index, sensor in enumerate(sensors):
             if sensor.get("protocol") == "I2C":
+                params = [
+                    format_value(sensor.get("imu"), 'raw'),
+                    format_value(sensor.get("address", 'PRIMARY_IMU_ADDRESS_ONE'), "number"),
+                    format_value(sensor.get("rotation"), 'raw'),
+                    f"DIRECT_WIRE({format_value(sensor.get("scl"), 'pin')}, {format_value(sensor.get("sda"), 'pin')})",
+                    'false' if index == 0 else 'true',
+                    f"DIRECT_PIN({format_value(sensor.get("int", 255), 'pin')})",
+                    "0"
+                ]
+                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
                 add("PIN_IMU_SDA", sensor.get("sda"), "pin")
                 add("PIN_IMU_SCL", sensor.get("scl"), "pin")
+
+            if sensor.get("protocol") == "SPI":
+                params = [
+                    format_value(sensor.get("imu"), 'raw'),
+                    f"DIRECT_PIN({format_value(sensor.get("cs"), 'pin')})",
+                    format_value(sensor.get("rotation"), 'raw'),
+                    "DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3)",
+                    'false' if index == 0 else 'true',
+                    f"DIRECT_PIN({format_value(sensor.get("int", 255), 'pin')})",
+                    "0"
+                ]
+                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
+
+            if index == 0: # FIXME: fix the CONFIG serial command so it use the sensor list
+                add("PIN_IMU_INT", sensor.get("int"), "pin")
+            elif index == 1:
+                add("PIN_IMU_INT_2", sensor.get("int"), "pin")
+        add('SENSOR_DESC_LIST', f"'{' '.join(sensor_list)}'", 'raw')
+
 
     battery = values.get("BATTERY")
     if battery:
@@ -90,16 +125,7 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
     for key, meta in args.items():
         val = meta["value"]
         typ = meta["type"]
-
-        if typ == "pin":
-            if isinstance(val, str) and re.search(r"[AD]", val):
-                parts.append(f"-D{key}='{val}'")
-            else:
-                parts.append(f"-D{key}={_format_raw_value(val)}")
-        elif typ == "string":
-            parts.append(f"-D{key}='{val}'")
-        elif typ in ("raw", "number"):
-            parts.append(f"-D{key}={_format_raw_value(val)}")
+        parts.append(f"-D{key}={format_value(val, typ)}")
 
     return parts
 
@@ -140,18 +166,18 @@ schema_obj = _load_json("./board-defaults.schema.json")
 defaults_obj = _load_json("./board-defaults.json")
 slime_board = env.GetProjectOption("custom_slime_board", None)
 if slime_board:
-	if 'SLIMEVR_OVERRIDE_DEFAULTS' in os.environ and slime_board in defaults_obj['defaults']:
-		print(">>> OVERIDING BOARD DEFAULTS ", os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
-		defaults_obj['defaults'][slime_board]['values'] = json.loads(os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
+    if 'SLIMEVR_OVERRIDE_DEFAULTS' in os.environ and slime_board in defaults_obj['defaults']:
+        print(">>> OVERIDING BOARD DEFAULTS ", os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
+        defaults_obj['defaults'][slime_board]['values'] = json.loads(os.environ['SLIMEVR_OVERRIDE_DEFAULTS'])
 
-	output_flags = build_boards(
-		schema_obj,
-		defaults_obj,
-		slime_board,
-	)
-	output_flags = output_flags.get(slime_board, []) if isinstance(output_flags, dict) else []
+    output_flags = build_boards(
+        schema_obj,
+        defaults_obj,
+        slime_board,
+    )
+    output_flags = output_flags.get(slime_board, []) if isinstance(output_flags, dict) else []
 
-	print(">>> Appending build flags:", output_flags)
-	env.Append(BUILD_FLAGS=output_flags)
+    print(f">>> Appending build flags:\n  {'\n  '.join(output_flags)}")
+    env.Append(BUILD_FLAGS=output_flags)
 else:
-	print(">>> custom_slime_board not set - skipping")
+    print(">>> custom_slime_board not set - skipping")
