@@ -67,59 +67,59 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
         if value is not None:
             args[key] = {"value": value, "type": value_type}
 
-    add("BOARD", board_name, "raw")
-    add("LED_PIN", values.get("LED").get("LED_PIN"), "pin")
-    add("LED_INVERTED", values.get("LED").get("LED_INVERTED"), "raw")
+    add('BOARD', board_name, 'raw')
+    add('LED_PIN', values.get('LED').get('LED_PIN'), 'pin')
+    add('LED_INVERTED', values.get('LED').get('LED_INVERTED'), 'raw')
 
-    sensors = values.get("SENSORS")
+    sensors = values.get('SENSORS')
     if sensors:
         sensor_list = []
 
-        add("PIN_IMU_SDA", 255, "pin") # FIXME fix the I2C Scanner so it use the sensor list and not be called when no I2C sensor
-        add("PIN_IMU_SCL", 255, "pin")
-        add("PIN_IMU_INT_2", 255, "pin") # FIXME: fix the CONFIG serial command so it use the sensor list
+        add('PIN_IMU_SDA', 255, 'pin') # FIXME fix the I2C Scanner so it use the sensor list and not be called when no I2C sensor
+        add('PIN_IMU_SCL', 255, 'pin')
+        add('PIN_IMU_INT_2', 255, 'pin') # FIXME: fix the CONFIG serial command so it use the sensor list
 
         for index, sensor in enumerate(sensors):
-            if sensor.get("protocol") == "I2C":
+            if sensor.get('protocol') == 'I2C':
                 params = [
-                    format_value(sensor.get("imu"), 'raw'),
-                    format_value(sensor.get("address", 'PRIMARY_IMU_ADDRESS_ONE'), "number"),
-                    format_value(sensor.get("rotation"), 'raw'),
-                    f"DIRECT_WIRE({format_value(sensor.get("scl"), 'pin')}, {format_value(sensor.get("sda"), 'pin')})",
+                    format_value(sensor.get('imu'), 'raw'),
+                    format_value(sensor.get('address', 'PRIMARY_IMU_ADDRESS_ONE'), 'number'),
+                    format_value(sensor.get('rotation'), 'raw'),
+                    f'DIRECT_WIRE({format_value(sensor.get('scl'), 'pin')}, {format_value(sensor.get('sda'), 'pin')})',
                     'false' if index == 0 else 'true',
-                    f"DIRECT_PIN({format_value(sensor.get("int", 255), 'pin')})",
-                    "0"
+                    f'DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})',
+                    '0'
                 ]
-                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
-                add("PIN_IMU_SDA", sensor.get("sda"), "pin")
-                add("PIN_IMU_SCL", sensor.get("scl"), "pin")
+                sensor_list.append(f'SENSOR_DESC_ENTRY({','.join(params)})')
+                add('PIN_IMU_SDA', sensor.get('sda'), 'pin')
+                add('PIN_IMU_SCL', sensor.get('scl'), 'pin')
 
-            if sensor.get("protocol") == "SPI":
+            if sensor.get('protocol') == 'SPI':
                 params = [
-                    format_value(sensor.get("imu"), 'raw'),
-                    f"DIRECT_PIN({format_value(sensor.get("cs"), 'pin')})",
-                    format_value(sensor.get("rotation"), 'raw'),
+                    format_value(sensor.get('imu'), 'raw'),
+                    f'DIRECT_PIN({format_value(sensor.get('cs'), 'pin')})',
+                    format_value(sensor.get('rotation'), 'raw'),
                     "DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3)",
                     'false' if index == 0 else 'true',
-                    f"DIRECT_PIN({format_value(sensor.get("int", 255), 'pin')})",
-                    "0"
+                    f'DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})',
+                    '0'
                 ]
-                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
+                sensor_list.append(f'SENSOR_DESC_ENTRY({','.join(params)})')
 
             if index == 0: # FIXME: fix the CONFIG serial command so it use the sensor list
-                add("PIN_IMU_INT", sensor.get("int"), "pin")
+                add('PIN_IMU_INT', sensor.get('int'), 'pin')
             elif index == 1:
-                add("PIN_IMU_INT_2", sensor.get("int"), "pin")
+                add('PIN_IMU_INT_2', sensor.get('int'), 'pin')
         add('SENSOR_DESC_LIST', f"'{' '.join(sensor_list)}'", 'raw')
 
 
-    battery = values.get("BATTERY")
+    battery = values.get('BATTERY')
     if battery:
-        add("BATTERY_MONITOR", battery.get("type"), "raw")
-        add("PIN_BATTERY_LEVEL", battery.get("pin", 255), "pin")
-        add("BATTERY_SHIELD_RESISTANCE", battery.get("shieldR", 180), "number")
-        add("BATTERY_SHIELD_R1", battery.get("r1", 100), "number")
-        add("BATTERY_SHIELD_R2", battery.get("r2", 220), "number")
+        add('BATTERY_MONITOR', battery.get('type'), 'raw')
+        add('PIN_BATTERY_LEVEL', battery.get('pin', 255), 'pin')
+        add('BATTERY_SHIELD_RESISTANCE', battery.get('shieldR', 180), 'number')
+        add('BATTERY_SHIELD_R1', battery.get('r1', 100), 'number')
+        add('BATTERY_SHIELD_R2', battery.get('r2', 220), 'number')
 
     parts: List[str] = []
     for key, meta in args.items():
