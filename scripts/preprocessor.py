@@ -85,26 +85,26 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
                     format_value(sensor.get('imu'), 'raw'),
                     format_value(sensor.get('address', 'PRIMARY_IMU_ADDRESS_ONE'), 'number'),
                     format_value(sensor.get('rotation'), 'raw'),
-                    f'DIRECT_WIRE({format_value(sensor.get('scl'), 'pin')}, {format_value(sensor.get('sda'), 'pin')})',
+                    f"DIRECT_WIRE({format_value(sensor.get('scl'), 'pin')}, {format_value(sensor.get('sda'), 'pin')})",
                     'false' if index == 0 else 'true',
-                    f'DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})',
+                    f"DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})",
                     '0'
                 ]
-                sensor_list.append(f'SENSOR_DESC_ENTRY({','.join(params)})')
+                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
                 add('PIN_IMU_SDA', sensor.get('sda'), 'pin')
                 add('PIN_IMU_SCL', sensor.get('scl'), 'pin')
 
             if sensor.get('protocol') == 'SPI':
                 params = [
                     format_value(sensor.get('imu'), 'raw'),
-                    f'DIRECT_PIN({format_value(sensor.get('cs'), 'pin')})',
+                    f"DIRECT_PIN({format_value(sensor.get('cs'), 'pin')})",
                     format_value(sensor.get('rotation'), 'raw'),
                     "DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3)",
                     'false' if index == 0 else 'true',
-                    f'DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})',
+                    f"DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})",
                     '0'
                 ]
-                sensor_list.append(f'SENSOR_DESC_ENTRY({','.join(params)})')
+                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
 
             if index == 0: # FIXME: fix the CONFIG serial command so it use the sensor list
                 add('PIN_IMU_INT', sensor.get('int'), 'pin')
@@ -177,7 +177,8 @@ if slime_board:
     )
     output_flags = output_flags.get(slime_board, []) if isinstance(output_flags, dict) else []
 
-    print(f">>> Appending build flags:\n  {'\n  '.join(output_flags)}")
+    separator = '\n  '
+    print(f">>> Appending build flags:\n  {separator.join(output_flags)}")
     env.Append(BUILD_FLAGS=output_flags)
 else:
     print(">>> custom_slime_board not set - skipping")
