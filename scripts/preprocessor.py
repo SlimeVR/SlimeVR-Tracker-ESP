@@ -18,6 +18,8 @@ except:
 
 from jsonschema import Draft202012Validator, exceptions as jsonschema_exceptions
 
+
+
 def _load_json(maybe_path_or_dict: Union[str, Path, dict]) -> dict:
     """Load JSON file or accept dict directly."""
     if isinstance(maybe_path_or_dict, dict):
@@ -30,25 +32,50 @@ def _load_json(maybe_path_or_dict: Union[str, Path, dict]) -> dict:
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON file {p}: {e}")
 
+# Allow:
+# - unquoted alphanumerics, underscores, dots, dashes
+# - or single-quoted with optional escaped double quotes inside
+VALID_DEFINE_VALUE = re.compile(
+    r"^(?:[A-Za-z0-9_.\-]*|'(\\\"[A-Za-z0-9_.\-\s]*\\\"|[A-Za-z0-9_.\-\s]*)')$"
+)
+
+def _validate_define_value(value: str, key: str) -> None:
+    if key == "SENSOR_DESC_LIST":
+        return
+
+    """Validate the formatted define value to prevent injection."""
+    if not VALID_DEFINE_VALUE.fullmatch(value):
+        raise ValueError(
+            f"Invalid characters in value for {key!r}: {value!r} "
+            "(only letters, digits, _, ., -, spaces, and optional quoted forms like '\"text\"' allowed)"
+        )
 
 def _format_raw_value(value: Any) -> str:
-    """Format booleans for c/cpp, otherwise str(value)."""
+    """Format booleans for C/C++, otherwise str(value)."""
     if isinstance(value, bool):
         return "true" if value else "false"
     return str(value)
 
-def format_value(val: Any, typ: str) -> str:
+def format_value(val: Any, typ: str, key: str = "<unknown>") -> str:
+    """Format a value according to type, with built-in validation."""
     if typ == "pin":
         if isinstance(val, str) and re.search(r"[AD]", val):
-            return f'{val}'
+            result = f'{val}'
         else:
-            return _format_raw_value(val)
+            result = _format_raw_value(val)
+
     elif typ == "string":
-        return f'{val}'
+        result = f"'\\\"{val}\\\"'"
+
     elif typ in ("raw", "number"):
-        return _format_raw_value(val)
+        result = _format_raw_value(val)
+
     else:
-        raise ValueError(f"Value type is not supported")
+        raise ValueError(f"Value type '{typ}' is not supported")
+
+
+    _validate_define_value(result, key)
+    return result
 
 
 def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
@@ -85,9 +112,9 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
                     format_value(sensor.get('imu'), 'raw'),
                     format_value(sensor.get('address', 'PRIMARY_IMU_ADDRESS_ONE'), 'number'),
                     format_value(sensor.get('rotation'), 'raw'),
-                    f'DIRECT_WIRE({format_value(sensor.get('scl'), 'pin')}, {format_value(sensor.get('sda'), 'pin')})',
+                    f"DIRECT_WIRE({format_value(sensor.get('scl'), 'pin')}, {format_value(sensor.get('sda'), 'pin')})",
                     'false' if index == 0 else 'true',
-                    f'DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})',
+                    f"DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})",
                     '0'
                 ]
                 sensor_list.append(f'SENSOR_DESC_ENTRY({','.join(params)})')
@@ -97,14 +124,14 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
             if sensor.get('protocol') == 'SPI':
                 params = [
                     format_value(sensor.get('imu'), 'raw'),
-                    f'DIRECT_PIN({format_value(sensor.get('cs'), 'pin')})',
+                    f"DIRECT_PIN({format_value(sensor.get('cs'), 'pin')})",
                     format_value(sensor.get('rotation'), 'raw'),
                     "DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3)",
                     'false' if index == 0 else 'true',
-                    f'DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})',
+                    f"DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})",
                     '0'
                 ]
-                sensor_list.append(f'SENSOR_DESC_ENTRY({','.join(params)})')
+                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
 
             if index == 0: # FIXME: fix the CONFIG serial command so it use the sensor list
                 add('PIN_IMU_INT', sensor.get('int'), 'pin')
@@ -123,9 +150,8 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
 
     parts: List[str] = []
     for key, meta in args.items():
-        val = meta["value"]
-        typ = meta["type"]
-        parts.append(f"-D{key}={format_value(val, typ)}")
+        formatted = format_value(meta["value"], meta["type"], key)
+        parts.append(f"-D{key}={formatted}")
 
     return parts
 
