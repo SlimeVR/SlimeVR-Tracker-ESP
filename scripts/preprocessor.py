@@ -110,7 +110,7 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
             if sensor.get('protocol') == 'I2C':
                 params = [
                     format_value(sensor.get('imu'), 'raw'),
-                    format_value(sensor.get('address', 'PRIMARY_IMU_ADDRESS_ONE'), 'number'),
+                    format_value(sensor.get('address', 'PRIMARY_IMU_ADDRESS_ONE' if index == 0 else 'SECONDARY_IMU_ADDRESS_TWO'), 'number'),
                     format_value(sensor.get('rotation'), 'raw'),
                     f"DIRECT_WIRE({format_value(sensor.get('scl'), 'pin')}, {format_value(sensor.get('sda'), 'pin')})",
                     'false' if index == 0 else 'true',
