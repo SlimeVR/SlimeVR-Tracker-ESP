@@ -173,6 +173,7 @@
 					"type": "array",
 					"items": { "$ref": "#/$defs/IMU" },
 					"minItems": 1,
+					"maxItems": 2,
 					"description": "Sensors List"
 				},
 				"LED": {
