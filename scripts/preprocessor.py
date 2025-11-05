@@ -117,7 +117,7 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
                     f"DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})",
                     '0'
                 ]
-                sensor_list.append(f'SENSOR_DESC_ENTRY({','.join(params)})')
+                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
                 add('PIN_IMU_SDA', sensor.get('sda'), 'pin')
                 add('PIN_IMU_SCL', sensor.get('scl'), 'pin')
 
@@ -203,7 +203,8 @@ if slime_board:
     )
     output_flags = output_flags.get(slime_board, []) if isinstance(output_flags, dict) else []
 
-    print(f">>> Appending build flags:\n  {'\n  '.join(output_flags)}")
+    separator = '\n  '
+    print(f">>> Appending build flags:\n  {separator.join(output_flags)}")
     env.Append(BUILD_FLAGS=output_flags)
 else:
     print(">>> custom_slime_board not set - skipping")
