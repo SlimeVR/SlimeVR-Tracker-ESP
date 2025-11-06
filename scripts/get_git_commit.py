@@ -35,13 +35,12 @@ except Exception:
 	branch = ""
 
 output = f"-DGIT_REV='\"{revision}\"'"
-
-#if tag != "":
-#	output += f" -DFIRMWARE_VERSION='\"{tag}\"'"
-#elif branch != "":
-#	output += f" -DFIRMWARE_VERSION='\"{branch}\"'"
-#else:
-#	output += f" -DFIRMWARE_VERSION='\"git-{revision}\"'"
-output += f" -DFIRMWARE_VERSION='v0.7.0'"
+tag = "0.7.0"
+if tag != "":
+	output += f" -DFIRMWARE_VERSION='\"{tag}\"'"
+elif branch != "":
+	output += f" -DFIRMWARE_VERSION='\"{branch}\"'"
+else:
+	output += f" -DFIRMWARE_VERSION='\"git-{revision}\"'"
 
 print(output)
