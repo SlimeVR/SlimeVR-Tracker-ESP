@@ -25,13 +25,18 @@
 
 #include <LittleFS.h>
 
+#include <cstdint>
+#include <cstring>
+
 #include "../FSHelper.h"
 #include "consts.h"
+#include "sensors/SensorToggles.h"
 #include "utils.h"
 
 #define DIR_CALIBRATIONS "/calibrations"
 #define DIR_TEMPERATURE_CALIBRATIONS "/tempcalibrations"
-#define DIR_TOGGLES "/toggles"
+#define DIR_TOGGLES_OLD "/toggles"
+#define DIR_TOGGLES "/sensortoggles"
 
 namespace SlimeVR::Configuration {
 void Configuration::setup() {
@@ -123,7 +128,8 @@ void Configuration::save() {
 		m_Logger.trace("Saving sensor toggle state for %d", i);
 
 		file = LittleFS.open(path, "w");
-		file.write((uint8_t*)&m_SensorToggles[i], sizeof(SensorToggleState));
+		auto toggleValues = m_SensorToggles[i].getValues();
+		file.write((uint8_t*)&toggleValues, sizeof(SensorToggleValues));
 		file.close();
 	}
 
@@ -131,6 +137,18 @@ void Configuration::save() {
 		File file = LittleFS.open("/config.bin", "w");
 		file.write((uint8_t*)&m_Config, sizeof(DeviceConfig));
 		file.close();
+	}
+
+	// Clean up old toggles directory
+	if (LittleFS.exists(DIR_TOGGLES_OLD)) {
+		char path[17] = DIR_TOGGLES_OLD;
+		char* end = path + strlen(DIR_TOGGLES_OLD);
+		Utils::forEachFile(DIR_TOGGLES_OLD, [&](SlimeVR::Utils::File file) {
+			sprintf(end, "/%s", file.name());
+			LittleFS.remove(path);
+			file.close();
+		});
+		LittleFS.rmdir(DIR_TOGGLES_OLD);
 	}
 
 	m_Logger.debug("Saved configuration");
@@ -226,14 +244,34 @@ void Configuration::loadSensors() {
 		setSensor(sensorId, sensorConfig);
 	});
 
+	if (LittleFS.exists(DIR_TOGGLES_OLD)) {
+		SlimeVR::Utils::forEachFile(DIR_TOGGLES_OLD, [&](SlimeVR::Utils::File f) {
+			SensorToggleValues values;
+			// Migration for pre 0.7.0 togglestate, the values started at offset 20 and
+			// there were 3 of them
+			f.seek(20);
+			f.read(reinterpret_cast<uint8_t*>(&values), 3);
+
+			uint8_t sensorId = strtoul(f.name(), nullptr, 10);
+			m_Logger.debug("Found sensor toggle state at index %d", sensorId);
+
+			setSensorToggles(sensorId, SensorToggleState{values});
+		});
+	}
+
 	SlimeVR::Utils::forEachFile(DIR_TOGGLES, [&](SlimeVR::Utils::File f) {
-		SensorToggleState sensorToggleState;
-		f.read((uint8_t*)&sensorToggleState, sizeof(SensorToggleState));
+		if (f.size() > sizeof(SensorToggleValues)) {
+			return;
+		}
+		SensorToggleValues values;
+		// With the magic of C++ default initialization, the rest of the values should
+		// be their default after reading
+		f.read(reinterpret_cast<uint8_t*>(&values), f.size());
 
 		uint8_t sensorId = strtoul(f.name(), nullptr, 10);
 		m_Logger.debug("Found sensor toggle state at index %d", sensorId);
 
-		setSensorToggles(sensorId, sensorToggleState);
+		setSensorToggles(sensorId, SensorToggleState{values});
 	});
 }
 

@@ -35,8 +35,17 @@ enum class SensorToggles : uint16_t {
 	TempGradientCalibrationEnabled = 3,
 };
 
+struct SensorToggleValues {
+	bool magEnabled = !USE_6_AXIS;
+	bool calibrationEnabled = true;
+	bool tempGradientCalibrationEnabled
+		= false;  // disable by default, it is not clear that it really helps
+};
+
 class SensorToggleState {
 public:
+	SensorToggleState() = default;
+	explicit SensorToggleState(SensorToggleValues values);
 	void setToggle(SensorToggles toggle, bool state);
 	[[nodiscard]] bool getToggle(SensorToggles toggle) const;
 
@@ -44,12 +53,12 @@ public:
 
 	static const char* toggleToString(SensorToggles toggle);
 
+	[[nodiscard]] SensorToggleValues getValues() const;
+
 private:
 	std::optional<std::function<void(SensorToggles, bool)>> callback;
+
 	void emitToggleChange(SensorToggles toggle, bool state) const;
 
-	bool magEnabled = !USE_6_AXIS;
-	bool calibrationEnabled = true;
-	bool tempGradientCalibrationEnabled
-		= false;  // disable by default, it is not clear that it really helps
+	SensorToggleValues values;
 };

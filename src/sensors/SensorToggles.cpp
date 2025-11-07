@@ -1,15 +1,18 @@
 #include "SensorToggles.h"
 
+SensorToggleState::SensorToggleState(SensorToggleValues values)
+	: values{values} {}
+
 void SensorToggleState::setToggle(SensorToggles toggle, bool state) {
 	switch (toggle) {
 		case SensorToggles::MagEnabled:
-			magEnabled = state;
+			values.magEnabled = state;
 			break;
 		case SensorToggles::CalibrationEnabled:
-			calibrationEnabled = state;
+			values.calibrationEnabled = state;
 			break;
 		case SensorToggles::TempGradientCalibrationEnabled:
-			tempGradientCalibrationEnabled = state;
+			values.tempGradientCalibrationEnabled = state;
 			break;
 	}
 }
@@ -17,11 +20,11 @@ void SensorToggleState::setToggle(SensorToggles toggle, bool state) {
 bool SensorToggleState::getToggle(SensorToggles toggle) const {
 	switch (toggle) {
 		case SensorToggles::MagEnabled:
-			return magEnabled;
+			return values.magEnabled;
 		case SensorToggles::CalibrationEnabled:
-			return calibrationEnabled;
+			return values.calibrationEnabled;
 		case SensorToggles::TempGradientCalibrationEnabled:
-			return tempGradientCalibrationEnabled;
+			return values.tempGradientCalibrationEnabled;
 	}
 	return false;
 }
@@ -31,6 +34,8 @@ void SensorToggleState::onToggleChange(
 ) {
 	this->callback = callback;
 }
+
+SensorToggleValues SensorToggleState::getValues() const { return values; }
 
 void SensorToggleState::emitToggleChange(SensorToggles toggle, bool state) const {
 	if (callback) {
