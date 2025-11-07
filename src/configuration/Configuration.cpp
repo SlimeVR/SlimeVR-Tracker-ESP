@@ -21,13 +21,14 @@
 	THE SOFTWARE.
 */
 
+#include "Configuration.h"
+
 #include <LittleFS.h>
 
 #include <cstdint>
 #include <cstring>
 
 #include "../FSHelper.h"
-#include "Configuration.h"
 #include "consts.h"
 #include "sensors/SensorToggles.h"
 #include "utils.h"
