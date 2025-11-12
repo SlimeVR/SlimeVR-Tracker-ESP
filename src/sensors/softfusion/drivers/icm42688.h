@@ -198,6 +198,13 @@ struct ICM42688 {
 			}
 		}
 	}
+
+	void deinit() {
+		m_RegisterInterface.writeReg(
+			Regs::DeviceConfig::reg,
+			Regs::DeviceConfig::valueSwReset
+		);
+	}
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers
