@@ -26,11 +26,14 @@
 #include <Arduino.h>
 #include <WiFiUdp.h>
 
+#include <cstdint>
 #include <optional>
 
 #include "../configuration/SensorConfig.h"
+#include "IPAddress.h"
 #include "featureflags.h"
 #include "globals.h"
+#include "network/mdns.h"
 #include "packets.h"
 #include "quat.h"
 #include "sensors/sensor.h"
@@ -59,6 +62,7 @@ public:
 	}
 
 	void searchForServer();
+	void connectTo(const IPAddress& ip, uint16_t port);
 	void update();
 	void reset();
 	bool isConnected() const { return m_Connected; }
@@ -240,6 +244,8 @@ private:
 	uint16_t m_BundlePacketInnerCount = 0;
 
 	unsigned char m_Buf[8];
+
+	MDNSResolver mdnsResolver{m_UDP, m_Logger};
 };
 
 }  // namespace SlimeVR::Network
