@@ -57,7 +57,7 @@ struct ICM42688 {
 	static constexpr float AccelSensitivity = 8192.0f;
 
 	static constexpr float TemperatureBias = 25.0f;
-	static constexpr float TemperatureSensitivity = 2.07f;
+	static constexpr float TemperatureSensitivity = 132.48f;
 
 	static constexpr float TemperatureZROChange = 20.0f;
 
@@ -159,8 +159,9 @@ struct ICM42688 {
 
 	bool bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
-
-		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
+		// max 4 readings, 8 readings delay too high 6 seems to be the edge to work
+		// reliably. Tested on ESP8266 with 1 IMU
+		std::array<uint8_t, FullFifoEntrySize * 4> read_buffer;
 		const auto bytes_to_read = std::min(
 									   static_cast<size_t>(read_buffer.size()),
 									   static_cast<size_t>(fifo_bytes)
@@ -181,9 +182,12 @@ struct ICM42688 {
 			// When 20-bits data format is used, gyroscope data consists of 19-bits of
 			// actual data and the LSB is always set to 0
 			const int32_t gyroData[3]{
-				static_cast<int32_t>(entry.part.gyro[0]) << 3 | ((entry.part.xlsb & 0xf)>1),
-				static_cast<int32_t>(entry.part.gyro[1]) << 3 | ((entry.part.ylsb & 0xf)>1),
-				static_cast<int32_t>(entry.part.gyro[2]) << 3 | ((entry.part.zlsb & 0xf)>1),
+				static_cast<int32_t>(entry.part.gyro[0]) << 3
+					| ((entry.part.xlsb & 0xe) >> 1),
+				static_cast<int32_t>(entry.part.gyro[1]) << 3
+					| ((entry.part.ylsb & 0xe) >> 1),
+				static_cast<int32_t>(entry.part.gyro[2]) << 3
+					| ((entry.part.zlsb & 0xe) >> 1),
 			};
 			callbacks.processGyroSample(gyroData, GyrTs);
 
