@@ -142,10 +142,14 @@ public:
 
 		switch (result) {
 			case CalibrationStep<RawSensorT>::TickResult::DONE:
+				if (nextCalibrationStep == CalibrationStepEnum::SAMPLING_RATE) {
+					stepCalibrationForward(true, false);
+					break;
+				}
 				stepCalibrationForward();
 				break;
 			case CalibrationStep<RawSensorT>::TickResult::SKIP:
-				stepCalibrationForward(false);
+				stepCalibrationForward(false, false);
 				break;
 			case CalibrationStep<RawSensorT>::TickResult::CONTINUE:
 				break;
@@ -180,6 +184,12 @@ public:
 
 	const uint8_t* getMotionlessCalibrationData() final {
 		return activeCalibration.MotionlessData;
+	}
+
+	void signalOverwhelmed() final {
+		if (isCalibrating) {
+			currentStep->signalOverwhelmed();
+		}
 	}
 
 	void provideAccelSample(const RawSensorT accelSample[3]) final {
@@ -247,7 +257,7 @@ private:
 		}
 	}
 
-	void stepCalibrationForward(bool save = true) {
+	void stepCalibrationForward(bool print = true, bool save = true) {
 		currentStep->cancel();
 		switch (nextCalibrationStep) {
 			case CalibrationStepEnum::NONE:
@@ -255,14 +265,14 @@ private:
 			case CalibrationStepEnum::SAMPLING_RATE:
 				nextCalibrationStep = CalibrationStepEnum::MOTIONLESS;
 				currentStep = &motionlessCalibrationStep;
-				if (save) {
+				if (print) {
 					printCalibration(CalibrationPrintFlags::TIMESTEPS);
 				}
 				break;
 			case CalibrationStepEnum::MOTIONLESS:
 				nextCalibrationStep = CalibrationStepEnum::GYRO_BIAS;
 				currentStep = &gyroBiasCalibrationStep;
-				if (save) {
+				if (print) {
 					printCalibration(CalibrationPrintFlags::MOTIONLESS);
 				}
 				break;
@@ -274,7 +284,7 @@ private:
 					currentStep = &gyroBiasCalibrationStep;
 				}
 
-				if (save) {
+				if (print) {
 					printCalibration(CalibrationPrintFlags::GYRO_BIAS);
 				}
 				break;
@@ -282,7 +292,7 @@ private:
 				nextCalibrationStep = CalibrationStepEnum::GYRO_BIAS;
 				currentStep = &gyroBiasCalibrationStep;
 
-				if (save) {
+				if (print) {
 					printCalibration(CalibrationPrintFlags::ACCEL_BIAS);
 				}
 
