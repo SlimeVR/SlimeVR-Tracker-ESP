@@ -44,6 +44,21 @@
 #define CALLBACK_SIZE 6  // Default callback size
 #endif
 
+#if defined(VENDOR_URL) && defined(VENDOR_NAME) && defined(PRODUCT_NAME) \
+	&& defined(UPDATE_ADDRESS) && defined(UPDATE_NAME)
+constexpr const char* FULL_VENDOR_STR
+	= "Vendor: " VENDOR_NAME " (" VENDOR_URL "), product: " PRODUCT_NAME
+	  ", firmware update url: " UPDATE_ADDRESS ", name: " UPDATE_NAME;
+#elif defined(VENDOR_URL) && defined(VENDOR_NAME) && defined(PRODUCT_NAME)
+constexpr const char* FULL_VENDOR_STR
+	= "Vendor: " VENDOR_NAME " (" VENDOR_URL "), product: " PRODUCT_NAME;
+#elif defined(VENDOR_NAME) && defined(PRODUCT_NAME)
+constexpr const char* FULL_VENDOR_STR
+	= "Vendor: " VENDOR_NAME ", product: " PRODUCT_NAME;
+#else
+constexpr const char* FULL_VENDOR_STR = "Vendor: Unknown, product: Unknown";
+#endif
+
 namespace SerialCommands {
 SlimeVR::Logging::Logger logger("SerialCommands");
 
@@ -165,37 +180,7 @@ void printState() {
 		wifiNetwork.getWiFiState()
 	);
 
-	char vendorBuffer[512];
-	size_t writtenLength;
-
-	if (strlen(VENDOR_URL) == 0) {
-		sprintf(
-			vendorBuffer,
-			"Vendor: %s, product: %s%n",
-			VENDOR_NAME,
-			PRODUCT_NAME,
-			&writtenLength
-		);
-	} else {
-		sprintf(
-			vendorBuffer,
-			"Vendor: %s (%s), product: %s%n",
-			VENDOR_NAME,
-			VENDOR_URL,
-			PRODUCT_NAME,
-			&writtenLength
-		);
-	}
-
-	if (strlen(UPDATE_ADDRESS) > 0 && strlen(UPDATE_NAME) > 0) {
-		sprintf(
-			vendorBuffer + writtenLength,
-			", firmware update url: %s, name: %s",
-			UPDATE_ADDRESS,
-			UPDATE_NAME
-		);
-	}
-	logger.info("%s", vendorBuffer);
+	logger.info("%s", FULL_VENDOR_STR);
 
 	for (auto& sensor : sensorManager.getSensors()) {
 		logger.info(
