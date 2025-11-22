@@ -152,7 +152,7 @@ struct ICM42688 {
 		return true;
 	}
 
-	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
+	bool bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
@@ -197,6 +197,8 @@ struct ICM42688 {
 				);
 			}
 		}
+
+		return fifo_bytes > bytes_to_read;
 	}
 };
 

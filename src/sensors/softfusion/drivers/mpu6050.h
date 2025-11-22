@@ -176,7 +176,7 @@ struct MPU6050 {
 		return result;
 	}
 
-	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+	bool bulkRead(DriverCallbacks<int16_t>&& callbacks) {
 		const auto status = m_RegisterInterface.readReg(Regs::IntStatus);
 
 		if (status & (1 << MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) {
@@ -184,7 +184,7 @@ struct MPU6050 {
 			// This necessitates a reset
 			m_Logger.debug("Fifo overrun, resetting...");
 			resetFIFO();
-			return;
+			return true;
 		}
 
 		std::array<uint8_t, 12 * 10>
@@ -194,7 +194,7 @@ struct MPU6050 {
 		auto readBytes = min(static_cast<size_t>(byteCount), readBuffer.size())
 					   / sizeof(FifoSample) * sizeof(FifoSample);
 		if (!readBytes) {
-			return;
+			return false;
 		}
 
 		m_RegisterInterface.readBytes(Regs::FifoData, readBytes, readBuffer.data());
@@ -213,6 +213,8 @@ struct MPU6050 {
 			xyz[2] = MPU6050_FIFO_VALUE(sample, gyro_z);
 			callbacks.processGyroSample(xyz, GyrTs);
 		}
+
+		return byteCount > readBytes;
 	}
 };  // namespace SlimeVR::Sensors::SoftFusion::Drivers
 

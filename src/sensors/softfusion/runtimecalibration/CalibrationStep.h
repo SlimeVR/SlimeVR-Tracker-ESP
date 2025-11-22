@@ -46,6 +46,9 @@ public:
 	virtual void cancel() = 0;
 
 	virtual bool requiresRest() { return true; }
+	// Signals that the sensor had more packets than the MCU could read, which can
+	// compromise calibration
+	virtual void signalOverwhelmed() {}
 	virtual void processAccelSample(const SensorRawT accelSample[3]) {}
 	virtual void processGyroSample(const SensorRawT accelSample[3]) {}
 	virtual void processTempSample(float tempSample) {}

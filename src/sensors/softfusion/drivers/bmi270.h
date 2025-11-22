@@ -428,7 +428,7 @@ struct BMI270 {
 		return to_ret;
 	}
 
-	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+	bool bulkRead(DriverCallbacks<int16_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		const auto bytes_to_read = std::min(
@@ -482,6 +482,8 @@ struct BMI270 {
 				}
 			}
 		}
+
+		return fifo_bytes > bytes_to_read;
 	}
 };
 

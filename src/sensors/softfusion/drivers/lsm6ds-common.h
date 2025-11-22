@@ -55,7 +55,7 @@ struct LSM6DSOutputHandler {
 	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
 	template <typename Regs>
-	void bulkRead(
+	bool bulkRead(
 		DriverCallbacks<int16_t>&& callbacks,
 		float GyrTs,
 		float AccTs,
@@ -103,6 +103,7 @@ struct LSM6DSOutputHandler {
 					break;
 			}
 		}
+		return fifo_bytes > bytes_to_read;
 	}
 };
 

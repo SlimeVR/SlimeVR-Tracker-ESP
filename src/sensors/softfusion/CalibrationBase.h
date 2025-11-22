@@ -87,6 +87,7 @@ public:
 
 	virtual const uint8_t* getMotionlessCalibrationData() = 0;
 
+	virtual void signalOverwhelmed() {}
 	virtual void provideAccelSample(const RawSensorT accelSample[3]) {}
 	virtual void provideGyroSample(const RawSensorT gyroSample[3]) {}
 	virtual void provideTempSample(float tempSample) {}
