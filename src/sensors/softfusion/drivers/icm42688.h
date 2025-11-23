@@ -44,15 +44,20 @@ struct ICM42688 {
 
 	static constexpr float GyrTs = 1.0 / 200.0;
 	static constexpr float AccTs = 1.0 / 100.0;
-	static constexpr float TempTs = 1.0 / 500.0;
+	static constexpr float TempTs = 1.0 / 200.0;
 
 	static constexpr float MagTs = 1.0 / 100;
 
-	static constexpr float GyroSensitivity = 32.8f;
-	static constexpr float AccelSensitivity = 4096.0f;
+	// When 20-bits data format is used, the only FSR settings that are
+	// operational are ±2000dps for gyroscope and ±16g for accelerometer, even if the
+	// FSR selection register settings are configured for other FSR values. The
+	// corresponding sensitivity scale factor values are 131 LSB/dps for gyroscope and
+	// 8192 LSB/g for accelerometer.
+	static constexpr float GyroSensitivity = 131.0f;
+	static constexpr float AccelSensitivity = 8192.0f;
 
 	static constexpr float TemperatureBias = 25.0f;
-	static constexpr float TemperatureSensitivity = 2.07f;
+	static constexpr float TemperatureSensitivity = 132.48f;
 
 	static constexpr float TemperatureZROChange = 20.0f;
 
@@ -88,7 +93,7 @@ struct ICM42688 {
 			static constexpr uint8_t reg = 0x5f;
 			static constexpr uint8_t value
 				= 0b1 | (0b1 << 1) | (0b1 << 2)
-				| (0b0 << 4);  // fifo accel en=1, gyro=1, temp=1, hires=1
+				| (0b1 << 4);  // fifo accel en=1, gyro=1, temp=1, hires=1
 		};
 		struct GyroConfig {
 			static constexpr uint8_t reg = 0x4f;
@@ -154,8 +159,9 @@ struct ICM42688 {
 
 	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
-
-		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;  // max 8 readings
+		// max 4 readings, 8 readings delay too high 6 seems to be the edge to work
+		// reliably. Tested on ESP8266 with 1 IMU
+		std::array<uint8_t, FullFifoEntrySize * 4> read_buffer;
 		const auto bytes_to_read = std::min(
 									   static_cast<size_t>(read_buffer.size()),
 									   static_cast<size_t>(fifo_bytes)
@@ -171,21 +177,30 @@ struct ICM42688 {
 				sizeof(FifoEntryAligned)
 			);  // skip fifo header
 
+			// 6.1 Packet Structure for high resolution mode
+			// https://invensense.tdk.com/wp-content/uploads/2020/04/ds-000347_icm-42688-p-datasheet.pdf
+			// When 20-bits data format is used, gyroscope data consists of 19-bits of
+			// actual data and the LSB is always set to 0
 			const int32_t gyroData[3]{
-				static_cast<int32_t>(entry.part.gyro[0]) << 4 | (entry.part.xlsb & 0xf),
-				static_cast<int32_t>(entry.part.gyro[1]) << 4 | (entry.part.ylsb & 0xf),
-				static_cast<int32_t>(entry.part.gyro[2]) << 4 | (entry.part.zlsb & 0xf),
+				static_cast<int32_t>(entry.part.gyro[0]) << 3
+					| ((entry.part.xlsb & 0xe) >> 1),
+				static_cast<int32_t>(entry.part.gyro[1]) << 3
+					| ((entry.part.ylsb & 0xe) >> 1),
+				static_cast<int32_t>(entry.part.gyro[2]) << 3
+					| ((entry.part.zlsb & 0xe) >> 1),
 			};
 			callbacks.processGyroSample(gyroData, GyrTs);
 
 			if (entry.part.accel[0] != -32768) {
+				// accelerometer data consists of 18-bits of actual data and the two
+				// lowest order bits are always set to 0
 				const int32_t accelData[3]{
-					static_cast<int32_t>(entry.part.accel[0]) << 4
-						| (static_cast<int32_t>(entry.part.xlsb) & 0xf0 >> 4),
-					static_cast<int32_t>(entry.part.accel[1]) << 4
-						| (static_cast<int32_t>(entry.part.ylsb) & 0xf0 >> 4),
-					static_cast<int32_t>(entry.part.accel[2]) << 4
-						| (static_cast<int32_t>(entry.part.zlsb) & 0xf0 >> 4),
+					static_cast<int32_t>(entry.part.accel[0]) << 2
+						| (static_cast<int32_t>(entry.part.xlsb) & 0xf0 >> 6),
+					static_cast<int32_t>(entry.part.accel[1]) << 2
+						| (static_cast<int32_t>(entry.part.ylsb) & 0xf0 >> 6),
+					static_cast<int32_t>(entry.part.accel[2]) << 2
+						| (static_cast<int32_t>(entry.part.zlsb) & 0xf0 >> 6),
 				};
 				callbacks.processAccelSample(accelData, AccTs);
 			}
