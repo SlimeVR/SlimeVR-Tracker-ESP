@@ -54,7 +54,7 @@ struct LSM6DS3TRC {
 	static constexpr float TempTs = 1.0 / TempFreq;
 
 	static constexpr float GyroSensitivity = 28.571428571f;
-	static constexpr float AccelSensitivity = 4098.360655738f;
+	static constexpr float AccelSensitivity = 1000 / 0.122f;
 
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
