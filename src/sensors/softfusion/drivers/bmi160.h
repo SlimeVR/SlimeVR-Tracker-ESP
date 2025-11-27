@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -176,7 +177,7 @@ struct BMI160 {
 		return to_ret;
 	}
 
-	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+	bool bulkRead(DriverCallbacks<int16_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoLength) & 0x7FF;
 
 		const auto bytes_to_read = std::min(
@@ -219,6 +220,7 @@ struct BMI160 {
 				}
 			}
 		}
+		return static_cast<size_t>(fifo_bytes) > static_cast<size_t>(bytes_to_read);
 	}
 };
 

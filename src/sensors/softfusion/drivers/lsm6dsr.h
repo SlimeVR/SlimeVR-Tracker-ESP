@@ -115,8 +115,8 @@ struct LSM6DSR : LSM6DSOutputHandler {
 		return true;
 	}
 
-	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
-		LSM6DSOutputHandler::template bulkRead<Regs>(
+	bool bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+		return LSM6DSOutputHandler::template bulkRead<Regs>(
 			std::move(callbacks),
 			GyrTs,
 			AccTs,
