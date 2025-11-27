@@ -27,6 +27,7 @@
 				"IMU_BMI160",
 				"IMU_ICM20948",
 				"IMU_ICM42688",
+				"IMU_BMI270",
 				"IMU_LSM6DS3TRC",
 				"IMU_LSM6DSV",
 				"IMU_LSM6DSO",
