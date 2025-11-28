@@ -21,13 +21,14 @@
 	THE SOFTWARE.
 */
 
+#include "wifi-provisioning.h"
+
 #include <cstdint>
 #include <memory>
 
 #include "network/wifiprovisioning/provisioning-packets.h"
 #include "network/wifiprovisioning/provisioning-provider.h"
 #include "network/wifiprovisioning/provisioning-target.h"
-#include "wifi-provisioning.h"
 
 #if ESP8266
 #include <espnow.h>
