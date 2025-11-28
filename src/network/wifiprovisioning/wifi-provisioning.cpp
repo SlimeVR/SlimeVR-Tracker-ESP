@@ -21,13 +21,13 @@
 	THE SOFTWARE.
 */
 
-#include "wifi-provisioning.h"
-
 #include <cstdint>
 #include <memory>
 
+#include "network/wifiprovisioning/provisioning-packets.h"
 #include "network/wifiprovisioning/provisioning-provider.h"
 #include "network/wifiprovisioning/provisioning-target.h"
+#include "wifi-provisioning.h"
 
 #if ESP8266
 #include <espnow.h>
@@ -179,6 +179,9 @@ void WiFiProvisioning::handleMessage(
 	const uint8_t* data,
 	uint8_t length
 ) {
+	if (length < 1 || data[0] != ProvisioningPackets::ESPNOWPacketId) {
+		return;
+	}
 	role->handleMessage(macAddress, data, length);
 }
 

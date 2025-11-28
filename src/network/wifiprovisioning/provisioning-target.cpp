@@ -20,8 +20,6 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "provisioning-target.h"
-
 #include <Arduino.h>
 
 #include <cstdint>
@@ -33,6 +31,7 @@
 #include "network/wifihandler.h"
 #include "network/wifiprovisioning/provisioning-packets.h"
 #include "network/wifiprovisioning/provisioning-party.h"
+#include "provisioning-target.h"
 
 #if ESP8266
 #include <espnow.h>
@@ -129,7 +128,7 @@ void ProvisioningTarget::handleMessage(
 	const uint8_t* data,
 	uint8_t length
 ) {
-	auto packetId = static_cast<ProvisioningPackets::ProvisioningPacketId>(data[0]);
+	auto packetId = static_cast<ProvisioningPackets::ProvisioningPacketId>(data[1]);
 
 	switch (packetId) {
 		case ProvisioningPackets::ProvisioningPacketId::ProvisioningAvailable:

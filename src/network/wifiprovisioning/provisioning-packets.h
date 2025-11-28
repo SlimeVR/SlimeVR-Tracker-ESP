@@ -36,10 +36,13 @@ enum class ProvisioningPacketId : uint8_t {
 	ProvisioningFailedAck,
 };
 
+constexpr static uint8_t ESPNOWPacketId = 0xde;
+
 #pragma pack(push, 1)
 
 template <ProvisioningPacketId PacketId>
 struct ProvisioningPacket {
+	uint8_t espnowPacketId = ESPNOWPacketId;
 	ProvisioningPacketId packetId = PacketId;
 };
 
