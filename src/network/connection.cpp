@@ -21,13 +21,12 @@
 	THE SOFTWARE.
 */
 
-#include "connection.h"
-
 #include <cstdint>
 #include <cstring>
 #include <string_view>
 
 #include "GlobalVars.h"
+#include "connection.h"
 #include "logging/Logger.h"
 #include "packets.h"
 
@@ -409,7 +408,7 @@ void Connection::sendFlexData(uint8_t sensorId, float flexLevel) {
 	));
 }
 
-// PACKET_PROVISIONING_NEW_TRACER 29
+// PACKET_PROVISIONING_NEW_TRACKER 29
 void Connection::sendProvisioningNewTracker(uint8_t mac[6]) {
 	MUST(m_Connected);
 	ProvisioningNewTrackerPacket packet{};
