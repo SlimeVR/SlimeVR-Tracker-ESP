@@ -52,7 +52,7 @@ struct LSM6DSV : LSM6DSOutputHandler {
 	static constexpr float TempTs = 1.0 / TempFreq;
 
 	static constexpr float GyroSensitivity = 1000 / 35.0f;
-	static constexpr float AccelSensitivity = 1000 / 0.244f;
+	static constexpr float AccelSensitivity = 1000 / 0.122f;
 
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
@@ -131,8 +131,8 @@ struct LSM6DSV : LSM6DSOutputHandler {
 		return true;
 	}
 
-	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
-		LSM6DSOutputHandler::template bulkRead<Regs>(
+	bool bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+		return LSM6DSOutputHandler::template bulkRead<Regs>(
 			std::move(callbacks),
 			GyrTs,
 			AccTs,

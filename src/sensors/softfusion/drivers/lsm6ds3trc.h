@@ -54,7 +54,7 @@ struct LSM6DS3TRC {
 	static constexpr float TempTs = 1.0 / TempFreq;
 
 	static constexpr float GyroSensitivity = 28.571428571f;
-	static constexpr float AccelSensitivity = 4098.360655738f;
+	static constexpr float AccelSensitivity = 1000 / 0.122f;
 
 	static constexpr float TemperatureBias = 25.0f;
 	static constexpr float TemperatureSensitivity = 256.0f;
@@ -122,14 +122,14 @@ struct LSM6DS3TRC {
 		return true;
 	}
 
-	void bulkRead(DriverCallbacks<int16_t>&& callbacks) {
+	bool bulkRead(DriverCallbacks<int16_t>&& callbacks) {
 		const auto read_result = m_RegisterInterface.readReg16(Regs::FifoStatus);
 		if (read_result & 0x4000) {  // overrun!
 			// disable and re-enable fifo to clear it
 			m_Logger.debug("Fifo overrun, resetting...");
 			m_RegisterInterface.writeReg(Regs::FifoCtrl5::reg, 0);
 			m_RegisterInterface.writeReg(Regs::FifoCtrl5::reg, Regs::FifoCtrl5::value);
-			return;
+			return true;
 		}
 		const auto unread_entries = read_result & 0x7ff;
 		constexpr auto single_measurement_words = 6;
@@ -156,6 +156,8 @@ struct LSM6DS3TRC {
 			callbacks.processAccelSample(&read_buffer[i + 3], AccTs);
 			callbacks.processTempSample(read_buffer[i + 9], TempTs);
 		}
+
+		return static_cast<size_t>(unread_entries) > read_buffer.size();
 	}
 };  // namespace SlimeVR::Sensors::SoftFusion::Drivers
 

@@ -654,6 +654,9 @@ void Connection::reset() {
 
 	m_UDP.begin(m_ServerPort);
 
+	// Reset server address to broadcast if disconnected
+	m_ServerHost = IPAddress(255, 255, 255, 255);
+
 	statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 }
 
@@ -683,6 +686,9 @@ void Connection::update() {
 			false
 		);
 		m_Logger.warn("Connection to server timed out");
+
+		// Reset server address to broadcast if disconnected
+		m_ServerHost = IPAddress(255, 255, 255, 255);
 
 		return;
 	}

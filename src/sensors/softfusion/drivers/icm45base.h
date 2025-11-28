@@ -238,13 +238,13 @@ struct ICM45Base {
 	// stack overflow and panic
 	std::vector<uint8_t> read_buffer;
 
-	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
+	bool bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		constexpr int16_t InvalidReading = -32768;
 
 		size_t fifo_packets = m_RegisterInterface.readReg16(BaseRegs::FifoCount);
 
 		if (fifo_packets <= 1) {
-			return;
+			return false;
 		}
 
 		// AN-000364
@@ -264,9 +264,9 @@ struct ICM45Base {
 		// can cause FIFO data corruption, from happening.
 		--fifo_packets;
 
-		fifo_packets = std::min(fifo_packets, MaxReadings);
+		auto packets_to_read = std::min(fifo_packets, MaxReadings);
 
-		size_t bytes_to_read = fifo_packets * FullFifoEntrySize;
+		size_t bytes_to_read = packets_to_read * FullFifoEntrySize;
 		m_RegisterInterface
 			.readBytes(BaseRegs::FifoData, bytes_to_read, read_buffer.data());
 
@@ -307,6 +307,8 @@ struct ICM45Base {
 				callbacks.processTempSample(static_cast<int16_t>(entry.temp), TempTs);
 			}
 		}
+
+		return fifo_packets > MaxReadings;
 	}
 
 	template <typename Reg>
