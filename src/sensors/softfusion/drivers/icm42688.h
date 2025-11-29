@@ -195,7 +195,7 @@ struct ICM42688 {
 #if debug_icm42688_20bit
 		std::array<uint8_t, FullFifoEntrySize * 4> read_buffer;
 #else
-		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer
+		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer;
 #endif
 		const auto bytes_to_read = std::min(
 									   static_cast<size_t>(read_buffer.size()),
