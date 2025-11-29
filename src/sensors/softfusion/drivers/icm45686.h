@@ -32,26 +32,14 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 4000dps
 // using high resolution mode
 // Uses 32.768kHz clock
-// Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
+// Gyroscope ODR = 204.8Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 struct ICM45686 : public ICM45Base {
 	static constexpr auto Name = "ICM-45686";
 	static constexpr auto Type = SensorTypeID::ICM45686;
 
-	static constexpr VQFParams SensorVQFParams{
-		.tauAcc = 7.171490,
-		.biasSigmaInit = 0.337976,
-		.biasForgettingTime = 352.235500,
-		.biasClip = 5.0,
-		.biasSigmaMotion = 0.985346,
-		.biasVerticalForgettingFactor = 0.007959,
-		.biasSigmaRest = 0.028897,
-		.restMinT = 4.648680,
-		.restFilterTau = 1.900166,
-		.restThGyr = 2.620598,
-		.restThAcc = 2.142593,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	ICM45686(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
 		: ICM45Base{registerInterface, logger} {}
@@ -75,8 +63,10 @@ struct ICM45686 : public ICM45Base {
 
 	bool initialize() {
 		ICM45Base::softResetIMU();
+#if IMU_USE_EXTERNAL_CLOCK
 		m_RegisterInterface.writeReg(Regs::Pin9Config::reg, Regs::Pin9Config::value);
 		m_RegisterInterface.writeReg(Regs::RtcConfig::reg, Regs::RtcConfig::value);
+#endif
 		return ICM45Base::initializeBase();
 	}
 };

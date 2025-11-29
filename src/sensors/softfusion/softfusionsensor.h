@@ -247,7 +247,7 @@ public:
 		constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6f;
 		elapsed = now - m_lastRotationPacketSent;
 		if (elapsed >= sendInterval) {
-			m_sensor.bulkRead({
+			auto overwhelmed = m_sensor.bulkRead({
 				[&](const auto sample[3], float AccTs) {
 					processAccelSample(sample, AccTs);
 				},
@@ -259,6 +259,9 @@ public:
 				},
 				[&](uint8_t* sample, float MagTs) { processMagSample(sample, MagTs); },
 			});
+			if (overwhelmed) {
+				calibrator.signalOverwhelmed();
+			}
 			if (!m_fusion.isUpdated()) {
 				checkSensorTimeout();
 				return;

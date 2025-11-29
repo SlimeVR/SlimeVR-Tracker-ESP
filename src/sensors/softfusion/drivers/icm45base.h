@@ -34,13 +34,13 @@ namespace SlimeVR::Sensors::SoftFusion::Drivers {
 // and gyroscope range at 4000dps
 // using high resolution mode
 // Uses 32.768kHz clock
-// Gyroscope ODR = 409.6Hz, accel ODR = 102.4Hz
+// Gyroscope ODR = 204.8Hz, accel ODR = 102.4Hz
 // Timestamps reading not used, as they're useless (constant predefined increment)
 
 struct ICM45Base {
 	static constexpr uint8_t Address = 0x68;
 
-	static constexpr float GyrTs = 1.0 / 409.6;
+	static constexpr float GyrTs = 1.0 / 204.8;
 	static constexpr float AccTs = 1.0 / 102.4;
 	static constexpr float TempTs = 1.0 / 409.6;
 
@@ -72,7 +72,7 @@ struct ICM45Base {
 		struct GyroConfig {
 			static constexpr uint8_t reg = 0x1c;
 			static constexpr uint8_t value
-				= (0b0000 << 4) | 0b0111;  // 4000dps, odr=409.6Hz
+				= (0b0000 << 4) | 0b1000;  // 4000dps, odr=204.8Hz
 		};
 
 		struct AccelConfig {
@@ -235,7 +235,7 @@ struct ICM45Base {
 	// stack overflow and panic
 	std::vector<uint8_t> read_buffer;
 
-	void bulkRead(DriverCallbacks<int32_t>&& callbacks) {
+	bool bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		if (magPollingEnabled && millis() - lastMagPollMillis >= MagTs * 1000) {
 			uint8_t magData[9];
 			readAux(magDataReg, magData, magDataWidth == MagDataWidth::SixByte ? 6 : 9);
@@ -252,9 +252,9 @@ struct ICM45Base {
 			return;
 		}
 
-		fifo_packets = std::min(fifo_packets, MaxReadings);
+		auto packets_to_read = std::min(fifo_packets, MaxReadings);
 
-		size_t bytes_to_read = fifo_packets * FullFifoEntrySize;
+		size_t bytes_to_read = packets_to_read * FullFifoEntrySize;
 		m_RegisterInterface
 			.readBytes(BaseRegs::FifoData, bytes_to_read, read_buffer.data());
 
@@ -295,6 +295,8 @@ struct ICM45Base {
 				callbacks.processTempSample(static_cast<int16_t>(entry.temp), TempTs);
 			}
 		}
+
+		return fifo_packets > MaxReadings;
 	}
 
 	template <typename Reg>

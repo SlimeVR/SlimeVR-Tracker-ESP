@@ -1,0 +1,590 @@
+{
+	"$schema": "board-defaults.schema.json",
+	"toolchain": "platformio",
+	"defaults": {
+		"BOARD_SLIMEVR": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "16",
+						"rotation": "DEG_270",
+						"scl": "12",
+						"sda": "14"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "13",
+						"rotation": "DEG_270",
+						"scl": "12",
+						"sda": "14"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 10,
+					"r2": 40.2,
+					"shieldR": 0,
+					"pin": "17"
+				},
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": true,
+				"needManualReboot": true,
+				"shouldOnlyUseDefaults": true
+			}
+		},
+		"BOARD_SLIMEVR_V1_2": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "SPI",
+						"imu": "IMU_AUTO",
+						"int": "2",
+						"cs": "15",
+						"rotation": "DEG_270"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "16",
+						"rotation": "DEG_270",
+						"scl": "5",
+						"sda": "4"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 10,
+					"r2": 40.2,
+					"shieldR": 0,
+					"pin": "17"
+				},
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": true,
+				"needManualReboot": true,
+				"shouldOnlyUseDefaults": true
+			}
+		},
+		"BOARD_SLIMEVR_DEV": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "10",
+						"rotation": "DEG_270",
+						"scl": "5",
+						"sda": "4"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "13",
+						"rotation": "DEG_270",
+						"scl": "5",
+						"sda": "4"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 10,
+					"r2": 40.2,
+					"shieldR": 0,
+					"pin": "17"
+				},
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": true,
+				"needManualReboot": true,
+				"shouldOnlyUseDefaults": true
+			}
+		},
+		"BOARD_WEMOSD1MINI": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "D5",
+						"rotation": "DEG_270",
+						"scl": "D1",
+						"sda": "D2"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_AUTO",
+						"int": "D6",
+						"rotation": "DEG_270",
+						"scl": "D1",
+						"sda": "D2"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "A0"
+				},
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_NODEMCU": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_BNO085",
+						"int": "D5",
+						"rotation": "DEG_270",
+						"scl": "D1",
+						"sda": "D2"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_BNO085",
+						"int": "D6",
+						"rotation": "DEG_270",
+						"scl": "D1",
+						"sda": "D2"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "A0"
+				},
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_ESP01": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_BNO085",
+						"int": "255",
+						"rotation": "DEG_270",
+						"scl": "0",
+						"sda": "2"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_BNO085",
+						"int": "255",
+						"rotation": "DEG_270",
+						"scl": "0",
+						"sda": "2"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_INTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "255"
+				},
+				"LED": {
+					"LED_PIN": "255",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_TTGO_TBASE": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_BNO085",
+						"int": "14",
+						"rotation": "DEG_270",
+						"scl": "4",
+						"sda": "5"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_BNO085",
+						"int": "13",
+						"rotation": "DEG_270",
+						"scl": "4",
+						"sda": "5"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 0,
+					"pin": "A0"
+				},
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_WROOM32": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_BNO085",
+						"int": "23",
+						"rotation": "DEG_270",
+						"scl": "22",
+						"sda": "21"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_BNO085",
+						"int": "25",
+						"rotation": "DEG_270",
+						"scl": "22",
+						"sda": "21"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "36"
+				},
+				"LED": {
+					"LED_PIN": "255",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_LOLIN_C3_MINI": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "6",
+						"rotation": "DEG_270",
+						"scl": "4",
+						"sda": "5"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "8",
+						"rotation": "DEG_270",
+						"scl": "4",
+						"sda": "5"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "3"
+				},
+				"LED": {
+					"LED_PIN": "7",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_BEETLE32C3": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "6",
+						"rotation": "DEG_270",
+						"scl": "9",
+						"sda": "8"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "7",
+						"rotation": "DEG_270",
+						"scl": "9",
+						"sda": "8"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "3"
+				},
+				"LED": {
+					"LED_PIN": "10",
+					"LED_INVERTED": false
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_ESP32C3DEVKITM1": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "6",
+						"rotation": "DEG_270",
+						"scl": "4",
+						"sda": "5"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "7",
+						"rotation": "DEG_270",
+						"scl": "4",
+						"sda": "5"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "3"
+				},
+				"LED": {
+					"LED_PIN": "LED_BUILTIN",
+					"LED_INVERTED": false
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_ESP32C6DEVKITC1": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "6",
+						"rotation": "DEG_270",
+						"scl": "4",
+						"sda": "5"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "7",
+						"rotation": "DEG_270",
+						"scl": "4",
+						"sda": "5"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "3"
+				},
+				"LED": {
+					"LED_PIN": "LED_BUILTIN",
+					"LED_INVERTED": false
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_WEMOSWROOM02": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "0",
+						"rotation": "DEG_270",
+						"scl": "14",
+						"sda": "2"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "4",
+						"rotation": "DEG_270",
+						"scl": "14",
+						"sda": "2"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 220,
+					"shieldR": 180,
+					"pin": "A0"
+				},
+				"LED": {
+					"LED_PIN": "16",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_XIAO_ESP32C3": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "5",
+						"rotation": "DEG_270",
+						"scl": "7",
+						"sda": "6"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "10",
+						"rotation": "DEG_270",
+						"scl": "7",
+						"sda": "6"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 100,
+					"shieldR": 0,
+					"pin": "2"
+				},
+				"LED": {
+					"LED_PIN": "4",
+					"LED_INVERTED": false
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		},
+		"BOARD_ESP32S3_SUPERMINI": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "5",
+						"rotation": "DEG_270",
+						"scl": "6",
+						"sda": "7"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "4",
+						"rotation": "DEG_270",
+						"scl": "6",
+						"sda": "7"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 10,
+					"r2": 40.2,
+					"shieldR": 0,
+					"pin": "A2"
+				},
+				"LED": {
+					"LED_PIN": "LED_BUILTIN",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 0,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
+		}
+	}
+}

@@ -5,3 +5,6 @@ venv/
 cache/
 .idea/
 compile_commands.json
+node_modules/
+dist/
+.nix-platformio
