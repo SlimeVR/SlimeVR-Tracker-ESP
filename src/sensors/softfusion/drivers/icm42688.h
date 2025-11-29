@@ -30,6 +30,8 @@
 #include "callbacks.h"
 #include "vqf.h"
 
+#define debug_icm42688_20bit false
+
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 8g
@@ -47,7 +49,7 @@ struct ICM42688 {
 	static constexpr float TempTs = 1.0 / 200.0;
 
 	static constexpr float MagTs = 1.0 / 100;
-
+#if debug_icm42688_20bit
 	// When 20-bits data format is used, the only FSR settings that are
 	// operational are ±2000dps for gyroscope and ±16g for accelerometer, even if the
 	// FSR selection register settings are configured for other FSR values. The
@@ -55,9 +57,17 @@ struct ICM42688 {
 	// 8192 LSB/g for accelerometer.
 	static constexpr float GyroSensitivity = 131.0f;
 	static constexpr float AccelSensitivity = 8192.0f;
+#else
+	static constexpr float GyroSensitivity = 32.8f;
+	static constexpr float AccelSensitivity = 4096.0f;
+#endif
 
 	static constexpr float TemperatureBias = 25.0f;
+#if debug_icm42688_20bit
 	static constexpr float TemperatureSensitivity = 132.48f;
+#else
+	static constexpr float TemperatureSensitivity = 2.07f;
+#endif
 
 	static constexpr float TemperatureZROChange = 20.0f;
 
@@ -91,9 +101,15 @@ struct ICM42688 {
 		};
 		struct FifoConfig1 {
 			static constexpr uint8_t reg = 0x5f;
+#if debug_icm42688_20bit
 			static constexpr uint8_t value
 				= 0b1 | (0b1 << 1) | (0b1 << 2)
 				| (0b1 << 4);  // fifo accel en=1, gyro=1, temp=1, hires=1
+#else
+			static constexpr uint8_t value
+				= 0b1 | (0b1 << 1) | (0b1 << 2)
+				| (0b0 << 4);  // fifo accel en=1, gyro=1, temp=1, hires=0
+#endif
 		};
 		struct GyroConfig {
 			static constexpr uint8_t reg = 0x4f;
@@ -118,7 +134,7 @@ struct ICM42688 {
 		static constexpr uint8_t FifoCount = 0x2e;
 		static constexpr uint8_t FifoData = 0x30;
 	};
-
+#if debug_icm42688_20bit
 #pragma pack(push, 1)
 	struct FifoEntryAligned {
 		union {
@@ -135,6 +151,21 @@ struct ICM42688 {
 		};
 	};
 #pragma pack(pop)
+#else
+#pragma pack(push, 1)
+	struct FifoEntryAligned {
+		union {
+			struct {
+				int16_t accel[3];
+				int16_t gyro[3];
+				int8_t temp;
+				uint16_t timestamp;
+			} part;
+			uint8_t raw[15];
+		};
+	};
+#pragma pack(pop)
+#endif
 
 	static constexpr size_t FullFifoEntrySize = sizeof(FifoEntryAligned) + 1;
 
@@ -159,9 +190,13 @@ struct ICM42688 {
 
 	bool bulkRead(DriverCallbacks<int32_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
-		// max 4 readings, 8 readings delay too high 6 seems to be the edge to work
-		// reliably. Tested on ESP8266 with 1 IMU
+		// max 4 readings in highres mode 8 readings delay too high 6 seems to be the
+		// edge to work reliably. Tested on ESP8266 with 2 IMU
+#if debug_icm42688_20bit
 		std::array<uint8_t, FullFifoEntrySize * 4> read_buffer;
+#else
+		std::array<uint8_t, FullFifoEntrySize * 8> read_buffer
+#endif
 		const auto bytes_to_read = std::min(
 									   static_cast<size_t>(read_buffer.size()),
 									   static_cast<size_t>(fifo_bytes)
@@ -176,7 +211,7 @@ struct ICM42688 {
 				&read_buffer[i + 0x1],
 				sizeof(FifoEntryAligned)
 			);  // skip fifo header
-
+#if debug_icm42688_20bit
 			// 6.1 Packet Structure for high resolution mode
 			// https://invensense.tdk.com/wp-content/uploads/2020/04/ds-000347_icm-42688-p-datasheet.pdf
 			// When 20-bits data format is used, gyroscope data consists of 19-bits of
@@ -189,9 +224,17 @@ struct ICM42688 {
 				static_cast<int32_t>(entry.part.gyro[2]) << 3
 					| ((entry.part.zlsb & 0xe) >> 1),
 			};
+#else
+			const int32_t gyroData[3]{
+				static_cast<int32_t>(entry.part.gyro[0]),
+				static_cast<int32_t>(entry.part.gyro[1]),
+				static_cast<int32_t>(entry.part.gyro[2]),
+			};
+#endif
 			callbacks.processGyroSample(gyroData, GyrTs);
 
 			if (entry.part.accel[0] != -32768) {
+#if debug_icm42688_20bit
 				// accelerometer data consists of 18-bits of actual data and the two
 				// lowest order bits are always set to 0
 				const int32_t accelData[3]{
@@ -202,6 +245,13 @@ struct ICM42688 {
 					static_cast<int32_t>(entry.part.accel[2]) << 2
 						| (static_cast<int32_t>(entry.part.zlsb) & 0xf0 >> 6),
 				};
+#else
+				const int32_t accelData[3]{
+					static_cast<int32_t>(entry.part.accel[0]),
+					static_cast<int32_t>(entry.part.accel[1]),
+					static_cast<int32_t>(entry.part.accel[2]),
+				};
+#endif
 				callbacks.processAccelSample(accelData, AccTs);
 			}
 
@@ -212,7 +262,6 @@ struct ICM42688 {
 				);
 			}
 		}
-
 		return fifo_bytes > bytes_to_read;
 	}
 };
