@@ -316,8 +316,6 @@ private:
 		calibration.data.runtimeCalibration = this->calibration;
 		configuration.setSensor(sensorId, calibration);
 		configuration.save();
-
-		ledManager.blink(100);
 	}
 
 	enum class CalibrationPrintFlags {
