@@ -123,14 +123,21 @@ void Configuration::save() {
 		file.write((uint8_t*)&config, sizeof(SensorConfig));
 		file.close();
 
-		sprintf(path, DIR_TOGGLES "/%zu", i);
+		if (i < m_SensorToggles.size()) {
+			sprintf(path, DIR_TOGGLES "/%zu", i);
 
-		m_Logger.trace("Saving sensor toggle state for %d", i);
+			m_Logger.trace("Saving sensor toggle state for %d", i);
 
-		file = LittleFS.open(path, "w");
-		auto toggleValues = m_SensorToggles[i].getValues();
-		file.write((uint8_t*)&toggleValues, sizeof(SensorToggleValues));
-		file.close();
+			file = LittleFS.open(path, "w");
+			auto toggleValues = m_SensorToggles[i].getValues();
+			file.write((uint8_t*)&toggleValues, sizeof(SensorToggleValues));
+			file.close();
+		} else {
+			m_Logger.trace(
+				"Skipping saving toggles for sensor %d, no toggles present",
+				i
+			);
+		}
 	}
 
 	{
