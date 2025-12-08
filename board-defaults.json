@@ -307,7 +307,7 @@
 				}
 			},
 			"flashingRules": {
-				"applicationOffset": 0,
+				"applicationOffset": 65536,
 				"needBootPress": false,
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
@@ -346,7 +346,7 @@
 				}
 			},
 			"flashingRules": {
-				"applicationOffset": 0,
+				"applicationOffset": 65536,
 				"needBootPress": false,
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
@@ -385,7 +385,7 @@
 				}
 			},
 			"flashingRules": {
-				"applicationOffset": 0,
+				"applicationOffset": 65536,
 				"needBootPress": false,
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
@@ -424,7 +424,7 @@
 				}
 			},
 			"flashingRules": {
-				"applicationOffset": 0,
+				"applicationOffset": 65536,
 				"needBootPress": false,
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
@@ -463,7 +463,7 @@
 				}
 			},
 			"flashingRules": {
-				"applicationOffset": 0,
+				"applicationOffset": 65536,
 				"needBootPress": false,
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
@@ -502,7 +502,7 @@
 				}
 			},
 			"flashingRules": {
-				"applicationOffset": 0,
+				"applicationOffset": 65536,
 				"needBootPress": false,
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
@@ -541,7 +541,7 @@
 				}
 			},
 			"flashingRules": {
-				"applicationOffset": 0,
+				"applicationOffset": 65536,
 				"needBootPress": false,
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
@@ -580,7 +580,7 @@
 				}
 			},
 			"flashingRules": {
-				"applicationOffset": 0,
+				"applicationOffset": 65536,
 				"needBootPress": false,
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
