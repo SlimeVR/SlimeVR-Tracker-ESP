@@ -21,13 +21,12 @@
 	THE SOFTWARE.
 */
 
-#include "mlx90393.h"
-
 #include <cmath>
 #include <cstdint>
 
 #include "GlobalVars.h"
 #include "Wire.h"
+#include "mlx90393.h"
 
 namespace SlimeVR::Sensors {
 
@@ -50,6 +49,7 @@ void MLX90393::motionSetup() {
 	m_hwInterface->swapIn();
 
 	if (!I2CSCAN::hasDevOnBus(address)) {
+		m_Logger.debug("Couldn't find device on bus!");
 		working = false;
 		return;
 	}
@@ -75,6 +75,7 @@ void MLX90393::motionSetup() {
 	delayMicroseconds(10);
 
 	if (status.error || !status.burstMode) {
+		m_Logger.debug("Burst mode couldn't be started!");
 		working = false;
 		return;
 	}
