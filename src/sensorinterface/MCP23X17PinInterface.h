@@ -55,6 +55,7 @@ public:
 	int digitalRead() override final;
 	void pinMode(uint8_t mode) override final;
 	void digitalWrite(uint8_t val) override final;
+	float analogRead() override final;
 
 	[[nodiscard]] std::string toString() const final {
 		using namespace std::string_literals;

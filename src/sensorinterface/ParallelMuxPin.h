@@ -1,17 +1,14 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Eiren Rain & SlimeVR contributors
-
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
 	in the Software without restriction, including without limitation the rights
 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 	copies of the Software, and to permit persons to whom the Software is
 	furnished to do so, subject to the following conditions:
-
 	The above copyright notice and this permission notice shall be included in
 	all copies or substantial portions of the Software.
-
 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,12 +17,29 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "DirectPinInterface.h"
 
-int DirectPinInterface::digitalRead() { return ::digitalRead(_pinNum); }
+#pragma once
 
-void DirectPinInterface::pinMode(uint8_t mode) { ::pinMode(_pinNum, mode); }
+#include <cstdint>
 
-void DirectPinInterface::digitalWrite(uint8_t val) { ::digitalWrite(_pinNum, val); }
+#include "ParallelMuxInterface.h"
+#include "PinInterface.h"
+namespace SlimeVR {
 
-float DirectPinInterface::analogRead() { return ::analogRead(_pinNum); }
+class ParallelMuxPin : public PinInterface {
+public:
+	ParallelMuxPin(ParallelMuxInterface* mux, uint8_t address);
+
+	void pinMode(uint8_t mode) final;
+	void digitalWrite(uint8_t value) final;
+	int digitalRead() final;
+	float analogRead() final;
+
+	[[nodiscard]] std::string toString() const final;
+
+private:
+	ParallelMuxInterface* const mux;
+	uint8_t address;
+};
+
+}  // namespace SlimeVR

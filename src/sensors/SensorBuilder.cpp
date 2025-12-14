@@ -60,6 +60,24 @@ uint8_t SensorBuilder::buildAllSensors() {
 				  SPISettings(clockFreq, bitOrder, dataMode)
 			  );
 		  };
+	[[maybe_unused]] static auto MUX_PIN
+		= [&](PinInterface* data,
+			  std::vector<PinInterface*>&& addressPins,
+			  uint8_t channel,
+			  PinInterface* enablePin = nullptr,
+			  bool enableActiveLevel = false,
+			  bool addressActiveLevel = true) constexpr {
+			  return interfaceManager.parallelMuxPinInterface().get(
+				  interfaceManager.parallelMuxInterface().get(
+					  data,
+					  addressPins,
+					  enablePin,
+					  enableActiveLevel,
+					  addressActiveLevel
+				  ),
+				  channel
+			  );
+		  };
 
 	// Apply descriptor list and expand to entries
 	SENSOR_DESC_LIST

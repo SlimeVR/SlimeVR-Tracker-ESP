@@ -34,6 +34,8 @@
 #include "I2CPCAInterface.h"
 #include "I2CWireSensorInterface.h"
 #include "MCP23X17PinInterface.h"
+#include "ParallelMuxInterface.h"
+#include "ParallelMuxPin.h"
 #include "SPIImpl.h"
 #include "SensorInterface.h"
 #include "i2cimpl.h"
@@ -97,6 +99,8 @@ public:
 	inline auto& i2cImpl() { return i2cImpls; }
 	inline auto& directSPIInterface() { return directSPIInterfaces; }
 	inline auto& spiImpl() { return spiImpls; }
+	inline auto& parallelMuxInterface() { return parallelMuxInterfaces; }
+	inline auto& parallelMuxPinInterface() { return parallelMuxPinInterfaces; }
 
 private:
 	SensorInterface<DirectPinInterface, int> directPinInterfaces{[](int pin) {
@@ -108,6 +112,16 @@ private:
 	SensorInterface<Sensors::I2CImpl, uint8_t> i2cImpls;
 	SensorInterface<DirectSPIInterface, SPIClass, SPISettings> directSPIInterfaces;
 	SensorInterface<Sensors::SPIImpl, DirectSPIInterface*, PinInterface*> spiImpls;
+	SensorInterface<
+		ParallelMuxInterface,
+		PinInterface*,
+		std::vector<PinInterface*>,
+		PinInterface*,
+		bool,
+		bool>
+		parallelMuxInterfaces;
+	SensorInterface<ParallelMuxPin, ParallelMuxInterface*, uint8_t>
+		parallelMuxPinInterfaces;
 };
 
 }  // namespace SlimeVR
