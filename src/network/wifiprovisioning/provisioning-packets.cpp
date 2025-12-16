@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,26 +20,30 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMEVR_WIFIPROVISIONING_H_
-#define SLIMEVR_WIFIPROVISIONING_H_
+#include "provisioning-packets.h"
 
-#include "logging/Logger.h"
+namespace SlimeVR::Network::ProvisioningPackets {
 
-namespace SlimeVR {
+const char* statusToCstr(ConnectionStatus status) {
+	switch (status) {
+		case ConnectionStatus::Connecting:
+			return "Connecting";
+		case ConnectionStatus::Connected:
+			return "Connected";
+		case ConnectionStatus::ServerFound:
+			return "Server Found";
+	}
+	return "Unknown";
+}
 
-class WifiProvisioning {
-public:
-	void upkeepProvisioning();
-	void startProvisioning();
-	void stopProvisioning();
-	bool isProvisioning() const;
-	void provideNeighbours();
+const char* errorToCstr(ConnectionError error) {
+	switch (error) {
+		case ConnectionError::ConnectionFailed:
+			return "Connection Failed";
+		case ConnectionError::ServerNotFound:
+			return "Server Not Found";
+	}
+	return "Unknown";
+}
 
-private:
-	SlimeVR::Logging::Logger wifiProvisioningLogger{"WiFiProvisioning"};
-	bool provisioning = false;
-};
-
-}  // namespace SlimeVR
-
-#endif  // SLIMEVR_WIFIPROVISIONING_H_
+}  // namespace SlimeVR::Network::ProvisioningPackets

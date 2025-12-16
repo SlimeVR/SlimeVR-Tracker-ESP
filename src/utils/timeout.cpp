@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,40 +20,17 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "wifiprovisioning.h"
+#include "timeout.h"
 
-#include "logging/Logger.h"
-#include "wifihandler.h"
-
-// TODO Currently provisioning implemented via SmartConfig
-// it sucks.
-// TODO: New implementation: https://github.com/SlimeVR/SlimeVR-Tracker-ESP/issues/71
+#include <Arduino.h>
 
 namespace SlimeVR {
 
-void WifiProvisioning::upkeepProvisioning() {
-	// Called even when not provisioning to do things like provide neighbours or other
-	// upkeep
-}
+TimeOut::TimeOut(float lengthSeconds)
+	: lengthMillis{static_cast<uint64_t>(lengthSeconds * 1000)} {}
 
-void WifiProvisioning::startProvisioning() {
-	if (WiFi.beginSmartConfig()) {
-		provisioning = true;
-		wifiProvisioningLogger.info("SmartConfig started");
-	}
-}
+void TimeOut::reset() { startMillis = millis(); }
 
-void WifiProvisioning::stopProvisioning() {
-	WiFi.stopSmartConfig();
-	provisioning = false;
-}
-
-void WifiProvisioning::provideNeighbours() {
-	// TODO: SmartConfig can't do this, created for future
-}
-
-bool WifiProvisioning::isProvisioning() const {
-	return provisioning && !WiFi.smartConfigDone();
-}
+bool TimeOut::elapsed() const { return millis() - startMillis >= lengthMillis; }
 
 }  // namespace SlimeVR

@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -22,5 +22,19 @@
 */
 #pragma once
 
-extern const char* otaPassword;
-extern const char* provisioningPassword;
+#include <cstdint>
+
+namespace SlimeVR {
+
+class TimeOut {
+public:
+	TimeOut(float lengthSeconds);
+	void reset();
+	[[nodiscard]] bool elapsed() const;
+
+private:
+	uint64_t lengthMillis;
+	uint64_t startMillis = 0;
+};
+
+}  // namespace SlimeVR

@@ -52,12 +52,17 @@ bool WiFiNetwork::isConnected() const {
 }
 
 void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
+	wifiProvisioning.stopSearchForProvider();
 	wifiProvisioning.stopProvisioning();
 	tryConnecting(false, SSID, pass);
 	retriedOnG = false;
-	// Reset state, will get back into provisioning if can't connect
-	hadWifi = false;
 	wifiState = WiFiReconnectionStatus::ServerCredAttempt;
+}
+
+void WiFiNetwork::setProvisionedWiFiCredentials(const char* SSID, const char* pass) {
+	tryConnecting(false, SSID, pass);
+	retriedOnG = false;
+	wifiState = WiFiReconnectionStatus::ProvisionedAttempt;
 }
 
 IPAddress WiFiNetwork::getAddress() { return WiFi.localIP(); }
@@ -107,7 +112,6 @@ void WiFiNetwork::setUp() {
 
 void WiFiNetwork::onConnected() {
 	wifiState = WiFiReconnectionStatus::Success;
-	wifiProvisioning.stopProvisioning();
 	statusManager.setStatus(SlimeVR::Status::WIFI_CONNECTING, false);
 	hadWifi = true;
 	wifiHandlerLogger.info(
@@ -144,7 +148,7 @@ String WiFiNetwork::getPassword() {
 WiFiNetwork::WiFiReconnectionStatus WiFiNetwork::getWiFiState() { return wifiState; }
 
 void WiFiNetwork::upkeep() {
-	wifiProvisioning.upkeepProvisioning();
+	wifiProvisioning.tick();
 
 	if (WiFi.status() == WL_CONNECTED) {
 		if (!isConnected()) {
@@ -199,29 +203,25 @@ void WiFiNetwork::upkeep() {
 				wifiState = WiFiReconnectionStatus::Failed;
 			}
 			return;
+		case WiFiReconnectionStatus::ProvisionedAttempt:  // Couldn't connect with
+														  // credentials received from
+														  // provisioning
+			if (!tryProvisionedCredentials()) {
+				wifiState = WiFiReconnectionStatus::Failed;
+			}
 		case WiFiReconnectionStatus::Failed:  // Couldn't connect with second set of
 											  // credentials or server credentials
-// Return to the default PHY Mode N.
-#if ESP8266
-			if constexpr (USE_ATTENUATION) {
-				WiFi.setOutputPower(20.0 - ATTENUATION_N);
+			if (startedProvisioning) {
+				return;
 			}
-			WiFi.setPhyMode(WIFI_PHY_MODE_11N);
-#endif
-			// Start smart config
-			if (!hadWifi && !WiFi.smartConfigDone()
-				&& millis() - wifiConnectionTimeout
-					   >= static_cast<uint32_t>(WiFiTimeoutSeconds * 1000)) {
-				if (WiFi.status() != WL_IDLE_STATUS) {
-					wifiHandlerLogger.error(
-						"Can't connect from any credentials, error: %d, reason: %s.",
-						static_cast<int>(statusToFailure(WiFi.status())),
-						statusToReasonString(WiFi.status())
-					);
-					wifiConnectionTimeout = millis();
-				}
-				wifiProvisioning.startProvisioning();
-			}
+			wifiHandlerLogger.error(
+				"Can't connect from any credentials, error: %d, reason: %s.",
+				static_cast<int>(statusToFailure(WiFi.status())),
+				statusToReasonString(WiFi.status())
+			);
+			wifiHandlerLogger.info("Starting wifi provisioning");
+			wifiProvisioning.startSearchForProvider();
+			startedProvisioning = true;
 			return;
 	}
 }
@@ -342,6 +342,20 @@ bool WiFiNetwork::tryHardcodedCredentials() {
 }
 
 bool WiFiNetwork::tryServerCredentials() {
+	if (WiFi.status() != WL_DISCONNECTED) {
+		return false;
+	}
+
+	if (retriedOnG) {
+		return false;
+	}
+
+	retriedOnG = true;
+
+	return tryConnecting(true);
+}
+
+bool WiFiNetwork::tryProvisionedCredentials() {
 	if (WiFi.status() != WL_DISCONNECTED) {
 		return false;
 	}
