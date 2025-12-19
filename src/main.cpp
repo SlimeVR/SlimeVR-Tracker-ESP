@@ -137,7 +137,10 @@ void setup() {
 
 	// Wait for IMU to boot
 	delay(500);
-
+	logger.info("IMU 1 READ SDA %d SCL %d INT %d", PIN_IMU_SDA, PIN_IMU_SCL, PIN_IMU_INT);
+#ifdef SECOND_IMU
+	logger.info("IMU 2 READ SDA %d SCL %d INT %d", PIN_IMU_SDA, PIN_IMU_SCL, PIN_IMU_INT_2);
+#endif
 	sensorManager.setup();
 
 	networkManager.setup();
