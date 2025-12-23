@@ -57,7 +57,13 @@ void OTA::otaSetup(const char * const otaPassword) {
         else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
         else if (error == OTA_END_ERROR) Serial.println("End Failed");
     });
-    ArduinoOTA.begin();
+#ifdef ESP8266
+	ArduinoOTA.begin(false);
+#endif
+#if ESP32
+	ArduinoOTA.setMdnsEnabled(false);
+	ArduinoOTA.begin();
+#endif
 
     Serial.println("[NOTICE] OTA updates allowed");
 }

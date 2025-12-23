@@ -63,10 +63,24 @@ void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
 IPAddress WiFiNetwork::getAddress() { return WiFi.localIP(); }
 
 void WiFiNetwork::setUp() {
+	static constexpr auto hostnamePrefix = "SlimeVR-FBT-Tracker-";
+	uint8_t mac[6];
+	WiFi.macAddress(mac);
+	String hostname = hostnamePrefix + String(mac[3], HEX) + String(mac[4], HEX)
+					+ String(mac[5], HEX);
+
+	// Disable auto connect on boot. Else we start connecting before we set up
+	// everything
+#if ESP8266
+	if (WiFi.getAutoConnect()) {
+		WiFi.setAutoConnect(false);
+	}
+#endif
+
 	wifiHandlerLogger.info("Setting up WiFi");
 	WiFi.persistent(true);
 	WiFi.mode(WIFI_STA);
-	WiFi.hostname("SlimeVR FBT Tracker");
+	WiFi.hostname(hostname.c_str());
 	wifiHandlerLogger.info(
 		"Loaded credentials for SSID '%s' and pass length %d",
 		getSSID().c_str(),
