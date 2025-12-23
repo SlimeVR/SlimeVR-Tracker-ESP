@@ -158,6 +158,14 @@ void cmdSet(CmdParser* parser) {
 				wifiNetwork.setWiFiCredentials(ssid, ppass);
 				logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
 			}
+		} else if (parser->equalCmdParam(1, "FLASHMODE")) {
+#if defined(ESP8266)
+			logger.info("Entering flash mode...");
+			delay(1000);
+			ESP.rebootIntoUartDownloadMode();
+#else
+			logger.info("Flash mode not supported on this platform!");
+#endif
 		} else {
 			logger.error("CMD SET ERROR: Unrecognized variable to set");
 		}
