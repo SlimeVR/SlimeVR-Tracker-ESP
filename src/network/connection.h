@@ -139,7 +139,6 @@ public:
 private:
 	void updateSensorState(std::vector<std::unique_ptr<::Sensor>>& sensors);
 	void maybeRequestFeatureFlags();
-	bool isSensorStateUpdated(int i, std::unique_ptr<::Sensor>& sensor);
 
 	bool beginPacket();
 	bool endPacket();

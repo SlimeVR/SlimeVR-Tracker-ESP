@@ -47,6 +47,8 @@ public:
 	SensorStatus getSensorState() override final {
 		return SensorStatus::SENSOR_OFFLINE;
 	};
+
+	bool isStateUpdated() final { return false; }
 };
 }  // namespace SlimeVR::Sensors
 
