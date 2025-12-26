@@ -96,7 +96,7 @@ enum class SensorTypeID : uint8_t {
 #define BOARD_GESTURES 21  // Used by Gestures
 #define BOARD_SLIMEVR_V1_2 22  // SlimeVR v1.2
 #define BOARD_ESP32S3_SUPERMINI 23
-#define BOARD_TTGO_TDISPLAY 24 // TTGO T-Display
+#define BOARD_TTGO_TDISPLAY 24  // TTGO T-Display
 #define BOARD_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 #define BAT_EXTERNAL 1
