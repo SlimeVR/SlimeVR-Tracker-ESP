@@ -57,6 +57,22 @@ public:
 		return SensorTypeID::Unknown;
 	}
 
+	void deinitAll() {
+		for (auto& sensor : m_Sensors) {
+			sensor->deinit();
+		}
+	}
+
+	bool allAtRest() {
+		for (auto& sensor : m_Sensors) {
+			if (!sensor->isAtRest()) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 private:
 	SlimeVR::Logging::Logger m_Logger;
 

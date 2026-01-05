@@ -385,6 +385,11 @@ public:
 	uint32_t m_lastTemperaturePacketSent = 0;
 
 	RestCalibrationDetector calibrationDetector;
+	void deinit() final {
+		m_sensor.deinit();
+		magDriver.deinit();
+	}
+	bool isAtRest() final { return m_fusion.getRestDetected(); }
 
 	SoftFusion::MagDriver magDriver;
 

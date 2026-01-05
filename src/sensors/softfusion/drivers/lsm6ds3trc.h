@@ -159,6 +159,10 @@ struct LSM6DS3TRC {
 
 		return static_cast<size_t>(unread_entries) > read_buffer.size();
 	}
-};  // namespace SlimeVR::Sensors::SoftFusion::Drivers
+
+	void deinit() {
+		m_RegisterInterface.writeReg(Regs::Ctrl3C::reg, Regs::Ctrl3C::valueSwReset);
+	}
+};
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers
