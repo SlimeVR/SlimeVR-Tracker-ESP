@@ -176,6 +176,20 @@ struct ICM45Base {
 			static constexpr uint8_t Done = 0b1 << 1;
 			static constexpr uint8_t Busy = 0b1 << 0;
 		};
+
+		// Testing stuff
+
+		struct IPregSys1Reg166 {
+			static constexpr Bank bank = Bank::IPregSys1;
+			static constexpr uint8_t reg = 0xa6;
+			static constexpr uint8_t value = 0b01011011;
+		};
+
+		struct IPregSys2Reg123 {
+			static constexpr Bank bank = Bank::IPregSys2;
+			static constexpr uint8_t reg = 0x7b;
+			static constexpr uint8_t value = 0b00010110;
+		};
 	};
 
 #pragma pack(push, 1)
@@ -225,6 +239,9 @@ struct ICM45Base {
 			BaseRegs::IOCPadScenarioAuxOvrd::reg,
 			BaseRegs::IOCPadScenarioAuxOvrd::value
 		);
+
+		writeBankRegister<BaseRegs::IPregSys1Reg166>();
+		writeBankRegister<BaseRegs::IPregSys2Reg123>();
 
 		read_buffer.resize(FullFifoEntrySize * MaxReadings);
 
@@ -341,7 +358,7 @@ struct ICM45Base {
 
 	template <typename Reg, typename T>
 	void writeBankRegister(T* buffer, size_t length) {
-		auto* bufferBytes = reinterpret_cast<uint8_t*>(buffer);
+		const auto* bufferBytes = reinterpret_cast<const uint8_t*>(buffer);
 
 		uint8_t data[] = {
 			static_cast<uint8_t>(Reg::bank),
