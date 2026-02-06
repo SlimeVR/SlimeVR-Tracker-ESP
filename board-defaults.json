@@ -633,16 +633,16 @@
 						"imu": "IMU_ICM45686",
 						"int": "3",
 						"rotation": "DEG_270",
-						"scl": "18",
-						"sda": "15"
+						"scl": "21",
+						"sda": "22"
 					},
 					{
 						"protocol": "I2C",
 						"imu": "IMU_ICM45686",
 						"int": "14",
 						"rotation": "DEG_270",
-						"scl": "18",
-						"sda": "15"
+						"scl": "21",
+						"sda": "22"
 					}
 				],
 				"BATTERY": {
