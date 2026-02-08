@@ -664,7 +664,6 @@ void Connection::update() {
 		return;
 	}
 
-	m_LastPacketTimestamp = millis();
 	int len = m_UDP.read(m_Packet, sizeof(m_Packet));
 
 #ifdef DEBUG_NETWORK
@@ -679,6 +678,12 @@ void Connection::update() {
 	(void)packetSize;
 #endif
 
+	if (static_cast<ReceivePacketType>(m_Packet[3]) == ReceivePacketType::Handshake) {
+		m_Logger.warn("Handshake received again, ignoring");
+		return;
+	}
+
+	m_LastPacketTimestamp = millis();
 	switch (static_cast<ReceivePacketType>(m_Packet[3])) {
 		case ReceivePacketType::HeartBeat:
 			sendHeartbeat();
@@ -688,8 +693,7 @@ void Connection::update() {
 			break;
 
 		case ReceivePacketType::Handshake:
-			// Assume handshake successful
-			m_Logger.warn("Handshake received again, ignoring");
+			// handled above
 			break;
 
 		case ReceivePacketType::Command:
