@@ -585,6 +585,45 @@
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
 			}
+		},
+		"BOARD_TTGO_TDISPLAY": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "32",
+						"rotation": "DEG_270",
+						"scl": "22",
+						"sda": "21"
+					},
+					{
+						"protocol": "I2C",
+						"imu": "IMU_ICM45686",
+						"int": "33",
+						"rotation": "DEG_270",
+						"scl": "22",
+						"sda": "21"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 100,
+					"r2": 100,
+					"shieldR": 0,
+					"pin": "34"
+				},
+				"LED": {
+					"LED_PIN": "2",
+					"LED_INVERTED": true
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 65536,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
 		}
 	}
 }
