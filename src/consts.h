@@ -99,6 +99,7 @@ enum class SensorTypeID : uint8_t {
 #define BOARD_GENERIC_NRF 24
 #define BOARD_SLIMEVR_BUTTERFLY_DEV 25
 #define BOARD_SLIMEVR_BUTTERFLY 26
+#define BOARD_ESP32C6_SUPERMINI 27
 #define BOARD_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 #define BAT_EXTERNAL 1

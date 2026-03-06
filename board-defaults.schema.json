@@ -118,7 +118,6 @@
 				"BOARD_WEMOSWROOM02",
 				"BOARD_XIAO_ESP32C3",
 				"BOARD_ESP32S3_SUPERMINI",
-				"BOARD_TTGO_TDISPLAY",
 				"BOARD_ESP32C6_SUPERMINI"
 			],
 			"description": "Board Type"
