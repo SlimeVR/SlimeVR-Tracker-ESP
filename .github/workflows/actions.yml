@@ -58,7 +58,7 @@ jobs:
         run: python ./ci/build.py
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: binaries
           path: ./build/*.bin
