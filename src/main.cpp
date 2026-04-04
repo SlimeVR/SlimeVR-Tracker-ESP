@@ -138,7 +138,6 @@ void setup() {
 	// Wait for IMU to boot
 	delay(500);
 	sensorManager.setup();
-
 	networkManager.setup();
 	OTA::otaSetup(otaPassword);
 	battery.Setup();
