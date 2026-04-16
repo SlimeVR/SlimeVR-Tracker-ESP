@@ -259,7 +259,7 @@ void BNO080Sensor::motionLoop() {
 				onTableCalEnabled
 			);
 			m_Logger.info(
-				"BNO08X calibration satus received: Status: %d, Accel: %d, Gyro: %d, "
+				"BNO08X calibration status received: Status: %d, Accel: %d, Gyro: %d, "
 				"Mag: %d, Planar: %d, OnTable: %d",
 				calibrationResponseStatus,
 				accelCalEnabled,
