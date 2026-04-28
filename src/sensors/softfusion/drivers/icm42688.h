@@ -256,6 +256,13 @@ struct ICM42688 {
 		}
 		return fifo_bytes > bytes_to_read;
 	}
+
+	void deinit() {
+		m_RegisterInterface.writeReg(
+			Regs::DeviceConfig::reg,
+			Regs::DeviceConfig::valueSwReset
+		);
+	}
 };
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers

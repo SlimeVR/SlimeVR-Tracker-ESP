@@ -62,6 +62,8 @@ public:
 	void sendData() override final;
 	void startCalibration(int calibrationType) override final;
 	SensorStatus getSensorState() override final;
+	void deinit() final;
+	bool isAtRest() final;
 	bool isFlagSupported(SensorToggles toggle) const final;
 	void sendTempIfNeeded();
 

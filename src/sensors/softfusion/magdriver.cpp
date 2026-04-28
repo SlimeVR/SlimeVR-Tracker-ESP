@@ -49,6 +49,12 @@ std::vector<MagDefinition> MagDriver::supportedMags{
 				);  // LP filter 2, 8x Oversampling, normal mode
 				return true;
 			},
+
+		.deinit =
+			[](MagInterface& interface) {
+				interface.writeByte(0x0b, 0x80);
+				interface.writeByte(0x0b, 0x00);  // Soft reset
+			},
 	},
 	MagDefinition{
 		.name = "IST8306",
@@ -63,6 +69,8 @@ std::vector<MagDefinition> MagDriver::supportedMags{
 
 		.setup =
 			[](MagInterface& interface) {
+				interface.writeByte(0x20, 0x00);  // Make sure suspend is off
+				delay(4);
 				interface.writeByte(0x32, 0x01);  // Soft reset
 				delay(50);
 				interface.writeByte(0x30, 0x20);  // Noise suppression: low
@@ -70,6 +78,11 @@ std::vector<MagDefinition> MagDriver::supportedMags{
 				interface.writeByte(0x31, 0x02);  // Continuous measurement @ 10Hz
 				return true;
 			},
+
+		.deinit =
+			[](MagInterface& interface) {
+				interface.writeByte(0x20, 0x02);  // Suspend
+			}
 	},
 };
 
@@ -103,6 +116,14 @@ bool MagDriver::init(MagInterface&& interface, bool supports9ByteMags) {
 
 	this->interface = interface;
 	return detectedMag.has_value();
+}
+
+void MagDriver::deinit() {
+	if (!detectedMag) {
+		return;
+	}
+
+	detectedMag->deinit(interface);
 }
 
 void MagDriver::startPolling() const {

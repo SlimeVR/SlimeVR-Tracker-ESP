@@ -54,6 +54,7 @@ public:
 	void motionSetup() override final;
 	void motionLoop() override final;
 	void startCalibration(int calibrationType) override final;
+	void deinit() final;
 
 private:
 	MPU6050 imu{};

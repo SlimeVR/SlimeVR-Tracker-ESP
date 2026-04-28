@@ -311,6 +311,8 @@ struct ICM45Base {
 		return fifo_packets > MaxReadings;
 	}
 
+	void deinit() { softResetIMU(); }
+
 	template <typename Reg>
 	uint8_t readBankRegister() {
 		uint8_t buffer;
