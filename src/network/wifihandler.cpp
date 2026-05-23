@@ -223,6 +223,8 @@ void WiFiNetwork::upkeep() {
 				wifiProvisioning.startProvisioning();
 			}
 			return;
+		default:
+			return;
 	}
 }
 

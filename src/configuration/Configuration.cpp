@@ -514,6 +514,8 @@ void Configuration::print() {
 				m_Logger.info("            magEnabled: %d", c.data.bno0XX.magEnabled);
 
 				break;
+			default:
+				break;
 		}
 	}
 }
