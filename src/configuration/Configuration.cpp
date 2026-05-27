@@ -229,10 +229,40 @@ void Configuration::eraseSensors() {
 
 void Configuration::loadSensors() {
 	SlimeVR::Utils::forEachFile(DIR_CALIBRATIONS, [&](SlimeVR::Utils::File f) {
-		SensorConfig sensorConfig;
-		f.read((uint8_t*)&sensorConfig, sizeof(SensorConfig));
-
 		uint8_t sensorId = strtoul(f.name(), nullptr, 10);
+
+		if (f.size() != sizeof(SensorConfig)) {
+			m_Logger.warn(
+				"Skipping incompatible sensor calibration file index %d (size=%u expected=%u)",
+				sensorId,
+				static_cast<unsigned>(f.size()),
+				static_cast<unsigned>(sizeof(SensorConfig))
+			);
+			return;
+		}
+
+		SensorConfig sensorConfig{};
+		auto bytesRead = f.read((uint8_t*)&sensorConfig, sizeof(SensorConfig));
+		if (bytesRead != sizeof(SensorConfig)) {
+			m_Logger.warn(
+				"Skipping unreadable sensor calibration file index %d (read=%u "
+				"expected=%u)",
+				sensorId,
+				static_cast<unsigned>(bytesRead),
+				static_cast<unsigned>(sizeof(SensorConfig))
+			);
+			return;
+		}
+
+		if (sensorConfig.type > SensorConfigType::RUNTIME_CALIBRATION) {
+			m_Logger.warn(
+				"Skipping sensor calibration file index %d with invalid type=%d",
+				sensorId,
+				static_cast<int>(sensorConfig.type)
+			);
+			return;
+		}
+
 		m_Logger.debug(
 			"Found sensor calibration for %s at index %d",
 			calibrationConfigTypeToString(sensorConfig.type),
