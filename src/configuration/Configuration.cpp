@@ -233,7 +233,8 @@ void Configuration::loadSensors() {
 
 		if (f.size() != sizeof(SensorConfig)) {
 			m_Logger.warn(
-				"Skipping incompatible sensor calibration file index %d (size=%u expected=%u)",
+				"Skipping incompatible sensor calibration file index %d (size=%u "
+				"expected=%u)",
 				sensorId,
 				static_cast<unsigned>(f.size()),
 				static_cast<unsigned>(sizeof(SensorConfig))
