@@ -22,29 +22,28 @@
 */
 #include "manager.h"
 
+#include <memory>
+
+#include "CommunicationStrategy.h"
 #include "GlobalVars.h"
+#include "network/wifi/WiFiCommunication.h"
 
 namespace SlimeVR::Network {
 
-void Manager::setup() { wifiNetwork.setUp(); }
+void Manager::setup() {
+	wifiConnection.init();
 
-void Manager::update() {
-	wifiNetwork.upkeep();
+	communication = std::make_unique<WiFiComms::WiFiCommunication>(wifiConnection);
+	communication->init();
+}
 
-	auto wasConnected = m_IsConnected;
+void Manager::update() { communication->tick(); }
 
-	m_IsConnected = wifiNetwork.isConnected();
+CommunicationStrategy& Manager::comms() { return *communication; }
 
-	if (!m_IsConnected) {
-		return;
-	}
-
-	if (!wasConnected) {
-		// WiFi was reconnected, rediscover the server and reconnect
-		networkConnection.reset();
-	}
-
-	networkConnection.update();
+void Manager::connectToWiFiWithCredentials(const char* SSID, const char* pass) {
+	wifiConnection.setWiFiCredentials(SSID, pass);
+	communication = std::make_unique<WiFiComms::WiFiCommunication>(wifiConnection);
 }
 
 }  // namespace SlimeVR::Network

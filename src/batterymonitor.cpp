@@ -114,7 +114,7 @@ void BatteryMonitor::Loop() {
 			} else if (level < 0) {
 				level = 0;
 			}
-			networkConnection.sendBatteryLevel(voltage, level);
+			networkManager.comms().sendBatteryLevel(voltage, level);
 #ifdef BATTERY_LOW_POWER_VOLTAGE
 			if (voltage < BATTERY_LOW_POWER_VOLTAGE) {
 #if defined(BATTERY_LOW_VOLTAGE_DEEP_SLEEP) && BATTERY_LOW_VOLTAGE_DEEP_SLEEP

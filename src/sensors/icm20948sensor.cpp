@@ -25,6 +25,7 @@
 #include <i2cscan.h>
 
 #include "GlobalVars.h"
+#include "SensorErrorCodes.h"
 #include "calibration.h"
 
 // seconds after previous save (from start) when calibration (DMP Bias) data will be
@@ -68,20 +69,11 @@ void ICM20948Sensor::motionLoop() {
 		float mY = imu.magY();
 		float mZ = imu.magZ();
 
-		networkConnection.sendInspectionRawIMUData(
+		networkManager.comms().sendInspectionRawIMUData(
 			sensorId,
-			rX,
-			rY,
-			rZ,
-			255,
-			aX,
-			aY,
-			aZ,
-			255,
-			mX,
-			mY,
-			mZ,
-			255
+			{rX, rY, rZ},
+			{aX, aY, aZ},
+			{mX, mY, mZ}
 		);
 	}
 #endif
@@ -126,25 +118,18 @@ void ICM20948Sensor::sendData() {
 		newFusedRotation = false;
 
 #if (USE_6_AXIS)
-		{
-			networkConnection
-				.sendRotationData(sensorId, &fusedRotation, DATA_TYPE_NORMAL, 0);
-		}
+		{ networkManager.comms().sendRotation(sensorId, fusedRotation, 0); }
 #else
 		{
-			networkConnection.sendRotationData(
-				sensorId,
-				&fusedRotation,
-				DATA_TYPE_NORMAL,
-				dmpData.Quat9.Data.Accuracy
-			);
+			networkManager.comms()
+				.sendRotation(sensorId, fusedRotation, dmpData.Quat9.Data.Accuracy);
 		}
 #endif
 
 #if SEND_ACCELERATION
 		if (newAcceleration) {
 			newAcceleration = false;
-			networkConnection.sendSensorAcceleration(sensorId, acceleration);
+			networkManager.comms().sendAcceleration(sensorId, acceleration);
 		}
 #endif
 	}
@@ -332,9 +317,9 @@ void ICM20948Sensor::checkSensorTimeout() {
 			addr,
 			currenttime - lastData
 		);
-		networkConnection.sendSensorError(
+		networkManager.comms().sendSensorError(
 			this->sensorId,
-			static_cast<uint8_t>(PacketErrorCode::WATCHDOG_TIMEOUT)
+			SensorErrorCode::WATCHDOG_TIMEOUT
 		);
 		lastData = currenttime;
 	}

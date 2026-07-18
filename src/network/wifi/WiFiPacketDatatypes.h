@@ -26,8 +26,9 @@
 
 #include <cstdint>
 
-#include "../consts.h"
-#include "../sensors/sensor.h"
+#include "../../consts.h"
+#include "../../sensors/SensorErrorCodes.h"
+#include "../../sensors/sensor.h"
 
 enum class SendPacketType : uint8_t {
 	HeartBeat = 0,
@@ -46,7 +47,7 @@ enum class SendPacketType : uint8_t {
 	SensorInfo = 15,
 	// Rotation2 = 16,
 	RotationData = 17,
-	MagnetometerAccuracy = 18,
+	// MagnetometerAccuracy = 18,
 	SignalStrength = 19,
 	Temperature = 20,
 	// UserAction = 21,
@@ -82,16 +83,6 @@ enum class InspectionDataType : uint8_t {
 	Float = 2,
 };
 
-// From the SH-2 interface that BNO08x use.
-enum class PacketErrorCode : uint8_t {
-	NOT_APPLICABLE = 0,
-	POWER_ON_RESET = 1,
-	INTERNAL_SYSTEM_RESET = 2,
-	WATCHDOG_TIMEOUT = 3,
-	EXTERNAL_RESET = 4,
-	OTHER = 5,
-};
-
 #pragma pack(push, 1)
 
 template <typename T>
@@ -110,29 +101,34 @@ struct BigEndian {
 	T value{};
 };
 
-struct AccelPacket {
+template <SendPacketType PacketType>
+struct BasePacket {
+	static constexpr SendPacketType packetType = PacketType;
+};
+
+struct AccelPacket : BasePacket<SendPacketType::Accel> {
 	BigEndian<float> x;
 	BigEndian<float> y;
 	BigEndian<float> z;
 	uint8_t sensorId{};
 };
 
-struct BatteryLevelPacket {
+struct BatteryLevelPacket : BasePacket<SendPacketType::BatteryLevel> {
 	BigEndian<float> batteryVoltage;
 	BigEndian<float> batteryPercentage;
 };
 
-struct TapPacket {
+struct TapPacket : BasePacket<SendPacketType::Tap> {
 	uint8_t sensorId;
 	uint8_t value;
 };
 
-struct ErrorPacket {
+struct ErrorPacket : BasePacket<SendPacketType::Error> {
 	uint8_t sensorId;
-	uint8_t error;
+	SensorErrorCode error;
 };
 
-struct SensorInfoPacket {
+struct SensorInfoPacket : BasePacket<SendPacketType::SensorInfo> {
 	uint8_t sensorId{};
 	SensorStatus sensorState{};
 	SensorTypeID sensorType{};
@@ -148,7 +144,7 @@ struct SensorInfoPacket {
 	BigEndian<float> dataCounterAveragedTps;
 };
 
-struct RotationDataPacket {
+struct RotationDataPacket : BasePacket<SendPacketType::RotationData> {
 	uint8_t sensorId{};
 	uint8_t dataType{};
 	BigEndian<float> x;
@@ -158,32 +154,28 @@ struct RotationDataPacket {
 	uint8_t accuracyInfo{};
 };
 
-struct MagnetometerAccuracyPacket {
-	uint8_t sensorId{};
-	BigEndian<float> accuracyInfo;
-};
-
-struct SignalStrengthPacket {
+struct SignalStrengthPacket : BasePacket<SendPacketType::SignalStrength> {
 	uint8_t sensorId;
 	uint8_t signalStrength;
 };
 
-struct TemperaturePacket {
+struct TemperaturePacket : BasePacket<SendPacketType::Temperature> {
 	uint8_t sensorId{};
 	BigEndian<float> temperature;
 };
 
-struct AcknowledgeConfigChangePacket {
+struct AcknowledgeConfigChangePacket
+	: BasePacket<SendPacketType::AcknowledgeConfigChange> {
 	uint8_t sensorId{};
 	BigEndian<SensorToggles> configType;
 };
 
-struct FlexDataPacket {
+struct FlexDataPacket : BasePacket<SendPacketType::FlexData> {
 	uint8_t sensorId{};
 	BigEndian<float> flexLevel;
 };
 
-struct IntRawImuDataInspectionPacket {
+struct IntRawImuDataInspectionPacket : BasePacket<SendPacketType::Inspection> {
 	InspectionPacketType inspectionPacketType{};
 	uint8_t sensorId{};
 	InspectionDataType inspectionDataType{};
@@ -204,7 +196,7 @@ struct IntRawImuDataInspectionPacket {
 	uint8_t mA{};
 };
 
-struct FloatRawImuDataInspectionPacket {
+struct FloatRawImuDataInspectionPacket : BasePacket<SendPacketType::Inspection> {
 	InspectionPacketType inspectionPacketType{};
 	uint8_t sensorId{};
 	InspectionDataType inspectionDataType{};

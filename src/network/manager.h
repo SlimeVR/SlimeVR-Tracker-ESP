@@ -23,10 +23,10 @@
 #ifndef SLIMEVR_NETWORK_MANAGER_H_
 #define SLIMEVR_NETWORK_MANAGER_H_
 
-#include "globals.h"
-#include "packets.h"
-#include "wifihandler.h"
-#include "wifiprovisioning.h"
+#include <memory>
+
+#include "CommunicationStrategy.h"
+#include "network/wifi/WiFiConnection.h"
 
 namespace SlimeVR::Network {
 
@@ -35,8 +35,14 @@ public:
 	void setup();
 	void update();
 
+	CommunicationStrategy& comms();
+
+	void connectToWiFiWithCredentials(const char* SSID, const char* pass);
+
 private:
-	bool m_IsConnected = false;
+	std::unique_ptr<CommunicationStrategy> communication;
+
+	WiFiComms::WiFiConnection wifiConnection;
 };
 
 }  // namespace SlimeVR::Network

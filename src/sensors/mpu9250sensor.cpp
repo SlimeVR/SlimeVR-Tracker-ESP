@@ -165,20 +165,11 @@ void MPU9250Sensor::motionLoop() {
 		imu.getAcceleration(&aX, &aY, &aZ);
 		imu.getMagnetometer(&mX, &mY, &mZ);
 
-		networkConnection.sendInspectionRawIMUData(
+		networkManager.comms().sendInspectionRawIMUData(
 			sensorId,
-			rX,
-			rY,
-			rZ,
-			255,
-			aX,
-			aY,
-			aZ,
-			255,
-			mX,
-			mY,
-			mZ,
-			255
+			{rX, rY, rZ},
+			{aX, aY, aZ},
+			{mX, mY, mZ}
 		);
 	}
 #endif
@@ -296,8 +287,8 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 
 	union fifo_sample_raw buf;
 
-	imu.resetFIFO(
-	);  // fifo is sure to have filled up in the seconds of delay, don't try reading it.
+	imu.resetFIFO();  // fifo is sure to have filled up in the seconds of delay, don't
+					  // try reading it.
 	for (int i = 0; i < calibrationSamples; i++) {
 		// wait for new sample
 		while (!getNextSample(&buf, nullptr)) {

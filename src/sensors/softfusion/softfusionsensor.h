@@ -31,6 +31,7 @@
 #include "../../GlobalVars.h"
 #include "../../sensorinterface/SensorInterface.h"
 #include "../RestCalibrationDetector.h"
+#include "../SensorErrorCodes.h"
 #include "../sensor.h"
 #include "TempGradientCalculator.h"
 #include "imuconsts.h"
@@ -96,7 +97,7 @@ class SoftFusionSensor : public Sensor {
 		uint32_t elapsed = now - m_lastTemperaturePacketSent;
 		if (elapsed >= sendInterval) {
 			m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
-			networkConnection.sendTemperature(sensorId, lastReadTemperature);
+			networkManager.comms().sendTemperature(sensorId, lastReadTemperature);
 		}
 	}
 
@@ -193,9 +194,9 @@ public:
 			addr,
 			now - m_lastRotationUpdateMillis
 		);
-		networkConnection.sendSensorError(
+		networkManager.comms().sendSensorError(
 			this->sensorId,
-			static_cast<uint8_t>(PacketErrorCode::WATCHDOG_TIMEOUT)
+			SensorErrorCode::WATCHDOG_TIMEOUT
 		);
 	}
 

@@ -93,7 +93,7 @@ void SensorManager::update() {
 
 	statusManager.setStatus(SlimeVR::Status::IMU_ERROR, !allIMUGood);
 
-	if (!networkConnection.isConnected()) {
+	if (!networkManager.comms().isConnected()) {
 		return;
 	}
 
@@ -126,9 +126,6 @@ void SensorManager::update() {
 #endif
 
 	sensorManagerNetworkingBM.before();
-#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
-	networkConnection.beginBundle();
-#endif
 
 	for (auto& sensor : m_Sensors) {
 		if (sensor->isWorking()) {
@@ -136,9 +133,6 @@ void SensorManager::update() {
 		}
 	}
 
-#if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
-	networkConnection.endBundle();
-#endif
 	sensorManagerNetworkingBM.after();
 }
 

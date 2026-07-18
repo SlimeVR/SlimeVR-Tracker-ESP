@@ -23,7 +23,6 @@
 #include "wifiprovisioning.h"
 
 #include "logging/Logger.h"
-#include "wifihandler.h"
 
 // TODO Currently provisioning implemented via SmartConfig
 // it sucks.

@@ -23,6 +23,14 @@
 #ifndef SLIMEVR_WIFIPROVISIONING_H_
 #define SLIMEVR_WIFIPROVISIONING_H_
 
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#else
+#include <WiFi.h>
+#include <esp_wifi.h>
+#include <esp_wifi_types.h>
+#endif
+
 #include "logging/Logger.h"
 
 namespace SlimeVR {

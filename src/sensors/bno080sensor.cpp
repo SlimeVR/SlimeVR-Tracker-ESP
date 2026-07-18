@@ -24,6 +24,7 @@
 #include "sensors/bno080sensor.h"
 
 #include "GlobalVars.h"
+#include "SensorErrorCodes.h"
 #include "utils.h"
 
 void BNO080Sensor::motionSetup() {
@@ -166,20 +167,11 @@ void BNO080Sensor::motionLoop() {
 
 				// only send Data when we have a set of new data
 
-				networkConnection.sendInspectionRawIMUData(
+				networkManager.comms().sendInspectionRawIMUData(
 					sensorId,
-					rX,
-					rY,
-					rZ,
-					rA,
-					aX,
-					aY,
-					aZ,
-					aA,
-					mX,
-					mY,
-					mZ,
-					mA
+					{rX, rY, rZ},
+					{aX, aY, aZ},
+					{mX, mY, mZ}
 				);
 			}
 		}
@@ -302,7 +294,10 @@ void BNO080Sensor::motionLoop() {
 		uint8_t rr = imu.resetReason();
 		if (rr != lastReset) {
 			lastReset = rr;
-			networkConnection.sendSensorError(this->sensorId, rr);
+			networkManager.comms().sendSensorError(
+				this->sensorId,
+				static_cast<SensorErrorCode>(rr)
+			);
 		}
 
 		m_Logger.error(
@@ -335,12 +330,8 @@ SensorStatus BNO080Sensor::getSensorState() {
 void BNO080Sensor::sendData() {
 	if (newFusedRotation) {
 		newFusedRotation = false;
-		networkConnection.sendRotationData(
-			sensorId,
-			&fusedRotation,
-			DATA_TYPE_NORMAL,
-			calibrationAccuracy
-		);
+		networkManager.comms()
+			.sendRotation(sensorId, fusedRotation, calibrationAccuracy);
 
 #ifdef DEBUG_SENSOR
 		m_Logger.trace("Quaternion: %f, %f, %f, %f", UNPACK_QUATERNION(fusedRotation));
@@ -349,10 +340,7 @@ void BNO080Sensor::sendData() {
 #if SEND_ACCELERATION
 		if (newAcceleration) {
 			newAcceleration = false;
-			networkConnection.sendSensorAcceleration(
-				this->sensorId,
-				this->acceleration
-			);
+			networkManager.comms().sendAcceleration(this->sensorId, this->acceleration);
 		}
 #endif
 	}
@@ -360,7 +348,7 @@ void BNO080Sensor::sendData() {
 	sendTempIfNeeded();
 
 	if (tap != 0) {
-		networkConnection.sendSensorTap(sensorId, tap);
+		networkManager.comms().sendSensorTap(sensorId, tap);
 		tap = 0;
 	}
 }
@@ -372,7 +360,7 @@ void BNO080Sensor::sendTempIfNeeded() {
 	uint32_t elapsed = now - m_lastTemperaturePacketSent;
 	if (elapsed >= sendInterval) {
 		m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
-		networkConnection.sendTemperature(sensorId, lastReadTemperature);
+		networkManager.comms().sendTemperature(sensorId, lastReadTemperature);
 	}
 }
 

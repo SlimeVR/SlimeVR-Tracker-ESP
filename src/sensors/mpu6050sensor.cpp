@@ -144,21 +144,8 @@ void MPU6050Sensor::motionLoop() {
 		imu.getRotation(&rX, &rY, &rZ);
 		imu.getAcceleration(&aX, &aY, &aZ);
 
-		networkConnection.sendInspectionRawIMUData(
-			sensorId,
-			rX,
-			rY,
-			rZ,
-			255,
-			aX,
-			aY,
-			aZ,
-			255,
-			0,
-			0,
-			0,
-			255
-		);
+		networkManager.comms()
+			.sendInspectionRawIMUData(sensorId, {rX, rY, rZ}, {aX, aY, aZ}, {0, 0, 0});
 	}
 #endif
 
