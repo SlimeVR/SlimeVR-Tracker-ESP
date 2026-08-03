@@ -94,7 +94,8 @@
 			"oneOf": [
 				{ "$ref": "#/$defs/I2C_BUS" },
 				{ "$ref": "#/$defs/SPI_BUS" }
-			]
+			],
+			"required": ["protocol"]
 		},
 
 		"I2C_BUS": {
@@ -102,14 +103,14 @@
 			"description": "I2C bus pin settings",
 			"properties": {
 				"protocol": { "const": "I2C" },
-				"sda": { "$ref": "#/$defs/pin", "description": "SDA Pin"},
+				"sda": { "$ref": "#/$defs/pin", "description": "SDA Pin" },
 				"scl": { "$ref": "#/$defs/pin", "description": "SCL Pin" },
 				"imus": {
 					"type": "array",
 					"items": { "$ref": "#/$defs/I2C_IMU" }
 				}
 			},
-			"required": ["sda", "scl"]
+			"required": ["protocol", "sda", "scl", "imus"]
 		},
 
 		"SPI_BUS": {
@@ -125,7 +126,7 @@
 					"items": { "$ref": "#/$defs/SPI_IMU" }
 				}
 			},
-			"required": ["sck", "miso", "mosi"]
+			"required": ["protocol", "sck", "miso", "mosi", "imus"]
 		},
 
 		"IMU": {
