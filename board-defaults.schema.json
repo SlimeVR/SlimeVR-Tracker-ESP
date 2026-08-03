@@ -106,8 +106,11 @@
 				"sda": { "$ref": "#/$defs/pin", "description": "SDA Pin" },
 				"scl": { "$ref": "#/$defs/pin", "description": "SCL Pin" },
 				"imus": {
+					"description": "I2C IMUs",
 					"type": "array",
-					"items": { "$ref": "#/$defs/I2C_IMU" }
+					"items": { "$ref": "#/$defs/I2C_IMU" },
+					"minItems": 1,
+					"maxItems": 2
 				}
 			},
 			"required": ["protocol", "sda", "scl", "imus"]
@@ -123,7 +126,10 @@
 				"mosi": { "$ref": "#/$defs/pin", "description": "MOSI Pin" },
 				"imus": {
 					"type": "array",
-					"items": { "$ref": "#/$defs/SPI_IMU" }
+					"description": "SPI IMUs",
+					"items": { "$ref": "#/$defs/SPI_IMU" },
+					"minItems": 1,
+					"maxItems": 2
 				}
 			},
 			"required": ["protocol", "sck", "miso", "mosi", "imus"]
