@@ -42,18 +42,13 @@ DirectSPIInterface::DirectSPIInterface(
 	, m_mosi{mosi} {}
 
 bool DirectSPIInterface::init() {
-	const bool customPinsConfigured
-		= m_sck != 255 && m_miso != 255 && m_mosi != 255;
+	const bool customPinsConfigured = m_sck != 255 && m_miso != 255 && m_mosi != 255;
 #if defined(ESP32)
 	// To make sure SCK, MISO, MOSI pins have already defined
 	if (customPinsConfigured) {
 		// SPIClass::begin() requires int8_t
 		// for kepping uint_8 style, doing transform here
-		m_spiClass->begin(
-			(int8_t)m_sck,
-			(int8_t)m_miso,
-			(int8_t)m_mosi
-		);
+		m_spiClass->begin((int8_t)m_sck, (int8_t)m_miso, (int8_t)m_mosi);
 	} else {
 		// or use the default pin defines
 		m_spiClass->begin();
@@ -61,14 +56,12 @@ bool DirectSPIInterface::init() {
 
 #elif defined(ESP8266)
 	if (customPinsConfigured) {
-		const bool overlapPins
-			= m_sck == 6 && m_miso == 7 && m_mosi == 8;
+		const bool overlapPins = m_sck == 6 && m_miso == 7 && m_mosi == 8;
 		// SPIClass::pins() requires an SS argument even though SlimeVR manages CS
 		// separately for each sensor through PinInterface. ESP8266 overlap mode
 		// specifically requires GPIO0, while the standard HSPI pin set uses the
 		// core-defined SS pin (GPIO15).
-		const int8_t hardwareSs
-			= overlapPins ? 0 : static_cast<int8_t>(SS);
+		const int8_t hardwareSs = overlapPins ? 0 : static_cast<int8_t>(SS);
 
 		if (!m_spiClass->pins(
 				static_cast<int8_t>(m_sck),

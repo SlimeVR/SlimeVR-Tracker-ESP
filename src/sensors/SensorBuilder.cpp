@@ -53,23 +53,18 @@ uint8_t SensorBuilder::buildAllSensors() {
 		= [&](uint8_t scl, uint8_t sda, uint8_t addr, uint8_t ch) {
 			  return interfaceManager.pcaWireInterface().get(scl, sda, addr, ch);
 		  };
-	[[maybe_unused]] const auto DIRECT_SPI
-		= [&](uint32_t clockFreq,
-			  uint8_t bitOrder,
-			  uint8_t dataMode,
-			  // Default to 255 to allow DIRECT_SPI() to be called without
-			  // explicit pins, making DirectSPIInterface use the board defaults.
-			  uint8_t sck = 255,
-			  uint8_t miso = 255,
-			  uint8_t mosi = 255) {
-			  return interfaceManager.directSPIInterface().get(
-				  &SPI,
-				  SPISettings(clockFreq, bitOrder, dataMode),
-				  sck,
-				  miso,
-				  mosi
-			  );
-		  };
+	[[maybe_unused]] const auto DIRECT_SPI =
+		[&](uint32_t clockFreq,
+			uint8_t bitOrder,
+			uint8_t dataMode,
+			// Default to 255 to allow DIRECT_SPI() to be called without
+			// explicit pins, making DirectSPIInterface use the board defaults.
+			uint8_t sck = 255,
+			uint8_t miso = 255,
+			uint8_t mosi = 255) {
+			return interfaceManager.directSPIInterface()
+				.get(&SPI, SPISettings(clockFreq, bitOrder, dataMode), sck, miso, mosi);
+		};
 
 	// Apply descriptor list and expand to entries
 	SENSOR_DESC_LIST
