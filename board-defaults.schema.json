@@ -57,8 +57,6 @@
 			"properties": {
 				"protocol": { "const": "I2C" },
 				"imu": { "$ref": "#/$defs/IMU_TYPE" },
-				"sda": { "$ref": "#/$defs/pin", "description": "SDA Pin" },
-				"scl": { "$ref": "#/$defs/pin", "description": "SCL Pin" },
 				"int": { "$ref": "#/$defs/pin", "description": "INT Pin" },
 				"address": {
 					"type": "number",
@@ -88,13 +86,44 @@
 			"required": ["protocol", "imu", "cs"]
 		},
 
+		"BUS": {
+			"type": "object",
+			"discriminator": {
+				"propertyName": "protocol"
+			},
+			"oneOf": [
+				{ "$ref": "#/$defs/I2C_BUS" },
+				{ "$ref": "#/$defs/SPI_BUS" }
+			]
+		},
+
+		"I2C_BUS": {
+			"type": "object",
+			"description": "I2C bus pin settings",
+			"properties": {
+				"protocol": { "const": "I2C" },
+				"sda": { "$ref": "#/$defs/pin", "description": "SDA Pin"},
+				"scl": { "$ref": "#/$defs/pin", "description": "SCL Pin" },
+				"imus": {
+					"type": "array",
+					"items": { "$ref": "#/$defs/I2C_IMU" }
+				}
+			},
+			"required": ["sda", "scl"]
+		},
+
 		"SPI_BUS": {
 			"type": "object",
-			"description": "Shared SPI bus pin settings",
+			"description": "SPI bus pin settings",
 			"properties": {
+				"protocol": { "const": "SPI" },
 				"sck": { "$ref": "#/$defs/pin", "description": "SCK Pin" },
 				"miso": { "$ref": "#/$defs/pin", "description": "MISO Pin" },
-				"mosi": { "$ref": "#/$defs/pin", "description": "MOSI Pin" }
+				"mosi": { "$ref": "#/$defs/pin", "description": "MOSI Pin" },
+				"imus": {
+					"type": "array",
+					"items": { "$ref": "#/$defs/SPI_IMU" }
+				}
 			},
 			"required": ["sck", "miso", "mosi"]
 		},
