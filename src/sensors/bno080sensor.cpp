@@ -135,6 +135,13 @@ void BNO080Sensor::motionSetup() {
 	configured = true;
 	m_tpsCounter.reset();
 	m_dataCounter.reset();
+
+	toggles.onToggleChange([&](SensorToggles toggle, bool) {
+		if (toggle == SensorToggles::MagEnabled) {
+			// TODO: maybe handle this more gracefully, I'm sure it's possible
+			motionSetup();
+		}
+	});
 }
 
 void BNO080Sensor::motionLoop() {
@@ -252,7 +259,7 @@ void BNO080Sensor::motionLoop() {
 				onTableCalEnabled
 			);
 			m_Logger.info(
-				"BNO08X calibration satus received: Status: %d, Accel: %d, Gyro: %d, "
+				"BNO08X calibration status received: Status: %d, Accel: %d, Gyro: %d, "
 				"Mag: %d, Planar: %d, OnTable: %d",
 				calibrationResponseStatus,
 				accelCalEnabled,
@@ -299,7 +306,7 @@ void BNO080Sensor::motionLoop() {
 		}
 
 		m_Logger.error(
-			"Sensor %d doesn't respond. Last reset reason:",
+			"Sensor %d doesn't respond. Last reset reason: %d",
 			sensorId,
 			lastReset
 		);

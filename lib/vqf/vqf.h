@@ -56,7 +56,7 @@ struct VQFParams {
 	 *
 	 * Default value: 3.0 s
 	 */
-	vqf_real_t tauAcc = 3.0;
+	vqf_real_t tauAcc = 4.337983;
 	/**
 	 * @brief Time constant \f$\tau_\mathrm{mag}\f$ for magnetometer update in seconds.
 	 *
@@ -106,7 +106,7 @@ struct VQFParams {
 	 *
 	 * Default value: 0.5 °/s
 	 */
-	vqf_real_t biasSigmaInit = 0.5;
+	vqf_real_t biasSigmaInit = 3.219453;
 	/**
 	 * @brief Time in which the bias estimation uncertainty increases from 0 °/s to 0.1
 	 * °/s (in seconds).
@@ -115,7 +115,7 @@ struct VQFParams {
 	 *
 	 * Default value: 100.0 s
 	 */
-	vqf_real_t biasForgettingTime = 100.0;
+	vqf_real_t biasForgettingTime = 136.579346;
 	/**
 	 * @brief Maximum expected gyroscope bias (in degrees per second).
 	 *
@@ -126,7 +126,7 @@ struct VQFParams {
 	 *
 	 * Default value: 2.0 °/s
 	 */
-	vqf_real_t biasClip = 2.0;
+	vqf_real_t biasClip = 5.0;
 #ifndef VQF_NO_MOTION_BIAS_ESTIMATION
 	/**
 	 * @brief Standard deviation of the converged bias estimation uncertainty during
@@ -137,7 +137,7 @@ struct VQFParams {
 	 *
 	 * Default value: 0.1 °/s
 	 */
-	vqf_real_t biasSigmaMotion = 0.1;
+	vqf_real_t biasSigmaMotion = 0.348501;
 	/**
 	 * @brief Forgetting factor for unobservable bias in vertical direction during
 	 * motion.
@@ -149,7 +149,7 @@ struct VQFParams {
 	 *
 	 * Default value: 0.0001
 	 */
-	vqf_real_t biasVerticalForgettingFactor = 0.0001;
+	vqf_real_t biasVerticalForgettingFactor = 0.007056;
 #endif
 	/**
 	 * @brief Standard deviation of the converged bias estimation uncertainty during
@@ -160,7 +160,7 @@ struct VQFParams {
 	 *
 	 * Default value: 0.03 °
 	 */
-	vqf_real_t biasSigmaRest = 0.03;
+	vqf_real_t biasSigmaRest = 0.063616;
 
 	/**
 	 * @brief Time threshold for rest detection (in seconds).
@@ -170,7 +170,7 @@ struct VQFParams {
 	 *
 	 * Default value: 1.5 s
 	 */
-	vqf_real_t restMinT = 1.5;
+	vqf_real_t restMinT = 2.586910;
 	/**
 	 * @brief Time constant for the low-pass filter used in rest detection (in seconds).
 	 *
@@ -179,7 +179,7 @@ struct VQFParams {
 	 *
 	 * Default value: 0.5 s
 	 */
-	vqf_real_t restFilterTau = 0.5;
+	vqf_real_t restFilterTau = 1.114532;
 	/**
 	 * @brief Angular velocity threshold for rest detection (in °/s).
 	 *
@@ -189,7 +189,7 @@ struct VQFParams {
 	 *
 	 * Default value: 2.0 °/s
 	 */
-	vqf_real_t restThGyr = 2.0;
+	vqf_real_t restThGyr = 1.399189;
 	/**
 	 * @brief Acceleration threshold for rest detection (in m/s²).
 	 *
@@ -198,7 +198,7 @@ struct VQFParams {
 	 *
 	 * Default value: 0.5 m/s²
 	 */
-	vqf_real_t restThAcc = 0.5;
+	vqf_real_t restThAcc = 1.418598;
 
 	/**
 	 * @brief Time constant for current norm/dip value in magnetic disturbance detection

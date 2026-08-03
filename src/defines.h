@@ -71,7 +71,7 @@
 // #define PIN_BATTERY_LEVEL 17
 // #define LED_PIN 2
 // #define LED_INVERTED true
-// #define BATTERY_SHILED_RESISTANCE 0
+// #define BATTERY_SHIELD_RESISTANCE 0
 // #define BATTERY_SHIELD_R1 10
 // #define BATTERY_SHIELD_R2 40.2
 

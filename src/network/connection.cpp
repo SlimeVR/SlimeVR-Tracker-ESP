@@ -23,6 +23,8 @@
 
 #include "connection.h"
 
+#include <string_view>
+
 #include "GlobalVars.h"
 #include "logging/Logger.h"
 #include "packets.h"
@@ -163,10 +165,14 @@ bool Connection::sendPacketNumber() {
 }
 
 bool Connection::sendShortString(const char* str) {
-	uint8_t size = strlen(str);
+	size_t size = strlen(str);
 
-	MUST_TRANSFER_BOOL(sendByte(size));
-	MUST_TRANSFER_BOOL(sendBytes((const uint8_t*)str, size));
+	assert(size <= 255);
+
+	MUST_TRANSFER_BOOL(sendByte(static_cast<uint8_t>(size)));
+	if (size > 0) {
+		MUST_TRANSFER_BOOL(sendBytes((const uint8_t*)str, size));
+	}
 
 	return true;
 }
@@ -381,6 +387,16 @@ void Connection::sendTrackerDiscovery() {
 			// Tracker type to hint the server if it's a glove or normal tracker or
 			// something else
 			MUST_TRANSFER_BOOL(sendByte(static_cast<uint8_t>(TRACKER_TYPE)));
+			static_assert(std::string_view{VENDOR_NAME}.size() <= 255);
+			MUST_TRANSFER_BOOL(sendShortString(VENDOR_NAME));
+			static_assert(std::string_view{VENDOR_URL}.size() <= 255);
+			MUST_TRANSFER_BOOL(sendShortString(VENDOR_URL));
+			static_assert(std::string_view{PRODUCT_NAME}.size() <= 255);
+			MUST_TRANSFER_BOOL(sendShortString(PRODUCT_NAME));
+			static_assert(std::string_view{UPDATE_ADDRESS}.size() <= 255);
+			MUST_TRANSFER_BOOL(sendShortString(UPDATE_ADDRESS));
+			static_assert(std::string_view{UPDATE_NAME}.size() <= 255);
+			MUST_TRANSFER_BOOL(sendShortString(UPDATE_NAME));
 			return true;
 		},
 		0
@@ -612,6 +628,9 @@ void Connection::reset() {
 
 	m_UDP.begin(m_ServerPort);
 
+	// Reset server address to broadcast if disconnected
+	m_ServerHost = IPAddress(255, 255, 255, 255);
+
 	statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 }
 
@@ -642,6 +661,9 @@ void Connection::update() {
 		);
 		m_Logger.warn("Connection to server timed out");
 
+		// Reset server address to broadcast if disconnected
+		m_ServerHost = IPAddress(255, 255, 255, 255);
+
 		return;
 	}
 
@@ -650,7 +672,6 @@ void Connection::update() {
 		return;
 	}
 
-	m_LastPacketTimestamp = millis();
 	int len = m_UDP.read(m_Packet, sizeof(m_Packet));
 
 #ifdef DEBUG_NETWORK
@@ -665,6 +686,12 @@ void Connection::update() {
 	(void)packetSize;
 #endif
 
+	if (static_cast<ReceivePacketType>(m_Packet[3]) == ReceivePacketType::Handshake) {
+		m_Logger.warn("Handshake received again, ignoring");
+		return;
+	}
+
+	m_LastPacketTimestamp = millis();
 	switch (static_cast<ReceivePacketType>(m_Packet[3])) {
 		case ReceivePacketType::HeartBeat:
 			sendHeartbeat();
@@ -674,8 +701,7 @@ void Connection::update() {
 			break;
 
 		case ReceivePacketType::Handshake:
-			// Assume handshake successful
-			m_Logger.warn("Handshake received again, ignoring");
+			// handled above
 			break;
 
 		case ReceivePacketType::Command:

@@ -32,12 +32,13 @@ def get_matrix() -> List[DeviceConfiguration]:
     matrix: List[DeviceConfiguration] = []
 
     config = configparser.ConfigParser()
-    config.read("./platformio-tools.ini")
+    config.read("./platformio.ini")
     for section in config.sections():
-        if section == "env":
+        split = section.split(":")
+        if len(split) != 2 or split[0] != 'env':
             continue
 
-        board = section.split(":")[1]
+        board = split[1]
         platform = config[section]["platform"]
         platformio_board = config[section]["board"]
 
@@ -51,32 +52,11 @@ def get_matrix() -> List[DeviceConfiguration]:
 
 def prepare() -> None:
     print(f"🡢 {COLOR_CYAN}Preparation{COLOR_RESET}")
-
-    print(f"  🡢 {COLOR_GRAY}Backing up platformio.ini{COLOR_RESET}")
-    shutil.copy("./platformio.ini", "platformio.ini.bak")
-
-    print(
-        f"  🡢 {COLOR_GRAY}Switching platformio.ini to platformio-tools.ini{COLOR_RESET}")
-    shutil.copy("./platformio-tools.ini", "platformio.ini")
-
     if os.path.exists("./build"):
         print(f"  🡢 {COLOR_GRAY}Removing existing build folder...{COLOR_RESET}")
         shutil.rmtree("./build")
-
     print(f"  🡢 {COLOR_GRAY}Creating build folder...{COLOR_RESET}")
     os.mkdir("./build")
-
-    print(f"  🡢 {COLOR_GREEN}Success!{COLOR_RESET}")
-
-
-def cleanup() -> None:
-    print(f"🡢 {COLOR_CYAN}Cleanup{COLOR_RESET}")
-
-    print(f"  🡢 {COLOR_GRAY}Restoring platformio.ini...{COLOR_RESET}")
-    shutil.copy("platformio.ini.bak", "platformio.ini")
-
-    print(f"  🡢 {COLOR_GRAY}Removing platformio.ini.bak...{COLOR_RESET}")
-    os.remove("platformio.ini.bak")
 
     print(f"  🡢 {COLOR_GREEN}Success!{COLOR_RESET}")
 
@@ -135,7 +115,6 @@ def build_for_device(device: DeviceConfiguration) -> bool:
 def main() -> None:
     prepare()
     code = build()
-    cleanup()
 
     sys.exit(code)
 

@@ -23,9 +23,18 @@
 
 #include "SensorManager.h"
 
+#include <array>
+
+#include "../debugging/Benchmark.h"
 #include "SensorBuilder.h"
 
 namespace SlimeVR::Sensors {
+
+std::array<SlimeVR::Debugging::Benchmark, 2> sensorLoopBMs{
+	SlimeVR::Debugging::Benchmark{"IMU1 Sensor loop"},
+	SlimeVR::Debugging::Benchmark{"IMU2 Sensor loop"}
+};
+SlimeVR::Debugging::Benchmark sensorManagerNetworkingBM{"sensorManager Network"};
 
 void SensorManager::setup() {
 	if (m_MCP.begin_I2C()) {
@@ -60,7 +69,12 @@ void SensorManager::postSetup() {
 void SensorManager::update() {
 	// Gather IMU data
 	bool allIMUGood = true;
+	size_t sensorId = 0;
 	for (auto& sensor : m_Sensors) {
+		if (sensorId < sensorLoopBMs.size()) {
+			sensorLoopBMs[sensorId].before();
+		}
+
 		if (sensor->isWorking()) {
 			if (sensor->m_hwInterface != nullptr) {
 				sensor->m_hwInterface->swapIn();
@@ -70,6 +84,11 @@ void SensorManager::update() {
 		if (sensor->getSensorState() == SensorStatus::SENSOR_ERROR) {
 			allIMUGood = false;
 		}
+
+		if (sensorId < sensorLoopBMs.size()) {
+			sensorLoopBMs[sensorId].after();
+		}
+		sensorId++;
 	}
 
 	statusManager.setStatus(SlimeVR::Status::IMU_ERROR, !allIMUGood);
@@ -106,6 +125,7 @@ void SensorManager::update() {
 	m_LastBundleSentAtMicros = now;
 #endif
 
+	sensorManagerNetworkingBM.before();
 #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
 	networkConnection.beginBundle();
 #endif
@@ -119,6 +139,7 @@ void SensorManager::update() {
 #if PACKET_BUNDLING != PACKET_BUNDLING_DISABLED
 	networkConnection.endBundle();
 #endif
+	sensorManagerNetworkingBM.after();
 }
 
 }  // namespace SlimeVR::Sensors

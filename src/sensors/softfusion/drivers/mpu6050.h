@@ -30,6 +30,7 @@
 #include <cstdint>
 
 #include "../../../sensorinterface/RegisterInterface.h"
+#include "callbacks.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
@@ -69,13 +70,7 @@ struct MPU6050 {
 
 	static constexpr float TemperatureZROChange = 1.6f;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 20.0f,
-		.biasClip = 40.0f,
-		.restThGyr = 20.0f,
-		.restThAcc = 0.784f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	RegisterInterface& m_RegisterInterface;
 	SlimeVR::Logging::Logger& m_Logger;
@@ -181,12 +176,7 @@ struct MPU6050 {
 		return result;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTempSample
-	) {
+	bool bulkRead(DriverCallbacks<int16_t>&& callbacks) {
 		const auto status = m_RegisterInterface.readReg(Regs::IntStatus);
 
 		if (status & (1 << MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) {
@@ -194,7 +184,7 @@ struct MPU6050 {
 			// This necessitates a reset
 			m_Logger.debug("Fifo overrun, resetting...");
 			resetFIFO();
-			return;
+			return true;
 		}
 
 		std::array<uint8_t, 12 * 10>
@@ -204,7 +194,7 @@ struct MPU6050 {
 		auto readBytes = min(static_cast<size_t>(byteCount), readBuffer.size())
 					   / sizeof(FifoSample) * sizeof(FifoSample);
 		if (!readBytes) {
-			return;
+			return false;
 		}
 
 		m_RegisterInterface.readBytes(Regs::FifoData, readBytes, readBuffer.data());
@@ -216,14 +206,16 @@ struct MPU6050 {
 			xyz[0] = MPU6050_FIFO_VALUE(sample, accel_x);
 			xyz[1] = MPU6050_FIFO_VALUE(sample, accel_y);
 			xyz[2] = MPU6050_FIFO_VALUE(sample, accel_z);
-			processAccelSample(xyz, AccTs);
+			callbacks.processAccelSample(xyz, AccTs);
 
 			xyz[0] = MPU6050_FIFO_VALUE(sample, gyro_x);
 			xyz[1] = MPU6050_FIFO_VALUE(sample, gyro_y);
 			xyz[2] = MPU6050_FIFO_VALUE(sample, gyro_z);
-			processGyroSample(xyz, GyrTs);
+			callbacks.processGyroSample(xyz, GyrTs);
 		}
+
+		return byteCount > readBytes;
 	}
-};
+};  // namespace SlimeVR::Sensors::SoftFusion::Drivers
 
 }  // namespace SlimeVR::Sensors::SoftFusion::Drivers

@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2024 Gorbit99 & SlimeVR Contributors
+	Copyright (c) 2026 Gorbit99, unlogisch04 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -23,38 +23,45 @@
 
 #pragma once
 
-#include "icm45base.h"
-#include "vqf.h"
+#include <Arduino.h>
 
-namespace SlimeVR::Sensors::SoftFusion::Drivers {
+#include <cmath>
+#include <cstdint>
+#include <limits>
 
-// Driver uses acceleration range at 32g
-// and gyroscope range at 4000dps
-// using high resolution mode
-// Uses 32.768kHz clock
-// Gyroscope ODR = 204.8Hz, accel ODR = 102.4Hz
-// Timestamps reading not used, as they're useless (constant predefined increment)
+#include "../logging/Logger.h"
 
-struct ICM45605 : public ICM45Base {
-	static constexpr auto Name = "ICM-45605";
-	static constexpr auto Type = SensorTypeID::ICM45605;
+namespace SlimeVR::Debugging {
 
-	static constexpr VQFParams SensorVQFParams{};
+class Benchmark {
+public:
+	Benchmark(const char* name);
+	Benchmark(const Benchmark& other) = delete;
+	Benchmark(Benchmark&& other) = delete;
+	Benchmark& operator=(const Benchmark& other) = delete;
+	Benchmark& operator=(Benchmark&& other) = delete;
 
-	ICM45605(RegisterInterface& registerInterface, SlimeVR::Logging::Logger& logger)
-		: ICM45Base{registerInterface, logger} {}
+	void before();
+	void after();
 
-	struct Regs {
-		struct WhoAmI {
-			static constexpr uint8_t reg = 0x72;
-			static constexpr uint8_t value = 0xe5;
-		};
-	};
+private:
+	static constexpr float ReportsIntervalSeconds = 10.0f;
 
-	bool initialize() {
-		ICM45Base::softResetIMU();
-		return ICM45Base::initializeBase();
-	}
+	void printReport();
+	void reset();
+
+	uint32_t lastReportMillis = millis();
+
+	uint64_t currentMeasurementStartMicros = 0;
+
+	uint64_t totalTimeTakenMicros = 0;
+	uint64_t minTimeTakenMicros = std::numeric_limits<uint64_t>::max();
+	uint64_t maxTimeTakenMicros = 0;
+	uint32_t measurementCount = 0;
+
+	const char* name;
+
+	SlimeVR::Logging::Logger m_Logger = SlimeVR::Logging::Logger("Benchmark");
 };
 
-}  // namespace SlimeVR::Sensors::SoftFusion::Drivers
+}  // namespace SlimeVR::Debugging

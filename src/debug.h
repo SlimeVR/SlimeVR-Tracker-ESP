@@ -39,6 +39,8 @@
 		   // disable if problems. Server does nothing with value so disabled atm
 #define SEND_ACCELERATION true  // send linear acceleration to the server
 
+#define EXT_SERIAL_COMMANDS false  // Set to true to enable extra serial debug commands
+
 // Debug information
 
 #define LOG_LEVEL LOG_LEVEL_DEBUG
@@ -94,7 +96,7 @@
 // Not recommended for production
 #define ENABLE_INSPECTION false
 
-#define PROTOCOL_VERSION 20
+#define PROTOCOL_VERSION 22
 
 #ifndef FIRMWARE_VERSION
 #define FIRMWARE_VERSION "UNKNOWN"
@@ -104,10 +106,8 @@
 #define USE_RUNTIME_CALIBRATION true
 #endif
 
-#define DEBUG_MEASURE_SENSOR_TIME_TAKEN false
-
-#ifndef DEBUG_MEASURE_SENSOR_TIME_TAKEN
-#define DEBUG_MEASURE_SENSOR_TIME_TAKEN false
+#ifndef DEBUG_MEASURE_TIME_TAKEN
+#define DEBUG_MEASURE_TIME_TAKEN false
 #endif
 
 #ifndef USE_OTA_TIMEOUT

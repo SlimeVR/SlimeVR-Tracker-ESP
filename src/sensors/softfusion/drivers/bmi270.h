@@ -31,13 +31,14 @@
 
 #include "../../../sensorinterface/RegisterInterface.h"
 #include "bmi270fw.h"
+#include "callbacks.h"
 #include "vqf.h"
 
 namespace SlimeVR::Sensors::SoftFusion::Drivers {
 
 // Driver uses acceleration range at 16g
 // and gyroscope range at 1000dps
-// Gyroscope ODR = 400Hz, accel ODR = 100Hz
+// Gyroscope ODR = 200Hz, accel ODR = 100Hz
 // Timestamps reading are not used
 
 struct BMI270 {
@@ -45,7 +46,7 @@ struct BMI270 {
 	static constexpr auto Name = "BMI270";
 	static constexpr auto Type = SensorTypeID::BMI270;
 
-	static constexpr float GyrTs = 1.0 / 400.0;
+	static constexpr float GyrTs = 1.0 / 200.0;
 	static constexpr float AccTs = 1.0 / 100.0;
 
 	static constexpr float MagTs = 1.0 / 100;
@@ -55,13 +56,7 @@ struct BMI270 {
 
 	static constexpr float TemperatureZROChange = 6.667f;
 
-	static constexpr VQFParams SensorVQFParams{
-		.motionBiasEstEnabled = true,
-		.biasSigmaInit = 0.5f,
-		.biasClip = 1.0f,
-		.restThGyr = 0.5f,
-		.restThAcc = 0.196f,
-	};
+	static constexpr VQFParams SensorVQFParams{};
 
 	struct MotionlessCalibrationData {
 		bool valid;
@@ -137,7 +132,7 @@ struct BMI270 {
 			static constexpr uint8_t filterHighPerfMode = 1 << 7;
 
 			static constexpr uint8_t value
-				= rate400Hz | DLPFModeNorm | noisePerfMode | filterHighPerfMode;
+				= rate200Hz | DLPFModeNorm | noisePerfMode | filterHighPerfMode;
 		};
 
 		struct GyrRange {
@@ -258,6 +253,7 @@ struct BMI270 {
 			Regs::InitCtrl::reg,
 			Regs::InitCtrl::valueStartInit
 		);
+		auto* firmware_buffer = new uint8_t[RegisterInterface::MaxTransactionLength];
 		for (uint16_t pos = 0; pos < sizeof(bmi270_firmware);) {
 			// tell the device current position
 
@@ -273,13 +269,11 @@ struct BMI270 {
 				static_cast<size_t>(sizeof(bmi270_firmware) - pos),
 				RegisterInterface::MaxTransactionLength
 			);
-			m_RegisterInterface.writeBytes(
-				Regs::InitData,
-				burstWrite,
-				const_cast<uint8_t*>(bmi270_firmware + pos)
-			);
+			memcpy_P(firmware_buffer, bmi270_firmware + pos, burstWrite);
+			m_RegisterInterface.writeBytes(Regs::InitData, burstWrite, firmware_buffer);
 			pos += burstWrite;
 		}
+		delete[] firmware_buffer;
 		m_RegisterInterface.writeReg(Regs::InitCtrl::reg, Regs::InitCtrl::valueEndInit);
 		delay(140);
 
@@ -434,12 +428,7 @@ struct BMI270 {
 		return to_ret;
 	}
 
-	template <typename AccelCall, typename GyroCall, typename TempCall>
-	void bulkRead(
-		AccelCall&& processAccelSample,
-		GyroCall&& processGyroSample,
-		TempCall&& processTempSample
-	) {
+	bool bulkRead(DriverCallbacks<int16_t>&& callbacks) {
 		const auto fifo_bytes = m_RegisterInterface.readReg16(Regs::FifoCount);
 
 		const auto bytes_to_read = std::min(
@@ -481,7 +470,7 @@ struct BMI270 {
 						static_cast<int32_t>(ShortLimit::min()),
 						static_cast<int32_t>(ShortLimit::max())
 					);
-					processGyroSample(gyro, GyrTs);
+					callbacks.processGyroSample(gyro, GyrTs);
 				}
 
 				if (header & Fifo::AccelDataBit) {
@@ -489,10 +478,12 @@ struct BMI270 {
 					accel[0] = getFromFifo<uint16_t>(i, read_buffer);
 					accel[1] = getFromFifo<uint16_t>(i, read_buffer);
 					accel[2] = getFromFifo<uint16_t>(i, read_buffer);
-					processAccelSample(accel, AccTs);
+					callbacks.processAccelSample(accel, AccTs);
 				}
 			}
 		}
+
+		return fifo_bytes > bytes_to_read;
 	}
 };
 

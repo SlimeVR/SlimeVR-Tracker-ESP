@@ -95,6 +95,11 @@ enum class SensorTypeID : uint8_t {
 #define BOARD_GLOVE_IMU_SLIMEVR_DEV 20  // IMU Glove
 #define BOARD_GESTURES 21  // Used by Gestures
 #define BOARD_SLIMEVR_V1_2 22  // SlimeVR v1.2
+#define BOARD_ESP32S3_SUPERMINI 23
+#define BOARD_GENERIC_NRF 24
+#define BOARD_SLIMEVR_BUTTERFLY_DEV 25
+#define BOARD_SLIMEVR_BUTTERFLY 26
+#define BOARD_ESP32C6_SUPERMINI 27
 #define BOARD_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 #define BAT_EXTERNAL 1
@@ -151,6 +156,8 @@ enum class SensorTypeID : uint8_t {
 #define MCU_ESP32_C3 6
 #define MCU_MOCOPI 7  // Used by mocopi/moslime
 #define MCU_HARITORA 8  // Used by Haritora/SlimeTora
+#define MCU_NRF52 9
+#define MCU_NRF54L 10
 #define MCU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
 enum class SensorDataType : uint8_t {

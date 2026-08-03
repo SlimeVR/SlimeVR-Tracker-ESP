@@ -25,13 +25,18 @@
 
 #include <LittleFS.h>
 
+#include <cstdint>
+#include <cstring>
+
 #include "../FSHelper.h"
 #include "consts.h"
+#include "sensors/SensorToggles.h"
 #include "utils.h"
 
 #define DIR_CALIBRATIONS "/calibrations"
 #define DIR_TEMPERATURE_CALIBRATIONS "/tempcalibrations"
-#define DIR_TOGGLES "/toggles"
+#define DIR_TOGGLES_OLD "/toggles"
+#define DIR_TOGGLES "/sensortoggles"
 
 namespace SlimeVR::Configuration {
 void Configuration::setup() {
@@ -118,19 +123,39 @@ void Configuration::save() {
 		file.write((uint8_t*)&config, sizeof(SensorConfig));
 		file.close();
 
-		sprintf(path, DIR_TOGGLES "/%zu", i);
+		if (i < m_SensorToggles.size()) {
+			sprintf(path, DIR_TOGGLES "/%zu", i);
 
-		m_Logger.trace("Saving sensor toggle state for %d", i);
+			m_Logger.trace("Saving sensor toggle state for %d", i);
 
-		file = LittleFS.open(path, "w");
-		file.write((uint8_t*)&m_SensorToggles[i], sizeof(SensorToggleState));
-		file.close();
+			file = LittleFS.open(path, "w");
+			auto toggleValues = m_SensorToggles[i].getValues();
+			file.write((uint8_t*)&toggleValues, sizeof(SensorToggleValues));
+			file.close();
+		} else {
+			m_Logger.trace(
+				"Skipping saving toggles for sensor %d, no toggles present",
+				i
+			);
+		}
 	}
 
 	{
 		File file = LittleFS.open("/config.bin", "w");
 		file.write((uint8_t*)&m_Config, sizeof(DeviceConfig));
 		file.close();
+	}
+
+	// Clean up old toggles directory
+	if (LittleFS.exists(DIR_TOGGLES_OLD)) {
+		char path[17] = DIR_TOGGLES_OLD;
+		char* end = path + strlen(DIR_TOGGLES_OLD);
+		Utils::forEachFile(DIR_TOGGLES_OLD, [&](SlimeVR::Utils::File file) {
+			sprintf(end, "/%s", file.name());
+			LittleFS.remove(path);
+			file.close();
+		});
+		LittleFS.rmdir(DIR_TOGGLES_OLD);
 	}
 
 	m_Logger.debug("Saved configuration");
@@ -204,10 +229,41 @@ void Configuration::eraseSensors() {
 
 void Configuration::loadSensors() {
 	SlimeVR::Utils::forEachFile(DIR_CALIBRATIONS, [&](SlimeVR::Utils::File f) {
-		SensorConfig sensorConfig;
-		f.read((uint8_t*)&sensorConfig, sizeof(SensorConfig));
-
 		uint8_t sensorId = strtoul(f.name(), nullptr, 10);
+
+		if (f.size() != sizeof(SensorConfig)) {
+			m_Logger.warn(
+				"Skipping incompatible sensor calibration file index %d (size=%u "
+				"expected=%u)",
+				sensorId,
+				static_cast<unsigned>(f.size()),
+				static_cast<unsigned>(sizeof(SensorConfig))
+			);
+			return;
+		}
+
+		SensorConfig sensorConfig{};
+		auto bytesRead = f.read((uint8_t*)&sensorConfig, sizeof(SensorConfig));
+		if (bytesRead != sizeof(SensorConfig)) {
+			m_Logger.warn(
+				"Skipping unreadable sensor calibration file index %d (read=%u "
+				"expected=%u)",
+				sensorId,
+				static_cast<unsigned>(bytesRead),
+				static_cast<unsigned>(sizeof(SensorConfig))
+			);
+			return;
+		}
+
+		if (sensorConfig.type > SensorConfigType::RUNTIME_CALIBRATION) {
+			m_Logger.warn(
+				"Skipping sensor calibration file index %d with invalid type=%d",
+				sensorId,
+				static_cast<int>(sensorConfig.type)
+			);
+			return;
+		}
+
 		m_Logger.debug(
 			"Found sensor calibration for %s at index %d",
 			calibrationConfigTypeToString(sensorConfig.type),
@@ -226,14 +282,34 @@ void Configuration::loadSensors() {
 		setSensor(sensorId, sensorConfig);
 	});
 
+	if (LittleFS.exists(DIR_TOGGLES_OLD)) {
+		SlimeVR::Utils::forEachFile(DIR_TOGGLES_OLD, [&](SlimeVR::Utils::File f) {
+			SensorToggleValues values;
+			// Migration for pre 0.7.0 togglestate, the values started at offset 20 and
+			// there were 3 of them
+			f.seek(20);
+			f.read(reinterpret_cast<uint8_t*>(&values), 3);
+
+			uint8_t sensorId = strtoul(f.name(), nullptr, 10);
+			m_Logger.debug("Found sensor toggle state at index %d", sensorId);
+
+			setSensorToggles(sensorId, SensorToggleState{values});
+		});
+	}
+
 	SlimeVR::Utils::forEachFile(DIR_TOGGLES, [&](SlimeVR::Utils::File f) {
-		SensorToggleState sensorToggleState;
-		f.read((uint8_t*)&sensorToggleState, sizeof(SensorToggleState));
+		if (f.size() > sizeof(SensorToggleValues)) {
+			return;
+		}
+		SensorToggleValues values;
+		// With the magic of C++ default initialization, the rest of the values should
+		// be their default after reading
+		f.read(reinterpret_cast<uint8_t*>(&values), f.size());
 
 		uint8_t sensorId = strtoul(f.name(), nullptr, 10);
 		m_Logger.debug("Found sensor toggle state at index %d", sensorId);
 
-		setSensorToggles(sensorId, sensorToggleState);
+		setSensorToggles(sensorId, SensorToggleState{values});
 	});
 }
 
@@ -437,6 +513,8 @@ void Configuration::print() {
 			case SensorConfigType::BNO0XX:
 				m_Logger.info("            magEnabled: %d", c.data.bno0XX.magEnabled);
 
+				break;
+			default:
 				break;
 		}
 	}

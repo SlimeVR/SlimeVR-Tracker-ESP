@@ -46,8 +46,8 @@ public:
 	size_t size() const { return m_File.size(); }
 	bool isDirectory() { return m_File.isDirectory(); }
 	bool seek(size_t pos) { return m_File.seek(pos); }
-	bool read(uint8_t* buffer, size_t size) { return m_File.read(buffer, size); }
-	bool write(const uint8_t* buffer, size_t size) {
+	size_t read(uint8_t* buffer, size_t size) { return m_File.read(buffer, size); }
+	size_t write(const uint8_t* buffer, size_t size) {
 		return m_File.write(buffer, size);
 	}
 	void close() { return m_File.close(); }

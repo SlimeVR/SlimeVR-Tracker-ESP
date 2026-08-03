@@ -1,14 +1,17 @@
 /*
 	SlimeVR Code is placed under the MIT license
 	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
+
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
 	in the Software without restriction, including without limitation the rights
 	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 	copies of the Software, and to permit persons to whom the Software is
 	furnished to do so, subject to the following conditions:
+
 	The above copyright notice and this permission notice shall be included in
 	all copies or substantial portions of the Software.
+
 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,38 +21,57 @@
 	THE SOFTWARE.
 */
 
-#include "TimeTaken.h"
+#pragma once
 
-namespace SlimeVR::Debugging {
+#include <functional>
+#include <optional>
 
-TimeTakenMeasurer::TimeTakenMeasurer(const char* name)
-	: name{name} {}
+#include "logging/Logger.h"
+#include "sensorinterface/RegisterInterface.h"
 
-void TimeTakenMeasurer::before() { startMicros = micros(); }
+namespace SlimeVR::Sensors::SoftFusion {
 
-void TimeTakenMeasurer::after() {
-	uint64_t elapsedMicros = micros() - startMicros;
-	timeTakenMicros += elapsedMicros;
+enum class MagDataWidth {
+	SixByte,
+	NineByte,
+};
 
-	uint64_t sinceLastReportMillis = millis() - lastTimeTakenReportMillis;
+struct MagInterface {
+	std::function<uint8_t(uint8_t)> readByte;
+	std::function<void(uint8_t, uint8_t)> writeByte;
+	std::function<void(uint8_t)> setDeviceId;
+	std::function<void(uint8_t, MagDataWidth)> startPolling;
+	std::function<void()> stopPolling;
+};
 
-	if (sinceLastReportMillis < static_cast<uint64_t>(SecondsBetweenReports * 1e3)) {
-		return;
-	}
+struct MagDefinition {
+	const char* name;
 
-	float usedPercentage = static_cast<float>(timeTakenMicros) / 1e3f
-						 / static_cast<float>(sinceLastReportMillis) * 100;
+	uint8_t deviceId;
 
-	m_Logger.info(
-		"%s: %.2f%% of the last period taken (%.2f/%lld millis)",
-		name,
-		usedPercentage,
-		timeTakenMicros / 1e3f,
-		sinceLastReportMillis
-	);
+	uint8_t whoAmIReg;
+	uint8_t expectedWhoAmI;
 
-	timeTakenMicros = 0;
-	lastTimeTakenReportMillis = millis();
-}
+	MagDataWidth dataWidth;
+	uint8_t dataReg;
 
-}  // namespace SlimeVR::Debugging
+	std::function<bool(MagInterface& interface)> setup;
+};
+
+class MagDriver {
+public:
+	bool init(MagInterface&& interface, bool supports9ByteMags);
+	void startPolling() const;
+	void stopPolling() const;
+	[[nodiscard]] const char* getAttachedMagName() const;
+
+private:
+	std::optional<MagDefinition> detectedMag;
+	MagInterface interface;
+
+	static std::vector<MagDefinition> supportedMags;
+
+	Logging::Logger logger{"MagDriver"};
+};
+
+}  // namespace SlimeVR::Sensors::SoftFusion

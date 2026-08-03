@@ -67,6 +67,14 @@ public:
 	void cancel() override final { calibrationData.reset(); }
 	bool requiresRest() override final { return false; }
 
+	void signalOverwhelmed() override final {
+		// Not good, restart
+		calibrationData.value().accelSamples = 0;
+		calibrationData.value().gyroSamples = 0;
+		calibrationData.value().tempSamples = 0;
+		calibrationData.value().startMillis = millis();
+	}
+
 	void processAccelSample(const SensorRawT accelSample[3]) override final {
 		calibrationData.value().accelSamples++;
 	}

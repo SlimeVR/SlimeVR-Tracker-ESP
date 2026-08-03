@@ -31,14 +31,38 @@
 #include "logging/Logger.h"
 #include "utils.h"
 
-#if ESP32
+#ifdef ESP32
 #include "nvs_flash.h"
+#endif
+
+#ifdef EXT_SERIAL_COMMANDS
+#define CALLBACK_SIZE 7  // Increase callback size to allow for debug commands
+#include "i2cscan.h"
+#endif
+
+#ifndef CALLBACK_SIZE
+#define CALLBACK_SIZE 6  // Default callback size
+#endif
+
+#if defined(VENDOR_URL) && defined(VENDOR_NAME) && defined(PRODUCT_NAME) \
+	&& defined(UPDATE_ADDRESS) && defined(UPDATE_NAME)
+constexpr const char* FULL_VENDOR_STR
+	= "Vendor: " VENDOR_NAME " (" VENDOR_URL "), product: " PRODUCT_NAME
+	  ", firmware update url: " UPDATE_ADDRESS ", name: " UPDATE_NAME;
+#elif defined(VENDOR_URL) && defined(VENDOR_NAME) && defined(PRODUCT_NAME)
+constexpr const char* FULL_VENDOR_STR
+	= "Vendor: " VENDOR_NAME " (" VENDOR_URL "), product: " PRODUCT_NAME;
+#elif defined(VENDOR_NAME) && defined(PRODUCT_NAME)
+constexpr const char* FULL_VENDOR_STR
+	= "Vendor: " VENDOR_NAME ", product: " PRODUCT_NAME;
+#else
+constexpr const char* FULL_VENDOR_STR = "Vendor: Unknown, product: Unknown";
 #endif
 
 namespace SerialCommands {
 SlimeVR::Logging::Logger logger("SerialCommands");
 
-CmdCallback<6> cmdCallbacks;
+CmdCallback<CALLBACK_SIZE> cmdCallbacks;
 CmdParser cmdParser;
 CmdBuffer<256> cmdBuffer;
 
@@ -85,7 +109,7 @@ void cmdSet(CmdParser* parser) {
 					return;
 				}
 
-				WiFiNetwork::setWiFiCredentials(sc_ssid, sc_pw);
+				wifiNetwork.setWiFiCredentials(sc_ssid, sc_pw);
 				logger.info("CMD SET WIFI OK: New wifi credentials set, reconnecting");
 			}
 		} else if (parser->equalCmdParam(1, "BWIFI")) {
@@ -131,7 +155,7 @@ void cmdSet(CmdParser* parser) {
 					// set the pointer for pass to null for no password
 					ppass = NULL;
 				}
-				WiFiNetwork::setWiFiCredentials(ssid, ppass);
+				wifiNetwork.setWiFiCredentials(ssid, ppass);
 				logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
 			}
 		} else {
@@ -150,11 +174,14 @@ void printState() {
 		HARDWARE_MCU,
 		PROTOCOL_VERSION,
 		FIRMWARE_VERSION,
-		WiFiNetwork::getAddress().toString().c_str(),
+		wifiNetwork.getAddress().toString().c_str(),
 		WiFi.macAddress().c_str(),
 		statusManager.getStatus(),
-		WiFiNetwork::getWiFiState()
+		static_cast<int>(wifiNetwork.getWiFiState())
 	);
+
+	logger.info("%s", FULL_VENDOR_STR);
+
 	for (auto& sensor : sensorManager.getSensors()) {
 		logger.info(
 			"Sensor[%d]: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
@@ -164,6 +191,10 @@ void printState() {
 			sensor->isWorking() ? "true" : "false",
 			sensor->getHadData() ? "true" : "false"
 		);
+		const char* mag = sensor->getAttachedMagnetometer();
+		if (mag) {
+			logger.info("Sensor[%d] magnetometer: %s", sensor->getSensorId(), mag);
+		}
 	}
 	logger.info(
 		"Battery voltage: %.3f, level: %.1f%%",
@@ -172,7 +203,7 @@ void printState() {
 	);
 }
 
-#if ESP32
+#ifdef ESP32
 String getEncryptionTypeName(wifi_auth_mode_t type) {
 	switch (type) {
 		case WIFI_AUTH_OPEN:
@@ -274,10 +305,10 @@ void cmdGet(CmdParser* parser) {
 			HARDWARE_MCU,
 			PROTOCOL_VERSION,
 			FIRMWARE_VERSION,
-			WiFiNetwork::getAddress().toString().c_str(),
+			wifiNetwork.getAddress().toString().c_str(),
 			WiFi.macAddress().c_str(),
 			statusManager.getStatus(),
-			WiFiNetwork::getWiFiState()
+			static_cast<int>(wifiNetwork.getWiFiState())
 		);
 		auto& sensor0 = sensorManager.getSensors()[0];
 		sensor0->motionLoop();
@@ -288,6 +319,14 @@ void cmdGet(CmdParser* parser) {
 			sensor0->isWorking() ? "true" : "false",
 			sensor0->getHadData() ? "true" : "false"
 		);
+
+		const char* mag = sensor0->getAttachedMagnetometer();
+		if (mag) {
+			logger.info("[TEST] Sensor[0] magnetometer: %s", mag);
+		} else {
+			logger.info("[TEST] Sensor[0] has no magnetometer attached");
+		}
+
 		if (!sensor0->getHadData()) {
 			logger.error("[TEST] Sensor[0] didn't send any data yet!");
 		} else {
@@ -302,8 +341,8 @@ void cmdGet(CmdParser* parser) {
 		if (WiFi.status() != WL_CONNECTED) {
 			WiFi.disconnect();
 		}
-		if (WiFiNetwork::isProvisioning()) {
-			WiFiNetwork::stopProvisioning();
+		if (wifiProvisioning.isProvisioning()) {
+			wifiProvisioning.stopProvisioning();
 		}
 
 		WiFi.scanNetworks();
@@ -346,7 +385,7 @@ void cmdFactoryReset(CmdParser* parser) {
 	WiFi.disconnect(true);  // Clear WiFi credentials
 #if ESP8266
 	ESP.eraseConfig();  // Clear ESP config
-#elif ESP32
+#elif defined(ESP32)
 	nvs_flash_erase();
 #else
 #warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED
@@ -412,6 +451,13 @@ void cmdDeleteCalibration(CmdParser* parser) {
 	configuration.eraseSensors();
 }
 
+#if EXT_SERIAL_COMMANDS
+void cmdScanI2C(CmdParser* parser) {
+	logger.info("Forcing I2C scan...");
+	I2CSCAN::scani2cports();
+}
+#endif
+
 void setUp() {
 	cmdCallbacks.addCmd("SET", &cmdSet);
 	cmdCallbacks.addCmd("GET", &cmdGet);
@@ -419,6 +465,9 @@ void setUp() {
 	cmdCallbacks.addCmd("REBOOT", &cmdReboot);
 	cmdCallbacks.addCmd("DELCAL", &cmdDeleteCalibration);
 	cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
+#if EXT_SERIAL_COMMANDS
+	cmdCallbacks.addCmd("SCANI2C", &cmdScanI2C);
+#endif
 }
 
 void update() { cmdCallbacks.updateCmdProcessing(&cmdParser, &cmdBuffer, &Serial); }
