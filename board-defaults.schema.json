@@ -67,7 +67,7 @@
 					"description": "IMU Rotation"
 				}
 			},
-			"required": ["protocol", "imu", "sda", "scl"]
+			"required": ["protocol", "imu"]
 		},
 
 		"SPI_IMU": {
@@ -210,12 +210,11 @@
 		"BASIC_IMU_BOARD_CONFIG": {
 			"type": "object",
 			"properties": {
-				"SENSORS": {
+				"BUSES": {
 					"type": "array",
-					"items": { "$ref": "#/$defs/IMU" },
+					"items": { "$ref": "#/$defs/BUS" },
 					"minItems": 1,
-					"maxItems": 2,
-					"description": "Sensors List"
+					"description": "Bus List"
 				},
 				"LED": {
 					"type": "object",
@@ -232,10 +231,9 @@
 					},
 					"required": ["LED_PIN", "LED_INVERTED"]
 				},
-				"SPI": { "$ref": "#/$defs/SPI_BUS" },
 				"BATTERY": { "$ref": "#/$defs/BATTERY" }
 			},
-			"required": ["SENSORS", "LED", "BATTERY"]
+			"required": ["BUSES", "LED", "BATTERY"]
 		},
 
 		"BoardConfig": {
