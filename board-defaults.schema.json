@@ -67,7 +67,7 @@
 					"description": "IMU Rotation"
 				}
 			},
-			"required": ["protocol", "imu"]
+			"required": ["protocol", "imu", "rotation"]
 		},
 
 		"SPI_IMU": {
@@ -83,7 +83,7 @@
 				},
 				"cs": { "$ref": "#/$defs/pin", "description": "CS Pin" }
 			},
-			"required": ["protocol", "imu", "cs"]
+			"required": ["protocol", "imu", "cs", "rotation"]
 		},
 
 		"BUS": {
@@ -221,6 +221,7 @@
 					"type": "array",
 					"items": { "$ref": "#/$defs/BUS" },
 					"minItems": 1,
+					"maxItems": 2,
 					"description": "Bus List"
 				},
 				"LED": {
