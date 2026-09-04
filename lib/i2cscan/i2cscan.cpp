@@ -11,6 +11,8 @@
 #include "../../src/globals.h"
 #include "../../src/consts.h"
 
+#define I2CSCAN_DEBUG false
+
 namespace I2CSCAN {
     enum class ScanState : uint8_t {
         IDLE,
@@ -68,7 +70,9 @@ namespace I2CSCAN {
 
 			activeSDAPin = portArray[sdaPortIndex];
 			activeSCLPin = portArray[sclPortIndex];
-//			Serial.printf_P(PSTR("[INFO ] [I2CSCAN] Change I2C to SDA: %d, SCL: %d\r\n"), (int)portArray[sdaPortIndex], (int)portArray[sclPortIndex]);
+#ifdef  I2CSCAN_DEBUG
+			Serial.printf_P(PSTR("[DEBUG] [I2CSCAN] Change I2C to SDA: %d, SCL: %d\r\n"), (int)portArray[sdaPortIndex], (int)portArray[sclPortIndex]);
+#endif
 		}
 
 		void incrementvalidPortsIndex(uint8_t &index) {
@@ -101,9 +105,6 @@ namespace I2CSCAN {
 				if (currentSCLPortIndex != currentSDAPortIndex) {
 					currentSCL = validPortsIndex[currentSCLPortIndex];
 					currentSDA = validPortsIndex[currentSDAPortIndex];
-// Debug
-//					Serial.printf("CCCC currentSDAPortIndex: %d currentSCLPortIndex: %d validPortsIndex.size: %d\r\n",
-//						currentSDAPortIndex, currentSCLPortIndex, validPortsIndex.size());
 					switchPort(currentSDA, currentSCL);
 					return true;
 				}
@@ -131,7 +132,7 @@ namespace I2CSCAN {
     void scani2cports() {
         if (scanState != ScanState::IDLE) {
 			if (scanState == ScanState::DONE) {
-				Serial.println(F("[DEBUG] [I2CSCAN] I2C scan finished previously, resetting and scanning again...")); //NOLINT
+				Serial.println(F("[INFO ] [I2CSCAN] I2C scan finished previously, resetting and scanning again...")); //NOLINT
 			} else {
 				return; // Already scanning, do not start again
 			}
@@ -157,8 +158,9 @@ namespace I2CSCAN {
 				startSCLPortIndex = i;
 			}
 		}
-
-//		Serial.printf_P(PSTR("[ERROR] [I2CSCAN] Default I2C Ports SDA: %d SCL: %d\r\n"), defaultSDAPin, defaultSCLPin);
+#ifdef  I2CSCAN_DEBUG
+		Serial.printf_P(PSTR("[DEBUG] [I2CSCAN] Default I2C Ports SDA: %d SCL: %d\r\n"), defaultSDAPin, defaultSCLPin);
+#endif
 		if (startSDAPortIndex == 255 || startSCLPortIndex == 255) {
 			Serial.printf_P(PSTR("[ERROR] [I2CSCAN] I2C Ports SDA: %d SCL: %d not found in Array. Abort the I2C Scan\r\n"), defaultSDAPin, defaultSCLPin);
 			// What todo when the PIN is not in the Index? Abort the scan?
@@ -168,12 +170,11 @@ namespace I2CSCAN {
 			return;
 		}
 
-// Debug
-//		for (const auto& portsIndex : validPortsIndex) {
-//			Serial.printf("Pin Index: %2d PinNum: %2d PinName: %s\r\n", portsIndex, portArray[portsIndex], portMap[portsIndex].c_str());
-//		}
-//		Serial.printf("startSDAPortIndex: %2d startSCLPortIndex: %2d\r\n", startSDAPortIndex, startSCLPortIndex);
-
+#ifdef  I2CSCAN_DEBUG
+		for (const auto& portsIndex : validPortsIndex) {
+			Serial.printf("[DEBUG] [I2CSCAN] validPortsIndex Pin Index: %2d PinNum: %2d PinName: %s\r\n", portsIndex, portArray[portsIndex], portMap[portsIndex].c_str());
+		}
+#endif
 		// Reset scan variables and start scanning
         found = false;
 		currentSDAPortIndex = startSDAPortIndex;
@@ -185,9 +186,6 @@ namespace I2CSCAN {
         currentAddress = 1;
 		txFails = 0;
         scanState = ScanState::SCANNING;
-// Debug
-//		Serial.printf("AAAA currentSDAPortIndex: %d currentSCLPortIndex: %d validPortsIndex.size: %d\r\n",
-//			currentSDAPortIndex, currentSCLPortIndex, validPortsIndex.size());
 	}
 
     void update() {
