@@ -77,6 +77,11 @@
 #define batterySampleRate 10000
 #define BATTERY_LOW_VOLTAGE_DEEP_SLEEP false
 #define BATTERY_LOW_POWER_VOLTAGE 3.3f  // Voltage to raise error
+// Only needed if BQ27441 battery gauge IC is used:
+#define BATTERY_DESIGN_CAPACITY 1500  // Battery design capacity in mAh
+#define BATTERY_LOWEST_OP_VOLTAGE \
+	3.2f  // Lowest battery voltage in which board can still operate
+#define BATTERY_TAPER_CURRENT 75  // Current at which charger stops charging in mA
 
 // Send updates over network only when changes are substantial
 // If "false" updates are sent at the sensor update rate (usually 100 TPS)
