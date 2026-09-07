@@ -56,6 +56,11 @@ void BNO080Sensor::motionSetup() {
 		imu.swVersionPatch
 	);
 
+	SlimeVR::Configuration::SensorConfig config;
+	config.type = SlimeVR::Configuration::SensorConfigType::BNO0XX;
+	config.data.bno0XX = m_Config;
+	configuration.setSensor(sensorId, config);
+
 	this->imu.enableLinearAccelerometer(10);
 
 	toggles = configuration.getSensorToggles(sensorId);

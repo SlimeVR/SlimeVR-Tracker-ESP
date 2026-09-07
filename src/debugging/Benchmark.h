@@ -45,6 +45,9 @@ public:
 	void before();
 	void after();
 	static void tick();
+	static void enable();
+	static void disable();
+	static bool status();
 
 private:
 	static constexpr float ReportsIntervalSeconds = 10.0f;
@@ -67,6 +70,7 @@ private:
 	static SlimeVR::Logging::Logger logger;
 	static std::vector<Benchmark*> benchmarkInstances;
 	static uint32_t totalLoops;
+	static bool enabled;
 };
 
 }  // namespace SlimeVR::Debugging

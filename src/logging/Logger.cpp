@@ -51,6 +51,13 @@ void Logger::fatal(const char* format, ...) const {
 	va_end(args);
 }
 
+void Logger::print(Level level, const char* format, ...) const {
+	va_list args;
+	va_start(args, format);
+	log(level, format, args);
+	va_end(args);
+}
+
 void Logger::log(Level level, const char* format, va_list args) const {
 	if (level < LOG_LEVEL) {
 		return;

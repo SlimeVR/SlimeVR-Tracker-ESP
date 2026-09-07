@@ -38,18 +38,20 @@ public:
 	void factoryReset();
 	void wifiReset();
 
-	void save();
 	void reset();
 
 	void print();
 
+	void tick();
+
 	int32_t getVersion() const;
 
 	size_t getSensorCount() const;
-	SensorConfig getSensor(size_t sensorID) const;
-	void setSensor(size_t sensorID, const SensorConfig& config);
+	SensorConfig getSensor(size_t sensorId) const;
+	void setSensor(size_t sensorId, const SensorConfig& config, bool nosave = false);
 	SensorToggleState getSensorToggles(size_t sensorId) const;
-	void setSensorToggles(size_t sensorId, SensorToggleState state);
+	void
+	setSensorToggles(size_t sensorId, SensorToggleState state, bool nosave = false);
 	void eraseSensors();
 
 	bool loadTemperatureCalibration(
@@ -64,12 +66,21 @@ public:
 private:
 	void loadSensors();
 	bool runMigrations(int32_t version);
+	bool saveSensorConfig(size_t sensorId);
+	bool saveSensorToggle(size_t sensorId);
+	void cleanupMigration();
+	unsigned long lastsave = millis();
+	unsigned long delaysave = 200;
+	bool saveNeeded = false;
 
 	bool m_Loaded = false;
 
 	DeviceConfig m_Config{};
 	std::vector<SensorConfig> m_Sensors;
 	std::vector<SensorToggleState> m_SensorToggles;
+	bool m_ConfigChanged = false;
+	std::vector<bool> m_SensorsChanged;
+	std::vector<bool> m_SensorTogglesChanged;
 
 	Logging::Logger m_Logger = Logging::Logger("Configuration");
 };

@@ -316,7 +316,6 @@ private:
 			= SlimeVR::Configuration::SensorConfigType::RUNTIME_CALIBRATION;
 		calibration.data.runtimeCalibration = this->calibration;
 		configuration.setSensor(sensorId, calibration);
-		configuration.save();
 	}
 
 	enum class CalibrationPrintFlags {

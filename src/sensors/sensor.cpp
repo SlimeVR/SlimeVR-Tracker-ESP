@@ -170,5 +170,4 @@ void Sensor::setFlag(SensorToggles toggle, bool state) {
 	toggles.setToggle(toggle, state);
 
 	configuration.setSensorToggles(sensorId, toggles);
-	configuration.save();
 }

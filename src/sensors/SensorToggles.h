@@ -40,6 +40,7 @@ struct SensorToggleValues {
 	bool calibrationEnabled = true;
 	bool tempGradientCalibrationEnabled
 		= false;  // disable by default, it is not clear that it really helps
+	bool operator==(const SensorToggleValues&) const = default;
 };
 
 class SensorToggleState {

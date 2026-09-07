@@ -255,7 +255,6 @@ private:
 		calibration.type = SlimeVR::Configuration::SensorConfigType::SFUSION;
 		calibration.data.sfusion = this->calibration;
 		configuration.setSensor(sensorId, calibration);
-		configuration.save();
 	}
 
 	void calibrateGyroOffset() {

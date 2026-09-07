@@ -43,6 +43,8 @@ struct BMI160SensorConfig {
 
 	// calibration temperature for dynamic compensation
 	float temperature;
+
+	constexpr bool operator==(const BMI160SensorConfig& rhs) const = default;
 };
 
 struct SoftFusionSensorConfig {
@@ -75,6 +77,8 @@ struct SoftFusionSensorConfig {
 
 	// temperature sampling rate (placed at the end to not break existing configs)
 	float T_Ts;
+
+	constexpr bool operator==(const SoftFusionSensorConfig& rhs) const = default;
 };
 
 struct RuntimeCalibrationSensorConfig {
@@ -98,6 +102,9 @@ struct RuntimeCalibrationSensorConfig {
 
 	bool accelCalibrated[3];
 	float A_off[3];
+
+	constexpr bool operator==(const RuntimeCalibrationSensorConfig& rhs) const
+		= default;
 };
 
 struct MPU6050SensorConfig {
@@ -106,6 +113,8 @@ struct MPU6050SensorConfig {
 
 	// raw offsets, determined from gyro at rest
 	float G_off[3];
+
+	constexpr bool operator==(const MPU6050SensorConfig& rhs) const = default;
 };
 
 struct MPU9250SensorConfig {
@@ -119,6 +128,8 @@ struct MPU9250SensorConfig {
 
 	// raw offsets, determined from gyro at rest
 	float G_off[3];
+
+	constexpr bool operator==(const MPU9250SensorConfig& rhs) const = default;
 };
 
 struct ICM20948SensorConfig {
@@ -130,6 +141,8 @@ struct ICM20948SensorConfig {
 
 	// compass bias
 	int32_t C[3];
+
+	constexpr bool operator==(const ICM20948SensorConfig& rhs) const = default;
 };
 
 struct ICM42688SensorConfig {
@@ -143,10 +156,15 @@ struct ICM42688SensorConfig {
 
 	// raw offsets, determined from gyro at rest
 	float G_off[3];
+
+	constexpr bool operator==(const ICM42688SensorConfig& rhs) const = default;
 };
 
 struct BNO0XXSensorConfig {
+	// the magEnabled Flag has been replaced by SensorToggles. It is no longer used.
 	bool magEnabled;
+
+	constexpr bool operator==(const BNO0XXSensorConfig& rhs) const = default;
 };
 
 enum class SensorConfigType {
@@ -174,6 +192,8 @@ struct SensorConfig {
 		BNO0XXSensorConfig bno0XX;
 		RuntimeCalibrationSensorConfig runtimeCalibration;
 	} data;
+
+	bool operator==(const SensorConfig& rhs) const;
 };
 
 struct SensorConfigBits {

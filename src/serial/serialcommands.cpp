@@ -25,6 +25,7 @@
 
 #include <CmdCallback.hpp>
 
+#include "../debugging/Benchmark.h"
 #include "GlobalVars.h"
 #include "base64.hpp"
 #include "batterymonitor.h"
@@ -36,12 +37,12 @@
 #endif
 
 #ifdef EXT_SERIAL_COMMANDS
-#define CALLBACK_SIZE 7  // Increase callback size to allow for debug commands
+#define CALLBACK_SIZE 8  // Increase callback size to allow for debug commands
 #include "i2cscan.h"
 #endif
 
 #ifndef CALLBACK_SIZE
-#define CALLBACK_SIZE 6  // Default callback size
+#define CALLBACK_SIZE 7  // Default callback size
 #endif
 
 #if defined(VENDOR_URL) && defined(VENDOR_NAME) && defined(PRODUCT_NAME) \
@@ -165,6 +166,20 @@ void cmdSet(CmdParser* parser) {
 				}
 				wifiNetwork.setWiFiCredentials(ssid, ppass);
 				logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
+			}
+		} else if (parser->equalCmdParam(1, "BENCHMARK")) {
+			if (parser->getParamCount() < 3) {
+				logger.error("CMD SET BENCHMARK ERROR: Too few arguments");
+				logger.info("Syntax: SET BENCHMARK ON/OFF");
+			} else if (parser->equalCmdParam(2, "ON")) {
+				SlimeVR::Debugging::Benchmark::enable();
+				logger.info("CMD SET BENCHMARK ON");
+			} else if (parser->equalCmdParam(2, "OFF")) {
+				SlimeVR::Debugging::Benchmark::disable();
+				logger.info("CMD SET BENCHMARK OFF");
+			} else {
+				logger.error("CMD SET BENCHMARK ERROR: Invalid argument");
+				logger.info("Syntax: SET BENCHMARK ON/OFF");
 			}
 		} else if (parser->equalCmdParam(1, "FLASHMODE")) {
 #if ESP8266
@@ -365,6 +380,13 @@ void cmdGet(CmdParser* parser) {
 			WiFi.begin();
 		}
 	}
+
+	if (parser->equalCmdParam(1, "BENCHMARK")) {
+		logger.info(
+			"Benchmark is %s",
+			SlimeVR::Debugging::Benchmark::status() ? "enabled" : "disabled"
+		);
+	}
 }
 
 void cmdReboot(CmdParser* parser) {
@@ -434,6 +456,18 @@ void cmdScanI2C(CmdParser* parser) {
 }
 #endif
 
+void cmdConfig(CmdParser* parser) {
+	// The current implementation of config allows only to print its value
+	// For the future, I want it to support:
+	// - IP Configuration / DHCP
+	// - LED Settings
+	// - Sensor Settings (changing sensor parameters)
+	//
+	// Currently only print the SensorConfiguration
+	logger.info("SensorConfiguration:");
+	configuration.print();
+}
+
 void setUp() {
 	cmdCallbacks.addCmd("SET", &cmdSet);
 	cmdCallbacks.addCmd("GET", &cmdGet);
@@ -441,6 +475,7 @@ void setUp() {
 	cmdCallbacks.addCmd("REBOOT", &cmdReboot);
 	cmdCallbacks.addCmd("DELCAL", &cmdDeleteCalibration);
 	cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
+	cmdCallbacks.addCmd("CONFIG", &cmdConfig);
 #if EXT_SERIAL_COMMANDS
 	cmdCallbacks.addCmd("SCANI2C", &cmdScanI2C);
 #endif
