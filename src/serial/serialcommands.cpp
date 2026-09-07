@@ -31,8 +31,8 @@
 #include "logging/Logger.h"
 #include "utils.h"
 
-#ifdef ESP32
-#include "nvs_flash.h"
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+#include "soc/rtc_cntl_reg.h"
 #endif
 
 #ifdef EXT_SERIAL_COMMANDS
@@ -58,6 +58,14 @@ constexpr const char* FULL_VENDOR_STR
 #else
 constexpr const char* FULL_VENDOR_STR = "Vendor: Unknown, product: Unknown";
 #endif
+
+static const char sCMDFlashmdoe[] PROGMEM
+	= "Entering flashing mode.\r\n"
+	  "You can now close the serial monitor\r\n"
+	  "and go to the firmware flasher to flash\r\n"
+	  "your tracker over USB.\r\n"
+	  "If you entered the flashing mode by accident,\r\n"
+	  "turn your tracker off and on.";
 
 namespace SerialCommands {
 SlimeVR::Logging::Logger logger("SerialCommands");
@@ -158,6 +166,29 @@ void cmdSet(CmdParser* parser) {
 				wifiNetwork.setWiFiCredentials(ssid, ppass);
 				logger.info("CMD SET BWIFI OK: New wifi credentials set, reconnecting");
 			}
+		} else if (parser->equalCmdParam(1, "FLASHMODE")) {
+#if ESP8266
+			logger.info(sCMDFlashmdoe);
+			delay(1000);
+			ESP.rebootIntoUartDownloadMode();
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+			logger.info(sCMDFlashmdoe);
+			delay(1000);
+			// from https://esp32.com/viewtopic.php?t=33180
+			REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+			esp_restart();
+#else
+			logger.error(PSTR("Flashmode is not supported on this device"));
+#endif
+#if EXT_SERIAL_COMMANDS
+		} else if (parser->equalCmdParam(1, "CRASH")) {
+			// well target of this function is to crash the tracker
+			// used for debuging/testing
+			while (true) {
+				int* ptr = NULL;
+				*ptr = 0;
+			}
+#endif
 		} else {
 			logger.error("CMD SET ERROR: Unrecognized variable to set");
 		}
@@ -258,43 +289,7 @@ void cmdGet(CmdParser* parser) {
 	}
 
 	if (parser->equalCmdParam(1, "CONFIG")) {
-		String str
-			= "BOARD=%d\n"
-			  "IMU=%d\n"
-			  "SECOND_IMU=%d\n"
-			  "IMU_ROTATION=%f\n"
-			  "SECOND_IMU_ROTATION=%f\n"
-			  "BATTERY_MONITOR=%d\n"
-			  "BATTERY_SHIELD_RESISTANCE=%d\n"
-			  "BATTERY_SHIELD_R1=%d\n"
-			  "BATTERY_SHIELD_R2=%d\n"
-			  "PIN_IMU_SDA=%d\n"
-			  "PIN_IMU_SCL=%d\n"
-			  "PIN_IMU_INT=%d\n"
-			  "PIN_IMU_INT_2=%d\n"
-			  "PIN_BATTERY_LEVEL=%d\n"
-			  "LED_PIN=%d\n"
-			  "LED_INVERTED=%d\n";
-
-		Serial.printf(
-			str.c_str(),
-			BOARD,
-			static_cast<int>(sensorManager.getSensorType(0)),
-			static_cast<int>(sensorManager.getSensorType(1)),
-			IMU_ROTATION,
-			SECOND_IMU_ROTATION,
-			BATTERY_MONITOR,
-			BATTERY_SHIELD_RESISTANCE,
-			BATTERY_SHIELD_R1,
-			BATTERY_SHIELD_R2,
-			PIN_IMU_SDA,
-			PIN_IMU_SCL,
-			PIN_IMU_INT,
-			PIN_IMU_INT_2,
-			PIN_BATTERY_LEVEL,
-			LED_PIN,
-			LED_INVERTED
-		);
+		Serial.printf(sSlVRPrInfo);
 	}
 
 	if (parser->equalCmdParam(1, "TEST")) {
@@ -379,27 +374,8 @@ void cmdReboot(CmdParser* parser) {
 
 void cmdFactoryReset(CmdParser* parser) {
 	logger.info("FACTORY RESET");
-
-	configuration.reset();
-
-	WiFi.disconnect(true);  // Clear WiFi credentials
-#if ESP8266
-	ESP.eraseConfig();  // Clear ESP config
-#elif defined(ESP32)
-	nvs_flash_erase();
-#else
-#warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED
-	logger.info("FACTORY RESET NOT SUPPORTED");
-	return;
-#endif
-
-#if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
-#warning FACTORY RESET does not clear your hardcoded WiFi credentials!
-	logger.warn("FACTORY RESET does not clear your hardcoded WiFi credentials!");
-#endif
-
-	delay(3000);
-	ESP.restart();
+	configuration.factoryReset();
+	// No return here factoryReset will reboot the tracker.
 }
 
 void cmdTemperatureCalibration(CmdParser* parser) {

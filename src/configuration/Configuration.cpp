@@ -29,19 +29,39 @@
 #include <cstring>
 
 #include "../FSHelper.h"
+#include "GlobalVars.h"
 #include "consts.h"
 #include "sensors/SensorToggles.h"
 #include "utils.h"
+
+#ifdef ESP32
+#include "nvs_flash.h"
+#endif
 
 #define DIR_CALIBRATIONS "/calibrations"
 #define DIR_TEMPERATURE_CALIBRATIONS "/tempcalibrations"
 #define DIR_TOGGLES_OLD "/toggles"
 #define DIR_TOGGLES "/sensortoggles"
 
+extern bool initFullreset;
+
 namespace SlimeVR::Configuration {
 void Configuration::setup() {
 	if (m_Loaded) {
 		return;
+	}
+
+	if (initFullreset) {
+		this->m_Logger.info(
+			PSTR("Request for Factory reset from Recovery Mode received.")
+		);
+		if (LittleFS.begin()) {
+			this->factoryReset();
+		} else {
+			this->m_Logger.error(PSTR("Could not mount LittleFS try to format it"));
+			LittleFS.format();
+			this->factoryReset();
+		}
 	}
 
 	bool status = LittleFS.begin();
@@ -104,6 +124,33 @@ void Configuration::setup() {
 
 #ifdef DEBUG_CONFIGURATION
 	print();
+#endif
+}
+
+void Configuration::factoryReset() {
+	this->reset();
+	this->wifiReset();
+	this->m_Logger.info("Rebooting...");
+	delay(3000);
+	ESP.restart();
+}
+
+void Configuration::wifiReset() {
+	WiFi.disconnect(true);  // Clear WiFi credentials
+#if ESP8266
+	ESP.eraseConfig();  // Clear ESP config
+#elif defined(ESP32)
+	nvs_flash_erase();
+#else
+#warning SERIAL COMMAND FACTORY RESET NOT SUPPORTED
+	this->m_Logger.info(PSTR("FACTORY RESET NOT SUPPORTED"));
+	return;
+#endif
+#if defined(WIFI_CREDS_SSID) && defined(WIFI_CREDS_PASSWD)
+#warning FACTORY RESET does not clear your hardcoded WiFi credentials!
+	this->m_Logger.warn(
+		PSTR("FACTORY RESET does not clear your hardcoded WiFi credentials!")
+	);
 #endif
 }
 

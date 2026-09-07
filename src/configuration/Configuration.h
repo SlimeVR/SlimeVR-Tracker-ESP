@@ -35,6 +35,8 @@ namespace SlimeVR::Configuration {
 class Configuration {
 public:
 	void setup();
+	void factoryReset();
+	void wifiReset();
 
 	void save();
 	void reset();

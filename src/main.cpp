@@ -32,6 +32,7 @@
 #include "logging/Logger.h"
 #include "logging/SerialBuffer.h"
 #include "ota.h"
+#include "preinit.h"
 #include "serial/serialcommands.h"
 #include "status/TPSCounter.h"
 
