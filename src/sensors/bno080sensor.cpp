@@ -376,7 +376,7 @@ void BNO080Sensor::sendTempIfNeeded() {
 	constexpr uint32_t sendInterval = 1.0f / maxSendRateHz * 1e6;
 	uint32_t elapsed = now - m_lastTemperaturePacketSent;
 	if (elapsed >= sendInterval) {
-		m_lastTemperaturePacketSent = now - (elapsed - sendInterval);
+		m_lastTemperaturePacketSent = now;
 		networkConnection.sendTemperature(sensorId, lastReadTemperature);
 	}
 }

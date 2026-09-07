@@ -102,6 +102,37 @@ enum class SensorTypeID : uint8_t {
 #define BOARD_ESP32C6_SUPERMINI 27
 #define BOARD_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 
+#define BOARD_N0 "BOARD_UNKNOWN"
+#define BOARD_N1 "BOARD_SLIMEVR_LEGACY"  // More ancient development version of SlimeVR
+#define BOARD_N2 "BOARD_SLIMEVR_DEV"  // Ancient development version of SlimeVR
+#define BOARD_N3 "BOARD_NODEMCU"
+#define BOARD_N4 "BOARD_CUSTOM"
+#define BOARD_N5 "BOARD_WROOM32"
+#define BOARD_N6 "BOARD_WEMOSD1MINI"
+#define BOARD_N7 "BOARD_TTGO_TBASE"
+#define BOARD_N8 "BOARD_ESP01"
+#define BOARD_N9 "BOARD_SLIMEVR"  // SlimeVR v1.0 & v1.1
+#define BOARD_N10 "BOARD_LOLIN_C3_MINI"
+#define BOARD_N11 "BOARD_BEETLE32C3"
+#define BOARD_N12 "BOARD_ESP32C3DEVKITM1"
+#define BOARD_N13 "BOARD_OWOTRACK"  // Only used by owoTrack mobile app
+#define BOARD_N14 "BOARD_WRANGLER"  // Only used by wrangler app
+#define BOARD_N15 "BOARD_MOCOPI"  // Used by mocopi/moslime
+#define BOARD_N16 "BOARD_WEMOSWROOM02"
+#define BOARD_N17 "BOARD_XIAO_ESP32C3"
+#define BOARD_N18 "BOARD_HARITORA"  // Used by Haritora/SlimeTora
+#define BOARD_N19 "BOARD_ESP32C6DEVKITC1"
+#define BOARD_N20 "BOARD_GLOVE_IMU_SLIMEVR_DEV"  // IMU Glove
+#define BOARD_N21 "BOARD_GESTURES"  // Used by Gestures
+#define BOARD_N22 "BOARD_SLIMEVR_V1_2"  // SlimeVR v1.2
+#define BOARD_N23 "BOARD_ESP32S3_SUPERMINI"
+#define BOARD_N24 "BOARD_GENERIC_NRF"
+#define BOARD_N25 "BOARD_SLIMEVR_BUTTERFLY_DEV"
+#define BOARD_N26 "BOARD_SLIMEVR_BUTTERFLY"
+#define BOARD_N27 "BOARD_ESP32C6_SUPERMINI"
+#define BOARD_N250 \
+	"BOARD_DEV_RESERVED"  // Reserved, should not be used in any release firmware
+
 #define BAT_EXTERNAL 1
 #define BAT_INTERNAL 2
 #define BAT_MCP3021 3

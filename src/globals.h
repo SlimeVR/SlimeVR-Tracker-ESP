@@ -76,3 +76,39 @@
 #ifndef UPDATE_NAME
 #define UPDATE_NAME ""
 #endif
+
+// Some Compiler magic to expand the define and the escpae it
+#define STRINGIFY(s) #s
+#define TOSTRING(s) STRINGIFY(s)
+
+// Some Compiler magic to combine defines together
+// Target is to from BOARD -> 6 to BOARD_N6 to resolve the boardname
+#define BOARD_CONSTRING(a, b) a##b
+#define BOARD_TOSTRING(a, b) BOARD_CONSTRING(a, b)
+#define BOARDNTOSTR(a) BOARD_TOSTRING(BOARD_N, a)
+
+// Formating does wired stuff here so disabled
+// clang-format off
+static const char sSlVRPrInfo[] PROGMEM
+	= "============= Product Info =============\r\n"
+	  "PRODUCT_NAME: " PRODUCT_NAME "\r\n"
+	  "VENDOR_NAME: " VENDOR_NAME "\r\n"
+	  "VENDOR_URL: " VENDOR_URL "\r\n"
+	  "Firmware update URL: " UPDATE_ADDRESS "\r\n"
+	  "Firmware update Name: " UPDATE_NAME "\r\n"
+	  "BOARD: " TOSTRING(BOARD) "\r\n"
+	  "BOARD NAME: " BOARDNTOSTR(BOARD) "\r\n"
+	  "HARDWARE_MCU: " TOSTRING(HARDWARE_MCU) "\r\n"
+	  "PROTOCOL_VERSION: " TOSTRING(PROTOCOL_VERSION) "\r\n"
+	  "FIRMWARE_VERSION: " TOSTRING(FIRMWARE_VERSION) "\r\n"
+	  "LED_PIN: " TOSTRING(LED_PIN) "\r\n"
+	  "LED_INVERTED: " TOSTRING(LED_INVERTED) "\r\n"
+	  "PIN_BATTERY_LEVEL: " TOSTRING(PIN_BATTERY_LEVEL) "\r\n"
+	  "BATTERY_MONITOR: " TOSTRING(BATTERY_MONITOR) "\r\n"
+	  "BATTERY_SHIELD_RESISTANCE: " TOSTRING(BATTERY_SHIELD_RESISTANCE) "\r\n"
+	  "BATTERY_SHIELD_R1: " TOSTRING(BATTERY_SHIELD_R1) "\r\n"
+	  "BATTERY_SHIELD_R2: " TOSTRING(BATTERY_SHIELD_R2) "\r\n"
+	  "SENSOR_DESC_LIST:\r\n"
+	  TOSTRING(SENSOR_DESC_LIST) "\r\n"
+	  "========================================\r\n";
+// clang-format on
