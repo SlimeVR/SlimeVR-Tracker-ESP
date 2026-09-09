@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2023 SlimeVR Contributors
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,25 +20,56 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMEVR_NETWORK_MANAGER_H_
-#define SLIMEVR_NETWORK_MANAGER_H_
+#pragma once
 
-#include "globals.h"
-#include "packets.h"
-#include "wifihandler.h"
-#include "wifiprovisioning/wifi-provisioning.h"
+#include <Arduino.h>
 
+#include <cstdint>
+#include <optional>
+#if ESP8266
+#include <espnow.h>
+#elif ESP32
+#include <esp_now.h>
+#endif
+
+#ifndef MACSTR
+#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
+#endif
+
+#ifndef MAC2STR
+#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+#endif
+
+#include "logging/Logger.h"
 namespace SlimeVR::Network {
 
-class Manager {
+class ProvisioningParty {
 public:
-	void setup();
-	void update();
+	explicit ProvisioningParty(SlimeVR::Logging::Logger& logger) noexcept;
+	virtual ~ProvisioningParty() = default;
+	virtual void init() = 0;
+	virtual bool tick() = 0;
+	virtual void
+	handleMessage(uint8_t macAddress[6], const uint8_t* data, uint8_t length)
+		= 0;
 
-private:
-	bool m_IsConnected = false;
+protected:
+	uint8_t BroadcastMacAddress[6]{0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+	void addPeer(uint8_t macAddress[6]) const;
+	void removePeer(uint8_t macAddress[6]) const;
+
+	template <typename Packet>
+	bool sendMessage(uint8_t receiverMac[6], Packet data) const {
+		return esp_now_send(
+				   receiverMac,
+				   reinterpret_cast<uint8_t*>(&data),
+				   sizeof(Packet)
+			   )
+			== 0;
+	}
+
+	SlimeVR::Logging::Logger& logger;
 };
 
 }  // namespace SlimeVR::Network
-
-#endif  // SLIMEVR_NETWORK_MANAGER_H_

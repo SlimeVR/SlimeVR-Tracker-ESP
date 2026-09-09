@@ -1,6 +1,6 @@
 /*
 	SlimeVR Code is placed under the MIT license
-	Copyright (c) 2021 Eiren Rain
+	Copyright (c) 2025 Gorbit99 & SlimeVR Contributors
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,30 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#pragma once
+#include "provisioning-party.h"
 
-extern const char* otaPassword;
-extern const char* provisioningPassword;
+#include "logging/Logger.h"
+
+namespace SlimeVR::Network {
+
+ProvisioningParty::ProvisioningParty(SlimeVR::Logging::Logger& logger) noexcept
+	: logger{logger} {}
+
+void ProvisioningParty::addPeer(uint8_t macAddress[6]) const {
+#if ESP8266
+	esp_now_add_peer(macAddress, ESP_NOW_ROLE_COMBO, 0, nullptr, 0);
+#elif ESP32
+	esp_now_peer_info_t peer{};
+	memcpy(peer.peer_addr, macAddress, sizeof(uint8_t[6]));
+	peer.channel = 0;
+	peer.ifidx = WIFI_IF_STA;
+	peer.encrypt = false;
+	esp_now_add_peer(&peer);
+#endif
+}
+
+void ProvisioningParty::removePeer(uint8_t macAddress[6]) const {
+	esp_now_del_peer(macAddress);
+}
+
+}  // namespace SlimeVR::Network

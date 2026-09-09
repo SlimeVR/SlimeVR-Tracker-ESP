@@ -22,5 +22,45 @@
 */
 #pragma once
 
-extern const char* otaPassword;
-extern const char* provisioningPassword;
+#include <cstdint>
+#include <memory>
+#include <optional>
+
+#include "logging/Logger.h"
+#include "provisioning-party.h"
+
+#if ESP32
+#include <esp_now.h>
+#endif
+
+namespace SlimeVR::Network {
+
+class WiFiProvisioning {
+public:
+	bool startProvisioning();
+	void stopProvisioning();
+
+	bool startSearchForProvider();
+	void stopSearchForProvider();
+
+	void tick();
+
+private:
+	bool initEspnow();
+	void handleMessage(uint8_t* macAddress, const uint8_t* data, uint8_t length);
+
+	std::unique_ptr<ProvisioningParty> role;
+	SlimeVR::Logging::Logger logger{"WiFiProvisioning"};
+
+#if ESP8266
+	friend void espnowReceiveCallback(uint8_t*, uint8_t*, uint8_t);
+#elif ESP32
+	friend void espnowReceiveCallback(
+		const esp_now_recv_info_t* senderInfo,
+		const uint8_t* data,
+		int dataLen
+	);
+#endif
+};
+
+}  // namespace SlimeVR::Network

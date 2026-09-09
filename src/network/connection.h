@@ -25,12 +25,15 @@
 
 #include <Arduino.h>
 #include <WiFiUdp.h>
+#include <sys/types.h>
 
+#include <cstdint>
 #include <optional>
 
 #include "../configuration/SensorConfig.h"
 #include "featureflags.h"
 #include "globals.h"
+#include "network/wifiprovisioning/provisioning-packets.h"
 #include "packets.h"
 #include "quat.h"
 #include "sensors/sensor.h"
@@ -97,6 +100,19 @@ public:
 
 	// PACKET_FLEX_DATA 26
 	void sendFlexData(uint8_t sensorId, float flexLevel);
+
+	// PACKET_PROVISIONING_NEW_TRACER 29
+	void sendProvisioningNewTracker(uint8_t mac[6]);
+
+	// PACKET_PROVISIONING_STATUS 30
+	void sendProvisioningStatus(
+		uint8_t mac[6],
+		ProvisioningPackets::ConnectionStatus status
+	);
+
+	// PACKET_PROVISIONING_FAILED 31
+	void
+	sendProvisioningFailed(uint8_t mac[6], ProvisioningPackets::ConnectionError error);
 
 #if ENABLE_INSPECTION
 	void sendInspectionRawIMUData(

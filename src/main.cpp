@@ -45,7 +45,7 @@ SlimeVR::Configuration::Configuration configuration;
 SlimeVR::Network::Manager networkManager;
 SlimeVR::Network::Connection networkConnection;
 SlimeVR::WiFiNetwork wifiNetwork;
-SlimeVR::WifiProvisioning wifiProvisioning;
+SlimeVR::Network::WiFiProvisioning wifiProvisioning;
 
 SlimeVR::Debugging::Benchmark tpsCounterBM{"tpsCounter.update()"};
 SlimeVR::Debugging::Benchmark globalTimerBM{"globalTimer.tick()"};
