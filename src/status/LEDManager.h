@@ -63,6 +63,9 @@ public:
 	 */
 	void off();
 
+	void forceOn();
+	void forceOff();
+
 	/*!
 	 *  @brief Blink the LED for [time]ms. *Can* cause lag
 	 *  @param time Amount of ms to turn the LED on
@@ -84,6 +87,7 @@ private:
 	unsigned long m_Timer = 0;
 	LEDStage m_CurrentStage = OFF;
 	unsigned long m_LastUpdate = millis();
+	bool forcedOn = false;
 
 	uint8_t m_Pin = LED_PIN;
 	bool m_Enabled = m_Pin >= 0 && m_Pin < LED_OFF;
