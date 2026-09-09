@@ -44,7 +44,8 @@ struct ICM45Base {
 	static constexpr float AccTs = 1.0 / 102.4;
 	static constexpr float TempTs = 1.0 / 409.6;
 
-	static constexpr float MagTs = 1.0 / 100;
+	static constexpr uint32_t MagPollingHz = 10;
+	static constexpr float MagTs = 1.0 / MagPollingHz;
 
 	static constexpr float GyroSensitivity = 131.072f;
 	static constexpr float AccelSensitivity = 16384.0f;
@@ -83,7 +84,7 @@ struct ICM45Base {
 		struct FifoConfig0 {
 			static constexpr uint8_t reg = 0x1d;
 			static constexpr uint8_t value
-				= (0b01 << 6) | (0b011111);  // stream to FIFO mode, FIFO depth
+				= (0b10 << 6) | (0b011111);  // stop on full FIFO mode, FIFO depth
 											 // 8k bytes <-- this disables all APEX
 											 // features, but we don't need them
 		};
@@ -154,10 +155,6 @@ struct ICM45Base {
 		struct I2CMRdData0 {
 			static constexpr Bank bank = Bank::IPregTop1;
 			static constexpr uint8_t reg = 0x1b;
-		};
-
-		struct DmpExtSenOdrCfg {
-			// TODO: todo
 		};
 
 		struct I2CMControl {
@@ -239,30 +236,21 @@ struct ICM45Base {
 	std::vector<uint8_t> read_buffer;
 
 	bool bulkRead(DriverCallbacks<int32_t>&& callbacks) {
+		if (magPollingEnabled && millis() - lastMagPollMillis >= MagTs * 1000) {
+			uint8_t magData[9];
+			readAux(magDataReg, magData, magDataWidth == MagDataWidth::SixByte ? 6 : 9);
+
+			callbacks.processMagSample(magData, 1.0f / MagPollingHz);
+			lastMagPollMillis += MagTs * 1000;
+		}
+
 		constexpr int16_t InvalidReading = -32768;
 
 		size_t fifo_packets = m_RegisterInterface.readReg16(BaseRegs::FifoCount);
 
-		if (fifo_packets <= 1) {
-			return false;
+		if (fifo_packets == 0) {
+			return;
 		}
-
-		// AN-000364
-		// 2.16 FIFO EMPTY EVENT IN STREAMING MODE CAN CORRUPT FIFO DATA
-		//
-		// Description: When in FIFO streaming mode, a FIFO empty event
-		// (caused by host reading the last byte of the last FIFO frame) can
-		// cause FIFO data corruption in the first FIFO frame that arrives
-		// after the FIFO empty condition. Once the issue is triggered, the
-		// FIFO state is compromised and cannot recover. FIFO must be set in
-		// bypass mode to flush out the wrong state
-		//
-		// When operating in FIFO streaming mode, if FIFO threshold
-		// interrupt is triggered with M number of FIFO frames accumulated
-		// in the FIFO buffer, the host should only read the first M-1
-		// number of FIFO frames. This prevents the FIFO empty event, that
-		// can cause FIFO data corruption, from happening.
-		--fifo_packets;
 
 		auto packets_to_read = std::min(fifo_packets, MaxReadings);
 
@@ -367,13 +355,21 @@ struct ICM45Base {
 	}
 
 	uint8_t readAux(uint8_t address) {
+		uint8_t buffer;
+		readAux(address, &buffer, sizeof(buffer));
+		return buffer;
+	}
+
+	void readAux(uint8_t address, uint8_t* buffer, size_t length) {
+		assert(length <= 15);
+
 		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
 
 		writeBankRegister<typename BaseRegs::I2CMCommand0>(
 			(0b1 << 7)  // Last transaction
 			| (0b0 << 6)  // Channel 0
 			| (0b01 << 4)  // Read with register
-			| (0b0001 << 0)  // Read 1 byte
+			| (length << 0)  // Read "length" bytes
 		);
 		writeBankRegister<typename BaseRegs::I2CMControl>(
 			(0b0 << 6)  // No restarts
@@ -394,17 +390,18 @@ struct ICM45Base {
 			);
 		}
 
-		return readBankRegister<typename BaseRegs::I2CMRdData0>();
+		readBankRegister<typename BaseRegs::I2CMRdData0>(buffer, length);
 	}
 
 	void writeAux(uint8_t address, uint8_t value) {
-		writeBankRegister<typename BaseRegs::I2CMDevProfile0>(address);
-		writeBankRegister<typename BaseRegs::I2CMWrData0>(value);
+		uint8_t writeData[] = {address, value};
+
+		writeBankRegister<typename BaseRegs::I2CMWrData0>(writeData, sizeof(writeData));
 		writeBankRegister<typename BaseRegs::I2CMCommand0>(
 			(0b1 << 7)  // Last transaction
 			| (0b0 << 6)  // Channel 0
-			| (0b01 << 4)  // Read with register
-			| (0b0001 << 0)  // Read 1 byte
+			| (0b00 << 4)  // Write
+			| (0b0010 << 0)  // Write 2 bytes
 		);
 		writeBankRegister<typename BaseRegs::I2CMControl>(
 			(0b0 << 6)  // No restarts
@@ -427,13 +424,19 @@ struct ICM45Base {
 		}
 	}
 
+	bool magPollingEnabled = false;
+	uint8_t magDataReg = 0x00;
+	MagDataWidth magDataWidth;
+	uint64_t lastMagPollMillis = 0;
+
 	void startAuxPolling(uint8_t dataReg, MagDataWidth dataWidth) {
-		// TODO:
+		magPollingEnabled = true;
+		magDataReg = dataReg;
+		magDataWidth = dataWidth;
+		lastMagPollMillis = millis();
 	}
 
-	void stopAuxPolling() {
-		// TODO:
-	}
+	void stopAuxPolling() { magPollingEnabled = false; }
 };
 
 };  // namespace SlimeVR::Sensors::SoftFusion::Drivers
