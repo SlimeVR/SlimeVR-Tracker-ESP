@@ -39,6 +39,24 @@
 #define SCL(pin)
 #endif
 
+#ifndef PIN_IMU_SCK
+#define SCK(pin) constexpr uint8_t PIN_IMU_SCK = pin;
+#else
+#define SCK(pin)
+#endif
+
+#ifndef PIN_IMU_MISO
+#define MISO(pin) constexpr uint8_t PIN_IMU_MISO = pin;
+#else
+#define MISO(pin)
+#endif
+
+#ifndef PIN_IMU_MOSI
+#define MOSI(pin) constexpr uint8_t PIN_IMU_MOSI = pin;
+#else
+#define MOSI(pin)
+#endif
+
 #ifndef PIN_IMU_INT
 #define INT(pin) constexpr uint8_t PIN_IMU_INT = pin;
 #else

@@ -57,8 +57,6 @@
 			"properties": {
 				"protocol": { "const": "I2C" },
 				"imu": { "$ref": "#/$defs/IMU_TYPE" },
-				"sda": { "$ref": "#/$defs/pin", "description": "SDA Pin" },
-				"scl": { "$ref": "#/$defs/pin", "description": "SCL Pin" },
 				"int": { "$ref": "#/$defs/pin", "description": "INT Pin" },
 				"address": {
 					"type": "number",
@@ -69,7 +67,7 @@
 					"description": "IMU Rotation"
 				}
 			},
-			"required": ["protocol", "imu", "sda", "scl"]
+			"required": ["protocol", "imu", "rotation"]
 		},
 
 		"SPI_IMU": {
@@ -85,7 +83,56 @@
 				},
 				"cs": { "$ref": "#/$defs/pin", "description": "CS Pin" }
 			},
-			"required": ["protocol", "imu", "cs"]
+			"required": ["protocol", "imu", "cs", "rotation"]
+		},
+
+		"BUS": {
+			"type": "object",
+			"discriminator": {
+				"propertyName": "protocol"
+			},
+			"oneOf": [
+				{ "$ref": "#/$defs/I2C_BUS" },
+				{ "$ref": "#/$defs/SPI_BUS" }
+			],
+			"required": ["protocol"]
+		},
+
+		"I2C_BUS": {
+			"type": "object",
+			"description": "I2C bus pin settings",
+			"properties": {
+				"protocol": { "const": "I2C" },
+				"sda": { "$ref": "#/$defs/pin", "description": "SDA Pin" },
+				"scl": { "$ref": "#/$defs/pin", "description": "SCL Pin" },
+				"imus": {
+					"description": "I2C IMUs",
+					"type": "array",
+					"items": { "$ref": "#/$defs/I2C_IMU" },
+					"minItems": 1,
+					"maxItems": 2
+				}
+			},
+			"required": ["protocol", "sda", "scl", "imus"]
+		},
+
+		"SPI_BUS": {
+			"type": "object",
+			"description": "SPI bus pin settings",
+			"properties": {
+				"protocol": { "const": "SPI" },
+				"sck": { "$ref": "#/$defs/pin", "description": "SCK Pin" },
+				"miso": { "$ref": "#/$defs/pin", "description": "MISO Pin" },
+				"mosi": { "$ref": "#/$defs/pin", "description": "MOSI Pin" },
+				"imus": {
+					"type": "array",
+					"description": "SPI IMUs",
+					"items": { "$ref": "#/$defs/SPI_IMU" },
+					"minItems": 1,
+					"maxItems": 2
+				}
+			},
+			"required": ["protocol", "sck", "miso", "mosi", "imus"]
 		},
 
 		"IMU": {
@@ -171,12 +218,12 @@
 		"BASIC_IMU_BOARD_CONFIG": {
 			"type": "object",
 			"properties": {
-				"SENSORS": {
+				"BUSES": {
 					"type": "array",
-					"items": { "$ref": "#/$defs/IMU" },
+					"items": { "$ref": "#/$defs/BUS" },
 					"minItems": 1,
 					"maxItems": 2,
-					"description": "Sensors List"
+					"description": "Bus List"
 				},
 				"LED": {
 					"type": "object",
@@ -195,7 +242,7 @@
 				},
 				"BATTERY": { "$ref": "#/$defs/BATTERY" }
 			},
-			"required": ["SENSORS", "LED", "BATTERY"]
+			"required": ["BUSES", "LED", "BATTERY"]
 		},
 
 		"BoardConfig": {

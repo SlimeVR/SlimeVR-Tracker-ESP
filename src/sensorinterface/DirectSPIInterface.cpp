@@ -28,25 +28,72 @@
 
 namespace SlimeVR {
 
-DirectSPIInterface::DirectSPIInterface(SPIClass& spiClass, SPISettings spiSettings)
+DirectSPIInterface::DirectSPIInterface(
+	SPIClass* spiClass,
+	SPISettings spiSettings,
+	uint8_t sck,
+	uint8_t miso,
+	uint8_t mosi
+)
 	: m_spiClass{spiClass}
-	, m_spiSettings{spiSettings} {}
+	, m_spiSettings{spiSettings}
+	, m_sck{sck}
+	, m_miso{miso}
+	, m_mosi{mosi} {}
 
 bool DirectSPIInterface::init() {
-	m_spiClass.begin();
+	const bool customPinsConfigured = m_sck != 255 && m_miso != 255 && m_mosi != 255;
+#if defined(ESP32)
+	// To make sure SCK, MISO, MOSI pins have already defined
+	if (customPinsConfigured) {
+		// SPIClass::begin() requires int8_t
+		// for kepping uint_8 style, doing transform here
+		m_spiClass->begin((int8_t)m_sck, (int8_t)m_miso, (int8_t)m_mosi);
+	} else {
+		// or use the default pin defines
+		m_spiClass->begin();
+	}
+
+#elif defined(ESP8266)
+	if (customPinsConfigured) {
+		const bool overlapPins = m_sck == 6 && m_miso == 7 && m_mosi == 8;
+		// SPIClass::pins() requires an SS argument even though SlimeVR manages CS
+		// separately for each sensor through PinInterface. ESP8266 overlap mode
+		// specifically requires GPIO0, while the standard HSPI pin set uses the
+		// core-defined SS pin (GPIO15).
+		const int8_t hardwareSs = overlapPins ? 0 : static_cast<int8_t>(SS);
+
+		if (!m_spiClass->pins(
+				static_cast<int8_t>(m_sck),
+				static_cast<int8_t>(m_miso),
+				static_cast<int8_t>(m_mosi),
+				hardwareSs
+			)) {
+			return false;
+		}
+	}
+
+	m_spiClass->begin();
+
+	// controls each sensor's CS through PinInterface,
+	// turn off the Hardware cs control
+	m_spiClass->setHwCs(false);
+#else
+	m_spiClass->begin();
+#endif
 	return true;
 }
 
 void DirectSPIInterface::swapIn() {}
 
 void DirectSPIInterface::beginTransaction(PinInterface* csPin) {
-	m_spiClass.beginTransaction(m_spiSettings);
+	m_spiClass->beginTransaction(m_spiSettings);
 	csPin->digitalWrite(LOW);
 }
 
 void DirectSPIInterface::endTransaction(PinInterface* csPin) {
 	csPin->digitalWrite(HIGH);
-	m_spiClass.endTransaction();
+	m_spiClass->endTransaction();
 }
 
 const SPISettings& DirectSPIInterface::getSpiSettings() { return m_spiSettings; }

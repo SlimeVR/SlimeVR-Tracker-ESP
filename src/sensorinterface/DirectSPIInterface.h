@@ -32,7 +32,18 @@ namespace SlimeVR {
 
 class DirectSPIInterface : public SensorInterface {
 public:
-	DirectSPIInterface(SPIClass& spiClass, SPISettings spiSettings);
+	// Store the SPIClass instance by pointer instead of by value/reference-like cache
+	// copies. On ESP32-C3, copying the global SPI object through the interface cache
+	// can lead to duplicated ownership of internal SPI resources and a heap
+	// double-free during teardown/reinitialization. This class does not own the
+	// SPIClass.
+	DirectSPIInterface(
+		SPIClass* spiClass,
+		SPISettings spiSettings,
+		uint8_t sck = 255,
+		uint8_t miso = 255,
+		uint8_t mosi = 255
+	);
 	bool init() final;
 	void swapIn() final;
 
@@ -43,14 +54,17 @@ public:
 
 	template <typename... Args>
 	auto transfer(Args... args) {
-		return m_spiClass.transfer(args...);
+		return m_spiClass->transfer(args...);
 	}
 
 	const SPISettings& getSpiSettings();
 
 private:
-	SPIClass& m_spiClass;
+	SPIClass* m_spiClass;
 	SPISettings m_spiSettings;
+	uint8_t m_sck;
+	uint8_t m_miso;
+	uint8_t m_mosi;
 };
 
 }  // namespace SlimeVR

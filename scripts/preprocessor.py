@@ -98,46 +98,75 @@ def _build_board_flags(defaults: dict, board_name: str) -> List[str]:
     add('LED_PIN', values.get('LED').get('LED_PIN'), 'pin')
     add('LED_INVERTED', values.get('LED').get('LED_INVERTED'), 'raw')
 
-    sensors = values.get('SENSORS')
-    if sensors:
-        sensor_list = []
+    buses = values.get('BUSES')
+    if not buses:
+        raise ValueError(f"Missing BUSES config for {board_name}")
 
-        add('PIN_IMU_SDA', 255, 'pin') # FIXME fix the I2C Scanner so it use the sensor list and not be called when no I2C sensor
-        add('PIN_IMU_SCL', 255, 'pin')
-        add('PIN_IMU_INT_2', 255, 'pin') # FIXME: fix the CONFIG serial command so it use the sensor list
+    sensor_list = []
+    sensor_index = 0
 
-        for index, sensor in enumerate(sensors):
-            if sensor.get('protocol') == 'I2C':
+    add('PIN_IMU_SDA', 255, 'pin') # FIXME fix the I2C Scanner so it use the sensor list and not be called when no I2C sensor
+    add('PIN_IMU_SCL', 255, 'pin')
+    add('PIN_IMU_INT_2', 255, 'pin') # FIXME: fix the CONFIG serial command so it use the sensor list
+
+    # Use 255 as "not configured" so DirectSPIInterface falls back to default SPI pins.
+    add('PIN_IMU_SCK', 255, 'pin')
+    add('PIN_IMU_MISO', 255, 'pin')
+    add('PIN_IMU_MOSI', 255, 'pin')
+
+    for bus in buses:
+        protocol = bus.get('protocol')
+
+        if protocol == 'I2C':
+            add('PIN_IMU_SDA', bus.get('sda'), 'pin')
+            add('PIN_IMU_SCL', bus.get('scl'), 'pin')
+
+        elif protocol == 'SPI':
+            add('PIN_IMU_SCK', bus.get('sck'), 'pin')
+            add('PIN_IMU_MISO', bus.get('miso'), 'pin')
+            add('PIN_IMU_MOSI', bus.get('mosi'), 'pin')
+
+        else:
+            raise ValueError(f"Unsupported bus protocol: {protocol}")
+
+        for sensor in bus.get('imus', []):
+            if sensor.get('protocol') != protocol:
+                raise ValueError(f"Sensor protocol does not match bus protocol on {board_name}")
+
+            secondary = 'false' if sensor_index == 0 else 'true'
+
+            if protocol == 'I2C':
                 params = [
                     format_value(sensor.get('imu'), 'raw'),
-                    format_value(sensor.get('address', 'PRIMARY_IMU_ADDRESS_ONE' if index == 0 else 'SECONDARY_IMU_ADDRESS_TWO'), 'number'),
+                    format_value(sensor.get('address', 'PRIMARY_IMU_ADDRESS_ONE' if sensor_index == 0 else 'SECONDARY_IMU_ADDRESS_TWO'), 'number'),
                     format_value(sensor.get('rotation'), 'raw'),
-                    f"DIRECT_WIRE({format_value(sensor.get('scl'), 'pin')}, {format_value(sensor.get('sda'), 'pin')})",
-                    'false' if index == 0 else 'true',
+                    f"DIRECT_WIRE({format_value(bus.get('scl'), 'pin')}, {format_value(bus.get('sda'), 'pin')})",
+                    secondary,
                     f"DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})",
                     '0'
                 ]
-                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
-                add('PIN_IMU_SDA', sensor.get('sda'), 'pin')
-                add('PIN_IMU_SCL', sensor.get('scl'), 'pin')
 
-            if sensor.get('protocol') == 'SPI':
+            else:
                 params = [
                     format_value(sensor.get('imu'), 'raw'),
                     f"DIRECT_PIN({format_value(sensor.get('cs'), 'pin')})",
                     format_value(sensor.get('rotation'), 'raw'),
-                    "DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3)",
-                    'false' if index == 0 else 'true',
+                    "DIRECT_SPI(24'000'000, MSBFIRST, SPI_MODE3, PIN_IMU_SCK, PIN_IMU_MISO, PIN_IMU_MOSI)",
+                    secondary,
                     f"DIRECT_PIN({format_value(sensor.get('int', 255), 'pin')})",
                     '0'
                 ]
-                sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
 
-            if index == 0: # FIXME: fix the CONFIG serial command so it use the sensor list
+            sensor_list.append(f"SENSOR_DESC_ENTRY({','.join(params)})")
+
+            if sensor_index == 0: # FIXME: fix the CONFIG serial command so it use the sensor list
                 add('PIN_IMU_INT', sensor.get('int'), 'pin')
-            elif index == 1:
+            elif sensor_index == 1:
                 add('PIN_IMU_INT_2', sensor.get('int'), 'pin')
-        add('SENSOR_DESC_LIST', f"'{' '.join(sensor_list)}'", 'raw')
+
+            sensor_index += 1
+
+    add('SENSOR_DESC_LIST', f"'{' '.join(sensor_list)}'", 'raw')
 
 
     battery = values.get('BATTERY')
