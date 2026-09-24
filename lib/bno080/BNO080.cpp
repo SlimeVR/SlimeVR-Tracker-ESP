@@ -302,15 +302,18 @@ uint16_t BNO080::parseInputReport(void)
 
 	timeStamp = ((uint32_t)shtpData[4] << (8 * 3)) | ((uint32_t)shtpData[3] << (8 * 2)) | ((uint32_t)shtpData[2] << (8 * 1)) | ((uint32_t)shtpData[1] << (8 * 0));
 
-	// The gyro-integrated input reports are sent via the special gyro channel and do no include the usual ID, sequence, and status fields
+	// The gyro-integrated input reports are sent via the special gyro channel and do not include the usual ID, sequence, and status fields
 	if(shtpHeader[2] == CHANNEL_GYRO) {
-		rawQuatI = (uint16_t)shtpData[1] << 8 | shtpData[0];
-		rawQuatJ = (uint16_t)shtpData[3] << 8 | shtpData[2];
-		rawQuatK = (uint16_t)shtpData[5] << 8 | shtpData[4];
-		rawQuatReal = (uint16_t)shtpData[7] << 8 | shtpData[6];
+		rawGyroIntegratedQuatI = (uint16_t)shtpData[1] << 8 | shtpData[0];
+		rawGyroIntegratedQuatJ = (uint16_t)shtpData[3] << 8 | shtpData[2];
+		rawGyroIntegratedQuatK = (uint16_t)shtpData[5] << 8 | shtpData[4];
+		rawGyroIntegratedQuatReal = (uint16_t)shtpData[7] << 8 | shtpData[6];
+
 		rawFastGyroX = (uint16_t)shtpData[9] << 8 | shtpData[8];
 		rawFastGyroY = (uint16_t)shtpData[11] << 8 | shtpData[10];
 		rawFastGyroZ = (uint16_t)shtpData[13] << 8 | shtpData[12];
+
+		hasNewGyroIntegratedQuaternion = true;
 		hasNewFastGyro_ = true;
 		return SENSOR_REPORTID_GYRO_INTEGRATED_ROTATION_VECTOR;
 	}
@@ -596,6 +599,26 @@ bool BNO080::getNewGameQuat(float &i, float &j, float &k, float &real, uint8_t &
 		return true;
 	}
 	return false;
+}
+
+void BNO080::getGyroIntegratedQuat(
+	float &i,
+	float &j,
+	float &k,
+	float &real
+)
+{
+	i = qToFloat(rawGyroIntegratedQuatI, rotationVector_Q1);
+	j = qToFloat(rawGyroIntegratedQuatJ, rotationVector_Q1);
+	k = qToFloat(rawGyroIntegratedQuatK, rotationVector_Q1);
+	real = qToFloat(rawGyroIntegratedQuatReal, rotationVector_Q1);
+
+	hasNewGyroIntegratedQuaternion = false;
+}
+
+bool BNO080::hasNewGyroIntegratedQuat()
+{
+	return hasNewGyroIntegratedQuaternion;
 }
 
 void BNO080::getMagQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy)

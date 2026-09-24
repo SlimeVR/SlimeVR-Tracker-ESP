@@ -204,6 +204,8 @@ public:
 	bool getNewQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy);
 	void getGameQuat(float &i, float &j, float &k, float &real, uint8_t &accuracy);
 	bool getNewGameQuat(float &i, float &j, float &k, float &real, uint8_t &accuracy);
+	bool hasNewGyroIntegratedQuat();
+	void getGyroIntegratedQuat(float &i, float &j, float &k, float &real);
 	void getMagQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy);
 	bool getNewMagQuat(float &i, float &j, float &k, float &real, float &radAccuracy, uint8_t &accuracy);
 	float getQuatI();
@@ -345,6 +347,8 @@ private:
 	uint16_t rawMagX, rawMagY, rawMagZ, magAccuracy;
 	uint16_t rawQuatI, rawQuatJ, rawQuatK, rawQuatReal, rawQuatRadianAccuracy, quatAccuracy;
 	uint16_t rawGameQuatI, rawGameQuatJ, rawGameQuatK, rawGameQuatReal, quatGameAccuracy;
+	uint16_t rawGyroIntegratedQuatI, rawGyroIntegratedQuatJ, rawGyroIntegratedQuatK, rawGyroIntegratedQuatReal;
+	bool hasNewGyroIntegratedQuaternion = false;
 	uint16_t rawMagQuatI, rawMagQuatJ, rawMagQuatK, rawMagQuatReal, rawMagQuatRadianAccuracy, quatMagAccuracy;
 	bool hasNewQuaternion, hasNewGameQuaternion, hasNewMagQuaternion, hasNewAccel_, hasNewLinAccel_, hasNewFastGyro_;
 	bool hasNewMag_, hasNewGyro_;
