@@ -624,6 +624,37 @@
 				"needManualReboot": false,
 				"shouldOnlyUseDefaults": false
 			}
+		},
+		"BOARD_TTGO_TOI_PLUS": {
+			"values": {
+				"SENSORS": [
+					{
+						"protocol": "I2C",
+						"imu": "IMU_BNO085",
+						"rotation": "DEG_270",
+						"scl": "18",
+						"sda": "19",
+						"int": "5"
+					}
+				],
+				"BATTERY": {
+					"type": "BAT_EXTERNAL",
+					"r1": 1,
+					"r2": 1,
+					"shieldR": 0,
+					"pin": "2"
+				},
+				"LED": {
+					"LED_PIN": "3",
+					"LED_INVERTED": false
+				}
+			},
+			"flashingRules": {
+				"applicationOffset": 65536,
+				"needBootPress": false,
+				"needManualReboot": false,
+				"shouldOnlyUseDefaults": false
+			}
 		}
 	}
 }
