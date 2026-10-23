@@ -34,7 +34,8 @@
 				"IMU_LSM6DSR",
 				"IMU_MPU6050_SF",
 				"IMU_ICM45686",
-				"IMU_ICM45605"
+				"IMU_ICM45605",
+				"IMU_ICM55686"
 			],
 			"description": "Imu Type"
 		},
