@@ -53,6 +53,11 @@
 #define EXPERIMENTAL_BNO_DISABLE_ACCEL_CALIBRATION true
 #endif
 
+#ifndef EXPERIMENTAL_BNO_USE_GIRV
+#define EXPERIMENTAL_BNO_USE_GIRV false
+// Use GIRV on BNO to report at 333Hz, stabilization still happens at 100Hz
+#endif
+
 #ifndef IMU_USE_EXTERNAL_CLOCK
 #define IMU_USE_EXTERNAL_CLOCK true  // Use external clock for IMU (ICM-45686 only)
 #endif

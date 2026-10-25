@@ -60,6 +60,10 @@ void BNO080Sensor::motionSetup() {
 
 	toggles = configuration.getSensorToggles(sensorId);
 
+#if EXPERIMENTAL_BNO_USE_GIRV
+	imu.enableGyroIntegratedRotationVector(3);
+#else
+
 	if (!toggles.getToggle(SensorToggles::MagEnabled)) {
 		if ((sensorType == SensorTypeID::BNO085 || sensorType == SensorTypeID::BNO086)
 			&& BNO_USE_ARVR_STABILIZATION) {
@@ -75,6 +79,7 @@ void BNO080Sensor::motionSetup() {
 			imu.enableRotationVector(10);
 		}
 	}
+#endif
 
 #if ENABLE_INSPECTION
 	imu.enableRawGyro(10);
@@ -189,6 +194,24 @@ void BNO080Sensor::motionLoop() {
 			lastReadTemperature = imu.getGyroTemp();
 			imu.resetNewRawGyro();
 		}
+
+#if EXPERIMENTAL_BNO_USE_GIRV
+
+		if (imu.hasNewGyroIntegratedQuat()) {
+			Quat nRotation;
+
+			imu.getGyroIntegratedQuat(
+				nRotation.x,
+				nRotation.y,
+				nRotation.z,
+				nRotation.w
+			);
+
+			setFusedRotation(nRotation);
+			continue;
+		}
+
+#endif
 
 		if (!toggles.getToggle(SensorToggles::MagEnabled)) {
 			if (imu.hasNewGameQuat())  // New quaternion if context
