@@ -137,7 +137,7 @@ void LEDManager::update() {
 		switch (m_CurrentStage) {
 			case ON:
 			case OFF:
-				length = STANDBUY_LENGTH;
+				length = STANDBY_LENGTH;
 				break;
 			case GAP:
 				length = DEFAULT_GAP;
