@@ -65,6 +65,7 @@ public:
 		, sensorId(id)
 		, sensorType(type)
 		, sensorOffset({Quat(Vector3(0, 0, 1), rotation)})
+		, inverseSensorOffset(sensorOffset.inverse())
 		, m_Logger(SlimeVR::Logging::Logger(sensorName)) {
 		char buf[4];
 		sprintf(buf, "%u", id);
@@ -132,6 +133,7 @@ protected:
 	 * (Y to top of the tracker, Z to front, X to left)
 	 */
 	Quat sensorOffset;
+	Quat inverseSensorOffset;
 
 	bool newFusedRotation = false;
 	Quat fusedRotation{};
