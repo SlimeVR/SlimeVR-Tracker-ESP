@@ -66,6 +66,9 @@
 
 // #define PIN_IMU_SDA 14
 // #define PIN_IMU_SCL 12
+// #define PIN_IMU_SCK 4
+// #define PIN_IMU_MISO 5
+// #define PIN_IMU_MOSI 6
 // #define PIN_IMU_INT 16
 // #define PIN_IMU_INT_2 13
 // #define PIN_BATTERY_LEVEL 17

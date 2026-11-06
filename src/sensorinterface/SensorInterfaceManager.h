@@ -106,7 +106,14 @@ private:
 	SensorInterface<I2CWireSensorInterface, int, int> i2cWireInterfaces;
 	SensorInterface<I2CPCASensorInterface, int, int, int, int> pcaWireInterfaces;
 	SensorInterface<Sensors::I2CImpl, uint8_t> i2cImpls;
-	SensorInterface<DirectSPIInterface, SPIClass, SPISettings> directSPIInterfaces;
+	SensorInterface<
+		DirectSPIInterface,
+		SPIClass*,
+		SPISettings,
+		uint8_t,
+		uint8_t,
+		uint8_t>
+		directSPIInterfaces;
 	SensorInterface<Sensors::SPIImpl, DirectSPIInterface*, PinInterface*> spiImpls;
 };
 

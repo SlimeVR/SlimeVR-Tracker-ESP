@@ -4,22 +4,25 @@
 	"defaults": {
 		"BOARD_SLIMEVR": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
-						"int": "16",
-						"rotation": "DEG_270",
+						"sda": "14",
 						"scl": "12",
-						"sda": "14"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_AUTO",
-						"int": "13",
-						"rotation": "DEG_270",
-						"scl": "12",
-						"sda": "14"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_AUTO",
+								"int": "16",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_AUTO",
+								"int": "13",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -43,21 +46,34 @@
 		},
 		"BOARD_SLIMEVR_V1_2": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "SPI",
-						"imu": "IMU_AUTO",
-						"int": "2",
-						"cs": "15",
-						"rotation": "DEG_270"
+						"sck": "14",
+						"miso": "12",
+						"mosi": "13",
+						"imus": [
+							{
+								"protocol": "SPI",
+								"imu": "IMU_AUTO",
+								"int": "2",
+								"cs": "15",
+								"rotation": "DEG_270"
+							}
+						]
 					},
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
-						"int": "16",
-						"rotation": "DEG_270",
+						"sda": "4",
 						"scl": "5",
-						"sda": "4"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_AUTO",
+								"int": "16",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -81,22 +97,25 @@
 		},
 		"BOARD_SLIMEVR_DEV": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
-						"int": "10",
-						"rotation": "DEG_270",
+						"sda": "4",
 						"scl": "5",
-						"sda": "4"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_AUTO",
-						"int": "13",
-						"rotation": "DEG_270",
-						"scl": "5",
-						"sda": "4"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_AUTO",
+								"int": "10",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_AUTO",
+								"int": "13",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -120,22 +139,25 @@
 		},
 		"BOARD_WEMOSD1MINI": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_AUTO",
-						"int": "D5",
-						"rotation": "DEG_270",
+						"sda": "D2",
 						"scl": "D1",
-						"sda": "D2"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_AUTO",
-						"int": "D6",
-						"rotation": "DEG_270",
-						"scl": "D1",
-						"sda": "D2"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_AUTO",
+								"int": "D5",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_AUTO",
+								"int": "D6",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -159,22 +181,25 @@
 		},
 		"BOARD_NODEMCU": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_BNO085",
-						"int": "D5",
-						"rotation": "DEG_270",
+						"sda": "D2",
 						"scl": "D1",
-						"sda": "D2"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_BNO085",
-						"int": "D6",
-						"rotation": "DEG_270",
-						"scl": "D1",
-						"sda": "D2"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_BNO085",
+								"int": "D5",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_BNO085",
+								"int": "D6",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -198,22 +223,25 @@
 		},
 		"BOARD_ESP01": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_BNO085",
-						"int": "255",
-						"rotation": "DEG_270",
+						"sda": "2",
 						"scl": "0",
-						"sda": "2"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_BNO085",
-						"int": "255",
-						"rotation": "DEG_270",
-						"scl": "0",
-						"sda": "2"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_BNO085",
+								"int": "255",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_BNO085",
+								"int": "255",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -237,22 +265,25 @@
 		},
 		"BOARD_TTGO_TBASE": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_BNO085",
-						"int": "14",
-						"rotation": "DEG_270",
+						"sda": "5",
 						"scl": "4",
-						"sda": "5"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_BNO085",
-						"int": "13",
-						"rotation": "DEG_270",
-						"scl": "4",
-						"sda": "5"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_BNO085",
+								"int": "14",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_BNO085",
+								"int": "13",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -276,22 +307,25 @@
 		},
 		"BOARD_WROOM32": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_BNO085",
-						"int": "23",
-						"rotation": "DEG_270",
+						"sda": "21",
 						"scl": "22",
-						"sda": "21"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_BNO085",
-						"int": "25",
-						"rotation": "DEG_270",
-						"scl": "22",
-						"sda": "21"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_BNO085",
+								"int": "23",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_BNO085",
+								"int": "25",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -315,22 +349,25 @@
 		},
 		"BOARD_LOLIN_C3_MINI": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "6",
-						"rotation": "DEG_270",
+						"sda": "5",
 						"scl": "4",
-						"sda": "5"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "8",
-						"rotation": "DEG_270",
-						"scl": "4",
-						"sda": "5"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "6",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "8",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -354,22 +391,25 @@
 		},
 		"BOARD_BEETLE32C3": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "6",
-						"rotation": "DEG_270",
+						"sda": "8",
 						"scl": "9",
-						"sda": "8"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "7",
-						"rotation": "DEG_270",
-						"scl": "9",
-						"sda": "8"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "6",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "7",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -393,22 +433,25 @@
 		},
 		"BOARD_ESP32C3DEVKITM1": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "6",
-						"rotation": "DEG_270",
+						"sda": "5",
 						"scl": "4",
-						"sda": "5"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "7",
-						"rotation": "DEG_270",
-						"scl": "4",
-						"sda": "5"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "6",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "7",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -432,22 +475,25 @@
 		},
 		"BOARD_ESP32C6DEVKITC1": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "6",
-						"rotation": "DEG_270",
+						"sda": "5",
 						"scl": "4",
-						"sda": "5"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "7",
-						"rotation": "DEG_270",
-						"scl": "4",
-						"sda": "5"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "6",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "7",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -471,22 +517,25 @@
 		},
 		"BOARD_WEMOSWROOM02": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "0",
-						"rotation": "DEG_270",
+						"sda": "2",
 						"scl": "14",
-						"sda": "2"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "4",
-						"rotation": "DEG_270",
-						"scl": "14",
-						"sda": "2"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "0",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "4",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -510,22 +559,25 @@
 		},
 		"BOARD_XIAO_ESP32C3": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "5",
-						"rotation": "DEG_270",
+						"sda": "6",
 						"scl": "7",
-						"sda": "6"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "10",
-						"rotation": "DEG_270",
-						"scl": "7",
-						"sda": "6"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "5",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "10",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
@@ -549,22 +601,25 @@
 		},
 		"BOARD_ESP32S3_SUPERMINI": {
 			"values": {
-				"SENSORS": [
+				"BUSES": [
 					{
 						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "5",
-						"rotation": "DEG_270",
+						"sda": "7",
 						"scl": "6",
-						"sda": "7"
-					},
-					{
-						"protocol": "I2C",
-						"imu": "IMU_ICM45686",
-						"int": "4",
-						"rotation": "DEG_270",
-						"scl": "6",
-						"sda": "7"
+						"imus": [
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "5",
+								"rotation": "DEG_270"
+							},
+							{
+								"protocol": "I2C",
+								"imu": "IMU_ICM45686",
+								"int": "4",
+								"rotation": "DEG_270"
+							}
+						]
 					}
 				],
 				"BATTERY": {
