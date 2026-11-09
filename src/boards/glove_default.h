@@ -122,7 +122,7 @@
 	SENSOR_INFO_ENTRY(7, SensorPosition::POSITION_LEFT_INDEX_DISTAL)        \
 	SENSOR_INFO_ENTRY(8, SensorPosition::POSITION_LEFT_THUMB_PROXIMAL)      \
 	SENSOR_INFO_ENTRY(9, SensorPosition::POSITION_LEFT_THUMB_DISTAL)
-#elif GLOVE_SDIE == GLOVE_RIGHT
+#elif GLOVE_SIDE == GLOVE_RIGHT
 #define SENSOR_INFO_LIST                                                     \
 	SENSOR_INFO_ENTRY(0, SensorPosition::POSITION_RIGHT_HAND)                \
 	SENSOR_INFO_ENTRY(1, SensorPosition::POSITION_RIGHT_LITTLE_INTERMEDIATE) \
