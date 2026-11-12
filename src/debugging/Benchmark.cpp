@@ -1,40 +1,57 @@
 #include "Benchmark.h"
 
-#include "../debug.h"
-
-#if DEBUG_MEASURE_TIME_TAKEN
 #include <limits>
-#endif
+
+#include "../debug.h"
 
 namespace SlimeVR::Debugging {
 
 Benchmark::Benchmark(const char* name)
 	: name{name} {}
 
+void Benchmark::enable() {
+	lastReportMillis = millis();
+	totalLoops = 0;
+	enabled = true;
+}
+
+void Benchmark::disable() {
+	for (auto* instance : benchmarkInstances) {
+		instance->reset();
+	}
+	enabled = false;
+}
+
+bool Benchmark::status() { return enabled; }
+
 void Benchmark::before() {
-#if DEBUG_MEASURE_TIME_TAKEN
+	if (!enabled) {
+		return;
+	}
 	if (!registered) {
 		benchmarkInstances.push_back(this);
 		registered = true;
 	}
 
 	currentMeasurementStartMicros = micros();
-#endif
 }
 
 void Benchmark::after() {
-#if DEBUG_MEASURE_TIME_TAKEN
+	if (!enabled) {
+		return;
+	}
 	auto timeTakenMicros = micros() - currentMeasurementStartMicros;
 
 	totalTimeTakenMicros += timeTakenMicros;
 	minTimeTakenMicros = std::min(minTimeTakenMicros, timeTakenMicros);
 	maxTimeTakenMicros = std::max(maxTimeTakenMicros, timeTakenMicros);
 	measurementCount++;
-#endif
 }
 
 void Benchmark::tick() {
-#if DEBUG_MEASURE_TIME_TAKEN
+	if (!enabled) {
+		return;
+	}
 	totalLoops++;
 
 	auto timeSinceLastReport = millis() - lastReportMillis;
@@ -57,11 +74,9 @@ void Benchmark::tick() {
 
 	lastReportMillis = millis();
 	totalLoops = 0;
-#endif
 }
 
 void Benchmark::printReport() const {
-#if DEBUG_MEASURE_TIME_TAKEN
 	if (measurementCount == 0) {
 		return;
 	}
@@ -86,16 +101,13 @@ void Benchmark::printReport() const {
 		timeSinceLastReport,
 		measurementCount
 	);
-#endif
 }
 
 void Benchmark::reset() {
-#if DEBUG_MEASURE_TIME_TAKEN
 	totalTimeTakenMicros = 0;
 	minTimeTakenMicros = std::numeric_limits<uint64_t>::max();
 	maxTimeTakenMicros = 0;
 	measurementCount = 0;
-#endif
 }
 
 uint32_t Benchmark::lastReportMillis = millis();
@@ -105,5 +117,7 @@ std::vector<Benchmark*> Benchmark::benchmarkInstances{};
 SlimeVR::Logging::Logger Benchmark::logger("Benchmark");
 
 uint32_t Benchmark::totalLoops = 0;
+
+bool Benchmark::enabled = DEBUG_MEASURE_TIME_TAKEN;
 
 }  // namespace SlimeVR::Debugging

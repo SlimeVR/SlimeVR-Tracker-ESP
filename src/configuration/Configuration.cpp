@@ -113,7 +113,8 @@ void Configuration::setup() {
 	} else {
 		m_Logger.info("No configuration file found, creating new one");
 		m_Config.version = CURRENT_CONFIGURATION_VERSION;
-		save();
+		m_ConfigChanged = true;
+		saveNeeded = true;
 	}
 
 	loadSensors();
@@ -121,6 +122,8 @@ void Configuration::setup() {
 	m_Loaded = true;
 
 	m_Logger.info("Loaded configuration");
+
+	cleanupMigration();
 
 #ifdef DEBUG_CONFIGURATION
 	print();
@@ -154,45 +157,108 @@ void Configuration::wifiReset() {
 #endif
 }
 
-void Configuration::save() {
-	for (size_t i = 0; i < m_Sensors.size(); i++) {
-		SensorConfig config = m_Sensors[i];
-		if (config.type == SensorConfigType::NONE) {
-			continue;
+// Constant called function
+// Should do the following:
+//  - Check if a config is flagged to be saved.
+//  - after processing that one flag, check if there is a other config to save.
+//  - make a minimal delay in between saves of files, to limit the impact of multi
+//    config file saves
+void Configuration::tick() {
+	if (saveNeeded && ((lastsave + delaysave) < millis())) {
+		bool saved = false;
+
+		// Handle SensorConfig and saveNeeded
+		for (size_t i = 0; i < m_SensorsChanged.size(); i++) {
+			if (m_SensorsChanged[i] && !saved) {
+				if (saveSensorConfig(i)) {
+					m_SensorsChanged[i] = false;
+					saved = true;
+				}
+			}
+			if (m_SensorsChanged[i]) {
+				saveNeeded = true;
+			}
 		}
 
-		char path[17];
-		sprintf(path, DIR_CALIBRATIONS "/%zu", i);
+		// Handle SensorToggle and saveNeeded
+		for (size_t i = 0; i < m_SensorTogglesChanged.size(); i++) {
+			if (m_SensorTogglesChanged[i] && !saved) {
+				if (saveSensorToggle(i)) {
+					m_SensorTogglesChanged[i] = false;
+					saved = true;
+				}
+			}
+			if (m_SensorTogglesChanged[i]) {
+				saveNeeded = true;
+			}
+		}
 
-		m_Logger.trace("Saving sensor config data for %d", i);
+		// Handle sensor config
+		if (m_ConfigChanged && !saved) {
+			File file = LittleFS.open("/config.bin", "w");
+			file.write((uint8_t*)&m_Config, sizeof(DeviceConfig));
+			file.close();
+			m_ConfigChanged = false;
+		}
+		if (m_ConfigChanged) {
+			saveNeeded = true;
+		}
+	}
+}
+
+bool Configuration::saveSensorConfig(size_t sensorId) {
+	SensorConfig config = m_Sensors[sensorId];
+	if (config.type == SensorConfigType::NONE) {
+		return true;
+	}
+
+	char path[17];
+	sprintf(path, DIR_CALIBRATIONS "/%zu", sensorId);
+
+	m_Logger.trace("Saving sensor config data for %zu", sensorId);
+
+	File file = LittleFS.open(path, "w");
+	bool ret = true;
+	if (file.write((uint8_t*)&config, sizeof(config)) < sizeof(config)) {
+		m_Logger
+			.error("Failed to save sensor config: %s SensorID: %zu", path, sensorId);
+		ret = false;
+	}
+	file.close();
+	return ret;
+}
+
+bool Configuration::saveSensorToggle(size_t sensorId) {
+	char path[17];
+	if (sensorId < m_SensorToggles.size()) {
+		sprintf(path, DIR_TOGGLES "/%zu", sensorId);
+
+		m_Logger.trace("Saving sensor toggle state for %d", sensorId);
 
 		File file = LittleFS.open(path, "w");
-		file.write((uint8_t*)&config, sizeof(SensorConfig));
-		file.close();
-
-		if (i < m_SensorToggles.size()) {
-			sprintf(path, DIR_TOGGLES "/%zu", i);
-
-			m_Logger.trace("Saving sensor toggle state for %d", i);
-
-			file = LittleFS.open(path, "w");
-			auto toggleValues = m_SensorToggles[i].getValues();
-			file.write((uint8_t*)&toggleValues, sizeof(SensorToggleValues));
-			file.close();
-		} else {
-			m_Logger.trace(
-				"Skipping saving toggles for sensor %d, no toggles present",
-				i
+		auto toggleValues = m_SensorToggles[sensorId].getValues();
+		bool ret = true;
+		if (file.write((uint8_t*)&toggleValues, sizeof(toggleValues))
+			< sizeof(toggleValues)) {
+			m_Logger.error(
+				"Failed to save sensor toggle state: %s SensorID: %zu",
+				path,
+				sensorId
 			);
-		}
-	}
-
-	{
-		File file = LittleFS.open("/config.bin", "w");
-		file.write((uint8_t*)&m_Config, sizeof(DeviceConfig));
+			ret = false;
+		};
 		file.close();
+		return ret;
+	} else {
+		m_Logger.trace(
+			"Skipping saving toggles for sensor %d, no toggles present",
+			sensorId
+		);
+		return true;
 	}
+}
 
+void Configuration::cleanupMigration() {
 	// Clean up old toggles directory
 	if (LittleFS.exists(DIR_TOGGLES_OLD)) {
 		char path[17] = DIR_TOGGLES_OLD;
@@ -203,18 +269,26 @@ void Configuration::save() {
 			file.close();
 		});
 		LittleFS.rmdir(DIR_TOGGLES_OLD);
+		m_Logger.debug("Cleanup Migration done");
 	}
-
-	m_Logger.debug("Saved configuration");
 }
 
 void Configuration::reset() {
 	LittleFS.format();
 
 	m_Sensors.clear();
+	m_SensorsChanged.clear();
 	m_SensorToggles.clear();
-	m_Config.version = 1;
-	save();
+	m_SensorTogglesChanged.clear();
+	m_Config.version = CURRENT_CONFIGURATION_VERSION;
+	m_ConfigChanged = true;
+	// Todo:
+	// - we don't want to save the old tracker configuration. As it would defeat the
+	// purpose of the reset. Also not clear if we really need to save the basic
+	// configuration, until a command changes it again. But this also means, after
+	// a reset we need to restart a tracker to activate the new configuration on the
+	// sensor. The sensorconfig is not cleared in the running class.
+	saveNeeded = true;
 
 	m_Logger.debug("Reset configuration");
 }
@@ -223,22 +297,31 @@ int32_t Configuration::getVersion() const { return m_Config.version; }
 
 size_t Configuration::getSensorCount() const { return m_Sensors.size(); }
 
-SensorConfig Configuration::getSensor(size_t sensorID) const {
-	if (sensorID >= m_Sensors.size()) {
+SensorConfig Configuration::getSensor(size_t sensorId) const {
+	if (sensorId >= m_Sensors.size()) {
 		return {};
 	}
 
-	return m_Sensors.at(sensorID);
+	return m_Sensors.at(sensorId);
 }
 
-void Configuration::setSensor(size_t sensorID, const SensorConfig& config) {
+void Configuration::setSensor(
+	size_t sensorId,
+	const SensorConfig& config,
+	bool nosave
+) {
 	size_t currentSensors = m_Sensors.size();
-
-	if (sensorID >= currentSensors) {
-		m_Sensors.resize(sensorID + 1);
+	m_Logger.trace("setSensor ID %d", sensorId);
+	if (sensorId >= currentSensors) {
+		m_Sensors.resize(sensorId + 1);
 	}
-
-	m_Sensors[sensorID] = config;
+	if ((m_Sensors[sensorId] != config) && !nosave) {
+		m_Logger.trace("setSensor ID %d, saving", sensorId);
+		m_SensorsChanged.resize(sensorId + 1);
+		m_SensorsChanged[sensorId] = true;
+		saveNeeded = true;
+	}
+	m_Sensors[sensorId] = config;
 }
 
 SensorToggleState Configuration::getSensorToggles(size_t sensorId) const {
@@ -249,18 +332,35 @@ SensorToggleState Configuration::getSensorToggles(size_t sensorId) const {
 	return m_SensorToggles.at(sensorId);
 }
 
-void Configuration::setSensorToggles(size_t sensorId, SensorToggleState state) {
+void Configuration::setSensorToggles(
+	size_t sensorId,
+	SensorToggleState state,
+	bool nosave
+) {
 	size_t currentSensors = m_SensorToggles.size();
-
+	m_Logger.trace("setSensorToggles ID %d", sensorId);
 	if (sensorId >= currentSensors) {
 		m_SensorToggles.resize(sensorId + 1);
 	}
-
+	if (sensorId >= m_SensorTogglesChanged.size()) {
+		m_SensorTogglesChanged.resize(sensorId + 1);
+	}
+	if ((m_SensorToggles[sensorId].getValues() != state.getValues()) && !nosave) {
+		m_Logger.trace("setSensorToggles ID %d, saving", sensorId);
+		m_SensorTogglesChanged[sensorId] = true;
+		saveNeeded = true;
+	}
 	m_SensorToggles[sensorId] = state;
 }
 
+// eraseSensors()
+// Removes the Configuration:
+// m_Sensors from Configuration, but it leaves an active copy on
+// the Sensors itself. To make a change after eraseSensors the tracker
+// needs to be rebooted. Only then the Sensors are reinitialized
 void Configuration::eraseSensors() {
 	m_Sensors.clear();
+	m_SensorsChanged.clear();
 
 	SlimeVR::Utils::forEachFile(DIR_CALIBRATIONS, [&](SlimeVR::Utils::File f) {
 		char path[17];
@@ -270,8 +370,7 @@ void Configuration::eraseSensors() {
 
 		LittleFS.remove(path);
 	});
-
-	save();
+	saveNeeded = true;
 }
 
 void Configuration::loadSensors() {
@@ -323,10 +422,10 @@ void Configuration::loadSensors() {
 				SensorToggles::MagEnabled,
 				sensorConfig.data.bno0XX.magEnabled
 			);
-			setSensorToggles(sensorId, toggles);
+			setSensorToggles(sensorId, toggles, true);
 		}
 
-		setSensor(sensorId, sensorConfig);
+		setSensor(sensorId, sensorConfig, true);
 	});
 
 	if (LittleFS.exists(DIR_TOGGLES_OLD)) {
@@ -342,6 +441,7 @@ void Configuration::loadSensors() {
 
 			setSensorToggles(sensorId, SensorToggleState{values});
 		});
+		cleanupMigration();
 	}
 
 	SlimeVR::Utils::forEachFile(DIR_TOGGLES, [&](SlimeVR::Utils::File f) {
@@ -561,8 +661,98 @@ void Configuration::print() {
 				m_Logger.info("            magEnabled: %d", c.data.bno0XX.magEnabled);
 
 				break;
-			default:
+			case SensorConfigType::RUNTIME_CALIBRATION:
+				m_Logger.info(
+					"            A_Ts       : %f",
+					c.data.runtimeCalibration.A_Ts
+				);
+				m_Logger.info(
+					"            G_Ts       : %f",
+					c.data.runtimeCalibration.G_Ts
+				);
+				m_Logger.info(
+					"            M_Ts       : %f",
+					c.data.runtimeCalibration.M_Ts
+				);
+				m_Logger.info(
+					"            T_Ts       : %f",
+					c.data.runtimeCalibration.T_Ts
+				);
+
+				m_Logger.info(
+					"    TimestepsCalibrated: %d",
+					c.data.runtimeCalibration.sensorTimestepsCalibrated
+				);
+
+				m_Logger.info(
+					"        accelCalibrated: %d, %d, %d",
+					UNPACK_VECTOR_ARRAY(c.data.runtimeCalibration.accelCalibrated)
+				);
+				m_Logger.info(
+					"            A_off      : %f, %f, %f",
+					UNPACK_VECTOR_ARRAY(c.data.runtimeCalibration.A_off)
+				);
+
+				m_Logger.info(
+					"   gyroPointsCalibrated: %d",
+					c.data.runtimeCalibration.gyroPointsCalibrated
+				);
+
+				m_Logger.info(
+					"            G_OffTemp1 : %f",
+					c.data.runtimeCalibration.gyroMeasurementTemperature1
+				);
+				m_Logger.info(
+					"            G_off1     : %f, %f, %f",
+					UNPACK_VECTOR_ARRAY(c.data.runtimeCalibration.G_off1)
+				);
+
+				m_Logger.info(
+					"            G_OffTemp2 : %f",
+					c.data.runtimeCalibration.gyroMeasurementTemperature2
+				);
+				m_Logger.info(
+					"            G_off2     : %f, %f, %f",
+					UNPACK_VECTOR_ARRAY(c.data.runtimeCalibration.G_off2)
+				);
+
+				m_Logger.info(
+					"      MotionlessDataLen: %d",
+					c.data.runtimeCalibration.MotionlessDataLen
+				);
+
+				m_Logger.info("         MotionlessData:");
+				m_Logger.loghex(
+					SlimeVR::Logging::INFO,
+					c.data.runtimeCalibration.MotionlessData,
+					sizeof(c.data.runtimeCalibration.MotionlessData)
+				);
+
 				break;
+			default:
+				m_Logger.info(
+					"            Not defined to Print %s",
+					calibrationConfigTypeToString(c.type)
+				);
+				break;
+		}
+
+		if (i < m_SensorToggles.size()) {
+			m_Logger.info("      SensorToggles:");
+			m_Logger.info(
+				"             MagEnabled: %d",
+				m_SensorToggles[i].getToggle(SensorToggles::MagEnabled)
+			);
+			m_Logger.info(
+				"     CalibrationEnabled: %d",
+				m_SensorToggles[i].getToggle(SensorToggles::CalibrationEnabled)
+			);
+			m_Logger.info(
+				" TempCalibrationEnabled: %d",
+				m_SensorToggles[i].getToggle(
+					SensorToggles::TempGradientCalibrationEnabled
+				)
+			);
 		}
 	}
 }

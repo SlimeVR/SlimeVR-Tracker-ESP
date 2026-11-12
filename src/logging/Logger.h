@@ -35,7 +35,35 @@ public:
 
 	static void tick();
 
+	template <typename T>
+	void loghex(Level level, const T* data, size_t elements) const {
+		if (level < LOG_LEVEL) {
+			return;
+		}
+		const size_t linelength = 80;
+		const uint8_t* tData = reinterpret_cast<const uint8_t*>(data);
+		size_t tDataSize = sizeof(T) * elements;
+		size_t pos = 0;
+		char line[linelength + 1];
+		size_t linesize = sizeof(line);
+		for (size_t i = 0; i < tDataSize; i++) {
+			snprintf(
+				line + pos,
+				linesize - pos,
+				"%02X ",
+				static_cast<unsigned int>(tData[i])
+			);
+			pos = pos + 3;
+			if ((pos + 1 >= linesize - 1) || (i >= tDataSize - 1)) {
+				print(level, "%s", line);
+				pos = 0;
+			}
+		}
+	}
+
 private:
+	void print(Level level, const char* str, ...) const
+		__attribute__((format(printf, 3, 4)));
 	void log(Level level, const char* str, va_list args) const;
 
 	const char* const m_Prefix;

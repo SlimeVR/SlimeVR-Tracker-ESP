@@ -432,7 +432,6 @@ void ICM20948Sensor::saveCalibration(bool repeat) {
 	config.type = SlimeVR::Configuration::SensorConfigType::ICM20948;
 	config.data.icm20948 = m_Config;
 	configuration.setSensor(sensorId, config);
-	configuration.save();
 
 	if (repeat) {
 		bias_save_counter++;

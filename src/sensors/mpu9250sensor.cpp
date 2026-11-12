@@ -395,7 +395,6 @@ void MPU9250Sensor::startCalibration(int calibrationType) {
 	config.type = SlimeVR::Configuration::SensorConfigType::MPU9250;
 	config.data.mpu9250 = m_Config;
 	configuration.setSensor(sensorId, config);
-	configuration.save();
 
 	ledManager.off();
 	m_Logger.debug("Saved the calibration data");

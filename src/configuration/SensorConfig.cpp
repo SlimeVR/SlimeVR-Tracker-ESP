@@ -47,6 +47,33 @@ const char* calibrationConfigTypeToString(SensorConfigType type) {
 	}
 }
 
+bool SensorConfig::operator==(const SensorConfig& rhs) const {
+	if (type != rhs.type) {
+		return false;
+	}
+
+	switch (type) {
+		case SensorConfigType::NONE:
+			return true;
+		case SensorConfigType::BMI160:
+			return data.bmi160 == rhs.data.bmi160;
+		case SensorConfigType::MPU6050:
+			return data.mpu6050 == rhs.data.mpu6050;
+		case SensorConfigType::MPU9250:
+			return data.mpu9250 == rhs.data.mpu9250;
+		case SensorConfigType::ICM20948:
+			return data.icm20948 == rhs.data.icm20948;
+		case SensorConfigType::SFUSION:
+			return data.sfusion == rhs.data.sfusion;
+		case SensorConfigType::BNO0XX:
+			return data.bno0XX == rhs.data.bno0XX;
+		case SensorConfigType::RUNTIME_CALIBRATION:
+			return data.runtimeCalibration == rhs.data.runtimeCalibration;
+		default:
+			return false;
+	}
+}
+
 bool SensorConfigBits::operator==(const SensorConfigBits& rhs) const {
 	return magEnabled == rhs.magEnabled && magSupported == rhs.magSupported
 		&& calibrationEnabled == rhs.calibrationEnabled
