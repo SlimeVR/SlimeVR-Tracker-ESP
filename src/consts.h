@@ -46,6 +46,7 @@ enum class SensorTypeID : uint8_t {
 	ICM45686,
 	ICM45605,
 	ADC_RESISTANCE,
+	ICM55686,
 	Empty = 255
 };
 
@@ -69,6 +70,7 @@ enum class SensorTypeID : uint8_t {
 #define IMU_MPU6050_SF SoftFusionMPU6050
 #define IMU_ICM45686 SoftFusionICM45686
 #define IMU_ICM45605 SoftFusionICM45605
+#define IMU_ICM55686 SoftFusionICM55686
 
 #define IMU_DEV_RESERVED 250  // Reserved, should not be used in any release firmware
 

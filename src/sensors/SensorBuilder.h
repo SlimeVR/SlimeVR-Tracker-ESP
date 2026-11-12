@@ -55,6 +55,7 @@
 #include "softfusion/drivers/icm42688.h"
 #include "softfusion/drivers/icm45605.h"
 #include "softfusion/drivers/icm45686.h"
+#include "softfusion/drivers/icm55686.h"
 #include "softfusion/drivers/lsm6ds3trc.h"
 #include "softfusion/drivers/lsm6dso.h"
 #include "softfusion/drivers/lsm6dsr.h"
@@ -96,6 +97,8 @@ using SoftFusionICM45686
 	= SoftFusionSensor<SoftFusion::Drivers::ICM45686, SFCALIBRATOR>;
 using SoftFusionICM45605
 	= SoftFusionSensor<SoftFusion::Drivers::ICM45605, SFCALIBRATOR>;
+using SoftFusionICM55686
+	= SoftFusionSensor<SoftFusion::Drivers::ICM55686, SFCALIBRATOR>;
 using SoftFusionBMI160 = SoftFusionSensor<SoftFusion::Drivers::BMI160, SFCALIBRATOR>;
 class SensorAuto {};
 
@@ -222,7 +225,8 @@ public:
 			SoftFusionLSM6DSR,
 			// SoftFusionMPU6050,
 			SoftFusionICM45686,
-			// SoftFusionICM45605
+			// SoftFusionICM45605,
+			SoftFusionICM55686,
 			BNO085Sensor>(sensorID, sensorInterface, accessInterface);
 	}
 

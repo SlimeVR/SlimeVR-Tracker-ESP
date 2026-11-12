@@ -113,6 +113,8 @@ SensorBuilder::buildSensorDynamically(SensorTypeID type, SensorDefinition sensor
 		//	return buildSensor<SoftFusionICM45605>(
 		//		sensorDef
 		//	);
+		case SensorTypeID::ICM55686:
+			return buildSensor<SoftFusionICM55686>(sensorDef);
 		default:
 			m_Manager->m_Logger.error(
 				"Unable to create sensor with type %s (%d)",
