@@ -110,6 +110,14 @@ public:
 		return SensorDataType::SENSOR_DATATYPE_ROTATION;
 	};
 
+	virtual bool isStateUpdated();
+	void signalAckedStateUpdate(
+		SensorStatus ackedState,
+		bool ackedCalibration,
+		SlimeVR::Configuration::SensorConfigBits ackedConfig
+	);
+	void resetAckedState();
+
 	SensorPosition getSensorPosition() { return m_SensorPosition; };
 
 	void setSensorInfo(SensorPosition sensorPosition) {
@@ -149,6 +157,10 @@ protected:
 	void markRestCalibrationComplete(bool completed = true);
 
 	mutable SlimeVR::Logging::Logger m_Logger;
+
+	SensorStatus ackedState = SensorStatus::SENSOR_OFFLINE;
+	bool ackedCalibration = false;
+	SlimeVR::Configuration::SensorConfigBits ackedConfig = {};
 
 private:
 	void printTemperatureCalibrationUnsupported();
