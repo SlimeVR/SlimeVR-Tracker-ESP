@@ -25,11 +25,19 @@
 
 #include <string_view>
 
+extern "C" {
+#include <lwip/udp.h>
+extern struct udp_pcb* udp_pcbs;
+}
+
 #include "GlobalVars.h"
 #include "logging/Logger.h"
 #include "packets.h"
 
 #define TIMEOUT 3000UL
+
+// 0xC0 = AC_VO - for voice traffic (lowest latency)
+#define PACKET_TOS 0xC0
 
 template <typename T>
 uint8_t* convert_to_chars(T src, uint8_t* target) {
@@ -627,6 +635,21 @@ void Connection::reset() {
 	);
 
 	m_UDP.begin(m_ServerPort);
+
+	for (struct udp_pcb* pcb = udp_pcbs; pcb != NULL; pcb = pcb->next) {
+		m_Logger.debug(
+			"Found UDP PCB at %p for local port %d and remote port %d with ToS %X",
+			pcb,
+			pcb->local_port,
+			pcb->remote_port,
+			pcb->tos
+		);
+
+		if (pcb->local_port == m_ServerPort) {
+			pcb->tos = PACKET_TOS;
+			m_Logger.debug("Configured UDP PCB at %p to use ToS of AC_VO", pcb);
+		}
+	}
 
 	// Reset server address to broadcast if disconnected
 	m_ServerHost = IPAddress(255, 255, 255, 255);
