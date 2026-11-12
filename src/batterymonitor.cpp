@@ -24,12 +24,32 @@
 
 #include "GlobalVars.h"
 
+#if BATTERY_MONITOR == BAT_BQ27441
+#include <SparkFunBQ27441.h>
+#endif
+
 #if ESP8266 \
 	&& (BATTERY_MONITOR == BAT_INTERNAL || BATTERY_MONITOR == BAT_INTERNAL_MCP3021)
 ADC_MODE(ADC_VCC);
 #endif
 
 void BatteryMonitor::Setup() {
+#if BATTERY_MONITOR == BAT_BQ27441
+	if (!lipo.begin()) {
+		m_Logger.error("BQ27741 not found on I2C bus");
+	} else {
+		m_Logger.info("BQ27741 found");
+		if (lipo.itporFlag()) {  // Check if need to set configs
+			m_Logger.info("BQ27741 paremeters not set, setting them");
+			lipo.enterConfig();
+			lipo.setCapacity(BATTERY_DESIGN_CAPACITY);
+			lipo.setDesignEnergy(3.7f * BATTERY_DESIGN_CAPACITY);
+			lipo.setTerminateVoltage(BATTERY_LOWEST_OP_VOLTAGE);
+			lipo.setTaperRate(10 * BATTERY_DESIGN_CAPACITY / BATTERY_TAPER_CURRENT);
+			lipo.exitConfig();
+		}
+	}
+#endif
 #if BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
 	for (uint8_t i = 0x48; i < 0x4F; i++) {
 		if (I2CSCAN::hasDevOnBus(i)) {
@@ -44,8 +64,9 @@ void BatteryMonitor::Setup() {
 }
 
 void BatteryMonitor::Loop() {
-#if BATTERY_MONITOR == BAT_EXTERNAL || BATTERY_MONITOR == BAT_INTERNAL \
-	|| BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021
+#if BATTERY_MONITOR == BAT_EXTERNAL || BATTERY_MONITOR == BAT_INTERNAL           \
+	|| BATTERY_MONITOR == BAT_MCP3021 || BATTERY_MONITOR == BAT_INTERNAL_MCP3021 \
+	|| BATTERY_MONITOR == BAT_BQ27441
 	auto now_ms = millis();
 	if (now_ms - last_battery_sample >= batterySampleRate) {
 		last_battery_sample = now_ms;
@@ -92,8 +113,13 @@ void BatteryMonitor::Loop() {
 			}
 		}
 #endif
+#if BATTERY_MONITOR == BAT_BQ27441
+		voltage = lipo.voltage() / 1000.f;
+		level = lipo.soc() / 100.0f;
+#endif
 		if (voltage > 0)  // valid measurement
 		{
+#if BATTERY_MONITOR != BAT_BQ27441
 			// Estimate battery level, 3.2V is 0%, 4.17V is 100% (1.0)
 			if (voltage > 3.975f) {
 				level = (voltage - 2.920f) * 0.8f;
@@ -114,6 +140,8 @@ void BatteryMonitor::Loop() {
 			} else if (level < 0) {
 				level = 0;
 			}
+#endif
+
 			networkConnection.sendBatteryLevel(voltage, level);
 #ifdef BATTERY_LOW_POWER_VOLTAGE
 			if (voltage < BATTERY_LOW_POWER_VOLTAGE) {
@@ -129,4 +157,22 @@ void BatteryMonitor::Loop() {
 		}
 	}
 #endif
+}
+
+std::string BatteryMonitor::getExtendedInfo() {
+	std::string extended_battery_status = "";
+#if BATTERY_MONITOR == BAT_BQ27441
+	int current = lipo.current(AVG);
+	unsigned int fullCapacity = lipo.capacity(FULL);
+	unsigned int capacity = lipo.capacity(REMAIN);
+	int power = lipo.power();
+	int health = lipo.soh();
+
+	extended_battery_status += ", current [mA]: " + std::to_string(current);
+	extended_battery_status += ", capacity [mAh]: " + std::to_string(capacity) + "/"
+							 + std::to_string(fullCapacity);
+	extended_battery_status += ", power draw [mW]: " + std::to_string(power);
+	extended_battery_status += ", health [perc]: " + std::to_string(health);
+#endif
+	return extended_battery_status;
 }
